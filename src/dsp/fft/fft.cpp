@@ -1,0 +1,1008 @@
+//
+//
+// Created by Angel Dust on 16/10/2019.
+//
+
+
+#include "config.h"
+#include <algorithm> // for sdt:sort
+#include <arm_math.h>
+#include "dsp/blocks/dc_block.h"
+#include "arm_common_tables.h"
+#include "hw/stm32f4xx/adc.h"
+#include "hw/stm32f4xx/timers.h"
+#include "ui/view.h"
+#include "fft_widget.h"
+#include "fft_ui.h"
+#include "dsp/window.h"
+#include "dsp/decimation/dsp_fir_decimator_float.h"
+#include "radio.h"
+#include "agc.h"
+#include "periodic_task.h"
+#include "ui/main_view.h"
+#include "ui/view_manager.h"
+
+// FFT parameters
+st_fft_params fft_params;
+
+// Current slice
+uint8_t fft_slice_n;
+
+__attribute__((section(".fccmram")))
+fft_type fft_output[FFT_N];
+//__attribute__((section(".fccmram")))
+complex_t_f32 fft_slice_buff[FFT_N];
+// Wrapper over the fft_slice_vector
+buffer_t<float32_t> fft_slice_buffer = {(float32_t *const) (fft_slice_buff), FFT_N * 2};
+
+// Displayed FFT
+fft_type fft_display[DISPLAY_X_PIXELS];
+fft_type fft_display_db[DISPLAY_X_PIXELS];
+
+// FFT FIFO 
+complex_t fft_fifo_buff[FFT_FIFO_SIZE];
+FIFO fft_fifo((char *) fft_fifo_buff, FFT_FIFO_SIZE * sizeof(complex_t));
+
+// We need a decimator for each chanel
+DspFIRDecimatorFloat decimator_i{};
+DspFIRDecimatorFloat decimator_q{};
+
+#if FFT_N == 64
+
+const float32_t *twiddle = twiddleCoef_64;
+const uint16_t *bitRevTable = armBitRevIndexTable64;
+uint16_t bitRevTableLength = ARMBITREVINDEXTABLE__64_TABLE_LENGTH;
+
+#elif FFT_N == 128
+
+const float32_t *twiddle = twiddleCoef_128;
+const uint16_t *bitRevTable = armBitRevIndexTable128;
+uint16_t bitRevTableLength = ARMBITREVINDEXTABLE_128_TABLE_LENGTH;
+
+#elif FFT_N == 256
+
+const float32_t *twiddle = twiddleCoef_256;
+const uint16_t *bitRevTable = armBitRevIndexTable256;
+uint16_t bitRevTableLength = ARMBITREVINDEXTABLE_256_TABLE_LENGTH;
+
+#endif
+
+// cfft instance
+arm_cfft_instance_f32 S_cfft =
+        {FFT_N,
+         twiddle,
+         bitRevTable,
+         bitRevTableLength
+        };
+
+void (*arm_cfft)(
+        const arm_cfft_instance_f32 *,
+        float32_t *,
+        uint8_t,
+        uint8_t) = arm_cfft_f32;
+
+void (*arm_cmplx_mag)(
+        float32_t *pSrc,
+        float32_t *pDst,
+        uint32_t
+        numSamples) =
+arm_cmplx_mag_f32;
+
+// When we use multiple slices, each of them will be obtained using a different LO frequency.
+// This happens to slightly change the offset at the input of the ADCs, so we use a pair of blockers (I,Q) for each slice
+DCBlock dcBlockers[FFT_MAX_SLICES][2];
+
+// Smoothing factor lookup table
+// Stores 2^SMOOTH_GAIN_LUT_PRECISION values of (1 - exp(-0.005 * ((DB - NOISE_FLOOR_DB + 1))))
+#define SMOOTH_GAIN_LUT_PRECISSION 4
+float32_t smoothingGainLUT[1 << (SMOOTH_GAIN_LUT_PRECISSION)];
+fft_type fft_peak;
+uint16_t fft_peak_bin = 0;
+uint64_t fft_peak_f = 0;
+
+// TODO: Move to storable properties
+bool fft_min_db_auto = false;
+bool fft_estimateIQBalance = false;
+/* Noise floor calculation */
+uint16_t fft_calc_noise_floor_period_ms = 200; // 0 = noise floor disabled
+unsigned long fft_last_noise_floor_calculation_ms;
+float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
+fft_type fft_peak_v = config.fft.min_db;
+
+/* ----------- */
+#define FFT_MAX_AMPL_FACTOR 0.9f;
+
+// Max FFT magnitude. Dependent on the ADC range
+// float fft_range;
+float fft_mag_conv_factor = V_REF / (float) FFT_N / (float) 0xFFF;
+float fft_radio_gain_factor;
+// FFT magnitude ADC overload threshold
+adc_type adc_max_ampl;
+bool fft_mag_overload = false;
+volatile FFT_STATUS fft_status = FFT_STATUS_IDLE;
+FFTIQBalancer fftIQBalancer;
+float window[FFT_N];
+bool initialized = false;
+
+/* ----------- */
+
+void fft_loop();
+
+periodic_task fft_task(config.fft.refresh_period_ms, fft_loop);
+uint64_t last_waterfall_ms = 0;
+uint64_t last_iqbalance_ms = 0;
+uint64_t last_iqbalance_estimate_ms = 0;
+
+// Calculates FFT parameters from desired span, decimation factor and n_slices
+void st_fft_params::calc() {
+
+    // Minimum sample frequency, taking into account the usable bandwidth of each slice
+    sample_freq = span * decimation_factor / n_slices / USABLE_BW_FACTOR;
+
+    // Resolution bandwidth (per FFT bin)
+    rbw = sample_freq / size / decimation_factor;
+
+    // Bandwidth per slice
+    bw = span / 2 / n_slices;
+
+    // Number of usable bins in each slice
+    nbins = size * USABLE_BW_FACTOR;
+
+    // Total bins
+    total_bins = nbins * n_slices;
+
+    // Pixels per bin
+    bin_width_px = (float) total_bins / (float) DISPLAY_X_PIXELS;
+
+    display_rbw = rbw * bin_width_px;
+
+    slice_w_px = nbins / bin_width_px;
+
+    // first bin to show in each slice
+    start_bin = (uint8_t) ((float) (size - nbins) / 2.0);
+
+    span_if_start = radio::f_dsp_if - (span >> 1U);
+    span_f_start = config.f_carrier - (span >> 1U);
+}
+
+bool st_fft_params::valid() {
+
+    bool b = (bw) <= FFT_BANDWIDTH &&
+             sample_freq >= config.fft.min_sample_rate &&
+             sample_freq <= dsp_max_sample_rate;
+
+    return b;
+}
+
+void fft_dcremoval(buffer_t<float32_t> &vData) {
+
+    dcBlockers[fft_slice_n][0].filter(vData, 2, 0);
+    dcBlockers[fft_slice_n][1].filter(vData, 2, 1);
+}
+
+void unzipIQSamples(complex_t_f32 *complexData, fft_type *destReal, fft_type *destImag, uint16_t size) {
+
+    for (int i = 0; i < size; i++) {
+        destReal[i] = complexData[i].r;
+        destImag[i] = complexData[i].i;
+    }
+}
+
+void zipIQSamples(fft_type *srcReal, fft_type *srcImag, complex_t_f32 *dest, uint16_t size) {
+
+    for (int i = 0; i < size; i++) {
+        dest[i].r = srcReal[i];
+        dest[i].i = srcImag[i];
+    }
+}
+
+inline float get_window_ampl_corr_factor() {
+    switch (config.fft.window) {
+        case FFT_WINDOW_HAMMING:
+            return 1.85f;
+        default:
+            return 1;
+    }
+}
+
+void calcFFTRange() {
+
+    // Values in the fft_output array are not normalized, so they are v*FFT_N where v is the voltage magnitude
+    // config.fft.maxAmpl is the integer range of the ADC
+
+    //fft_range = (float) ((config.fft.maxAmpl * FFT_N) << (FFT_SCALE_FACTOR ? (FFT_SCALE_FACTOR - 6) : 0));
+
+    // Overload threshold
+    adc_max_ampl = (float) config.fft.maxAmpl * FFT_MAX_AMPL_FACTOR;
+}
+
+/*
+ * Generates the smoothing gain factors lookup table
+ */
+void generateSmoothingGainLUT() {
+
+    int db = FFT_MIN_DB;
+    int lut_size = (sizeof(smoothingGainLUT) / sizeof(smoothingGainLUT[0]));
+    int db_step = (FFT_MAX_DB - FFT_MIN_DB) / lut_size;
+
+    for (int i = 0; i < lut_size; i++, db += db_step) {
+
+        smoothingGainLUT[i] = (1 - exp(-0.14 * ((db - FFT_MIN_DB + 1)))) * config.fft.smooth_factor;
+    }
+}
+
+void fftInit() {
+
+    float32_t minPrecZ, maxPrecZ;
+
+    min_max_f32((float32_t *) config.fft.iq_balance_precZ, FFT_IQ_BALANCER_FILTER_SIZE, &minPrecZ, &maxPrecZ);
+
+    if (maxPrecZ > FFT_IQ_BALANCER_MIN_PRECISSION) {
+
+        // Initialize only if we have usable data
+
+        fftIQBalancer.setMeanZ(config.fft.iq_balance_meanZ);
+        fftIQBalancer.setPrecZ(config.fft.iq_balance_precZ);
+    }
+
+    for (int i = 0; i < DISPLAY_X_PIXELS; i++) {
+        fft_display[i] = FFT_HEIGHT;
+    }
+
+    fft_config(config.fft.span);
+
+    generateSmoothingGainLUT();
+
+    calcFFTRange();
+
+    config.fft.max_decimation_factor = min2(config.fft.max_decimation_factor, MAX_DECIMATION_FACTOR); // sanity check
+
+    fftUI::set_spectrum_style(config.fft.spectrum_style);
+    fftUI::set_spectrum_colors(config.fft.spectrum_line_color,config.fft.spectrum_fill_color);
+}
+
+void resetIQBalancer() {
+    fftIQBalancer.reset();
+}
+
+uint32_t fft_max_span() {
+    return config.fft.max_slices * FFT_BANDWIDTH * 2;
+}
+
+/* Finds the optimal FFT parameters based on the current selected span
+ *
+ * Calculates:
+ *
+ * - Decimation factor
+ * - Sample rate
+ * - FFT number of usable bins
+ * - Number of slides needed
+ * - FFT size
+ * - RBW
+ * - screen pixel/bin ratio
+ *
+ *
+ */
+bool fft_config(uint32_t span) {
+
+    uint8_t current_dec_factor = fft_params.decimation_factor;
+    uint32_t fft_sf = config.fft.sample_rate;
+
+    // Max span check
+    uint32_t max_span = fft_max_span();
+    if (span > max_span) span = max_span;
+
+    st_fft_params params{.span = span};
+    bool found = false;
+    st_fft_params best;
+
+    for (int s = 1; s <= config.fft.max_slices; s++) {
+        for (int d = 1; d <= config.fft.max_decimation_factor; d <<= 1) {
+
+            params.decimation_factor = d;
+            params.n_slices = s;
+            params.size = FFT_N;
+            params.calc();
+
+            if (params.valid()) {
+                // Our cost function is just the bind_width_px nearest to one so the bins doesn't have to be stretched nor shrink
+                if (abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px)) {
+                    best = params;
+                    found = true;
+                }
+            }
+        }
+    }
+
+    if (found) {
+
+        fft_params = best;
+        config.fft.sample_rate = fft_params.sample_freq;
+
+        // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
+        // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
+
+        if (fft_sf != config.fft.sample_rate ||
+            !decimator_i.isInitialized()) { // sample frequency changed not yet initialized
+
+            decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
+            decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
+            set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
+        } else {
+            decimator_i.setFactor(fft_params.decimation_factor);
+            decimator_q.setFactor(fft_params.decimation_factor);
+        }
+
+        if (current_dec_factor != fft_params.decimation_factor) {
+            // If decimation factor has changed, reset the fifo and make sure its size is a multiple
+            // of the chunk size. This changes if we are decimating, since in that case, we store some filter delay blocks
+            fft_fifo.setSize(
+                    (FFT_N + (fft_params.decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) *
+                    MAX_DECIMATION_FACTOR * sizeof(complex_t));
+            fft_fifo.reset();
+            //current_dec_factor = fft_decimation_factor;
+        }
+    }
+
+    return found;
+}
+
+/*
+void calibrateFFT() {
+
+
+    for (int i = 0; i < FFT_N; i++) {
+
+        double rads = 2.0f * PI * (90000.0f / (double) (config.fft.sampling * 1000)) * (double) i;
+
+        adc_buff_f[i].r = ((float) (0.0f + (10.0f) * cos(rads)));
+        adc_buff_f[i].i = ((float) (0.0f + (10.0f) * sin(rads)));
+    }
+
+//    // apply window
+//    arm_cmplx_mult_real_f32((float32_t *) adc_buff_f, window, (float32_t *) adc_buff_f, FFT_N);
+//
+//    (*arm_cfft)(&S_cfft, (float32_t *) adc_buff_f, 0, 1);
+//
+//    reorderBins(adc_buff_f);
+//
+//    arm_cmplx_mag_f32((float32_t *) adc_buff_f, (float32_t *) fft_output, FFT_N);
+
+
+}*/
+
+/*
+ * Performance with -Og optimizations for FFT_N=128: 5ms
+ */
+//__attribute__((section(".ccmram")))
+void doFFT() {
+
+    //  calibrateFFT(); // To measure max2 bin value
+
+    if (config.fft.window != FFT_WINDOW_NONE && config.fft.view_mode != FFT_VIEW_TIME_DOMAIN) {
+
+        if (!initialized) {
+            generate_window(3, window, FFT_N);
+            initialized = true;
+        }
+
+        arm_cmplx_mult_real_f32((float32_t *) fft_slice_buff, window, (float32_t *) fft_slice_buff, FFT_N);
+    }
+
+    if (config.fft.view_mode == FFT_VIEW_SPECTRUM) {
+
+        // Calculate FFT
+        (*arm_cfft)(&S_cfft, (float32_t *) fft_slice_buff, 0, 1);
+
+        reorderBins(fft_slice_buff);
+
+        fftIQBalancer.setFftRbw(fft_params.rbw);
+
+        if (fft_estimateIQBalance && fft_slice_n == 0) {
+
+            fftIQBalancer.estimate(fft_slice_buff);
+
+            complex_t_f32 *meanZ = fftIQBalancer.getMeanPoints();
+            float32_t *precZ = fftIQBalancer.getPrecisionPoints();
+            memcpy(config.fft.iq_balance_precZ, precZ,
+                   FFT_IQ_BALANCER_FILTER_SIZE * sizeof(config.fft.iq_balance_precZ[0]));
+            memcpy(config.fft.iq_balance_meanZ, meanZ,
+                   FFT_IQ_BALANCER_FILTER_SIZE * sizeof(config.fft.iq_balance_meanZ[0]));
+        }
+
+        if (config.fft.enable_iq_balance) {
+            fftIQBalancer.correct(fft_slice_buff);
+        }
+    }
+}
+
+void reorderBins(complex_t_f32 *v) {
+
+    complex_t_f32 temp;
+    uint16_t center_bin = FFT_N / 2;
+    for (int i = 0; i < center_bin; i++) {
+
+        temp = v[i];
+        v[i] = v[center_bin + i];
+        v[center_bin + i] = temp;
+    }
+}
+
+uint8_t getPeak(uint8_t start_bin, uint8_t end_bin, fft_type &peak_v) {
+
+    uint8_t max_ix = 0;
+
+    fft_type max = -32000;
+
+    for (uint16_t i = start_bin; i < end_bin; i++) {
+
+        if (fft_output[i] > max) {
+            max_ix = i;
+            peak_v = max = fft_output[i];
+        }
+    }
+
+    return max_ix;
+}
+
+uint8_t findFreqs(int *arr_idx_freqs, uint8_t max) {
+
+    uint16_t n = 0;
+    unsigned long fft_span_f_end = fft_params.span_f_start + config.fft.span;
+    for (int i = 0; i < FREQ_MEM_SIZE && n < max; i++) {
+        if (config.freqs[i].freq > fft_params.span_f_start && config.freqs[i].freq < fft_span_f_end) {
+            *(arr_idx_freqs++) = i;
+            n++;
+        }
+    }
+    return n;
+}
+
+/**
+ * Calculate the noise floor of the FFT using the fft_display (dB) values
+ * We estimate it just by taking the median, which yields good enough approximation for our needs
+ * For better FFT calculation methods: https://kluedo.ub.uni-kl.de/frontdoor/deliver/index/docId/4293/file/exact_fft_measurements.pdf
+ */
+void calculateNoiseFloor() {
+
+    fft_type copy[FFT_N];
+    memcpy(copy, fft_output + fft_params.start_bin, fft_params.nbins * sizeof(fft_type));
+
+    std::sort(copy, copy + fft_params.nbins);
+    fft_type median = copy[fft_params.nbins >> 1];
+
+    // Exponential filter
+    fft_noise_floor_db = (fft_noise_floor_db - (0.1f * (fft_noise_floor_db - median)));
+
+    if (fft_min_db_auto) {
+        // Set the dB scale automatically
+        //fft_type min_db = copy[0];
+
+        config.fft.min_db = fft_noise_floor_db - 10;
+
+        if (config.fft.min_db > config.fft.max_db) config.fft.min_db = config.fft.max_db;
+    }
+}
+
+/*
+ * Search for the smoothing gain factor on a precalculated lookup table
+ */
+float32_t getSmoothGain(float db) {
+
+    // Some smoothing with a 1st order low pass IIR filter
+    // The gain of the filter is a non-linear function of the amplitude, making the time constant high for the
+    // noise (low level signals) but small (fast response) for stronger signals
+
+    // The exp function is too slow, so we use an approximation instead
+    // gain = (1 - exp(-0.005 * ((db - FFT_MIN_DB + 1))));
+    // gain *= config.fft.smooth_factor;
+
+    return smoothingGainLUT[(int) (db - FFT_MIN_DB) >> SMOOTH_GAIN_LUT_PRECISSION];
+}
+
+void testFastLog() {
+
+    float b = 515234.0f;
+
+    for (int i = 0; i < 2000; i++) {
+
+        float x = i / b;
+        float l1 = 20 * log10(x);
+        float l2 = 20 * fasterlog(x);
+        //  float e = abs(l1 - l2);
+
+
+        printf("%d: L1:  %.2f L2: %.2f", i, l1, l2);
+        // printf("%d: L1: %.5f L2: %.5f E: %.5f\n", i, l1, l2, e);
+        HAL_Delay(10);
+    }
+}
+
+/* dB-based calculation
+inline fft_type fft_output_db(fft_type v) {
+
+    float db;
+
+    if (config.fft.window != FFT_WINDOW_NONE) {
+        // Apply window amplitude correction
+        v *= get_window_ampl_corr_factor();
+    }
+
+    // db referenced to the fft_range
+    db = v == 0 ? config.fft.min_db : 20.0f * fasterlog((float) v / fft_range);
+
+    // Subtract the gain
+    // TODO: Take into account the AGC value (requires taking into account that the analog gain depends on frequency, filters, etc)
+    db -= radio::get_gain();
+
+    // db =  20.0 * fasterlog((float) (fft_output[ii]) / fft_amp);
+    //logEvent(110,4,0);
+    if (db < config.fft.min_db)
+        db = FFT_MIN_DB;
+    //else if (db > config.fft.max_db)
+    //    db = config.fft.max_db;
+
+    //  start = height - (uint8_t) (
+    //  ((float) (fft_display[px] - config.fft.min_db) / (float) db_amp) *
+    //  (float) height);
+
+    return db;
+}
+*/
+
+/*** voltage-based calculation ***/
+
+inline fft_type fft_output_db(fft_type v) {
+
+    float db;
+
+    if (config.fft.window != FFT_WINDOW_NONE) {
+        // Apply window amplitude correction
+        v *= get_window_ampl_corr_factor();
+    }
+
+    v = v * fft_mag_conv_factor;
+
+    // Divide by the gain
+    v /= fft_radio_gain_factor;
+
+    // dBm
+    db = 10.0f * fasterlog(1000.0f * (float) pow(v, 2.0) / 400.0);
+
+    //logEvent(110,4,0);
+    if (db < config.fft.min_db)
+        db = FFT_MIN_DB;
+    //else if (db > config.fft.max_db)
+    //    db = config.fft.max_db;
+
+    //  start = height - (uint8_t) (
+    //  ((float) (fft_display[px] - config.fft.min_db) / (float) db_amp) *
+    //  (float) height);
+
+    return db;
+}
+
+void processFFT(float32_t *v) {
+
+    uint16_t startx;
+    int8_t x_inc;
+
+    fft_radio_gain_factor = pow(10.0, (float) agc::get_gain() / 20.0f);
+
+    // The first pixel depends on the slice we are currently in
+
+    if (radio::is_freq_inverted()) {
+
+        // FFT bins are in reverse order of frequency if the mixers prior to the sampling invert the frequency
+        // This happens when the number of high side LO injections is odd
+
+        // Here, if the LO is injected in the high side, the frequency is inverted and we start drawing from right to left
+        startx = DISPLAY_X_PIXELS - (uint16_t) (fft_slice_n * fft_params.slice_w_px) - 1;
+        x_inc = -1;
+    } else {
+        startx = (uint16_t) (fft_slice_n * fft_params.slice_w_px);
+        x_inc = 1;
+    }
+
+    arm_cmplx_mag_f32(v, (float32_t *) fft_output, FFT_N);
+
+    float db = FFT_MIN_DB, db_constrained = 0;
+
+    float gain = 1;
+    uint16_t start;
+    uint16_t db_amp = config.fft.max_db - config.fft.min_db;
+    int bin_ix, display_ix;
+    float bin_pos, display_pos;
+
+    if (fft_params.bin_width_px < 1) {
+
+        // Display size > number of bins => increase display index by one
+        display_ix = startx;
+        int last_bin_ix = fft_params.start_bin - 1;
+        bin_pos = fft_params.start_bin;
+
+        while (radio::is_freq_inverted() ? display_ix >= max2(0, startx - fft_params.slice_w_px) : display_ix <
+                                                                                                   min2(DISPLAY_X_PIXELS,
+                                                                                                        fft_params.slice_w_px +
+                                                                                                        startx)) {
+            bin_ix = uint16_t(bin_pos);
+
+            if (bin_ix != last_bin_ix) {
+
+                db = fft_output_db(fft_output[bin_ix]);
+                fft_output[bin_ix] = db;
+                gain = getSmoothGain(db);
+                last_bin_ix = bin_ix;
+            }
+
+            db_constrained = fmin(db, config.fft.max_db);
+
+            // We will store fft_display in display units ('y' coordinates from the top) for the sake of speed
+            // This way, we can calculate them here once instead of (like we used to do in previous versions), store it in db units and
+            // calculate display coordinates in the screen drawing callbacks (it was too slow to do the math within DMA transfers)
+            start = FFT_HEIGHT -
+                    (uint8_t) (((float) (db_constrained - config.fft.min_db) / (float) db_amp) * (float) FFT_HEIGHT);
+
+            // IIR filter
+            fft_display[display_ix] = fft_display[display_ix] - (gain * (fft_display[display_ix] - (float) start));
+
+            // Debug
+            if (fft_display[display_ix] > FFT_HEIGHT) {
+                fft_display[display_ix] = FFT_HEIGHT;
+            }
+
+            fft_display_db[display_ix] = fft_display_db[display_ix] - (gain * (fft_display_db[display_ix] - db));
+            display_ix += x_inc;
+            bin_pos += fft_params.bin_width_px;
+        }
+    } else {
+
+        // Number of bins > display size => increase bin index by one
+        display_pos = startx;
+        int next_display_ix = startx + x_inc;
+        int nix = uint16_t(display_pos);
+        bin_ix = fft_params.start_bin;
+        float display_pos_incr = (1.0f / fft_params.bin_width_px) * (float)x_inc;
+
+        while (bin_ix <= fft_params.start_bin + fft_params.nbins) {
+
+            display_ix = nix;
+
+            fft_output[bin_ix] = fft_output_db(fft_output[bin_ix]);
+
+            if (db <
+                fft_output[bin_ix]) { // Max db value among all the bins that are compressed in the current display pixel
+                db = fft_output[bin_ix];
+            }
+
+            nix = uint16_t(display_pos);
+            bin_ix += 1;
+
+            if (nix == next_display_ix) { // store the accumulated value of the display
+
+                gain = getSmoothGain(db);
+
+                db_constrained = fmin(db, config.fft.max_db);
+
+                start = FFT_HEIGHT -
+                        (uint8_t) (((float) (db_constrained - config.fft.min_db) / (float) db_amp) *
+                                   (float) FFT_HEIGHT);
+
+                // IIR filter
+                fft_display[display_ix] = fft_display[display_ix] - (gain * (fft_display[display_ix] - (float) start));
+                fft_display_db[display_ix] = fft_display_db[display_ix] - (gain * (fft_display_db[display_ix] - db));
+
+                next_display_ix += x_inc;
+                db = FFT_MIN_DB;
+            }
+
+            display_pos += display_pos_incr;
+        }
+
+        fft_display[nix] = fft_display[nix] - (gain * (fft_display[nix] - (float) start));
+        fft_display_db[nix] = fft_display_db[nix] - (gain * (fft_display_db[nix] - db));
+    }
+
+    // If the slice is not fully shown, set the fft_output to min_db so they're not used in further calculations (getPeak, for example)
+    /*while (ii < fft_params.start_bin + fft_params.nbins) {
+        //fft_output[ii] = config.fft.min_db;
+        fft_output[ii] = FFT_MIN_DB;
+        ii++;
+    }*/
+
+    // Calculate noise floor if needed
+    if (fft_calc_noise_floor_period_ms > 0) {
+        unsigned long ms = HAL_GetTick();
+        if (ms - fft_last_noise_floor_calculation_ms > fft_calc_noise_floor_period_ms) {
+            calculateNoiseFloor();
+            fft_last_noise_floor_calculation_ms = ms;
+        }
+    }
+
+#if DEBUG_FFT_ADC
+    printf("Power spectrum\r\n");
+    print_vector_f32(fft_output,FFT_N);
+
+    // printf("drawFFT: %dms\n",(int)(HAL_GetTick()-m));
+#endif
+}
+
+/* Decimate a complex_t buffer into the fft_slice_buff buffer */
+void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
+
+    // We need to clear the state of the decimator (do we?)
+    // decimator.clear_state();
+
+    uint16_t decimated_block_size = DSP_BLOCK / fft_params.decimation_factor;
+
+    // We decimate in DSP_BLOCK block sizes to save memory, at the expense of speed, since we need two buffers
+    // to process the signal (one of DSP_BLOCK length and one of DSP_BLOCK / fft_decimation_factor length)
+    complex_t_f32 signal[DSP_BLOCK];
+    buffer_t<float> src((float *) signal, DSP_BLOCK);
+    uint16_t ix = 0;
+    uint16_t ixOut = 0;
+
+    while (ix < size) {
+
+        // Transform to float
+        for (int i = 0, j = ix; i < DSP_BLOCK; j++, i++) {
+            //printf("%d;%d\n",f_buff[j].i,f_buff[j].r);
+            signal[i].i = f_buff[j].i;
+            signal[i].r = f_buff[j].r;
+
+            if (f_buff[j].r > adc_max_ampl) {
+                fft_mag_overload = true;
+            }
+
+        }
+
+        buffer_t<float> dst((float *) (fft_slice_buff + ixOut), decimated_block_size);
+        dst.decimated_size_bytes = decimated_block_size;
+
+        decimator_i.decimate(src, dst, 0, 2);
+        /*for (int i=0; i < DSP_BLOCK*2; i+=2) {
+            printf("%f\n",src.p[i]);
+            HAL_Delay(2);
+        }
+        printf("------\n");
+        HAL_Delay(2);
+        for (int i=0; i < (DSP_BLOCK/fft_decimation_factor)*2; i+=2) {
+            printf("%f\n",dst.p[i]);
+            HAL_Delay(2);
+        }
+        printf("------\n");*/
+        decimator_q.decimate(src, dst, 1, 2);
+
+        // Skip the first blocks to account for the delay group of the filter
+        if (ix >= FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft_params.decimation_factor) {
+            ixOut += decimated_block_size;
+        }
+
+        ix += DSP_BLOCK;
+    }
+
+    /*
+    printf("--------------------\n");
+    for (int i=0; i < size; i++) {
+        printf("%d\n",f_buff[i].i);
+        HAL_Delay(2);
+    }
+    printf("--------------------\n");
+    for (int i=0; i < FFT_N; i++) {
+        printf("%f\n",fft_slice_buff[i].i);
+        HAL_Delay(2);
+    }
+    printf("--------------------\n");
+     */
+}
+
+// ADC Acquisition
+// OFFLINE. It needs FFN*decimation_factor ADC buffer length
+void adquireFFTAsync() {
+
+
+    /* The FIR filter has a delay of (FFT_LPF_FIR_FILTER_NTAPS-1)/2 samples, so we
+        * discard the first ((FFT_LPF_FIR_FILTER_NTAPS-1)/2)/DSP_BLOCK blocks
+        * TODO: TO BE IMPLEMENTED. In order to discard blocks, we have to do different from the way it is done
+        * in real-time filtering (discarding the first blocks as we are processing them) because
+        * here we are filtering AFTER the whole set of blocks is acquired, and so, we have to acquire
+        * 'discard_n_blocks' in excess BEFORE we start the filtering and, after that, discard them */
+    // uint8_t discard_n_blocks = (uint8_t) (((FFT_LPF_FIR_FILTER_NTAPS - 1) / 2) / DSP_BLOCK) + 1;
+    uint16_t fft_buff_size = fft_params.size * fft_params.decimation_factor;
+
+    if (fft_params.decimation_factor > 1) {
+
+        // If we are decimating (using FIR filtering), we have to discard the FIR filter group delay samples
+        fft_buff_size += FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft_params.decimation_factor;
+    }
+
+    union {
+        char *c;
+        complex_t *f;
+    } data;
+
+    uint16_t chunk_size = fft_buff_size * sizeof(complex_t);
+    uint64_t timeout = HAL_GetTick() + 1000;
+
+    while (fft_fifo.available(&data.c) < chunk_size && HAL_GetTick() < timeout) {
+
+    }
+
+    if (true) { //av >= chunk_size) {
+
+        // Uncomment to create a pure sinusoid for testing
+        //    double rads = 2.0 * PI * (((int64_t)config.f_carrier - (int64_t)5005000) / (double) (config.fft.sampling)) * (double) i;
+
+        //  adc_buff_f[fft_buff_acq_ix].r  = ((int16_t) (0 + (config.fft.maxAmpl>>4) * cos(rads)));
+        //  adc_buff_f[fft_buff_acq_ix].i = ((int16_t) (0 + (config.fft.maxAmpl>>4) * sin(rads)));
+
+        if (fft_params.decimation_factor > 1) {
+
+            // Decimate the complex buffer (I and Q channels interleaved, so odd and even indexes) into fft_slice_buff
+            decimateComplexFFTBuffer((complex_t *) data.c, fft_buff_size);
+        } else {
+            // Transform to float
+            for (int i = 0; i < fft_buff_size; i++) {
+                fft_slice_buff[i].i = data.f[i].i;
+                fft_slice_buff[i].r = data.f[i].r;
+
+                if (data.f[i].r > adc_max_ampl) {
+                    fft_mag_overload = true;
+                }
+            }
+        }
+
+        fft_fifo.consume(chunk_size, &data.c);
+
+        // LOGGING
+        // GPIOA->BSRR= GPIO_PIN_12 << 16;
+    }
+
+    if (config.fft.removeDC) {
+        fft_dcremoval(fft_slice_buffer);
+    }
+}
+
+complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b) {
+
+    complex_t_f32 r;
+    r.r = a.r * b.r - a.i * b.i;
+    r.i = a.r * b.i + a.i * b.r;
+
+    return r;
+}
+
+void fft_work() {
+
+    adquireFFTAsync();
+
+    // Estimate only in the first slice
+    // IQ imbalance varies with IF frequency so we are only estimating it in the first slice
+    // TODO: Account for IF frequency dependent IQ imbalances
+
+    doFFT();
+
+    if (config.fft.view_mode == FFT_VIEW_TIME_DOMAIN) {
+
+        //drawTimeDomain();
+
+    } else {
+
+        // Depending on the rbw and the bandwidth of interest, we only show a portion of
+        // the FFT.
+        // In theory, we should be able to use the entire FFT bin array, but
+        // the cutoff frequency of the low pass filters in front of the ADCs is lower than
+        // the first nyquist zone to avoid aliasing, so the usable portion of the FFT is
+        // just the bandwidth of interest, which is lower than half the sampling rate (1st nyquist zone)
+        // Reference reading: Analog Devices MT-002: "What the Nyquist Criterion Means to Your Sampled Data System Design by Walt Kester")
+
+        processFFT((float32_t *) fft_slice_buff);
+
+        // A (side) note of caution. When changing connections, be careful not to swap I/Q signals from
+        // the quadrature mixer into the ADCs, or the frequency will be inverted again.
+
+        uint8_t peak_ix = getPeak(fft_params.start_bin, fft_params.start_bin + fft_params.nbins, fft_peak_v);
+
+        if (fft_output)
+
+            // Only consider a peak value if it's above a threshold from the current noise floor
+            if (fft_peak_v > FFT_SIGNAL_THRESHOLD_DB + fft_noise_floor_db && fft_peak < fft_peak_v) {
+
+                fft_peak = fft_peak_v;
+                fft_peak_bin = fft_slice_n * fft_params.nbins + peak_ix - fft_params.start_bin;
+
+                fft_peak_f = fft_params.span_if_start +
+                             fft_params.rbw * fft_peak_bin;// config.f_carrier + (rbw*(peak_ix-(FFT_N>>1)))*1000;
+            }
+    }
+}
+
+
+/*
+ * Performance with -Og optimizations for FFT_N=128: 15ms * number slices + 19ms for the rendering in a 240*80 display buffer at 18Mhz SPI
+ */
+void updateFFT() {
+
+    uint64_t m;
+    uint8_t slices;
+    unsigned long first_slice_center_f;
+
+    // Calculate the resolution bandwith (hz per bin) to have a bin per pixel
+    fft_config(fft_params.span);
+
+    if (config.fft.view_mode == FFT_VIEW_TIME_DOMAIN) {
+        slices = 1;
+    } else {
+        slices = fft_params.n_slices;
+    }
+
+    first_slice_center_f = fft_params.span_if_start + fft_params.bw;
+
+    fft_peak_v = config.fft.min_db;
+    fft_peak = config.fft.min_db;
+    fft_peak_bin = 0;
+
+    m = HAL_GetTick();
+
+    if (config.fft.iq_balance_estimate_period_ms) {
+        if (m - last_iqbalance_estimate_ms > config.fft.iq_balance_estimate_period_ms) {
+            last_iqbalance_estimate_ms = m;
+            fft_estimateIQBalance = true;
+        } else {
+            fft_estimateIQBalance = false;
+        }
+    }
+
+    if (config.fft.view_IQBalance) {
+        if (m - last_iqbalance_ms > FFT_IQBALANCE_REFRESH_PERIOD_MS) {
+            last_iqbalance_ms = m;
+
+            view_manager::mainView.IQBalance()->set_visible(true);
+            view_manager::mainView.Waterfall()->set_visible(false);
+            view_manager::mainView.IQBalance()->set_dirty();
+        }
+    } else {
+        if (m - last_waterfall_ms > config.fft.waterfall_refresh_period_ms) {
+            last_waterfall_ms = m;
+            view_manager::mainView.IQBalance()->set_visible(false);
+            view_manager::mainView.Waterfall()->set_visible(true);
+            view_manager::mainView.Waterfall()->set_dirty();
+        }
+    }
+
+    unsigned long f;
+
+    fft_mag_overload = false;
+
+    // GPIOA->BSRR= GPIO_PIN_15;
+    for (fft_slice_n = 0; fft_slice_n < slices; fft_slice_n++) {
+
+        f = first_slice_center_f +
+            ((uint32_t) fft_params.bw << 1U) *
+            (int32_t) fft_slice_n; // move to the next bandwidth of interest (set by the LPF before de ADC)
+
+        //  GPIOB->BSRR= GPIO_PIN_5;
+        if (radio::f_iq != f) {
+
+            radio::f_iq = f;
+
+            // TODO: update_freq() takes 4ms with a 400khz I2C, way too much. Should try to improve it's performance
+            if_freq(RF_DIRECTION_RX, f);
+
+            // Clear the FIFO since it will likely contain samples of the previous slice
+            fft_fifo.reset();
+
+            // TODO: Check if a delay for fequency settling is needed or not
+            HAL_Delay(0);
+        }
+        //  GPIOB->BSRR= GPIO_PIN_5 << 16;
+
+        fft_work();
+    }
+    view_manager::mainView.Spectrum()->set_dirty();
+}
+
+void fft_loop() {
+    updateFFT();
+    view_manager::mainView.paint();
+}

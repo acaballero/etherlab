@@ -1,0 +1,49 @@
+//
+// Created by Angel Dust on 20/05/2021.
+//
+
+#ifndef TRX_FRONTEND_GPIO_H
+#define TRX_FRONTEND_GPIO_H
+
+#include "../lib/MCP23017/mcp23017.h"
+
+extern MCP23017_HandleTypeDef hmcp01;
+extern MCP23017_HandleTypeDef hmcp02;
+
+#define ROT_BTN_PIN GPIO_PIN_5
+#define ROT_BTN_GPIO_PORT GPIOB
+#define ROT_BTN_EXTI_IRQn EXTI15_10_IRQn
+#define ROT_B_PIN GPIO_PIN_4
+#define ROT_B_GPIO_PORT GPIOB
+#define ROT_A_PIN GPIO_PIN_15
+#define ROT_A_GPIO_PORT GPIOA
+//#define S_STRENGTH_Pin GPIO_PIN_4
+//#define S_STRENGTH_GPIO_Port GPIOA
+#define S_STRENGTH_ADC_CHANNEL ADC_CHANNEL_3
+#define RSSI_ADC_CHANNEL ADC_CHANNEL_5 // Receiver signal strength indicator on ADC4 channel 5
+#define ANALOG_KEYBOARD_ADC_CHANNEL ADC_CHANNEL_1
+//#define ANALOG_KEYBOARD_PIN GPIO_PIN_0
+//#define ANALOG_KEYBORAD_PORT GPIOA
+#define ANALOG_KEYBOARD_INTERRUPT_PIN GPIO_PIN_1
+#define ANALOG_KEYBORAD_INTERRUPT_PORT GPIOA
+//#define MUTE_Pin GPIO_PIN_15
+//#define MUTE_GPIO_Port GPIOA
+//#define RX_TX_Pin GPIO_PIN_4
+//#define RX_TX_GPIO_Port GPIOB
+
+// extern GPIOInputPin TXInputPin;
+
+#define POW_CTRL_DATA_PIN GPIO_PIN_15
+#define POW_CTRL_DATA_PORT GPIOB
+#define POW_CTRL_SET_PIN GPIO_PIN_8
+#define POW_CTRL_SET_PORT GPIOA
+#define POW_CTRL_CLK_PIN GPIO_PIN_9
+#define POW_CTRL_CLK_PORT GPIOA
+
+//#define FILTER_A_CTRL_SET_PIN GPIO_PIN_5
+//#define FILTER_A_CTRL_SET_PORT GPIOB
+
+static void MX_GPIO_Init(void);
+
+
+#endif //TRX_FRONTEND_GPIO_H

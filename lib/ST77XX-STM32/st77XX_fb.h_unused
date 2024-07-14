@@ -1,0 +1,330 @@
+#ifndef __ST77XX_FB_H
+#define __ST77XX_FB_H
+
+#include "hw/stm32_hal.h"
+#include <stdint-gcc.h>
+#include <string.h>
+#include "ips_font.h"
+
+#define DEBUG_LCD 1
+
+#ifndef DISPLAY_X_PIXELS
+#if USING_HORIZONAL == 0 || USING_HORIZONAL == 1
+#define DISPLAY_X_PIXELS 240
+#define DISPLAY_Y_PIXELS 240
+#else
+#define DISPLAY_X_PIXELS 240
+#define DISPLAY_Y_PIXELS 240
+#endif
+#endif
+
+#define ABS(x)   ((x) > 0 ? (x) : -(x))
+
+// Reduced color depth params
+#define BITS_PER_PIXEL 1 // Default BPP for the pixel buffer
+#define PIXELS_PER_BYTE(bpp) (uint8_t)(8/(1<<(bpp-1)))
+
+#define BPP1_LOG2_PIXELS_PER_BYTE 3
+#define BPP1_PIXEL_MASK 0x0001U
+
+#define BPP2_LOG2_PIXELS_PER_BYTE 2
+#define BPP2_PIXEL_MASK 0x0003U
+
+#define BPP4_LOG2_PIXELS_PER_BYTE 1
+#define BPP4_PIXEL_MASK 0x000FU
+
+// RGB656 Colors
+//#define C565_WHITE 0xFFFF
+//#define C565_BLACK 0x0000
+//#define C565_BLUE 0x001F
+//#define C565_BRED 0XF81F
+//#define C565_GRED 0XFFE0
+//#define C565_GBLUE 0X07FF
+//#define C565_RED 0xF800
+//#define C565_MAGENTA 0xF81F
+//#define C565_GREEN 0x07E0
+//#define C565_CYAN 0x7FFF
+//#define C565_YELLOW 0xFFE0
+//#define C565_BROWN 0XBC40
+//#define C565_BRRED 0XFC07
+//#define C565_GRAY 0X8430
+//#define C565_DARKBLUE 0X01CF
+//#define C565_LIGHTBLUE 0X7D7C
+//#define C565_GRAYBLUE 0X5458
+//#define C565_LIGHTGREEN 0X841F
+//#define C565_LGRAY 0XC618
+//#define C565_LGRAYBLUE 0XA651
+//#define C565_LBBLUE 0X2B12
+
+// BGR565
+#define C565_WHITE 0xFFFF
+#define C565_BLACK 0x0000
+#define C565_BLUE 0x1F00
+#define C565_BRED 0x1FF8
+#define C565_GRED 0xE0FF
+#define C565_GBLUE 0xFF07
+#define C565_RED 0x00F8
+#define C565_MAGENTA 0x1FF8
+#define C565_GREEN 0xE007
+#define C565_CYAN 0xFF7F
+#define C565_YELLOW 0xE0FF
+#define C565_BROWN 0x40BC
+#define C565_BRRED 0x07FC
+#define C565_GRAY 0x3084
+#define C565_DARKBLUE 0xCF01
+#define C565_LIGHTBLUE 0x7C7D
+#define C565_GRAYBLUE 0x5854
+#define C565_LIGHTGREEN 0x1F84
+#define C565_LGRAY 0xE73C
+#define C565_LGRAYBLUE 0x51A6
+#define C565_LBBLUE 0x122B
+
+#define RGB888_TO_RGB565(rgb)   ((((rgb >> 19) & 0x1f) << 11) | \
+                                (((rgb >> 10) & 0x3f) <<  5) | \
+                                 (((rgb >>  3) & 0x1f)      ))
+
+#define SWAP_BYTES(w) (uint16_t)(w>>8 | w<<8)
+
+enum Color {
+    BLACK, WHITE, YELLOW, RED
+};
+
+enum FFTColor {
+    FC_BLACK, FC_WHITE, FC_YELLOW, FC_GRAY
+};
+
+enum SettingsColor {
+    SC_BLACK, SC_WHITE, SC_YELLOW, SC_GRAY
+};
+
+const uint16_t fft_palette[] = {
+        C565_BLACK, C565_WHITE, C565_YELLOW, C565_LGRAY
+};
+
+const uint16_t palette[] = {
+        C565_BLACK, C565_WHITE, C565_YELLOW, C565_RED
+};
+
+const uint16_t settings_palette[] = {
+        C565_BLACK, C565_WHITE, C565_YELLOW, C565_GRAY
+};
+
+const uint32_t waterfall_palette_rgb256[16] = {
+        0x0000, 0x000085, 0x0000c8, 0x4B00e3,
+        0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
+        0xdc6a55, 0xed852a, 0xffa000, 0xffbf55,
+        0xffcf7f, 0xffdfaa, 0xffefd4, 0xffffff
+
+};
+
+extern uint16_t waterfall_palette[16];
+
+struct PixelBuffer {
+    uint8_t bits_per_pixel, pixels_per_byte, log2_pixels_per_byte, pixel_mask;
+    uint8_t ncolors;
+    uint16_t x, y;
+    uint16_t height, width;
+    uint8_t *buffer = 0;
+    uint16_t size = 0;
+    const uint16_t *palette;
+    bool dirty = false;
+    float fps = 0;
+    uint64_t last_refresh_ms = 0;
+};
+
+#define MAX_BUFFERS 5
+
+/* Max allocated space for all the PixelBuffers */
+/* For example: 14400 is enough for:
+ * - 1 240x240 buffer at 2 bits per pixel (4 colors)
+ * - 2 240*80 buffers at 1 bpp and 1 240*80 buffer at 4 bpp (2400*2+9600)
+ */
+#define BUFFER_SIZE 17400
+
+class ST77XX {
+
+public:
+
+    ST77XX(SPI_HandleTypeDef *);
+
+    virtual int16_t begin() = 0;
+
+    void initPixelBuffer(PixelBuffer *, uint16_t, uint16_t, uint16_t, uint16_t, uint8_t, const uint16_t *);
+
+    int16_t initBuffer(uint16_t, uint16_t, uint16_t, uint16_t, uint8_t, const uint16_t *);
+
+    int16_t initBuffer(uint8_t ibuffer, uint16_t, uint16_t, uint16_t, uint16_t, uint8_t, const uint16_t *);
+
+    void deleteBuffers();
+
+    void setBuffer(uint8_t ibuffer);
+
+    virtual void select() = 0;
+
+    virtual void unselect() = 0;
+
+    virtual void reset() = 0;
+
+    void renderAll();
+
+    void renderBuffer(PixelBuffer *buffer, bool force);
+
+    void renderBuffer(uint8_t ibuffer);
+
+    void renderBuffer(uint8_t ibuffer, bool force);
+
+    uint8_t renderString(uint8_t x, uint8_t y, uint16_t length);
+
+    void setPixel(uint16_t x, uint16_t y, uint16_t color);
+
+    void writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color);
+
+    void writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+
+    void writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
+
+    void writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t width);
+
+    void writeRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
+
+    void writeRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color);
+
+    void drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color);
+
+    void invertColors(uint8_t invert);
+
+    void test(void);
+
+    void setFont(FontDef *);
+
+    void setColor(uint8_t c);
+
+    void setBgColor(uint8_t c);
+
+    void clear(bool render = true);
+
+    void clear(uint8_t ibuffer, bool render = true);
+
+    void gotoXY(uint16_t x, uint16_t y);
+
+    void gotoCharXY(uint16_t x, uint16_t y);
+
+    void fill(uint16_t color);
+
+    void fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, uint16_t color);
+
+    void fillBuffer(uint8_t ibuffer, uint16_t color);
+
+    PixelBuffer *findBuffer(uint16_t x, uint16_t y);
+
+    void scrollBuffer(uint8_t ibuffer, uint16_t x, uint16_t y);
+
+    void writeChar(uint16_t x, uint16_t y, char ch, FontDef *font, uint16_t color, uint16_t bgcolor);
+
+    void writeString(uint16_t x, uint16_t y, const char *str, FontDef *font, uint16_t color, uint16_t bgcolor);
+
+    size_t write(uint8_t uint8_t);
+
+    size_t write(const uint8_t *buffer, size_t size);
+
+    size_t write(const char *str) {
+        if (str == NULL)
+            return 0;
+        return write((const uint8_t *) str, strlen(str));
+    }
+
+    size_t write(const char *buffer, size_t size) {
+        return write((const uint8_t *) buffer, size);
+    }
+
+    // These handle ambiguity for write(0) case, because (0) can be a pointer or an integer
+    inline size_t write(short t) { return write((uint8_t) t); }
+
+    inline size_t write(unsigned short t) { return write((uint8_t) t); }
+
+    inline size_t write(int t) { return write((uint8_t) t); }
+
+    inline size_t write(unsigned int t) { return write((uint8_t) t); }
+
+    inline size_t write(long t) { return write((uint8_t) t); }
+
+    inline size_t write(unsigned long t) { return write((uint8_t) t); }
+
+    // Enable write(char) to fall through to write(uint8_t)
+    inline size_t write(char c) { return write((uint8_t) c); }
+
+    inline size_t write(int8_t c) { return write((uint8_t) c); }
+
+    size_t print(const char[]);
+
+    size_t print(char);
+
+    size_t print(unsigned char, int = 10);
+
+    size_t print(int, int = 10);
+
+    size_t print(unsigned int, int = 10);
+
+    size_t print(long, int = 10);
+
+    size_t print(unsigned long, int = 10);
+
+    size_t print(double, int = 2);
+
+    void DMATxHalfCpltCallback(void);
+
+    void DMATxCpltCallback(void);
+
+    void setVerticalLineSpacing(uint8_t);
+
+    uint8_t getVerticalLineSpacing();
+
+
+protected:
+
+    void convertPalette888to565(const uint32_t *, uint16_t *, uint8_t size);
+
+    SPI_HandleTypeDef *spi_port;
+
+private:
+
+    uint16_t px = 0;
+    uint16_t py = 0;
+    uint16_t padding_x = 0;
+    uint16_t padding_y = 0;
+    FontDef *font = (FontDef *) &Font_11x18;
+    uint16_t color = WHITE;
+    uint16_t bgColor = BLACK;
+    uint8_t verticalSpacing = 2;
+
+    uint8_t nbuffers;
+    PixelBuffer buffers[MAX_BUFFERS];
+    PixelBuffer *curr_buffer = 0;
+
+    volatile bool DMAHalfTransferCompleted = false;
+
+    int16_t allocateBuffers(void);
+
+//    inline uint16_t getPixelIndex(uint16_t x, uint16_t y);
+
+    //void init(void);
+    virtual void writeCommand(uint8_t data) = 0;
+
+    virtual void writeData(uint8_t *buff, size_t buff_size) = 0;
+
+    virtual void InitDisplayDataTransfer() = 0;
+
+    virtual void EndDisplayDataTransfer() = 0;
+
+    virtual void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) = 0;
+
+    size_t printNumber(unsigned long, uint8_t);
+
+    size_t printFloat(double, uint8_t);
+
+    inline void swap(uint8_t &a, uint8_t &b);
+};
+
+
+#endif
+

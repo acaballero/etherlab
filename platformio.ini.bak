@@ -1,0 +1,60 @@
+; PlatformIO Project Configuration File
+;
+;   Build options: build flags, source filter
+;   Upload options: custom upload port, speed and extra flags
+;   Library options: dependencies, extra library storages
+;   Advanced options: extra scripting
+;
+; Please visit documentation for the other options and examples
+; http://docs.platformio.org/page/projectconf.html
+
+[platformio]
+default_envs = genericSTM32F427VGT
+
+[env:genericSTM32F303CC]
+
+lib_compat_mode = off
+platform = ststm32
+board = genericSTM32F303CC
+;framework = cmsis
+framework = stm32cube
+; specific board parameters
+;board_build.mcu = stm32f303cct6
+;board_upload.maximum_ram_size =40960
+;board_upload.maximum_size = 262144
+build_src_filter = +<*> -<hw/stm32f4xx> -<.git/> -<.svn/> -<example/> -<examples/> -<test/> -<tests/>
+; Build flags (-ggdb generates debug symbols)
+build_flags = -Og  -DHSE_VALUE=((uint32_t)16000000) -L$(CMSISPATH)/CMSIS/Lib/GCC/ -mthumb -mthumb-interwork -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -ffast-math -fno-math-errno -larm_cortexM4lf_math -Wno-switch -Wl,--gc-sections   -Wl,-TD:/dev/STM32/trx_frontend/STM32F303CC_DEFAULT.ld   -ggdb
+build_unflags = -Os
+; There's a bug in Platformio (https://community.platformio.org/t/how-to-pass-flags-to-final-firmware-elf-linkage/72/3)
+; causing it not to use all the compiler flags to the linkage step. When using -mfloat-abi=hard, it results in an error if the linker tries to link hard float libraries whith soft-float ones
+; Using update_link_flags script overcomes this bug
+extra_scripts = update_link_flags.py
+; To debug, start a GDB servehaltr (D:\dev\OpenOCD-20190828-0.10.0\bin\openocd -f D:\dev\OpenOCD-20190828-0.10.0\share\openocd\scripts\board\stm32f3discovery.cfg -d2)
+; and set a debug target for remote GDB debugging at port 3333
+; Or, use the Download & Debug template
+debug_tool = stlink
+
+upload_protocol = stlink
+
+[env:genericSTM32F427VGT]
+lib_ldf_mode = chain
+lib_compat_mode = off
+platform = ststm32
+board = genericSTM32F427VGT
+framework = stm32cube
+
+build_src_filter = +<*> -<hw/stmf4xx/STM32_USB_Device_Library> -<hw/board/board_v1*> -<hw/stm32f3xx> -<hw/stm32f3xx>  -<.git/> -<.svn/> -<example/> -<examples/> -<test/> -<tests/> -<.*> -<cmake*> -<.pio/>
+; Build flags (-ggdb generates debug symbols)
+build_flags =  -DTICK_INT_PRIORITY=((uint32_t)0) -DHSE_VALUE=((uint32_t)26000000) -Og  -L$(CMSISPATH)/CMSIS/Lib/GCC/ -mthumb -mthumb-interwork -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -ffast-math -fno-math-errno -larm_cortexM4lf_math -Wno-switch -Wl,--gc-sections  -ggdb
+build_unflags = -Os
+board_build.ldscript = D:/dev/STM32/trx_frontend/STM32F427VGT_DEFAULT.ld
+; There's a bug in Platformio (https://community.platformio.org/t/how-to-pass-flags-to-final-firmware-elf-linkage/72/3)
+; causing it not to use all the compiler flags to the linkage step. When using -mfloat-abi=hard, it results in an error if the linker tries to link hard float libraries whith soft-float ones
+; Using update_link_flags script overcomes this bug
+extra_scripts = update_link_flags.py
+; To debug, start a GDB server (D:\dev\OpenOCD-20190828-0.10.0\bin\openocd -f D:\dev\OpenOCD-20190828-0.10.0\share\openocd\scripts\board\stm32f4discovery.cfg -d2)
+; and set a debug target for remote GDB debugging at port 3333
+; Or, use the Download & Debug template
+debug_tool = stlink
+upload_protocol = stlink

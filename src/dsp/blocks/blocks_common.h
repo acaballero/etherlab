@@ -1,0 +1,6 @@
+#ifndef TRX_FRONTEND_BLOCKS_COMMON_H
+#define TRX_FRONTEND_BLOCKS_COMMON_H
+
+#define LUT_SIZE 256
+
+#endif

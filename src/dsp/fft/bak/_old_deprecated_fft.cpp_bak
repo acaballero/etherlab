@@ -1,0 +1,300 @@
+//
+// Created by Angel Dust on 25/06/2021.
+//
+
+
+//__attribute__((section(".ccmram")))
+// DEPRECATED: Same reason as for fft_config function
+void processFFT(float32_t *v) {
+
+    uint16_t startx;
+    int8_t x_inc;
+
+    // The first pixel depends on the slice we are currently in
+    // We will center the slices around the viewport, and it may be
+    // that not all the bins of the first and last slices are shown. Ej. with 3 slices:
+    //
+    //                     viewport
+    //              |--------------------|
+    //         <----1----><----2----><---3---->
+    //
+    // The first pixel is = n_slices*slice_w_px/2
+
+
+    if (lo_injection == HIGH_SIDE) {
+
+        // FFT bins are in reverse order of frequency if the mixers prior to the sampling invert the frequency
+        // This happens when the number of high side LO injections is odd
+
+        // Here, if the LO is injected in the high side, the frequency is inverted and we start drawing from right to left
+        startx = DISPLAY_X_PIXELS - (uint16_t) (fft_slice_n * slice_w_px) - 1;
+        x_inc = -1;
+
+    } else {
+        startx = (uint16_t) (fft_slice_n * slice_w_px);
+        x_inc = 1;
+    }
+
+    arm_cmplx_mag_f32(v, (float32_t *) fft_output, FFT_N);
+
+
+    // reorderBins();
+
+    float db = 0;
+//    float noise_level;
+//
+//    if (config.fft.iq_balance_estimate_period_ms) {
+//        // If IQ balance is enabled, we already have the noise level calculated in it
+//        noise_level = fftIQBalancer.getNoiseLevel();
+//    } else {
+//        noise_level = FFT_NOISE_LEVEL;
+//    }
+
+    int ii;
+    int iii = fft_start_bin - 1;
+    float i = 0;
+    int16_t px = 0;
+
+    float gain = 1;
+
+    px = startx;
+    i = ii = fft_start_bin;
+
+    uint16_t start;
+    uint8_t height = FFT_HEIGHT;
+
+    uint16_t db_amp = config.fft.max_db - config.fft.min_db;
+
+    while (lo_injection == HIGH_SIDE ? px >= max2(0, startx - slice_w_px) : px <
+                                                                            min2(DISPLAY_X_PIXELS,
+                                                                                 slice_w_px + startx)) {
+
+        ii = uint16_t(i);
+
+        if (ii != iii) {
+
+            // if (vDataR[ix].i > config.fft.maxAmpl) vDataR[ix].i = config.fft.maxAmpl;
+
+            //logEvent(110,3,0);
+            db = fft_output[ii] == 0 ? config.fft.min_db : 20.0f * fasterlog((float) (fft_output[ii]) / fft_range);
+            // db =  20.0 * fasterlog((float) (fft_output[ii]) / fft_amp);
+            //logEvent(110,4,0);
+            //if (db < config.fft.min_db) db = FFT_MIN_DB;
+            //else
+            if (db > config.fft.max_db) db = config.fft.max_db;
+
+            // Some smoothing with a 1st order low pass IIR filter
+            // The gain of the filter is a non-linear function of the amplitude, making the time constant high for the
+            // noise (low level signals) but small (fast response) for stronger signals
+
+            // The exp function is too slow, so we use an approximation instead
+            // gain = (1 - exp(-0.005 * ((db - FFT_MIN_DB + 1))));
+            // gain *= config.fft.smooth_factor;
+
+            gain = getSmoothGain(db);
+
+
+//            start = height - (uint8_t) (
+//                    ((float) (fft_display[px] - config.fft.min_db) / (float) db_amp) *
+//                    (float) height);
+
+
+            fft_output[ii] = db;
+
+            iii = ii;
+        }
+
+
+        // We will store fft_display in display units ('y' coordinates from the top) for the sake of speed
+        // This way, we can calculate them here once instead of (like we used to do in previous versions), store it in db units and
+        // calculate display coordinates in the screen drawing callbacks (It was too slow to do the math within DMA transfers)
+        start = height - (uint8_t) (
+                ((float) (db - config.fft.min_db) / (float) db_amp) *
+                (float) height);
+
+
+
+        // IIR filter
+        fft_display[px] = fft_display[px] - (gain * (fft_display[px] - (float) start));
+        fft_display_db[px] = fft_display_db[px] - (gain * (fft_display_db[px] - db));
+        px += x_inc;
+        i += bin_width_px;
+
+    }
+
+    // If the slice is not fully shown, set the fft_output to min_db so they're not used in further calculations (getPeak, for example)
+    while (ii < fft_start_bin + fft_nbins) {
+        //fft_output[ii] = config.fft.min_db;
+        fft_output[ii] = FFT_MIN_DB;
+        ii++;
+    }
+
+    // Calculate noise floor if needed
+    if (fft_calc_noise_floor_period_ms > 0) {
+        unsigned long ms = HAL_GetTick();
+        if (ms - fft_last_noise_floor_calculation_ms > fft_calc_noise_floor_period_ms) {
+            calculateNoiseFloor();
+            fft_last_noise_floor_calculation_ms = ms;
+        }
+    }
+
+#if DEBUG_FFT_ADC
+    printf("Power spectrum\r\n");
+    print_vector_f32(fft_output,FFT_N);
+
+    // printf("drawFFT: %dms\n",(int)(HAL_GetTick()-m));
+#endif
+}
+
+
+/* Finds the optimal FFT parameters based on the current selected span
+ *
+ * Calculates:
+ *
+ * - Decimation factor
+ * - Sample rate
+ * - FFT number of usable bins
+ *
+ * DEPRECATED:
+ * This method tries to find the optimal resolution bandwidth obtained by dividing the span by the screen resolution.
+ * While doing so, it assumes there will be FTT slices that fall outside de viewport
+ * There's a bug that produces an incorect fft_nbins when the maximum resolution bandwidth obtained is smaller than the desired one
+ * I have developed a better approach, which doesn't try to get the exact otimal resolution bandwidth, and expects the FFT bins to be
+ * streched/compressed to real display pixels as required
+ */
+float fft_config() {
+
+    uint8_t current_dec_factor = fft_decimation_factor;
+
+    uint32_t fft_sf = config.fft.sample_rate;
+
+    // Max span, decimation factor and resolution bandwidth according to the current max number of slices
+
+    uint32_t max_span = config.fft.max_slices * (config.fft.bw << 1);
+
+    if (max_span < config.fft.span) {
+        config.fft.span = max_span;
+    }
+
+    uint16_t max_x = min2(DISPLAY_X_PIXELS, FFT_N * config.fft.max_slices * 0.8);
+
+    // uint8_t max_decimation_factor
+
+    // Optimal resolution bandwidth to display one bin per pixel
+    display_rbw = (float) config.fft.span / (float) max_x;
+
+    // fft_bw = (rbw * FFT_N / 2);
+
+    // Calculate the sample frequency to get the resolution bandwidth given an FFT_N sample length
+
+    config.fft.sample_rate = display_rbw * FFT_N;
+
+    fft_decimation_factor = config.fft.max_decimation_factor;
+
+    // The sample rate should be more than twice the bandwidth of interest to avoid aliasing (the rolloff of the LPF filters extends several khz beyond fft_bw)
+
+
+    float max_rbw = (float) dsp_max_sample_rate / (float) fft_decimation_factor / (float) FFT_N;
+
+    // Max span at current decimation factor
+    // The absolute maximum span is determined by the maximum number of slices and the cutoff frequency of the
+    // ADCs anti-alias low pass filter but, if we are decimating, the maximum span can be further reduced by
+    // the resulting sampling frequency and the FIR filter cutoff frequency
+    uint32_t decimation_max_span = min2(max_span,
+                                        config.fft.max_slices * (dsp_max_sample_rate / (float) fft_decimation_factor) *
+                                        0.8);
+
+    // Try to find a decimation factor that suits our constraints
+    // The decimation factor selected must allow a rbw greater than the optimal rbw in order to show all the desired span
+
+    while (fft_decimation_factor > 1 && max_rbw < display_rbw && decimation_max_span < config.fft.span) {
+
+        // Commented calculations are simplified to be able to use only powers of two factors
+        fft_decimation_factor >>= 1;
+        decimation_max_span = min2(max_span,
+                                   config.fft.max_slices * (dsp_max_sample_rate / (float) fft_decimation_factor) * 0.8);
+        max_rbw *= 2;
+
+        // We cannot work with decimation factors which are not powers of two as the decimation factor
+        // should be a factor of the FTT block size, and we currently are limited by powers of two FTT sizes (and DMA FTT block sizes)
+        // TODO: Think of a way of avoiding the power of two size restriction (maybe Benstein's FTT algorithm?)
+
+        // fft_decimation_factor = fft_decimation_factor == 2 ? 1 : fft_decimation_factor - 2;
+        // max_rbw = (float) dsp_max_sample / (float) fft_decimation_factor / (float) FFT_N;
+
+    }
+
+    // With the decimation factor selected, let's see if we can get the desired rbw
+    float min_rbw = (float) config.fft.min_sample_rate / (float) fft_decimation_factor / (float) FFT_N;
+
+    // If we cannot met the desired rbw with the sampling frequency limits, we have to adjust it
+    if (display_rbw < min_rbw) {
+
+        config.fft.sample_rate = config.fft.min_sample_rate / fft_decimation_factor;
+
+    } else if (display_rbw > max_rbw) {
+
+        config.fft.sample_rate = dsp_max_sample_rate / fft_decimation_factor;
+
+    }
+
+    if (fft_decimation_factor > 1) {
+
+        // Usable bandwidth of the FFT (positive half)
+        fft_bw = (display_rbw * FFT_N / 2.0f);
+
+        // The cutoff frequency of the digital filter will be set at 0.4*frequency
+        // to let the transition band lie in the 1st Nyquist zone.
+        fft_bw = (int) ((float) fft_bw * 0.8f);
+
+        //fir_decimate_instance_Q.M = fft_decimation_factor; // Disabled: Using the same filter instance for both I and Q signals
+
+        config.fft.sample_rate = config.fft.sample_rate * fft_decimation_factor;
+
+    } else {
+        fft_bw = config.fft.bw;
+    }
+
+    // Real resolution bandwidth
+    // Can differ from the desired display rbw if the sampling frequency has been adjusted at this point (max2 and min2 rbw constraints)
+    fft_rbw = (float) config.fft.sample_rate / fft_decimation_factor / (float) FFT_N;
+
+    if (fft_sf != config.fft.sample_rate ||
+        !decimator_i.isInitialized()) { // sample frequency changed not yet initialized
+
+        decimator_i.config(config.fft.sample_rate, fft_bw * 1.1, fft_decimation_factor);
+        decimator_q.config(config.fft.sample_rate, fft_bw * 1.1, fft_decimation_factor);
+        set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
+
+    } else {
+        decimator_i.setFactor(fft_decimation_factor);
+        decimator_q.setFactor(fft_decimation_factor);
+    }
+
+    if (current_dec_factor != fft_decimation_factor) {
+        // If decimation factor has changed, reset the fifo and make sure its size is a multiple
+        // of the chunk size. This changes if we are decimating, since in that case, we store some filter delay blocks
+        fft_fifo.setSize((FFT_N + (fft_decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) *
+                         MAX_DECIMATION_FACTOR * sizeof(complex_t));
+        fft_fifo.reset();
+        //current_dec_factor = fft_decimation_factor;
+    }
+
+    // Calculate max2 usable bins per FFT
+    fft_nbins = (uint16_t) ((float) fft_bw / fft_rbw) * 2.0f;
+
+    fft_start_bin = (uint8_t) ((float) (FFT_N - fft_nbins) / 2.0); // first bin to show
+
+    // display_rbw = ((float) config.fft.span / (float) max_x);
+    // To fill the whole screen width, each bin will fill the ratio between the current rbw and the optimal rbw (the one to fill the screen)
+    bin_width_px = display_rbw / fft_rbw;
+
+    // Width of the a slice in pixels
+    slice_w_px = fft_nbins / bin_width_px;
+
+    // Span start
+    fft_span_if_start = f_2if - (config.fft.span >> 1U);
+    fft_span_f_start = config.f_carrier - (config.fft.span >> 1U);
+
+    return fft_rbw;
+}

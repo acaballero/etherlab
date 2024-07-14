@@ -1,0 +1,35 @@
+{
+  "build": {
+    "core": "stm32",
+    "cpu": "cortex-m4",
+    "extra_flags": "-DSTM32F4 -DSTM32F427xC",
+    "f_cpu": "168000000L",
+    "ldscript": "stm32f42xx.ld",
+    "mcu": "stm32f427vgt"
+  },
+  "connectivity": [
+    "can"
+  ],
+  "debug": {
+    "jlink_device": "STM32F427VGT",
+    "openocd_target": "stm32f4x",
+    "svd_path": "STM32F40x.svd"
+  },
+  "frameworks": [
+    "cmsis",
+    "stm32cube"
+  ],
+  "name": "STM32F427VGT (256k RAM. 1024k Flash)",
+  "upload": {
+    "maximum_ram_size": 262144,
+    "maximum_size": 1048576,
+    "protocol": "stlink",
+    "protocols": [
+      "jlink",
+      "stlink",
+      "blackmagic"
+    ]
+  },
+  "url": "https://www.st.com/en/microcontrollers/stm32f427vgt.html",
+  "vendor": "Generic"
+}

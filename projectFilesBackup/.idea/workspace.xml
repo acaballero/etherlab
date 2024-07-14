@@ -1,0 +1,988 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="CMakePresetLoader"><![CDATA[{
+  "useNewFormat": true
+}]]></component>
+  <component name="CMakeReloadState">
+    <option name="reloaded" value="true" />
+  </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated>
+      <config projectName="trx_frontend" targetName="Production" />
+      <config projectName="trx_frontend" targetName="PLATFORMIO" />
+      <config projectName="trx_frontend" targetName="Z_DUMMY_TARGET" />
+      <config projectName="trx_frontend" targetName="Upload" />
+      <config projectName="trx_frontend" targetName="trx_frontend" />
+      <config projectName="trx_frontend" targetName="Debug" />
+      <config projectName="trx_frontend" targetName="DEBUG" />
+    </generated>
+  </component>
+  <component name="CMakeSettings" AUTO_RELOAD="true">
+    <configurations>
+      <configuration PROFILE_NAME="genericSTM32F303CC" ENABLED="true" CONFIG_NAME="genericSTM32F303CC" />
+      <configuration PROFILE_NAME="genericSTM32F427VGT-MinGW" ENABLED="true" CONFIG_NAME="genericSTM32F427VGT" TOOLCHAIN_NAME="MinGW" GENERATION_OPTIONS="-G Ninja" BUILD_OPTIONS="-j 12" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="ec922180-b3d3-40f1-af0b-2568113a9075" name="Default" comment="work">
+      <change afterPath="$PROJECT_DIR$/platformio.ini.bak" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.pio/build/project.checksum" beforeDir="false" afterPath="$PROJECT_DIR$/.pio/build/project.checksum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeListsPrivate.txt_bak" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeListsPrivate.txt_bak" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeListsUser.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeListsUser.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeCache.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/3.14.5/CMakeCCompiler.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/3.14.5/CMakeSystem.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/3.14.5/CompilerIdC/CMakeCCompilerId.c" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/3.14.5/CompilerIdC/a.exe" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/3.14.5/CompilerIdCXX/CMakeCXXCompilerId.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/3.14.5/CompilerIdCXX/a.exe" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/CMakeDirectoryInformation.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/CMakeError.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/CMakeOutput.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/CMakeRuleHashes.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Debug.dir/DependInfo.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Debug.dir/build.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Debug.dir/cmake_clean.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Debug.dir/progress.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Makefile.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Makefile2" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Production.dir/DependInfo.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Production.dir/build.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Production.dir/cmake_clean.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Production.dir/progress.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/TargetDirectories.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Z_DUMMY_TARGET.dir/DependInfo.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Z_DUMMY_TARGET.dir/build.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Z_DUMMY_TARGET.dir/cmake_clean.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Z_DUMMY_TARGET.dir/depend.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Z_DUMMY_TARGET.dir/flags.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Z_DUMMY_TARGET.dir/link.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Z_DUMMY_TARGET.dir/objects1.rsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/Z_DUMMY_TARGET.dir/progress.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/clion-environment.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/clion-log.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/cmake.check_cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/feature_tests.c" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/feature_tests.cxx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/CMakeFiles/progress.marks" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/cmake_install.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f303cc/trx_frontend.cbp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeCache.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/3.14.5/CMakeCCompiler.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/3.14.5/CMakeCXXCompiler.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/3.14.5/CMakeSystem.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/3.14.5/CompilerIdC/CMakeCCompilerId.c" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/3.14.5/CompilerIdC/a.exe" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/3.14.5/CompilerIdCXX/CMakeCXXCompilerId.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/3.14.5/CompilerIdCXX/a.exe" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/CMakeDirectoryInformation.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/CMakeError.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/CMakeOutput.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/CMakeRuleHashes.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Debug.dir/DependInfo.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Debug.dir/build.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Debug.dir/cmake_clean.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Debug.dir/progress.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Makefile.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Makefile2" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Production.dir/DependInfo.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Production.dir/build.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Production.dir/cmake_clean.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Production.dir/progress.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/TargetDirectories.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Z_DUMMY_TARGET.dir/DependInfo.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Z_DUMMY_TARGET.dir/build.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Z_DUMMY_TARGET.dir/cmake_clean.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Z_DUMMY_TARGET.dir/depend.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Z_DUMMY_TARGET.dir/flags.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Z_DUMMY_TARGET.dir/link.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Z_DUMMY_TARGET.dir/objects1.rsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/Z_DUMMY_TARGET.dir/progress.make" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/clion-environment.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/clion-log.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/cmake.check_cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/feature_tests.c" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/feature_tests.cxx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/CMakeFiles/progress.marks" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/Makefile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/cmake_install.cmake" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-genericstm32f427vgt/trx_frontend.cbp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/ST77XX-STM32/ips_font.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/ST77XX-STM32/ips_font.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/ST77XX-STM32/ips_font.h" beforeDir="false" afterPath="$PROJECT_DIR$/lib/ST77XX-STM32/ips_font.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/ST77XX-STM32/st77XX_afb.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/ST77XX-STM32/st77XX_afb.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/ST77XX-STM32/st77XX_afb.h" beforeDir="false" afterPath="$PROJECT_DIR$/lib/ST77XX-STM32/st77XX_afb.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/platformio.ini" beforeDir="false" afterPath="$PROJECT_DIR$/platformio.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/config.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/config.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/capture/capture_task.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/capture/capture_task.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/capture/capture_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/capture/capture_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/capture/dsp_capture_ui.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/capture/dsp_capture_ui.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/fft/fft_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/fft/fft_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/fft/iqbalance_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/fft/iqbalance_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/fft/waterfall_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/fft/waterfall_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/replay/dsp_replay_ui.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/replay/dsp_replay_ui.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/replay/replay_task.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/replay/replay_task.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dsp/replay/replay_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/dsp/replay/replay_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hw/hw_config.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/hw/hw_config.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hw/stm32.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/hw/stm32.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main_board.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main_board.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main_board.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/main_board.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/radio.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/radio.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/radio.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/radio.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/scanner.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/scanner.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/types.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/dbscale_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/dbscale_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/frequency_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/frequency_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/main_view.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/main_view.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/main_view.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/main_view.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/menu.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/menu.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/menu.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/menu.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/message_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/message_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/message_widget.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/message_widget.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/scanner_ui.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/scanner_ui.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/status_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/status_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/titlebar_widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/titlebar_widget.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ui/widget.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ui/widget.cpp" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="CreatePatchCommitExecutor">
+    <option name="PATCH_PATH" value="" />
+  </component>
+  <component name="EmbeddedSvdWindowState">
+    <option name="columnWidths">
+      <list>
+        <option value="187" />
+        <option value="82" />
+        <option value="848" />
+      </list>
+    </option>
+    <option name="columnOrder">
+      <list>
+        <option value="Name" />
+        <option value="Value" />
+        <option value="Description" />
+      </list>
+    </option>
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:genericSTM32F427VGT-MinGW" />
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="stm32f427_menuSPR" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/src/main.cpp" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/platformio.ini" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/src/dsp/replay/replay_widget.cpp" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="OCFindUsagesOptions" text="false" ivars="false" properties="false" derivedClasses="false" />
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 0
+}]]></component>
+  <component name="ProjectId" id="1siwRRwtNiy6itNmDGdyCSsYJQj" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "CMake Application.Build.executor": "Run",
+    "OpenOCD Download & Run.OpenOCD.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "last_opened_file_path": "D:/dev/STM32/trx_frontend",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "structure.view.defaults.are.configured": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\dev\STM32\trx_frontend" />
+      <recent name="D:\dev\STM32\trx_frontend\src\ui" />
+      <recent name="D:\dev\STM32\trx_frontend\lib\DspFilters" />
+      <recent name="D:\dev\STM32\trx_frontend\lib\FatFs\option" />
+      <recent name="D:\dev\STM32\trx_frontend\lib" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\dev\STM32\trx_frontend\lib\FatFs_STM32Cube" />
+      <recent name="D:\dev\STM32\trx_frontend\src\hw\stm32f4xx\STM32_USB_Device_Library\Class\CDC" />
+      <recent name="D:\dev\STM32\trx_frontend\src\hw\stm32f4xx\STM32_USB_Device_Library\Core" />
+      <recent name="D:\dev\STM32\trx_frontend\src\hw\stm32f4xx\STM32_USB_Device_Library\Core\Inc" />
+      <recent name="D:\dev\STM32\trx_frontend\src\hw\stm32f4xx" />
+    </key>
+  </component>
+  <component name="RunManager" selected="CMake Application.Build">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Remote GDB" type="CLion_Remote" version="1" remoteCommand="localhost:3333" symbolFile="$PROJECT_DIR$/.pio/build/genericSTM32F427VGT/firmware.elf" sysroot="">
+      <debugger kind="GDB">D:\Users\Angel Dust\.platformio\packages\toolchain-gccarmnoneeabi\bin\arm-none-eabi-gdb.exe</debugger>
+      <method v="2" />
+    </configuration>
+    <configuration name="Build" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-v" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="trx_frontend" TARGET_NAME="Production" CONFIG_NAME="genericSTM32F303CC">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="trx_frontend" TARGET_NAME="trx_frontend" CONFIG_NAME="genericSTM32F303CC">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Unnamed" type="CompoundRunConfigurationType">
+      <toRun name="OpenOCD" type="com.jetbrains.cidr.embedded.openocd.conf.type" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="CompoundRunConfigurationType">
+      <toRun name="OpenOCD" type="com.jetbrains.cidr.embedded.openocd.conf.type" />
+      <method v="2" />
+    </configuration>
+    <configuration name="OpenOCD + swoparser" type="Multirun" factoryName="Multirun" separateTabs="true" reuseTabsWithFailures="false" startOneByOne="true" markFailedProcess="true" hideSuccessProcess="false" delayTime="0.0">
+      <runConfiguration name="Compound OpenOCD Download &amp; Run" type="Compound" />
+      <method v="2" />
+    </configuration>
+    <configuration name="OpenOCD+swoparser" type="PythonConfigurationType" factoryName="Python" show_console_on_std_err="true" show_console_on_std_out="true">
+      <module name="clion" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Users\Angel Dust\AppData\Local\Programs\Python\Python37\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="false" />
+      <option name="ADD_SOURCE_ROOTS" value="false" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/swoparser.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2">
+        <option name="RunConfigurationTask" enabled="true" run_configuration_name="OpenOCD" run_configuration_type="com.jetbrains.cidr.embedded.openocd.conf.type" run_configuration_target="CMakeBuildProfile:genericSTM32F427VGT" />
+      </method>
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python" show_console_on_std_err="true" show_console_on_std_out="true">
+      <module name="clion" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Users\Angel Dust\AppData\Local\Programs\Python\Python37\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/swoparser.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="swoparser" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true" show_console_on_std_err="true" show_console_on_std_out="true">
+      <module name="clion" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Users\Angel Dust\AppData\Local\Programs\Python\Python37\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/swoparser.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="swoparser" type="ShConfigurationType" singleton="false">
+      <option name="SCRIPT_TEXT" value="" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="false" />
+      <option name="SCRIPT_PATH" value="$PROJECT_DIR$/swoparser.py" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="false" />
+      <option name="INTERPRETER_PATH" value="C:/Windows/py.exe" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="true" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="OpenOCD" type="com.jetbrains.cidr.embedded.openocd.conf.type" factoryName="com.jetbrains.cidr.embedded.openocd.conf.factory" singleton="true" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="trx_frontend" TARGET_NAME="Upload" CONFIG_NAME="genericSTM32F303CC" version="1" RUN_PATH="$PROJECT_DIR$/.pio/build/genericSTM32F427VGT/firmware.elf">
+      <openocd version="1" gdb-port="3333" telnet-port="4444" board-config="board/stm32f4discovery.cfg" reset-type="INIT" download-type="ALWAYS">
+        <debugger kind="GDB" isBundled="true" />
+      </openocd>
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="js.build_tools.gulp">
+      <node-interpreter>project</node-interpreter>
+      <node-options />
+      <gulpfile />
+      <tasks />
+      <arguments />
+      <pass-parent-envs>true</pass-parent-envs>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="CMake Application.Build" />
+      <item itemvalue="Compound.Unnamed" />
+      <item itemvalue="OpenOCD Download &amp; Run.OpenOCD" />
+      <item itemvalue="Python.swoparser" />
+      <item itemvalue="Python.OpenOCD+swoparser" />
+      <item itemvalue="Remote Debug.Remote GDB" />
+      <item itemvalue="Shell Script.swoparser" />
+    </list>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="project-level" UseSingleDictionary="true" transferred="true" />
+  <component name="StructureViewFactory">
+    <option name="ACTIVE_ACTIONS" value=",KIND" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ec922180-b3d3-40f1-af0b-2568113a9075" name="Default" comment="" />
+      <created>1435919971910</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1435919971910</updated>
+      <workItem from="1621368715586" duration="1985000" />
+      <workItem from="1621371999907" duration="213000" />
+      <workItem from="1621372263635" duration="165000" />
+      <workItem from="1621372470896" duration="832000" />
+      <workItem from="1621373325602" duration="851000" />
+      <workItem from="1621374200555" duration="327000" />
+      <workItem from="1621374549529" duration="171000" />
+      <workItem from="1621374738412" duration="7237000" />
+      <workItem from="1621444672974" duration="8447000" />
+      <workItem from="1621454974478" duration="246000" />
+      <workItem from="1621458209136" duration="53000" />
+      <workItem from="1621458282667" duration="9396000" />
+      <workItem from="1621532082226" duration="17383000" />
+      <workItem from="1621552843540" duration="640000" />
+      <workItem from="1622152750076" duration="3505000" />
+      <workItem from="1622221794317" duration="1081000" />
+      <workItem from="1622224513380" duration="591000" />
+      <workItem from="1622230338289" duration="774000" />
+      <workItem from="1622277729006" duration="17382000" />
+      <workItem from="1622382266150" duration="7118000" />
+      <workItem from="1622400024460" duration="10050000" />
+      <workItem from="1622497822205" duration="4079000" />
+      <workItem from="1622570462165" duration="2035000" />
+      <workItem from="1622572761693" duration="2061000" />
+      <workItem from="1622584071481" duration="1719000" />
+      <workItem from="1622585824339" duration="712000" />
+      <workItem from="1622586579930" duration="153000" />
+      <workItem from="1622586755003" duration="3466000" />
+      <workItem from="1622590270372" duration="1491000" />
+      <workItem from="1622591793326" duration="1350000" />
+      <workItem from="1622656000504" duration="5719000" />
+      <workItem from="1622663639567" duration="6534000" />
+      <workItem from="1622672379214" duration="2045000" />
+      <workItem from="1622674461676" duration="991000" />
+      <workItem from="1622675480262" duration="1581000" />
+      <workItem from="1622677093081" duration="155000" />
+      <workItem from="1622677268002" duration="410000" />
+      <workItem from="1622677726259" duration="264000" />
+      <workItem from="1622678036714" duration="4224000" />
+      <workItem from="1622744407153" duration="548000" />
+      <workItem from="1622744976644" duration="2776000" />
+      <workItem from="1622747796850" duration="104000" />
+      <workItem from="1622747922678" duration="73000" />
+      <workItem from="1622748022915" duration="107000" />
+      <workItem from="1622748162032" duration="11737000" />
+      <workItem from="1622819330145" duration="1785000" />
+      <workItem from="1622824906245" duration="7059000" />
+      <workItem from="1622892669632" duration="8628000" />
+      <workItem from="1622974941291" duration="2819000" />
+      <workItem from="1623015630816" duration="1637000" />
+      <workItem from="1623017320139" duration="2890000" />
+      <workItem from="1623020286126" duration="1286000" />
+      <workItem from="1623021628516" duration="366000" />
+      <workItem from="1623022034091" duration="369000" />
+      <workItem from="1623022449970" duration="691000" />
+      <workItem from="1623023193385" duration="136000" />
+      <workItem from="1623023374703" duration="627000" />
+      <workItem from="1623092049112" duration="83000" />
+      <workItem from="1623092162028" duration="834000" />
+      <workItem from="1623093174674" duration="1328000" />
+      <workItem from="1623095763541" duration="460000" />
+      <workItem from="1623096248937" duration="132000" />
+      <workItem from="1623101491555" duration="502000" />
+      <workItem from="1623102020378" duration="747000" />
+      <workItem from="1623102793233" duration="989000" />
+      <workItem from="1623103806947" duration="780000" />
+      <workItem from="1623104718705" duration="6626000" />
+      <workItem from="1623179709318" duration="970000" />
+      <workItem from="1623180708202" duration="8395000" />
+      <workItem from="1623194185409" duration="3710000" />
+      <workItem from="1623240264759" duration="4159000" />
+      <workItem from="1623248413327" duration="24126000" />
+      <workItem from="1623345661125" duration="17594000" />
+      <workItem from="1623368161464" duration="1310000" />
+      <workItem from="1623423018321" duration="14360000" />
+      <workItem from="1623516255479" duration="17985000" />
+      <workItem from="1623619775589" duration="345000" />
+      <workItem from="1623620142795" duration="6421000" />
+      <workItem from="1623688761858" duration="37577000" />
+      <workItem from="1623863926405" duration="3407000" />
+      <workItem from="1623878270517" duration="2361000" />
+      <workItem from="1623880671692" duration="48882000" />
+      <workItem from="1624227307959" duration="2273000" />
+      <workItem from="1624277200005" duration="6262000" />
+      <workItem from="1624310284778" duration="24164000" />
+      <workItem from="1624567328976" duration="9883000" />
+      <workItem from="1624634025267" duration="26975000" />
+      <workItem from="1624830885492" duration="6524000" />
+      <workItem from="1624916310256" duration="4859000" />
+      <workItem from="1624988314007" duration="9900000" />
+      <workItem from="1625163384075" duration="1736000" />
+      <workItem from="1625782499007" duration="594000" />
+      <workItem from="1626802307965" duration="1641000" />
+      <workItem from="1626818829659" duration="4275000" />
+      <workItem from="1626889199466" duration="1207000" />
+      <workItem from="1631908787379" duration="1174000" />
+      <workItem from="1633131391643" duration="6000" />
+      <workItem from="1636128174297" duration="2135000" />
+      <workItem from="1636138001493" duration="4204000" />
+      <workItem from="1636200698071" duration="5230000" />
+      <workItem from="1636930329336" duration="1643000" />
+      <workItem from="1639513037850" duration="1732000" />
+      <workItem from="1640197499814" duration="2034000" />
+      <workItem from="1640247127000" duration="29790000" />
+      <workItem from="1641663476867" duration="11712000" />
+      <workItem from="1641847904452" duration="7692000" />
+      <workItem from="1642327945761" duration="12657000" />
+      <workItem from="1643137385318" duration="8173000" />
+      <workItem from="1643223050725" duration="3300000" />
+      <workItem from="1643233527422" duration="7369000" />
+      <workItem from="1643310637246" duration="6918000" />
+      <workItem from="1649944414022" duration="9275000" />
+      <workItem from="1649962381567" duration="2764000" />
+      <workItem from="1653077143361" duration="15491000" />
+      <workItem from="1653255827362" duration="390000" />
+      <workItem from="1653256447633" duration="3311000" />
+      <workItem from="1653341172462" duration="13484000" />
+      <workItem from="1653656377766" duration="10482000" />
+      <workItem from="1653812130907" duration="5272000" />
+      <workItem from="1654899415815" duration="2449000" />
+      <workItem from="1654950813538" duration="8603000" />
+      <workItem from="1656268073308" duration="3132000" />
+      <workItem from="1656353503336" duration="14307000" />
+      <workItem from="1656539865424" duration="3169000" />
+      <workItem from="1656685219508" duration="4988000" />
+      <workItem from="1656690285483" duration="6680000" />
+      <workItem from="1656776796399" duration="2194000" />
+      <workItem from="1656783545777" duration="5508000" />
+      <workItem from="1656954079094" duration="13633000" />
+      <workItem from="1657032555606" duration="6646000" />
+      <workItem from="1657903743639" duration="9502000" />
+      <workItem from="1657995789503" duration="2038000" />
+      <workItem from="1658078266516" duration="1331000" />
+      <workItem from="1659114606353" duration="1775000" />
+      <workItem from="1659201175654" duration="1338000" />
+      <workItem from="1659211747931" duration="1981000" />
+      <workItem from="1659294337065" duration="1782000" />
+      <workItem from="1660069400901" duration="4815000" />
+      <workItem from="1661010711070" duration="5504000" />
+      <workItem from="1661203546008" duration="3243000" />
+      <workItem from="1661361294762" duration="13678000" />
+      <workItem from="1661442180376" duration="13404000" />
+      <workItem from="1661466256390" duration="6194000" />
+      <workItem from="1661595894511" duration="8152000" />
+      <workItem from="1661715714470" duration="8883000" />
+      <workItem from="1661787365501" duration="593000" />
+      <workItem from="1661896747949" duration="3021000" />
+      <workItem from="1661982646311" duration="1004000" />
+      <workItem from="1661983685818" duration="2367000" />
+      <workItem from="1665160188925" duration="5396000" />
+      <workItem from="1665251603303" duration="2769000" />
+      <workItem from="1665353283273" duration="1343000" />
+      <workItem from="1665437701123" duration="4001000" />
+      <workItem from="1665512873253" duration="33599000" />
+      <workItem from="1665684679301" duration="2608000" />
+      <workItem from="1665695714500" duration="6399000" />
+      <workItem from="1666300365884" duration="395000" />
+      <workItem from="1666303581994" duration="3577000" />
+      <workItem from="1666365007933" duration="16718000" />
+      <workItem from="1666434500039" duration="21573000" />
+      <workItem from="1666473889645" duration="32432000" />
+      <workItem from="1666562246186" duration="3159000" />
+      <workItem from="1666722279554" duration="7600000" />
+      <workItem from="1666808745685" duration="399000" />
+      <workItem from="1666809178716" duration="6575000" />
+      <workItem from="1667171233640" duration="4643000" />
+      <workItem from="1667213979723" duration="25184000" />
+      <workItem from="1667341419094" duration="3274000" />
+      <workItem from="1668878424407" duration="3214000" />
+      <workItem from="1668971592755" duration="3213000" />
+      <workItem from="1669563580200" duration="3669000" />
+      <workItem from="1670454281961" duration="13801000" />
+      <workItem from="1670527809955" duration="3207000" />
+      <workItem from="1670538267744" duration="5557000" />
+      <workItem from="1670616496347" duration="2860000" />
+      <workItem from="1670751394754" duration="17928000" />
+      <workItem from="1670878163163" duration="3049000" />
+      <workItem from="1670968866611" duration="1383000" />
+      <workItem from="1671046979108" duration="4910000" />
+      <workItem from="1671059265024" duration="4409000" />
+      <workItem from="1671134095781" duration="41672000" />
+      <workItem from="1671305022488" duration="9765000" />
+      <workItem from="1671357709303" duration="6453000" />
+      <workItem from="1671405141299" duration="41624000" />
+      <workItem from="1672196819148" duration="45000" />
+      <workItem from="1673045141788" duration="6472000" />
+      <workItem from="1673132583282" duration="294000" />
+      <workItem from="1673132915271" duration="3333000" />
+      <workItem from="1673173991609" duration="1992000" />
+      <workItem from="1673191248605" duration="7402000" />
+      <workItem from="1673218475869" duration="677000" />
+      <workItem from="1673294399556" duration="4345000" />
+      <workItem from="1673636069716" duration="3243000" />
+      <workItem from="1673642705375" duration="6793000" />
+      <workItem from="1673721381386" duration="3229000" />
+      <workItem from="1673779998704" duration="18875000" />
+      <workItem from="1673910325915" duration="3792000" />
+      <workItem from="1674834285859" duration="133000" />
+      <workItem from="1677884648046" duration="302000" />
+      <workItem from="1680298375954" duration="845000" />
+      <workItem from="1683304717426" duration="7860000" />
+      <workItem from="1683321233490" duration="3753000" />
+      <workItem from="1683374885442" duration="1844000" />
+      <workItem from="1683382920095" duration="2124000" />
+      <workItem from="1683407555036" duration="1929000" />
+      <workItem from="1683578955346" duration="6646000" />
+      <workItem from="1683926787315" duration="254000" />
+      <workItem from="1683977128178" duration="2213000" />
+      <workItem from="1684008694195" duration="1022000" />
+      <workItem from="1684012945564" duration="2690000" />
+      <workItem from="1684101491799" duration="2034000" />
+      <workItem from="1685295456299" duration="13211000" />
+      <workItem from="1685394607790" duration="307000" />
+      <workItem from="1685556271248" duration="2381000" />
+      <workItem from="1685824201882" duration="606000" />
+      <workItem from="1686257791474" duration="1225000" />
+      <workItem from="1686261676081" duration="3329000" />
+      <workItem from="1686953491211" duration="294000" />
+      <workItem from="1686953822025" duration="573000" />
+      <workItem from="1687000071365" duration="1180000" />
+      <workItem from="1687023736359" duration="102000" />
+      <workItem from="1687023867424" duration="55000" />
+      <workItem from="1687025050619" duration="56000" />
+      <workItem from="1689097565897" duration="207000" />
+      <workItem from="1689111063581" duration="89000" />
+      <workItem from="1689111864109" duration="3219000" />
+      <workItem from="1689177764342" duration="5821000" />
+      <workItem from="1689186636085" duration="9843000" />
+      <workItem from="1699643774416" duration="1591000" />
+      <workItem from="1699655950800" duration="1904000" />
+      <workItem from="1700262757079" duration="328000" />
+      <workItem from="1700932615209" duration="219000" />
+      <workItem from="1700932988456" duration="653000" />
+      <workItem from="1700937120629" duration="2811000" />
+      <workItem from="1701382953142" duration="1658000" />
+      <workItem from="1702418318516" duration="3822000" />
+      <workItem from="1702580763958" duration="3705000" />
+      <workItem from="1702593475072" duration="2485000" />
+      <workItem from="1702657515374" duration="1052000" />
+      <workItem from="1702666682787" duration="3905000" />
+      <workItem from="1702678931915" duration="1209000" />
+      <workItem from="1702767781434" duration="703000" />
+      <workItem from="1705743558136" duration="13756000" />
+      <workItem from="1705762198737" duration="2314000" />
+      <workItem from="1706349221756" duration="237000" />
+      <workItem from="1706350310780" duration="800000" />
+      <workItem from="1706358511586" duration="3567000" />
+      <workItem from="1706382607614" duration="1162000" />
+      <workItem from="1706656739436" duration="747000" />
+      <workItem from="1707517338142" duration="3116000" />
+      <workItem from="1707681558304" duration="597000" />
+      <workItem from="1708113124293" duration="2381000" />
+      <workItem from="1708381372213" duration="396000" />
+      <workItem from="1708382402647" duration="337000" />
+      <workItem from="1708382777822" duration="2479000" />
+      <workItem from="1708458098942" duration="170000" />
+      <workItem from="1708458309695" duration="4972000" />
+      <workItem from="1708467402368" duration="4553000" />
+      <workItem from="1708544217009" duration="3857000" />
+      <workItem from="1708554787093" duration="1344000" />
+      <workItem from="1708630387064" duration="3004000" />
+      <workItem from="1708639272157" duration="7830000" />
+      <workItem from="1708709759866" duration="7241000" />
+      <workItem from="1708766520591" duration="1343000" />
+      <workItem from="1708776081015" duration="11031000" />
+      <workItem from="1708877937860" duration="1672000" />
+      <workItem from="1708888924573" duration="4676000" />
+      <workItem from="1709073026388" duration="3521000" />
+      <workItem from="1709318495794" duration="2064000" />
+      <workItem from="1709331974782" duration="13513000" />
+      <workItem from="1709418203683" duration="8798000" />
+      <workItem from="1709505584646" duration="3646000" />
+      <workItem from="1709938688319" duration="1991000" />
+      <workItem from="1709978353096" duration="13849000" />
+      <workItem from="1710016442550" duration="3233000" />
+      <workItem from="1710026251685" duration="2041000" />
+    </task>
+    <task id="LOCAL-00001" summary="work">
+      <created>1621382018830</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1621382018830</updated>
+    </task>
+    <task id="LOCAL-00002" summary="work">
+      <created>1621467762583</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1621467762583</updated>
+    </task>
+    <task id="LOCAL-00003" summary="work">
+      <created>1621553333120</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1621553333120</updated>
+    </task>
+    <task id="LOCAL-00004" summary="work">
+      <created>1623269212296</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1623269212296</updated>
+    </task>
+    <task id="LOCAL-00005" summary="work">
+      <created>1623626522946</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1623626522946</updated>
+    </task>
+    <task id="LOCAL-00006" summary="work">
+      <created>1624405576815</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1624405576816</updated>
+    </task>
+    <task id="LOCAL-00007" summary="work">
+      <created>1624836548626</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1624836548626</updated>
+    </task>
+    <task id="LOCAL-00008" summary="work">
+      <created>1641858424291</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1641858424291</updated>
+    </task>
+    <task id="LOCAL-00009" summary="work">
+      <created>1653341238319</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1653341238329</updated>
+    </task>
+    <task id="LOCAL-00010" summary="work">
+      <created>1656269105281</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1656269105281</updated>
+    </task>
+    <task id="LOCAL-00011" summary="work">
+      <created>1656789297803</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1656789297803</updated>
+    </task>
+    <task id="LOCAL-00012" summary="work">
+      <created>1657044417397</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1657044417397</updated>
+    </task>
+    <task id="LOCAL-00013" summary="work">
+      <created>1661380691413</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1661380691413</updated>
+    </task>
+    <task id="LOCAL-00014" summary="work">
+      <created>1661638886001</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1661638886001</updated>
+    </task>
+    <task id="LOCAL-00015" summary="work">
+      <created>1665253774398</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1665253774398</updated>
+    </task>
+    <task id="LOCAL-00016" summary="work">
+      <created>1665530120090</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1665530120090</updated>
+    </task>
+    <task id="LOCAL-00017" summary="work">
+      <created>1665702112831</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1665702112831</updated>
+    </task>
+    <task id="LOCAL-00018" summary="work">
+      <created>1667174525425</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1667174525425</updated>
+    </task>
+    <task id="LOCAL-00019" summary="work">
+      <created>1670628532558</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1670628532558</updated>
+    </task>
+    <task id="LOCAL-00020" summary="work">
+      <created>1671495185482</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1671495185482</updated>
+    </task>
+    <task id="LOCAL-00021" summary="work">
+      <created>1689199237086</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1689199237086</updated>
+    </task>
+    <task id="LOCAL-00022" summary="work">
+      <created>1702583811655</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1702583811655</updated>
+    </task>
+    <task id="LOCAL-00023" summary="work">
+      <created>1705763787125</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1705763787125</updated>
+    </task>
+    <task id="LOCAL-00024" summary="work">
+      <created>1708464341329</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1708464341329</updated>
+    </task>
+    <task id="LOCAL-00025" summary="work">
+      <created>1708472502063</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1708472502063</updated>
+    </task>
+    <task id="LOCAL-00026" summary="work">
+      <created>1708905179583</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1708905179583</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="executable:docker" />
+    <option featureType="com.intellij.configurationType" implementationName="Multirun" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ORDER">
+      <list>
+        <option value="0" />
+        <option value="2" />
+        <option value="3" />
+        <option value="1" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="1">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
+            </State>
+          </value>
+        </entry>
+        <entry key="2">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
+            </State>
+          </value>
+        </entry>
+        <entry key="3">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
+            </State>
+          </value>
+        </entry>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="Vcs.Log.UiProperties">
+    <option name="RECENTLY_FILTERED_USER_GROUPS">
+      <collection />
+    </option>
+    <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
+      <collection />
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CHECK_NEW_TODO" value="false" />
+    <MESSAGE value="work" />
+    <option name="LAST_COMMIT_MESSAGE" value="work" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

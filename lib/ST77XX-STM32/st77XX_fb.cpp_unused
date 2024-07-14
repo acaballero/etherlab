@@ -1,0 +1,806 @@
+#include "st77XX_fb.h_unused"
+#include <stdint-gcc.h>
+#include <string.h>
+#include <math.h>
+#include "hw/stm32_hal.h"
+#include "../printf/printf.h"
+
+/* RGB565 buffer for transferring pixels to the display using DMA */
+static const uint16_t b565_buffer_size = DISPLAY_X_PIXELS * 6;
+
+uint16_t b565_buffer[b565_buffer_size];
+
+uint16_t waterfall_palette[16];
+
+/* We allocate a big buffer to store the **dynamic size and color depth** zones that can be dynamically defined at runtime
+ * Using multiple pixel zones we archieve:
+ * - Saving memory by defining some zones a low color depth
+ * - Increase refresh rate avoiding the transfer of the zones which haven't been written since the last render
+ * To manage this buffer, we have to reallocate the buffers whenever one of them is added or modified
+ * We also have to check the availability of free space in the buffer when a new buffer is initialized
+ *
+ * The purpose of using this buffer is to avoid the use of malloc, at the cost of having to manage it as malloc will do with the heap
+ */
+uint8_t pixelBuffer[BUFFER_SIZE];
+
+ST77XX::ST77XX(SPI_HandleTypeDef *spi_port) {
+
+    this->spi_port = spi_port;
+}
+
+void ST77XX::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8_t size) {
+
+    for (int i = 0; i < size; i++) {
+        dest[i] = SWAP_BYTES(RGB888_TO_RGB565(orig[i]));
+    }
+}
+
+void ST77XX::clear(bool render) {
+
+    for (int i = 0; i < MAX_BUFFERS; i++) {
+        if (this->buffers[i].buffer) {
+            this->clear(i, false);
+        }
+    }
+
+    if (render)
+        this->renderAll();
+    this->gotoXY(0, 0);
+}
+
+void ST77XX::clear(uint8_t ibuffer, bool render) {
+
+    memset(this->buffers[ibuffer].buffer, 0x00, this->buffers[ibuffer].size);
+
+    this->buffers[ibuffer].dirty = true;
+
+    if (render)
+        this->renderAll();
+
+    this->gotoXY(0, 0);
+}
+
+int16_t ST77XX::allocateBuffers() {
+
+    uint8_t *p = pixelBuffer;
+    PixelBuffer *prev_buffer, *buffer;
+
+    prev_buffer = &this->buffers[0];
+    prev_buffer->buffer = p;
+
+    for (int i = 1; i < MAX_BUFFERS; i++) {
+
+        buffer = &this->buffers[i];
+
+        p += prev_buffer->width * prev_buffer->height >> prev_buffer->log2_pixels_per_byte;
+
+        if (p - pixelBuffer <= BUFFER_SIZE) {
+
+            buffer->buffer = p;
+            prev_buffer = buffer;
+        } else {
+
+            break;
+        }
+    }
+
+    return BUFFER_SIZE - (p - pixelBuffer); /* remaining space */
+}
+
+/*
+ * Finds the buffer that contains a pixel
+ */
+PixelBuffer *ST77XX::findBuffer(uint16_t x, uint16_t y) {
+
+    bool b = false;
+    uint8_t ibuffer = 0;
+    PixelBuffer *buffer = 0;
+    while (!b && ibuffer < MAX_BUFFERS) {
+
+        if (this->buffers[ibuffer].buffer) {
+            buffer = &this->buffers[ibuffer++];
+            if (buffer->x <= x && buffer->y <= y && buffer->x + buffer->width > x && buffer->y + buffer->height > y) {
+                b = true;
+            }
+        }
+    }
+
+    return b ? buffer : 0;
+}
+
+void ST77XX::initPixelBuffer(PixelBuffer *buffer, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp,
+                             const uint16_t *palette) {
+
+    buffer->x = x;
+    buffer->y = y;
+    buffer->width = w;
+    buffer->height = h;
+
+    buffer->bits_per_pixel = bpp;
+    buffer->ncolors = 2 << (bpp - 1);
+    buffer->palette = palette;
+
+    if (bpp == 1) {
+        buffer->log2_pixels_per_byte = 3;
+        buffer->pixel_mask = BPP1_PIXEL_MASK;
+    } else if (bpp == 2) {
+        buffer->log2_pixels_per_byte = 2;
+        buffer->pixel_mask = BPP2_PIXEL_MASK;
+    } else {
+        buffer->log2_pixels_per_byte = 1;
+        buffer->pixel_mask = BPP4_PIXEL_MASK;
+    }
+
+    buffer->pixels_per_byte = 1 << buffer->log2_pixels_per_byte;
+
+    buffer->size = w * h >> buffer->log2_pixels_per_byte;
+}
+
+int16_t ST77XX::initBuffer(uint8_t ibuffer, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp,
+                           const uint16_t *palette) {
+
+    PixelBuffer *buffer = &this->buffers[ibuffer];
+
+    this->initPixelBuffer(buffer, x, y, w, h, bpp, palette);
+
+    int16_t ret = this->allocateBuffers();
+
+    if (ret < 0) {
+    } else {
+
+        this->clear(ibuffer, false);
+        this->curr_buffer = buffer;
+    }
+
+    return ret;
+}
+
+int16_t ST77XX::initBuffer(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp, const uint16_t *palette) {
+
+    int16_t ret = -1;
+    uint8_t ibuffer = 0;
+
+    while (ret < 0 && ibuffer < MAX_BUFFERS) {
+
+        if (!this->buffers[ibuffer].buffer) { // Free buffer
+
+            ret = this->initBuffer(this->nbuffers, x, y, w, h, bpp, palette);
+        }
+    }
+
+    return ret;
+}
+
+void ST77XX::deleteBuffers() {
+
+    for (int i = 0; i < MAX_BUFFERS; i++) {
+
+        this->buffers[i].buffer = 0;
+    }
+
+    this->curr_buffer = NULL;
+}
+
+void ST77XX::scrollBuffer(uint8_t ibuffer, uint16_t x, uint16_t y) {
+
+    PixelBuffer *buffer = &this->buffers[ibuffer];
+
+    if (y > 0) {
+
+        uint16_t delta = buffer->width >> buffer->log2_pixels_per_byte;
+        memmove(buffer->buffer + delta, buffer->buffer, buffer->size - delta);
+    }
+}
+
+void ST77XX::renderAll(void) {
+
+    for (int i = 0; i < MAX_BUFFERS; i++) {
+
+        this->renderBuffer(i);
+    }
+}
+
+void ST77XX::renderBuffer(uint8_t ibuffer) {
+    this->renderBuffer(ibuffer, false);
+}
+
+/**
+ * The pixel buffer is sent to the display using DMA transfers with a double buffering scheme.
+ * A whole WIDTH*HEIGHT display buffer of 16 bit won't fit in most of the MCUs, so we make partial transfers of
+ * the reduced color depth pixel buffer, after converting to RGB565, to a smaller RGB565 buffer with the 16 bit color depth required by the display.
+ * During each half of a DMA transfer, a portion of the reduced pixel buffer is transferred (and color converted) to the other half of the RGB565 buffer
+ * which is being transferred by DMA
+ *
+ * CAUTION: THE TIMING IS SUCH THAT EACH HALF OF THE RGB565 BUFFER HAS TO BE READY BEFORE THE DMA TRANSFERS THE OTHER HALF
+ *          IN OTHER WORDS, THE DMA TRANSFER WON'T WAIT FOR THE SECOND HALF OF THE BUFFER TO BE READY
+ *          IF THE SECOND HALF OF THE RGB565 BUFFER IS NOT READY WHEN THE FIRST ONE IS SENT, THE DMA WILL START
+ *          TRANSFERRING IT.
+ *          BECAUSE OF THIS, WE CAN'T USE A DEBUGGER HERE AS THE OVERHEAD CAN CAUSE THE DMA TO OVERRUN THE BUFFER FILLING
+ */
+void ST77XX::renderBuffer(uint8_t ibuffer, bool force) {
+
+    PixelBuffer *buffer = &this->buffers[ibuffer];
+
+    this->renderBuffer(buffer, force);
+}
+
+void ST77XX::renderBuffer(PixelBuffer *buffer, bool force) {
+
+    if (buffer->width > 0 && (buffer->dirty || force)) {
+
+        setAddressWindow(buffer->x, buffer->y, buffer->x + buffer->width - 1, buffer->y + buffer->height - 1);
+
+        // Number of pixels in the buffer
+        uint16_t buffer_size_pixels_remaining = buffer->size << buffer->log2_pixels_per_byte;
+
+        // Number of bytes of the block sent to the driver each transfer. This is limited by the memory available
+        uint16_t dma_buffer_size =
+                buffer_size_pixels_remaining < b565_buffer_size ? buffer_size_pixels_remaining : b565_buffer_size;
+
+        uint16_t buffer_pixels_per_transfer = dma_buffer_size >> buffer->log2_pixels_per_byte;
+
+        uint16_t half_dma_buffer_size = dma_buffer_size / 2;
+
+        uint16_t dma_transfer_length = dma_buffer_size * 2; // 2 bytes per pixel
+
+        uint8_t colorIndex;
+        uint8_t byte;
+        uint16_t b565_color;
+
+        InitDisplayDataTransfer();
+
+        uint16_t ib = 0;
+
+        uint16_t length = buffer->size;
+
+        //volatile uint32_t m = HAL_GetTick();
+
+#if DEBUG_LCD
+        char str[10];
+        sprintf(str, "%d.%d", (int) buffer->fps, (int) (buffer->fps * 10) % 10);
+        this->curr_buffer = buffer;
+        this->writeString(0, 0, str, (FontDef *) &Font_7x10, BLACK, WHITE);
+        this->writeLine(0, 10, 21, 10, BLACK);
+#endif
+
+        for (uint16_t i = 0; i < length; i++) {
+
+            byte = buffer->buffer[i];
+
+            for (uint8_t j = 0; j < buffer->pixels_per_byte; j++) {
+
+                colorIndex = byte & buffer->pixel_mask;
+
+                byte >>= buffer->bits_per_pixel;
+
+                /* Black and white are forzed to be 0x0000 and 0xFFFF even if they're not in the palette */
+                if (colorIndex == WHITE) {
+                    b565_color = 0xFFFF;
+                } else if (colorIndex == BLACK) {
+                    b565_color = 0x0000;
+                } else {
+                    b565_color = buffer->palette[colorIndex];
+                }
+
+                b565_buffer[ib++] = b565_color;
+
+                if (ib == half_dma_buffer_size) {
+
+                    // The first half of the RGB buffer is ready to be transferred
+                    // If DMA is ready (second half has been transferred, so state == READY), we start another transfer now
+
+                    while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY);
+
+                    this->DMAHalfTransferCompleted = false;
+
+                    HAL_SPI_Transmit_DMA(spi_port, ((uint8_t *) b565_buffer), dma_transfer_length);
+
+                    // Adjust for the last transfer, as it may be smaller than the dma_transfer_length
+
+
+
+                } else if (ib == dma_buffer_size) {
+
+                    // The second half of the RGB buffer is ready
+                    // Wait for the first half of the buffer to be transferred before start again
+
+                    ib = 0;
+                    while (!this->DMAHalfTransferCompleted);
+
+                    // The last chunk may need less bytes to transfer
+                    if (length - i < buffer_pixels_per_transfer) {
+
+                        buffer_size_pixels_remaining = (length - i) << buffer->log2_pixels_per_byte;
+                        dma_buffer_size = buffer_size_pixels_remaining;
+                        half_dma_buffer_size = dma_buffer_size >> 1;
+                        dma_transfer_length = dma_buffer_size << 1;
+                    }
+                }
+
+                //   GPIOB->BSRR= GPIO_PIN_3 << 16;
+
+            }
+        }
+
+        while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY);
+
+        EndDisplayDataTransfer();
+
+        //printf("Disp %d: %dms\n",ibuffer,HAL_GetTick() - m);
+
+        buffer->dirty = false;
+
+#if DEBUG_LCD
+        uint64_t t = HAL_GetTick();
+        if (buffer->last_refresh_ms) {
+
+            float fps = 1000.0 / (float) (t - buffer->last_refresh_ms);
+            buffer->fps = buffer->fps - (0.2 * (buffer->fps - fps));
+        }
+        buffer->last_refresh_ms = t;
+#endif
+    }
+}
+
+void ST77XX::DMATxHalfCpltCallback(void) {
+    this->DMAHalfTransferCompleted = true;
+}
+
+void ST77XX::DMATxCpltCallback(void) {
+}
+
+void ST77XX::setBuffer(uint8_t ibuffer) {
+
+    if (this->buffers[ibuffer].buffer) {
+        this->curr_buffer = &this->buffers[ibuffer];
+        this->bgColor = BLACK;
+        this->color = WHITE;
+    }
+}
+
+void ST77XX::fillBuffer(uint8_t ibuffer, uint16_t color) {
+
+    PixelBuffer *buffer = &this->buffers[ibuffer];
+
+    for (uint16_t i = 0; i < buffer->size; i++) {
+
+        for (uint8_t j = 0; j < buffer->pixels_per_byte; j++) {
+
+            buffer->buffer[i] <<= BITS_PER_PIXEL;
+            buffer->buffer[i] |= (color % buffer->ncolors);
+        }
+    }
+
+    buffer->dirty = true;
+}
+
+void ST77XX::fill(uint16_t color) {
+
+    for (int i = 0; i < MAX_BUFFERS; i++) {
+        this->fillBuffer(i, color);
+    }
+}
+
+void ST77XX::setPixel(uint16_t x, uint16_t y, uint16_t c) {
+
+//    if (!useDma) {
+//        //select();
+//        setAddressWindow(x, y, x, y);
+//        uint8_t data[] = {(uint8_t) (color >> 8), (uint8_t) (color & 0xFF)};
+//        writeData(data, sizeof(data));
+//        //Unselect();
+//    }
+//    else {
+
+    PixelBuffer *buffer = this->curr_buffer;
+
+    uint8_t shift;
+    uint8_t mask;
+
+    uint16_t ix = ((y * buffer->width) + x) >> buffer->log2_pixels_per_byte;
+
+    if (ix < buffer->size) {
+
+        shift = (x % buffer->pixels_per_byte) * buffer->bits_per_pixel;
+
+        mask = buffer->buffer[ix] & (uint8_t) ~(buffer->pixel_mask << shift);
+
+        buffer->buffer[ix] = mask | ((c % buffer->ncolors) << shift);
+
+        buffer->dirty = true;
+    }
+
+    // }
+}
+
+void ST77XX::fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, uint16_t color) {
+
+    uint16_t i, j;
+
+    for (i = ySta; i <= yEnd; i++)
+        for (j = xSta; j <= xEnd; j++) {
+
+            setPixel(j, i, color);
+        }
+}
+
+void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+    writeLine(x1, y1, x2, y2, this->color);
+}
+
+void ST77XX::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color) {
+
+    int y = y1;
+    if (y1 > y2) {
+        y2 = y1;
+        y = y2;
+    }
+
+    PixelBuffer *buffer = this->curr_buffer;
+
+    uint8_t shift;
+    uint8_t mask;
+
+    shift = (x % buffer->pixels_per_byte) * buffer->bits_per_pixel;
+    uint8_t c = (color % buffer->ncolors) << shift;
+    uint8_t m = (uint8_t) ~(buffer->pixel_mask << shift);
+    uint16_t delta = buffer->width >> buffer->log2_pixels_per_byte;
+    uint16_t ix = y * delta + (x >> buffer->log2_pixels_per_byte);
+
+    while (y <= y2) {
+        //setPixel(x, y++, color);
+        if (ix < buffer->size) {
+
+            mask = buffer->buffer[ix] & m;
+            buffer->buffer[ix] = mask | c;
+        }
+
+        y++;
+        ix += delta;
+    }
+
+    buffer->dirty = true;
+}
+
+void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+    this->writeLine(x1, y1, x2, y2, color, 1);
+}
+
+void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t width) {
+    //select();
+    uint16_t t;
+    int xerr = 0, yerr = 0, delta_x, delta_y, distance;
+    int incx, incy, uRow, uCol;
+
+    delta_y = y2 - y1;
+
+    delta_x = x2 - x1;
+
+    uRow = x1;
+    uCol = y1;
+
+    if (delta_x > 0)
+        incx = 1;
+    else if (delta_x == 0)
+        incx = 0;
+    else {
+        incx = -1;
+        delta_x = -delta_x;
+    }
+
+    if (delta_y > 0)
+        incy = 1;
+    else if (delta_y == 0)
+        incy = 0;
+    else {
+        incy = -1;
+        delta_y = -delta_x;
+    }
+
+    if (delta_x > delta_y)
+        distance = delta_x;
+    else
+        distance = delta_y;
+
+    for (t = 0; t <= distance; t++) {
+        setPixel(uRow, uCol, color);
+        xerr += delta_x;
+        yerr += delta_y;
+        if (xerr > distance) {
+            xerr -= distance;
+            uRow += incx;
+        }
+        if (yerr > distance) {
+            yerr -= distance;
+            uCol += incy;
+        }
+    }
+    //Unselect();
+}
+
+void ST77XX::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+    //select();
+    writeRect(x1, y1, x2, y1, WHITE);
+}
+
+void ST77XX::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+    //select();
+    writeLine(x1, y1, x2, y1, color);
+    writeLine(x1, y1, x1, y2, color);
+    writeLine(x1, y2, x2, y2, color);
+    writeLine(x2, y1, x2, y2, color);
+    //Unselect();
+}
+
+void ST77XX::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
+    //select();
+    int16_t f = 1 - r;
+    int16_t ddF_x = 1;
+    int16_t ddF_y = -2 * r;
+    int16_t x = 0;
+    int16_t y = r;
+
+    setPixel(x0, y0 + r, color);
+    setPixel(x0, y0 - r, color);
+    setPixel(x0 + r, y0, color);
+    setPixel(x0 - r, y0, color);
+
+    while (x < y) {
+        if (f >= 0) {
+            y--;
+            ddF_y += 2;
+            f += ddF_y;
+        }
+        x++;
+        ddF_x += 2;
+        f += ddF_x;
+
+        setPixel(x0 + x, y0 + y, color);
+        setPixel(x0 - x, y0 + y, color);
+        setPixel(x0 + x, y0 - y, color);
+        setPixel(x0 - x, y0 - y, color);
+
+        setPixel(x0 + y, y0 + x, color);
+        setPixel(x0 - y, y0 + x, color);
+        setPixel(x0 + y, y0 - x, color);
+        setPixel(x0 - y, y0 - x, color);
+    }
+    //Unselect();
+}
+
+void ST77XX::invertColors(uint8_t invert) {
+    //select();
+    writeCommand(invert ? 0x21 /* INVON */ : 0x20 /* INVOFF */);
+    //Unselect();
+}
+
+/*
+ * Gets the buffer index of a pixel based in the actual color depth
+ */
+//inline uint16_t ST77XX::getPixelIndex(uint16_t x, uint16_t y) {
+//
+//
+//}
+
+void ST77XX::writeChar(uint16_t x, uint16_t y, char ch, FontDef *font, uint16_t color, uint16_t bgcolor) {
+
+    uint32_t i, b, j;
+    uint16_t ix, iy;
+    uint16_t c;
+
+    const uint8_t *data = ((FontDef8 *) font)->data;
+    uint8_t incr = font->size;
+
+    for (i = 0, ix = 0; i < font->height; i++, ix += incr) {
+        b = data[(ch - 32) * font->height + ix];
+        for (j = 0; j < font->width; j++) {
+
+            ix = x + j;
+            iy = y + i;
+
+            if ((b << j) & 0x8000) {
+                c = color;
+            } else {
+                c = bgcolor;
+            }
+            setPixel(ix, iy, c);
+        }
+    }
+}
+
+void ST77XX::writeString(uint16_t x, uint16_t y, const char *str, FontDef *font, uint16_t color, uint16_t bgcolor) {
+    //select();
+    while (*str) {
+        if (x + font->width >= DISPLAY_X_PIXELS) {
+            // wrap text
+
+            x = 0;
+            y += font->height;
+            if (y + font->height >= DISPLAY_Y_PIXELS) {
+                break;
+            }
+
+            if (*str == ' ') {
+                // skip spaces in the beginning of the new line
+                str++;
+                continue;
+            }
+        }
+        writeChar(x, y, *str, font, color, bgcolor);
+        x += font->width;
+        str++;
+    }
+
+    px = x;
+    py = y;
+    //Unselect();
+}
+
+void ST77XX::gotoXY(uint16_t x, uint16_t y) {
+    px = x;
+    py = y;
+}
+
+void ST77XX::gotoCharXY(uint16_t x, uint16_t y) {
+    px = this->padding_x + (x * font->width);
+    py = this->verticalSpacing + (y * (font->height + (this->verticalSpacing * 2)));
+}
+
+uint8_t ST77XX::getVerticalLineSpacing() {
+    return this->verticalSpacing;
+}
+
+void ST77XX::setVerticalLineSpacing(uint8_t pixels) {
+    this->verticalSpacing = pixels;
+}
+
+void ST77XX::setColor(uint8_t c) {
+    this->color = c;
+}
+
+void ST77XX::setBgColor(uint8_t c) {
+    this->bgColor = c;
+}
+
+size_t ST77XX::write(const uint8_t *buffer, size_t size) {
+    writeString(px, py, (const char *) buffer, font, color, bgColor);
+    return 0;
+}
+
+size_t ST77XX::write(uint8_t c) {
+    writeChar(px, py, c, font, color, bgColor);
+    return 0;
+}
+
+void ST77XX::setFont(FontDef *f) {
+    this->font = f;
+}
+
+void ST77XX::test(void) {
+    fill(BLACK);
+    writeString(0, 0, "Welcome to", (FontDef *) &Font_11x18, BLACK, WHITE);
+    renderAll();
+
+    HAL_Delay(1000);
+
+    fill(WHITE);
+    writeString(0, 0, "my laboratory", (FontDef *) &Font_11x18, BLACK, WHITE);
+    renderAll();
+
+    HAL_Delay(1000);
+}
+
+size_t ST77XX::print(const char str[]) {
+    return write(str);
+}
+
+size_t ST77XX::print(char c) {
+    return write(c);
+}
+
+size_t ST77XX::print(unsigned char b, int base) {
+    return print((unsigned long) b, base);
+}
+
+size_t ST77XX::print(int n, int base) {
+    return print((long) n, base);
+}
+
+size_t ST77XX::print(unsigned int n, int base) {
+    return print((unsigned long) n, base);
+}
+
+size_t ST77XX::print(long n, int base) {
+    if (base == 0) {
+        return write(n);
+    } else if (base == 10) {
+        if (n < 0) {
+            int t = print('-');
+            n = -n;
+            return printNumber(n, 10) + t;
+        }
+        return printNumber(n, 10);
+    } else {
+        return printNumber(n, base);
+    }
+}
+
+size_t ST77XX::print(unsigned long n, int base) {
+    if (base == 0)
+        return write(n);
+    else
+        return printNumber(n, base);
+}
+
+size_t ST77XX::print(double n, int digits) {
+    return printFloat(n, digits);
+}
+
+size_t ST77XX::printNumber(unsigned long n, uint8_t base) {
+    char buf[8 * sizeof(long) + 1]; // Assumes 8-bit chars plus zero byte.
+    char *str = &buf[sizeof(buf) - 1];
+
+    *str = '\0';
+
+    // prevent crash if called with base == 1
+    if (base < 2)
+        base = 10;
+
+    do {
+        unsigned long m = n;
+        n /= base;
+        char c = m - base * n;
+        *--str = c < 10 ? c + '0' : c + 'A' - 10;
+    } while (n);
+
+    return write(str);
+}
+
+size_t ST77XX::printFloat(double number, uint8_t digits) {
+    size_t n = 0;
+
+    if (isnan(number))
+        return print("nan");
+    if (isinf(number))
+        return print("inf");
+    if (number > 4294967040.0)
+        return print("ovf");  // constant determined empirically
+    if (number < -4294967040.0)
+        return print("ovf");  // constant determined empirically
+
+    // Handle negative numbers
+    if (number < 0.0) {
+        n += print('-');
+        number = -number;
+    }
+
+    // Round correctly so that print(1.999, 2) prints as "2.00"
+    double rounding = 0.5;
+    for (uint8_t i = 0; i < digits; ++i)
+        rounding /= 10.0;
+
+    number += rounding;
+
+    // Extract the integer part of the number and print it
+    unsigned long int_part = (unsigned long) number;
+    double remainder = number - (double) int_part;
+    n += print(int_part);
+
+    // Print the decimal point, but only if there are digits beyond
+    if (digits > 0) {
+        n += print(".");
+    }
+
+    // Extract digits from the remainder one at a time
+    while (digits-- > 0) {
+        remainder *= 10.0;
+        int toPrint = int(remainder);
+        n += print(toPrint);
+        remainder -= toPrint;
+    }
+
+    return n;
+}
+
+
+

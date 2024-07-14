@@ -1,0 +1,142 @@
+//
+// Created by Angel Dust on 16/04/2021.
+//
+
+#ifndef TRX_FRONTEND_DSP_COMMON_H
+#define TRX_FRONTEND_DSP_COMMON_H
+
+#define __FPU_PRESENT 1U
+#define __FPU_USED 1U
+#define ARM_MATH_CM4 1
+
+#define DSP_MIN_TX_GAIN_DB -20
+#define DSP_MAX_TX_GAIN_DB 20
+
+#include <stddef.h>
+#include <stdint.h>
+#include <arm_math.h>
+#include <Signal.h>
+#include "FIFO.h"
+
+typedef int16_t adc_type;
+
+typedef struct {
+    adc_type r;
+    adc_type i;
+} complex_t;
+
+enum DSP_COMMAND {
+    DSP_COMMAND_NONE, DSP_COMMAND_STOP, DSP_COMMAND_START
+};
+enum DSP_STATUS {
+    DSP_STATUS_STOPPED, DSP_STATUS_STOPPING, DSP_STATUS_RUNNING, DSP_STATUS_PENDING
+};
+enum DSP_ERROR {
+    DSP_ERR_NONE,
+    DSP_ERR,
+    DSP_ERR_FILEOPEN,
+    DSP_ERR_FILECLOSE,
+    DSP_ERR_FILEWRITE,
+    DSP_ERR_FILEREAD,
+    DSP_ERR_DMAOVERRUN,
+    DSP_ERR_FIFO_OVERRUN,
+    DSP_ERR_FIFO_UNDERRUN
+};
+
+#define DSP_MAX_CAPTURE_SIZE 50000000
+
+// IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
+// A LCD SPI DMA transfer and cause problems
+#ifndef STM32F4xx
+#define LCD_DISABLE_ON_DSP false
+#endif
+
+// Other way to try to use the same SPI bus is by executing DSP tasks (which should be less time critical than DSP processors) in the
+// main loop rather than within the timing interrupt. This may not work if we have too much load in our loop and we don't give enough
+// chances to the task to execute at decent pace
+#define EXECUTE_TASKS_ON_INTERRUPT true
+
+/*
+ * Direction of the baseband flow
+ */
+enum DSP_DIRECTION {
+    DSP_DIRECTION_IN = 0, // A/D
+    DSP_DIRECTION_OUT // D/A
+};
+
+struct st_dspCommand {
+    DSP_COMMAND command;
+    uint8_t id = 0;
+};
+
+struct st_dspStatus {
+
+    uint8_t id;
+    volatile DSP_STATUS status = DSP_STATUS_STOPPED;
+    volatile DSP_ERROR error = DSP_ERR_NONE;
+    DSP_DIRECTION direction = DSP_DIRECTION_IN;
+
+    volatile float gain{1.0}; // This is the gain factor. Not in DB
+
+    uint32_t bandwidth;
+    uint32_t sample_rate;
+    uint8_t decimation_factor;
+    uint32_t decimated_block_size_bytes;
+    uint16_t decimated_block_size;
+    uint16_t bits_per_sample;
+    uint8_t n_channels;
+
+    volatile uint32_t block_size_bytes; // Size of each processed block, in bytes
+    volatile uint32_t processed_blocks;
+    volatile uint32_t fifo_underruns;
+    volatile uint32_t fifo_overruns;
+    float delta_phase; // Experimental. Phase increment in the sin/cos lookup table
+
+    uint64_t start_ms;
+    uint64_t stop_ms;
+
+    bool operator==(const st_dspStatus &st) const {
+        return status == st.status
+               && error == st.error
+               && fifo_underruns == st.fifo_underruns
+               && fifo_overruns == st.fifo_overruns
+               && sample_rate == st.sample_rate
+               && processed_blocks == st.processed_blocks
+               && block_size_bytes == st.block_size_bytes
+               && bits_per_sample == st.bits_per_sample
+               && n_channels == st.n_channels
+               && id == st.id
+               && gain == st.gain
+               && decimation_factor == st.decimation_factor
+               && bandwidth == st.bandwidth;
+    }
+};
+
+extern Signal dsp_common_params_signal;
+
+extern st_dspStatus *dsp_status;
+// Phase in the LUT table
+// extern float dsp_lut_phase;
+
+// Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
+extern uint32_t dsp_max_sample_rate;
+extern const char *dsp_error_names[];
+
+/* Sets the max sample frequency depending on whether we're doing real-time DSP or not */
+void set_max_sample_freq(bool dsp);
+
+/* Set a specific maximum for the sample rate */
+void set_max_sample_freq(uint32_t rate);
+
+/* Sets the digital domain TX direction gain */
+void set_tx_gain_db(int8_t gain_db);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //TRX_FRONTEND_DSP_COMMON_H
