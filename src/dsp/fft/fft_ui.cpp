@@ -162,6 +162,8 @@ namespace fftUI {
          SUBMENU(fftStyleMenu),
          SUBMENU(lineColorMenu),
          SUBMENU(fillColorMenu),
+         FIELD(config.fft.waterfall_refresh_period_ms, "Waterfall refresh", "ms.", 50, 400, 50, 0, doNothing, noEvent,
+               noStyle),
          EXIT("<Back")
     );
 

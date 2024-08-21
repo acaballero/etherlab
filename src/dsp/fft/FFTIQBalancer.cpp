@@ -3,13 +3,10 @@
 //
 
 #include <algorithm>
-#include <stdio.h>
-#include <stddef.h>
 #include <string.h>
 #include "FFTIQBalancer.h"
 #include <math.h>
 #include "fft.h"
-#include "../../../lib/utils/utils.hpp"
 
 #define SQR(a) (a*a)
 
@@ -42,7 +39,6 @@ BalanceEstate FFTIQBalancer::estimate(complex_t_f32 *fft) {
             this->changed = this->rebuildFilter();
             this->leak();
         }
-
     }
 
     return this->state;
@@ -50,7 +46,6 @@ BalanceEstate FFTIQBalancer::estimate(complex_t_f32 *fft) {
 }
 
 BalanceEstate FFTIQBalancer::correct(complex_t_f32 *data) {
-
 
     if (this->correctionEnabled) {
         this->correctSpectrum(data);
@@ -68,7 +63,7 @@ void FFTIQBalancer::reset() {
 bool FFTIQBalancer::rebuildFilter() {
 
     bool ret = false;
- //   float32_t x, gain, phase;
+   // float32_t x, gain, phase;
 
     if (this->fitPolynomial()) {
 

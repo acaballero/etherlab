@@ -96,7 +96,7 @@ DCBlock dcBlockers[FFT_MAX_SLICES][2];
 // Stores 2^SMOOTH_GAIN_LUT_PRECISION values of (1 - exp(-0.005 * ((DB - NOISE_FLOOR_DB + 1))))
 #define SMOOTH_GAIN_LUT_PRECISSION 4
 float32_t smoothingGainLUT[1 << (SMOOTH_GAIN_LUT_PRECISSION)];
-fft_type fft_peak;
+fft_type fft_peak = FFT_MIN_DB;
 uint16_t fft_peak_bin = 0;
 uint64_t fft_peak_f = 0;
 
@@ -651,7 +651,7 @@ void processFFT(float32_t *v) {
                 fft_display[display_ix] = FFT_HEIGHT;
             }
 
-            fft_display_db[display_ix] = fft_display_db[display_ix] - (gain * (fft_display_db[display_ix] - db));
+            fft_display_db[display_ix] = fft_display_db[display_ix] - (config.fft.smooth_factor * (fft_display_db[display_ix] - db));
             display_ix += x_inc;
             bin_pos += fft_params.bin_width_px;
         }
@@ -690,7 +690,7 @@ void processFFT(float32_t *v) {
 
                 // IIR filter
                 fft_display[display_ix] = fft_display[display_ix] - (gain * (fft_display[display_ix] - (float) start));
-                fft_display_db[display_ix] = fft_display_db[display_ix] - (gain * (fft_display_db[display_ix] - db));
+                fft_display_db[display_ix] = fft_display_db[display_ix] - (config.fft.smooth_factor * (fft_display_db[display_ix] - db));
 
                 next_display_ix += x_inc;
                 db = FFT_MIN_DB;

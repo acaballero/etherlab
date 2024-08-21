@@ -100,9 +100,9 @@ namespace radio {
             {10698000, 15,  GPIOEXP_IF_FILTER_15KHZ}, // 15Kh
             {10700000, 150, GPIOEXP_IF_FILTER_150KHZ}, // 150Khz
     };
-    const char *bandNames[] = {"70cm", "1m", "2m", "AIRBAND", "FM", "6m", "10m", "11m", "12m", "15m", "17m", "20m",
+    const char *bandNames[] = {"70cm", "1m", "2m", "AIRB", "WFM", "6m", "10m", "11m", "12m", "15m", "17m", "20m",
                                "30m", "40m", "60m", "80m", "160m", "Auto", "None"};
-    const char *modulationNames[] = {"LSB", "USB", "FM", "AM"};
+    const char *modulationNames[] = {"LSB", "USB", "FM","WFM", "AM", "CW"};
     const char *IFFilterNames[] = {"3k", "15k", "150k", "Auto"};
     const char *IFFilter2Names[] = {"Auto", "Passthru"};
     const char *repeaterNames[] = {"+", "-", "Off"};
@@ -132,6 +132,7 @@ namespace radio {
 
             case SSB_LSB:
             case SSB_USB:
+            case CW:
 
                 mixers[0].setIf(config.f_1st_if);
 
@@ -177,6 +178,7 @@ namespace radio {
                 break;
 
             case FM:
+            case WFM:
             case AM:
 
                 mixers[1].setLoInjection(LOW_SIDE);
@@ -186,7 +188,7 @@ namespace radio {
 
 
                 mixers[0].setIf(ISTX ? config.f_if_fm_tx : config.f_1st_if);
-                mixers[1].setRf(ISTX && config.modulation == FM ? config.f_if_fm_tx : config.f_1st_if);
+                mixers[1].setRf(ISTX && (config.modulation == FM || config.modulation == WFM) ? config.f_if_fm_tx : config.f_1st_if);
                 break;
         }
 

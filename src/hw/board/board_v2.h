@@ -55,7 +55,7 @@ void calibrate_freq();
 int power_down_lo_clocks();
 int power_up_lo_clocks();
 int board_gain();
-
+int get_max_input_dbm();
 /**
  * Configures the digital radio
  */

@@ -27,9 +27,14 @@ void InfoWidget::paint_callback() {
     uint16_t fft_fs = fft_params.sample_freq / 1000 / fft_params.decimation_factor;
 
     display->gotoCharXY(13, 0);
-    format_long(fft_fs, buf);
 
+    format_long(fft_fs, buf);
     display->print("ADC:", buf, " kHz");
+
+    display->gotoCharXY(25, 0);
+
+    snprintf(buf, 12, "Slices: %d", fft_params.n_slices);
+    display->print(buf);
 
     if (fft_params.decimation_factor > 1) {
 
@@ -38,7 +43,7 @@ void InfoWidget::paint_callback() {
         display->print(buf);
     }
 
-    snprintf(buf, 6, " %d", fft_params.rbw);
+    snprintf(buf, 6, " %.0f", fft_params.display_rbw);
     display->print(" RBW:", buf, " Hz");
 
     display->gotoCharXY(0, 1);

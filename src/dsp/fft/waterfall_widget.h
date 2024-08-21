@@ -9,8 +9,8 @@
 #include "../../types.h"
 #include "fft_types.h"
 
-#define FFT_WATERFALL_HEIGHT 36
-#define FFT_WATERFALL_DEFAULT_COLOR_INDEX 2
+#define FFT_WATERFALL_HEIGHT 50
+#define FFT_WATERFALL_DEFAULT_COLOR_INDEX 1
 
 class WaterfallWidget : public Widget {
 public:

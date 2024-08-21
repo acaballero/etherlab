@@ -33,6 +33,8 @@ logevent_st_t logEvents[LOG_MAX_ITEMS];
 logevent_st_t logEventsClone[LOG_MAX_ITEMS];
 uint32_t logEventTypeStartTimes[LOG_MAX_ITEMS];
 
+uint32_t POWSOF10[] = {1, 10, 100, 1000, 10000, 100000, 1000000};
+
 /*
 logger_t loggers[MAX_LOGGERS];
 int addLogger(logger_t logger) {
@@ -464,6 +466,9 @@ int mostSignificantDecimal(long i) {
     return (int) d;
 }
 
+float truncate_float(float v, int decimals) {
+    return (float) ((int) (v * POWSOF10[decimals - 1])) / (float) POWSOF10[decimals - 1];
+}
 /**
  * Double to ASCII
  */

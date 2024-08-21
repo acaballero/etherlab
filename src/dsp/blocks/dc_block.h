@@ -17,7 +17,7 @@ class DCBlock {
 
 public:
 
-    explicit DCBlock() : pole_radius{0.975} {}
+    explicit DCBlock() : pole_radius{0.985} {}
     explicit DCBlock(float pole_radius) : pole_radius{pole_radius} {}
     int16_t filter(int16_t sample);
     float32_t filter(float32_t input);
@@ -29,8 +29,6 @@ private:
     float32_t pole_radius;
     float32_t last_x=0;
     float32_t last_y=0;
-
-
 };
 
 #endif //TRX_FRONTEND_DC_BLOCK_H

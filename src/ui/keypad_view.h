@@ -32,6 +32,8 @@ public:
 
     double value() const;
 
+    void with_multipliers(bool);
+
     void set_value(double value, uint8_t frac_digits, const char *units, const char *label);
 
     bool on_input(const st_inputEvent event) override;
@@ -40,6 +42,7 @@ public:
 
 private:
 
+    bool show_multipliers = true;
     uint16_t focused_button = 0;
     static constexpr int cols = 4;
     static constexpr int button_w = WIDTH / cols;

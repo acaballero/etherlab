@@ -158,6 +158,7 @@ void printDouble(double val, int precision, bool newline);
 
 int readVcc();
 
+float truncate_float(float v, int decimals);
 
 float adc_to_mv(int adc_value, float adc_vref, int adc_max);
 

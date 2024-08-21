@@ -30,7 +30,8 @@ namespace main_board {
     battery::BATTERY_STATUS battery_status = battery::BATTERY_STATUS_UNDEFINED;
 
     void s_strength_callback(void *thisptr, void *args) {
-        setMute(*((bool *) args) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        sstrength::st_sstrength_info info = *((sstrength::st_sstrength_info *) args);
+        setMute(info.in_squelch && info.level>0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
     }
 
     void s_level_callback(void *thisptr, void *args) {
@@ -215,7 +216,7 @@ namespace main_board {
                     */
 
                     if_gain(RF_DIRECTION_RX, IF_GAIN_MINUS18,
-                            config.modulation == FM ? IF_GAIN_MINUS6 : IF_GAIN_MINUS30);
+                            (config.modulation == FM || config.modulation == WFM) ? IF_GAIN_MINUS6 : IF_GAIN_MINUS30);
 
 
                 }
@@ -294,12 +295,6 @@ namespace main_board {
         return false;
     }
 
-    void setSquelch() {
-        if (config.squelch_level == 0) {
-            setMute(GPIO_PIN_RESET);
-        }
-    }
-
     void setMute(GPIO_PinState muteState) {
         if (mute != muteState) {
             mute = muteState;
@@ -344,6 +339,7 @@ namespace main_board {
 
             switch (config.modulation) {
                 case FM:
+                case WFM:
                     changed =
                             changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX, false);
                     changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
@@ -542,9 +538,11 @@ namespace main_board {
             switch (config.modulation) {
                 case SSB_USB:
                 case SSB_LSB:
+                case CW:
                     new_filter = radio::IF_FILTER_3KHZ;
                     break;
                 case FM:
+                case WFM:
                     if (radio::get_band() == radio::BAND_FM) {
                         new_filter = radio::IF_FILTER_150KHZ;
                     }

@@ -69,12 +69,14 @@ namespace agc {
         // TODO: This class shouldn't be coupled to board_v2.h and it's gain-specific details
         fft_type max_power_at_dsp = fft_peak + get_analog_gain();
 
+        int max_input_dbm = get_max_input_dbm();
+
         if (!ISTX) {
             IF_GAIN vga = vga_gain;
             IF_GAIN vgb = vgb_gain;
             uint64_t t = HAL_GetTick();
 
-            if (max_power_at_dsp >= MAX_DSP_INPUT_POWER_DBM || fft_mag_overload) {
+                if (max_power_at_dsp >= max_input_dbm || fft_mag_overload) {
 
                 if (t - last_overload_ms > overload_auto_correction_delay_ms) {
                     if (vga_gain < MIN_VGA_GAIN) {
@@ -84,13 +86,13 @@ namespace agc {
                     }
                 }
 
-                overload = max_power_at_dsp >= MAX_DSP_INPUT_POWER_DBM;
+                overload = max_power_at_dsp >= max_input_dbm;
 
             } else {
 
                 overload = false;
 
-                if (!fft_mag_overload && max_power_at_dsp < MAX_DSP_INPUT_POWER_DBM - 50) {
+                if (!fft_mag_overload && max_power_at_dsp < max_input_dbm - 50) {
                     if (vga_gain > config.hw.cmx973_vga) {
                         vga = (IF_GAIN) (vga - 1);
                     } else if (vgb_gain > config.hw.cmx973_vgb) {
@@ -100,7 +102,6 @@ namespace agc {
             }
 
             if (vga != vga_gain || vgb != vgb_gain) {
-
                 if_gain(RF_DIRECTION_RX, vga, vgb);
 
                 if (overload || fft_mag_overload) {

@@ -145,7 +145,7 @@ void Config_ADC_DMA() {
     ADC_ChannelConfTypeDef sConfig = {0};
 
     if (hadc1_mode !=
-        1) { // Prevent reinitializing this ADC in the same mode (we're using it in both DMA and syncronous mode, using MX_ADC1_Init())
+        1) { // Prevent reinitializing this ADC in the same mode (we're using it in both DMA and synchronous mode, using MX_ADC1_Init())
 
         hadc1_mode = 1;
         /* USER CODE BEGIN ADC1_Init 0 */

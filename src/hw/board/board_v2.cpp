@@ -49,6 +49,8 @@ adf4350_init_param adf4350Params = {
 
 IF_GAIN vga_gain = config.hw.cmx973_vga;
 IF_GAIN vgb_gain = config.hw.cmx973_vga;
+// The IIP3 of the CMX973 depends on VGA/VGB settings
+int cmx973_input_ip3;
 
 si5351_drive lo_power_to_si5351_drive_strength(LO_POWER lo_power) {
     switch (lo_power) {
@@ -61,6 +63,7 @@ si5351_drive lo_power_to_si5351_drive_strength(LO_POWER lo_power) {
             return SI5351_DRIVE_6MA;
     }
 }
+
 
 uint8_t lo_power_to_adf4350_drive_strength(LO_POWER lo_power) {
     switch (lo_power) {
@@ -105,23 +108,6 @@ void if_freq(RF_DIRECTION direction, uint64_t freq) {
     }
 }
 
-void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
-
-    vga_gain = vga;
-    vgb_gain = vgb;
-
-    if (direction == RF_DIRECTION_RX) {
-        cmx973State.rxc = (cmx973State.rxc & ~CMX973_RXC_VGAMSK) | (vga << 0); // VGB gain
-        cmx973State.rxc = (cmx973State.rxc & ~CMX973_RXC_VGBMSK) | (vgb << 2); // VGB gain
-        uint8_t ret = cmx973_update();
-        if (ret) {
-           // DEBUGPRINT("Error updating CMX973: %d", ret)
-        }
-    } else {
-        status::handleError(status::ST_ERROR, "The IF gain can't be changed in TX direction");
-    }
-}
-
 int16_t if_gain_to_db(IF_GAIN if_gain) {
     switch (if_gain) {
         case IF_GAIN_0:
@@ -138,6 +124,43 @@ int16_t if_gain_to_db(IF_GAIN if_gain) {
             return -30;
     }
 }
+
+int calc_max_input_dbm() {
+    // Based on estimations from the datasheet of the CMX973
+    if (vga_gain == IF_GAIN_0 && vgb_gain == IF_GAIN_0) {
+        return -42;
+    } else if (vga_gain <= IF_GAIN_MINUS18 && vgb_gain == IF_GAIN_0) {
+        return -36 + if_gain_to_db(vga_gain)/2;
+    } else {
+        return -42 - (if_gain_to_db(vga_gain) +  if_gain_to_db(vgb_gain))/2;
+    }
+}
+
+
+void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
+
+    vga_gain = vga;
+    vgb_gain = vgb;
+
+    if (direction == RF_DIRECTION_RX) {
+        cmx973State.rxc = (cmx973State.rxc & ~CMX973_RXC_VGAMSK) | (vga << 0); // VGB gain
+        cmx973State.rxc = (cmx973State.rxc & ~CMX973_RXC_VGBMSK) | (vgb << 2); // VGB gain
+        uint8_t ret = cmx973_update();
+        if (ret) {
+            // DEBUGPRINT("Error updating CMX973: %d", ret)
+        }
+
+        cmx973_input_ip3 = calc_max_input_dbm();
+
+    } else {
+        status::handleError(status::ST_ERROR, "The IF gain can't be changed in TX direction");
+    }
+}
+
+int get_max_input_dbm() {
+    return cmx973_input_ip3;
+}
+
 
 /**
  * Returns the overall gain
@@ -228,7 +251,7 @@ void if_direction(RF_DIRECTION direction) {
 
     uint8_t ret = cmx973_update();
     if (ret) {
-       // DEBUGPRINT("Error updating CMX973: %d", ret)
+        // DEBUGPRINT("Error updating CMX973: %d", ret)
     }
 }
 
@@ -241,7 +264,7 @@ void if_setup() {
     uint8_t ret = cmx973_update();
 
     if (ret) {
-      //  DEBUGPRINT("Error updating CMX973: %d\n", ret)
+        //  DEBUGPRINT("Error updating CMX973: %d\n", ret)
     }
 
     if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);

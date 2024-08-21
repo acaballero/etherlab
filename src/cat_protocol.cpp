@@ -134,12 +134,14 @@ namespace cat_protocol {
             case MODE_TYPE_AM:
                 return AM;
             case MODE_TYPE_FM:
-            case MODE_TYPE_WFM:
                 return FM;
+            case MODE_TYPE_WFM:
+                return WFM;
             case MODE_TYPE_LSB:
                 return SSB_LSB;
-            case MODE_TYPE_USB:
             case MODE_TYPE_CW:
+                return CW;
+            case MODE_TYPE_USB:
             case MODE_TYPE_RTTY:
                 return SSB_USB;
             default:
@@ -153,6 +155,8 @@ namespace cat_protocol {
                 return MODE_TYPE_AM;
             case FM:
                 return MODE_TYPE_FM;
+            case WFM:
+                return MODE_TYPE_WFM;
             case SSB_LSB:
                 return MODE_TYPE_LSB;
             case SSB_USB:

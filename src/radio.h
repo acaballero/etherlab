@@ -28,6 +28,7 @@ namespace radio {
 
         // Whether TX is allowed in the band
         bool tx_enabled;
+
     } st_band;
 
     typedef struct {

@@ -11,18 +11,20 @@
 #include "radio.h"
 #include "dsp/dsp_common.h"
 
-enum RF_DIRECTION {RF_DIRECTION_RX,RF_DIRECTION_TX};
+enum RF_DIRECTION {
+    RF_DIRECTION_RX, RF_DIRECTION_TX
+};
 
 enum SSB_MODE {
     SSB_MODE_LSB, SSB_MODE_USB
 };
 
 enum MODE {
-    ANALOG_RX,ANALOG_TX,DIGITAL_RX,DIGITAL_TX
+    ANALOG_RX, ANALOG_TX, DIGITAL_RX, DIGITAL_TX
 };
 
 enum MODULATION_MODE {
-    SSB_LSB, SSB_USB, FM, AM, MODULATION_MODE_ALL
+    SSB_LSB, SSB_USB, FM, WFM, AM, CW, MODULATION_MODE_ALL
 };
 
 enum DIRECTION {
@@ -85,7 +87,7 @@ struct st_topBar {
     st_dspStatus *dspState;
 
     bool operator==(const st_topBar &st) const {
-        return *dspState==*st.dspState;
+        return *dspState == *st.dspState;
     }
 };
 
@@ -96,8 +98,8 @@ struct st_freqInfo {
 
     bool operator==(const st_freqInfo &st) const {
         return f_carrier == st.f_carrier
-        && f_step == st.f_step
-        && repeater_mode == st.repeater_mode;
+               && f_step == st.f_step
+               && repeater_mode == st.repeater_mode;
 
     }
 };

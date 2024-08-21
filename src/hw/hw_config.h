@@ -56,7 +56,6 @@
 #define CONFIG_AUTOSAVE_SECS 300 // Autosave config every CONFIG_AUTOSAVE_SECS seconds
 
 #define V_REF 3.2f
-#define MAX_DSP_INPUT_POWER_DBM -25
 
 /******************/
 /* Rotary encoder */

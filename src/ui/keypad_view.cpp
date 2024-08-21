@@ -85,14 +85,14 @@ double KeypadView::value() const {
 void KeypadView::set_value(double new_value, uint8_t digits, const char *units, const char *label) {
     frac_digits = digits;
 
-    char buff[5];
+    char b[5];
 
-    sprintf(buff, "M%s", units);
-    button_M.set_text(buff);
-    sprintf(buff, "k%s", units);
-    button_K.set_text(buff);
-    sprintf(buff, "%s", units);
-    button_1.set_text(buff);
+    sprintf(b, "M%s", units);
+    button_M.set_text(b);
+    sprintf(b, "k%s", units);
+    button_K.set_text(b);
+    sprintf(b, "%s", units);
+    button_1.set_text(b);
 
     ftoa(buff, MAX_DIGITS, new_value, frac_digits);
 
@@ -156,4 +156,11 @@ void KeypadView::update_text() {
 
 void KeypadView::do_paint() {
 
+}
+
+void KeypadView::with_multipliers(bool v) {
+    show_multipliers = v;
+
+    button_K.set_visible(show_multipliers);
+    button_M.set_visible(show_multipliers);
 }

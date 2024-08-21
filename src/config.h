@@ -19,7 +19,7 @@
 #define TXMODE(mode) (mode==ANALOG_TX || mode==DIGITAL_TX)
 #define ISTX (config.mode==ANALOG_TX || config.mode==DIGITAL_TX)
 #define ISANALOG (config.mode==ANALOG_TX || config.mode==ANALOG_RX)
-#define CONFIG_VERSION "311"
+#define CONFIG_VERSION "312"
 
 // DO NOT use a packed structure if memory constraints are not critical. The misalignment has caused
 // me trouble when FPU is enabled and operations are done on misaligned struct members, resulting

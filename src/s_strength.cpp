@@ -35,7 +35,10 @@ namespace sstrength {
     void check_signal_strength();
 
     Signal s_strength_signal, squelch_signal;
-    bool squelch = false;
+    st_sstrength_info info {
+            .in_squelch = false,
+            .level = config.squelch_level
+    };
     float s_strength;
     float s_level;
     periodic_task task(50, check_signal_strength);
@@ -124,15 +127,27 @@ namespace sstrength {
             }
 
             // Apply some hysteresis
-            if (!squelch) squelch_level *= SQUELCH_HYSTERESIS;
+            if (!info.in_squelch) squelch_level *= SQUELCH_HYSTERESIS;
 
             bool new_squelch = s_level < squelch_level;
 
-            if (new_squelch != squelch) {
-                squelch = new_squelch;
-                squelch_signal.emit(&squelch);
+            if (new_squelch != info.in_squelch) {
+                info.in_squelch = new_squelch;
+                info.level = config.squelch_level;
+                squelch_signal.emit(&info);
             }
         }
+    }
+
+    void set_squelch(float level) {
+        config.squelch_level = level;
+        info.in_squelch = false;
+        info.level = level;
+        squelch_signal.emit(&info);
+    }
+
+    float get_squelch() {
+        return config.squelch_level;
     }
 
     void loop() {

@@ -17,6 +17,7 @@
 #include "rf_coupler.h"
 #include "../../lib/utils/utils.hpp"
 #include "view_manager.h"
+#include "s_strength.h"
 
 using namespace Menu;
 
@@ -46,6 +47,8 @@ result changeModulation(eventMask e) {
 prompt *modulationValues[] = {
         new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[AM], AM),
         new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[FM], FM),
+        new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[WFM], WFM),
+        new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[CW], CW),
         new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[SSB_LSB], SSB_LSB),
         new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[SSB_USB], SSB_USB)
 };
@@ -169,6 +172,11 @@ result changeIFFilter(eventMask e) { // syncronize current filter and config.fil
     return proceed;
 }
 
+result set_squelch(eventMask e) {
+    sstrength::set_squelch(config.squelch_level);
+    return proceed;
+}
+
 Menu::select<radio::IF_FILTER> &IFFilterMenu =
         *new Menu::select<radio::IF_FILTER>("IF Filter",
                                             config.if_filter,
@@ -196,7 +204,7 @@ MENU(menuTune, "Tune", doNothing, anyEvent, noStyle,
      SUBMENU(IFFilterMenu),
      SUBMENU(enableAGCToggleMenu),
      SUBMENU(autoSquelch),
-     FIELD(config.squelch_level, "Squelch", "S", -0, 10, 1, 0.1, main_board::setSquelch, exitEvent, noStyle),
+     FIELD(config.squelch_level, "Squelch", "S", -0, 10, 1, 0.1, set_squelch, exitEvent, noStyle),
      SUBMENU(repeaterMenu),
      altFIELD(engPlaces<3>::menuField, config.repeater_offset, "Repeater offset: ", "kHz.", 0, 100000, 10000, 10000,
               changeRepeater, exitEvent, noStyle),
@@ -273,7 +281,9 @@ result changeCouplerOffset(eventMask e) {
     return proceed;
 }
 
+radio::FRONTEND_PATH frontend_path = config.frontend_path;
 result updateRadio(eventMask e) {
+    config.frontend_path = frontend_path;
     main_board::update();
     return proceed;
 }
@@ -292,7 +302,7 @@ Menu::select<LO_POWER> &driveStrength2ndLOMenu =
 
 Menu::select<radio::FRONTEND_PATH> &frontendPathMenu =
         *new Menu::select<radio::FRONTEND_PATH>("Frontend",
-                                                config.frontend_path,
+                                                frontend_path,
                                                 sizeof(frontendPathValues) / sizeof(prompt *),
                                                 frontendPathValues, updateRadio, exitEvent);
 #if ENABLE_RTC

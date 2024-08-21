@@ -9,8 +9,9 @@ void Label::paint_callback() {
 
     display->setFont(font);
 
-    uint16_t width = strlen(text) * font->width;
-    uint16_t x = align_right ? area.width - width - 10 : 10;
+    int16_t width = strlen(text) * font->width;
+
+    int16_t x = align_right ? area.width - width - 10 : 10;
     if (x < 0) {
         x = 0;
     }

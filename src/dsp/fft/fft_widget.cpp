@@ -7,7 +7,8 @@
 #include "fft.h"
 #include "agc.h"
 
-FFTWidget::FFTWidget(const Rect &parentRect, ILI9341 *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {
+FFTWidget::FFTWidget(const Rect &parentRect, ILI9341 *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display),
+                                                                                       style{s} {
 }
 
 void FFTWidget::draw_bandwidth() {
@@ -46,8 +47,8 @@ void FFTWidget::draw_freq_marks() {
     while (n) {
         data = config.freqs[arr_idx_freqs[n - 1]];
         uint16_t x = ((float) (data.freq - fft_params.span_f_start) / (float) (fft_params.span)) * FTT_DISPLAY_WIDTH;
-        if (x <
-            FFT_ZONE_WIDTH) { // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
+        if (x < FFT_ZONE_WIDTH) {
+            // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
             display->writeVertLine(x, 1, FFT_HEIGHT, C565_GREY_LIGHT);
             display->gotoXY(x - (strlen(data.name) << 1), 0);
             display->setFont((FontDef *) &Font_Micro4x6);
@@ -103,10 +104,9 @@ void FFTWidget::draw_h_labels() {
 
     for (int i = 0; i < n_divs - 1; i++) {
         float f_mhz = (float) f_khz / 1000.0f;
-        if (delta_khz>100) {
+        if (delta_khz > 200) {
             sprintf(buf, "%.1f", f_mhz);
-        }
-        else {
+        } else {
             sprintf(buf, "%.2f", f_mhz);
         }
         display->gotoXY(x - (((int) strlen(buf)) * 2), FFT_HEIGHT + 3);
@@ -156,10 +156,10 @@ void FFTWidget::draw_spectrum_fill() {
 
 void FFTWidget::draw_spectrum_line() {
 
-    for (uint16_t i = 0; i < FFT_ZONE_WIDTH-1; i++) {
+    for (uint16_t i = 0; i < FFT_ZONE_WIDTH - 1; i++) {
         // Although the fft_display array is wider, we will only draw the zone width to allow for the Db scale to be drawn next to it
         if (fft_display[i] < FFT_HEIGHT) {
-            display->writeLine(i, fft_display[i], i+1, fft_display[i+1], spectrum_line_color);
+            display->writeLine(i, fft_display[i], i + 1, fft_display[i + 1], spectrum_line_color);
         }
     }
 }
@@ -182,14 +182,14 @@ void FFTWidget::draw_spectrum() {
     display->setBgColor(C565_BLACK);
 
     if (fft_mag_overload) {
-        display->gotoXY(10,FFT_HEIGHT-20);
+        display->gotoXY(10, FFT_HEIGHT - 20);
         display->setColor(C565_RED);
 
         display->print("ADC OVERLOAD");
     }
 
     if (agc::is_overload()) {
-        display->gotoXY(10,FFT_HEIGHT-20);
+        display->gotoXY(10, FFT_HEIGHT - 20);
         display->setColor(C565_RED);
         display->print("DSP OVERLOAD");
     }
