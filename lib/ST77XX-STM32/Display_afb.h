@@ -4,12 +4,12 @@
 #include <stdint-gcc.h>
 #include <string.h>
 
-#define DEBUG_LCD 0
+#define DEBUG_LCD 1
 
 #ifndef DISPLAY_X_PIXELS
 #if USING_HORIZONAL == 0 || USING_HORIZONAL == 1
-#define DISPLAY_X_PIXELS 320
-#define DISPLAY_Y_PIXELS 240
+#define DISPLAY_X_PIXELS 480
+#define DISPLAY_Y_PIXELS 320
 #else
 #define DISPLAY_X_PIXELS 240
 #define DISPLAY_Y_PIXELS 240
@@ -78,11 +78,11 @@ struct Area {
     float fps;
 };
 
-class ST77XX {
+class Display {
 
 public:
 
-    ST77XX(SPI_HandleTypeDef *);
+    Display(SPI_HandleTypeDef *);
 
     virtual int16_t begin() = 0;
 
@@ -237,7 +237,7 @@ public:
 
 protected:
 
-    static void fillCallback(ST77XX *, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+    static void fillCallback(Display *, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 
     SPI_HandleTypeDef *spi_port;
 

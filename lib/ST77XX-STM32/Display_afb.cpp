@@ -1,4 +1,4 @@
-#include "st77XX_afb.h"
+#include "Display_afb.h"
 #include <string.h>
 #include <math.h>
 #include <hw/stm32.h>
@@ -12,30 +12,30 @@ static const uint16_t b565_buffer_size = DISPLAY_X_PIXELS * 20;
 
 uint16_t b565_buffer[b565_buffer_size];
 
-ST77XX::ST77XX(SPI_HandleTypeDef *spi_port) {
+Display::Display(SPI_HandleTypeDef *spi_port) {
     this->spi_port = spi_port;
     this->curr_buffer = b565_buffer;
 }
 
-void ST77XX::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8_t size) {
+void Display::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8_t size) {
     for (int i = 0; i < size; i++) {
         dest[i] = SWAP_BYTES(RGB888_TO_RGB565(orig[i]));
     }
 }
 
-void ST77XX::clear() {
+void Display::clear() {
     memset(this->curr_buffer, 0, this->chunk_height * this->curr_area->width * 2);
 }
 
-void ST77XX::setEnabled(bool b) {
+void Display::setEnabled(bool b) {
     this->enabled = b;
 }
 
-bool ST77XX::getEnabled() {
+bool Display::getEnabled() {
     return this->enabled;
 }
 
-void ST77XX::drawArea(Area *area, Painter *painter) {
+void Display::drawArea(Area *area, Painter *painter) {
 
     if (this->enabled) {
 
@@ -191,25 +191,25 @@ void ST77XX::drawArea(Area *area, Painter *painter) {
     }
 }
 
-void ST77XX::DMATxHalfCpltCallback(void) {
+void Display::DMATxHalfCpltCallback(void) {
     this->DMAHalfTransferCompleted = true;
     // GPIOB->BSRR= GPIO_PIN_5 << 16;
 }
 
-void ST77XX::DMATxCpltCallback(void) {
+void Display::DMATxCpltCallback(void) {
 }
 
-uint16_t ST77XX::getColor() {
+uint16_t Display::getColor() {
     return this->color;
 }
 
-void ST77XX::fillBuffer(uint16_t c) {
+void Display::fillBuffer(uint16_t c) {
     for (uint16_t i = 0; i < this->chunk_height * this->curr_area->width; i++) {
         *(curr_buffer + i) = c;
     }
 }
 
-void ST77XX::fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
+void Display::fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
 
     Area *area = this->curr_area;
     uint16_t zy1 = this->current_line;
@@ -237,7 +237,7 @@ void ST77XX::fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c
     }
 }
 
-void ST77XX::setPixel(uint16_t x, uint16_t y, uint16_t c) {
+void Display::setPixel(uint16_t x, uint16_t y, uint16_t c) {
 
     // Have in mind this function is too slow (around 17 assembler instructions) to call
     // it within a area drawing callback function (in which you have around 18 instructions to draw a pixel ( 72Mhz(core) / ( 18Mhz(spi) * 16 (bits/pixel) ) / 4 (cycles per instruction, but can be slower due to bus waiting) )
@@ -255,11 +255,11 @@ void ST77XX::setPixel(uint16_t x, uint16_t y, uint16_t c) {
     }
 }
 
-void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     writeLine(x1, y1, x2, y2, this->color);
 }
 
-void ST77XX::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color) {
+void Display::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color) {
 
     int y = y1;
     if (y1 > y2) {
@@ -289,11 +289,11 @@ void ST77XX::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color)
     }
 }
 
-void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
     this->writeLine(x1, y1, x2, y2, color, 1);
 }
 
-void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t width) {
+void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t width) {
 
     Area *area = this->curr_area;
 
@@ -441,12 +441,12 @@ void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint1
     }
 }
 
-void ST77XX::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     //select();
     writeRect(x1, y1, x2, y1, C565_WHITE);
 }
 
-void ST77XX::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
     //select();
     writeLine(x1, y1, x2, y1, color);
     writeLine(x1, y1, x1, y2, color);
@@ -455,7 +455,7 @@ void ST77XX::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint1
     //Unselect();
 }
 
-void ST77XX::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
+void Display::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
     //select();
     int16_t f = 1 - r;
     int16_t ddF_x = 1;
@@ -491,18 +491,18 @@ void ST77XX::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
     //Unselect();
 }
 
-void ST77XX::invertColors(uint8_t invert) {
+void Display::invertColors(uint8_t invert) {
     //select();
     writeCommand(invert ? 0x21 /* INVON */ : 0x20 /* INVOFF */);
     //Unselect();
 }
 
-void ST77XX::writeChar(char ch) {
+void Display::writeChar(char ch) {
     this->writeChar(px, py, ch, font, color, bgColor);
     this->px += font->width;
 }
 
-void ST77XX::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor) {
+void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor) {
 
     uint16_t i, b, j;
     uint16_t px, py = y, dy, y1, y2;
@@ -582,7 +582,7 @@ void ST77XX::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, uin
 }
 
 void
-ST77XX::writeString(uint16_t x, uint16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor) {
+Display::writeString(uint16_t x, uint16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor) {
     //select();
 
     uint8_t delta_punct = font->width - font->trim_punct_end - font->trim_punct_start;
@@ -627,70 +627,70 @@ ST77XX::writeString(uint16_t x, uint16_t y, const char *str, const FontDef *font
 //Unselect();
 }
 
-uint16_t *ST77XX::getBuffer() {
+uint16_t *Display::getBuffer() {
     return this->curr_buffer;
 }
 
-void ST77XX::gotoXY(uint16_t x, uint16_t y) {
+void Display::gotoXY(uint16_t x, uint16_t y) {
     px = x;
     py = y;
 }
 
-void ST77XX::gotoCharXY(uint16_t x, uint16_t y) {
+void Display::gotoCharXY(uint16_t x, uint16_t y) {
     px = this->padding_x + (x * font->width);
     py = this->verticalSpacing + (y * (font->height + (this->verticalSpacing * 2)));
 }
 
-uint8_t ST77XX::getVerticalLineSpacing() {
+uint8_t Display::getVerticalLineSpacing() {
 
     return this->verticalSpacing;
 }
 
-void ST77XX::setVerticalLineSpacing(uint8_t pixels) {
+void Display::setVerticalLineSpacing(uint8_t pixels) {
     py = (int) py - ((int) this->verticalSpacing - (int) pixels);
     this->verticalSpacing = pixels;
 }
 
-void ST77XX::setColor(uint16_t c) {
+void Display::setColor(uint16_t c) {
     this->color = c;
 }
 
-void ST77XX::setBgColor(uint16_t c) {
+void Display::setBgColor(uint16_t c) {
     this->bgColor = c;
 }
 
-size_t ST77XX::write(const uint8_t *buffer, size_t size) {
+size_t Display::write(const uint8_t *buffer, size_t size) {
     writeString(px, py, (const char *) buffer, font, color, bgColor);
     return 0;
 }
 
-size_t ST77XX::write(uint8_t c) {
+size_t Display::write(uint8_t c) {
     writeChar(px, py, c, font, color, bgColor);
     return 0;
 }
 
-void ST77XX::setFont(const FontDef *f) {
+void Display::setFont(const FontDef *f) {
     this->font = f;
 }
 
-const FontDef *ST77XX::getFont(void) {
+const FontDef *Display::getFont(void) {
     return this->font;
 }
 
-void ST77XX::test(void) {
+void Display::test(void) {
 }
 
-size_t ST77XX::print(const char str[]) {
+size_t Display::print(const char str[]) {
     return write(str);
 }
 
-size_t ST77XX::print(const char str[], const char *value, const char units[]) {
+size_t Display::print(const char str[], const char *value, const char units[]) {
 
     return this->print(str, value, units, C565_GREY_LIGHT, C565_WHITE, C565_GREY_LIGHT);
 }
 
-size_t ST77XX::print(const char str[], const char *value, const char units[], uint16_t labelColor, uint16_t valueColor,
-                     uint16_t unitsColor) {
+size_t Display::print(const char str[], const char *value, const char units[], uint16_t labelColor, uint16_t valueColor,
+                      uint16_t unitsColor) {
 
     uint16_t c = this->color;
     this->setColor(labelColor);
@@ -704,36 +704,36 @@ size_t ST77XX::print(const char str[], const char *value, const char units[], ui
     return 0;
 }
 
-void ST77XX::setPadding(uint16_t x, uint16_t y) {
+void Display::setPadding(uint16_t x, uint16_t y) {
     padding_x = x;
     padding_y = y;
 }
 
-uint16_t ST77XX::get_padding_x() {
+uint16_t Display::get_padding_x() {
     return padding_x;
 }
 
-uint16_t ST77XX::get_padding_y() {
+uint16_t Display::get_padding_y() {
     return padding_y;
 }
 
-size_t ST77XX::print(char c) {
+size_t Display::print(char c) {
     return write(c);
 }
 
-size_t ST77XX::print(unsigned char b, int base) {
+size_t Display::print(unsigned char b, int base) {
     return print((unsigned long) b, base);
 }
 
-size_t ST77XX::print(int n, int base) {
+size_t Display::print(int n, int base) {
     return print((long) n, base);
 }
 
-size_t ST77XX::print(unsigned int n, int base) {
+size_t Display::print(unsigned int n, int base) {
     return print((unsigned long) n, base);
 }
 
-size_t ST77XX::print(long n, int base) {
+size_t Display::print(long n, int base) {
     if (base == 0) {
         return write(n);
     } else if (base == 10) {
@@ -748,18 +748,18 @@ size_t ST77XX::print(long n, int base) {
     }
 }
 
-size_t ST77XX::print(unsigned long n, int base) {
+size_t Display::print(unsigned long n, int base) {
     if (base == 0)
         return write(n);
     else
         return printNumber(n, base);
 }
 
-size_t ST77XX::print(double n, int digits) {
+size_t Display::print(double n, int digits) {
     return printFloat(n, digits);
 }
 
-size_t ST77XX::printNumber(unsigned long n, uint8_t base) {
+size_t Display::printNumber(unsigned long n, uint8_t base) {
     char buf[8 * sizeof(long) + 1]; // Assumes 8-bit chars plus zero byte.
     char *str = &buf[sizeof(buf) - 1];
 
@@ -779,7 +779,7 @@ size_t ST77XX::printNumber(unsigned long n, uint8_t base) {
     return write(str);
 }
 
-size_t ST77XX::printFloat(double number, uint8_t digits) {
+size_t Display::printFloat(double number, uint8_t digits) {
     size_t n = 0;
 
     if (isnan(number))
@@ -825,12 +825,12 @@ size_t ST77XX::printFloat(double number, uint8_t digits) {
     return n;
 }
 
-bool ST77XX::getWrapText() const {
+bool Display::getWrapText() const {
     return wrap_text;
 }
 
-void ST77XX::setWrapText(bool wrap_text) {
-    ST77XX::wrap_text = wrap_text;
+void Display::setWrapText(bool wrap_text) {
+    Display::wrap_text = wrap_text;
 }
 
 

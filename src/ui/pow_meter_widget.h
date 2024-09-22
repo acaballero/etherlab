@@ -18,7 +18,7 @@ class PowerMeterWidget : public Widget {
 public:
 
     using Widget::Widget;
-    PowerMeterWidget(Rect parent_rect, ILI9341 *display);
+    PowerMeterWidget(Rect parent_rect, Display *display);
     void paint_callback() override;
 
 protected:

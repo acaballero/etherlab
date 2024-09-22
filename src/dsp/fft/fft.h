@@ -18,7 +18,7 @@
 #include <arm_math.h>
 #include "hw/stm32.h"
 #include "config.h"
-#include "../../../lib/ST77XX-STM32/st77XX_afb.h"
+#include "../../../lib/ST77XX-STM32/Display_afb.h"
 #include "dsp/dsp_config.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_buffers.h"

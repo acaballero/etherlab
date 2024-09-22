@@ -3,17 +3,17 @@
 //
 #include "hw/stm32.h"
 #include "input.h"
-
 #include "hw/hw_config.h"
 #include "hw/stm32f4xx/adc.h"
 #include "inputEvent.h"
 #include "input_controller.h"
-#include "XPT2046_touch.h"
+#include "../lib/ST77XX-STM32/XPT2046_touch.h"
+
 
 int8_t analogKeyboardLastPressedButton = -1;
-GPIOInputPin AnalogKeyBoardInterruptPin(ANALOG_KEYBOARD_INTERRUPT_PIN, ANALOG_KEYBOARD_INTERRUPT_PORT, PINMODE_IT,
+GPIOInputPin FrontPanelInterruptPin(FRONT_PANEL_INTERRUPT_PIN_A, FRONT_PANEL_INTERRUPT_PIN_A_PORT, PINMODE_IT,
                                         GPIO_NOPULL, 0,
-                                        analogKeyboardInterruptCallback);
+                                        frontPanelInterruptCallback);
 
 GPIOInputPin TouchPanelInterruptPin(TOUCH_IRQ_PIN, TOUCH_IRQ_PORT, PINMODE_IT, GPIO_NOPULL, 2,
                                     touchPanelInterruptCallback);
@@ -21,12 +21,7 @@ GPIOInputPin TouchPanelInterruptPin(TOUCH_IRQ_PIN, TOUCH_IRQ_PORT, PINMODE_IT, G
 GPIOInputPin BackBtnInputPin(BACK_BTN_PIN, BACK_BTN_GPIO_PORT, PINMODE_IT, GPIO_NOPULL, 0,
                              backBtnInterruptCallback);
 
-uint16_t analogKeyboardOpenVoltage = 1 << 12; // FULL ADC range by default
-
-void calibrateAnalogKeyboard() {
-    // Reads the "open drain" value and stores it as the default
-    analogKeyboardOpenVoltage = GetADCValue(&ANALOG_KEYBOARD_ADC_HANDLER, ANALOG_KEYBOARD_ADC_CHANNEL, 1);
-}
+//uint16_t analogKeyboardOpenVoltage = 1 << 12; // FULL ADC range by default
 
 void backBtnInterruptCallback() {
     GPIO_PinState state = BackBtnInputPin.getState();
@@ -46,13 +41,17 @@ void touchPanelInterruptCallback() {
     xpt2046_touch_check(&xpt2046_touch);
 }
 
-void analogKeyboardInterruptCallback() {
+void frontPanelInterruptCallback() {
 
-    /*** TODO: As we use the same ADC (ADC1) between FFT captures (in DMA mode) and reading some voltages like this one, there is a chance
+}
+
+/*void analogKeyboardInterruptCallback() {
+
+    *//*** TODO: As we use the same ADC (ADC1) between FFT captures (in DMA mode) and reading some voltages like this one, there is a chance
          that we try to use the ADC when it's already started in DMA mode. I know this is not the best arrangement,
          and while I redesign the controller board (I ran out of usable analog pins), we have to stop the DMA adquisition and start it again if it's already started.
          Anyway, if we're pushing some keys maybe we don't mind if there's some momentary glich in the FFT
-     ***/
+     ***//*
 
     bool is_fft_adc_started = adc_dma_started;
 
@@ -96,5 +95,5 @@ void analogKeyboardInterruptCallback() {
             analogKeyboardLastPressedButton = ibutton;
         }
     }
-}
+}*/
 

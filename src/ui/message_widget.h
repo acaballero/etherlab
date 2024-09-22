@@ -14,7 +14,7 @@
 class MessageWidget : public Widget {
 public:
 
-    MessageWidget(Rect parent_rect, ILI9341 *display,
+    MessageWidget(Rect parent_rect, Display *display,
                   FontDef *title_font, FontDef *text_font,
                   uint16_t border_color, uint16_t title_color, uint16_t text_color)
             : Widget(parent_rect, display), border_color{border_color}, title_font{title_font}, text_font{text_font},

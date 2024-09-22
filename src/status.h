@@ -27,7 +27,7 @@ namespace status {
     };
 
     typedef struct {
-        StatusCode code;
+        StatusCode code = ST_OK;
         char msg[30];
     } Status;
 

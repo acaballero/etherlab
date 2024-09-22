@@ -141,11 +141,11 @@ struct PixelBuffer {
  */
 #define BUFFER_SIZE 17400
 
-class ST77XX {
+class Display {
 
 public:
 
-    ST77XX(SPI_HandleTypeDef *);
+    Display(SPI_HandleTypeDef *);
 
     virtual int16_t begin() = 0;
 

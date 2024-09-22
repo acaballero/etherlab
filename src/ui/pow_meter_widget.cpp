@@ -7,7 +7,7 @@
 #include "../config.h"
 
 
-PowerMeterWidget::PowerMeterWidget(Rect parent_rect, ILI9341 *display) : Widget(parent_rect, display) {
+PowerMeterWidget::PowerMeterWidget(Rect parent_rect, Display *display) : Widget(parent_rect, display) {
 
     float f_swr_block_size = 0.1;
     float f_dbm_block_size = 0.1;

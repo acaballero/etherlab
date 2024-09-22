@@ -4,8 +4,7 @@
 
 #include "ui_types.h"
 #include "../input/inputEvent.h"
-#include "../../lib/ST77XX-STM32/st77XX_afb.h"
-#include "../../lib/ST77XX-STM32/ILI9341_fb.h"
+#include "../../lib/ST77XX-STM32/Display_afb.h"
 #include "../../lib/ST77XX-STM32/Painter.hpp"
 #include "../../lib/printf/printf.h"
 #include "lcd.h"
@@ -17,7 +16,7 @@ public:
 
     Widget() : _parent_rect{}, display{&lcd} {}
 
-    Widget(Rect parent_rect, ILI9341 *display) : _parent_rect{parent_rect}, display{display} {
+    Widget(Rect parent_rect, Display *display) : _parent_rect{parent_rect}, display{display} {
         this->set_area();
     }
 
@@ -76,9 +75,9 @@ public:
 
     void set_clean();
 
-    ILI9341 *get_display() const;
+    Display *get_display() const;
 
-    void set_display(ILI9341 *display);
+    void set_display(Display *display);
 
     bool visible();
 
@@ -101,8 +100,7 @@ protected:
 
     uint8_t z_index = 0;
 
-    // TODO: Abstract this
-    ILI9341 *display;
+    Display *display;
 
     Area area;
 

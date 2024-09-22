@@ -6,7 +6,7 @@
 
 #include "hw/stm32.h"
 #include "../../../lib/utils/utils.hpp"
-#include "st77XX_afb.h"
+#include "Display_afb.h"
 
 
 enum FFT_SPECTRUM_STYLE {

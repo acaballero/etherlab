@@ -3,10 +3,11 @@
 //
 
 #include "lcd.h"
+#include "../../lib/ST77XX-STM32/st7789_fb.h"
 
 extern SPI_HandleTypeDef LCD_SPI_HANDLE;
 
-ILI9341 lcd(&LCD_SPI_HANDLE);
+ST7789 lcd(&LCD_SPI_HANDLE);
 
 void lcd_init() {
 

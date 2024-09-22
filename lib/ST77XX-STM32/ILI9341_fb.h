@@ -48,7 +48,7 @@
 #include <stdint-gcc.h>
 #include <string.h>
 #include "ips_font.h"
-#include "st77XX_afb.h"
+#include "Display_afb.h"
 
 #define ILI9341_RST_PORT DISP_RST_PORT
 #define ILI9341_RST_PIN DISP_RST_PIN
@@ -77,7 +77,7 @@
 #define ILI9341_CS_Set() HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_SET)
 
 
-class ILI9341: public ST77XX {
+class ILI9341: public Display {
 
 public:
 

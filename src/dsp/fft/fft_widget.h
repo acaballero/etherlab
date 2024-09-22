@@ -17,7 +17,7 @@
 class FFTWidget : public Widget {
 public:
 
-    FFTWidget(const Rect &parentRect, ILI9341 *display, FFT_SPECTRUM_STYLE s);
+    FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s);
     void set_style(FFT_SPECTRUM_STYLE style);
     void set_colors(uint16_t line, uint16_t fill);
     void paint_callback() override;

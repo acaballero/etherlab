@@ -19,7 +19,7 @@ public:
 
     Button() : Widget() {};
 
-    Button(Rect parent_rect, ILI9341 *display,const char *t, uint16_t fg_color) : Widget(parent_rect, display), fg_color{fg_color} {
+    Button(Rect parent_rect, Display *display,const char *t, uint16_t fg_color) : Widget(parent_rect, display), fg_color{fg_color} {
         set_text(t);
     };
 

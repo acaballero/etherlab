@@ -6,12 +6,12 @@
 #define TRX_FRONTEND_LCD_H
 
 #include "hw/hw_config.h"
+#include "../../lib/ST77XX-STM32/st7789_fb.h"
 
 #if LCD_ENABLED
 
-#include "../../lib/ST77XX-STM32/ILI9341_fb.h"
-#include "../../lib/ST77XX-STM32/XPT2046_touch.h"
-extern ILI9341 lcd;
+
+extern ST7789 lcd;
 
 #endif
 

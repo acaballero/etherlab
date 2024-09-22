@@ -23,19 +23,19 @@ uint16_t waterfall_palette[16];
  */
 uint8_t pixelBuffer[BUFFER_SIZE];
 
-ST77XX::ST77XX(SPI_HandleTypeDef *spi_port) {
+Display::Display(SPI_HandleTypeDef *spi_port) {
 
     this->spi_port = spi_port;
 }
 
-void ST77XX::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8_t size) {
+void Display::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8_t size) {
 
     for (int i = 0; i < size; i++) {
         dest[i] = SWAP_BYTES(RGB888_TO_RGB565(orig[i]));
     }
 }
 
-void ST77XX::clear(bool render) {
+void Display::clear(bool render) {
 
     for (int i = 0; i < MAX_BUFFERS; i++) {
         if (this->buffers[i].buffer) {
@@ -48,7 +48,7 @@ void ST77XX::clear(bool render) {
     this->gotoXY(0, 0);
 }
 
-void ST77XX::clear(uint8_t ibuffer, bool render) {
+void Display::clear(uint8_t ibuffer, bool render) {
 
     memset(this->buffers[ibuffer].buffer, 0x00, this->buffers[ibuffer].size);
 
@@ -60,7 +60,7 @@ void ST77XX::clear(uint8_t ibuffer, bool render) {
     this->gotoXY(0, 0);
 }
 
-int16_t ST77XX::allocateBuffers() {
+int16_t Display::allocateBuffers() {
 
     uint8_t *p = pixelBuffer;
     PixelBuffer *prev_buffer, *buffer;
@@ -90,7 +90,7 @@ int16_t ST77XX::allocateBuffers() {
 /*
  * Finds the buffer that contains a pixel
  */
-PixelBuffer *ST77XX::findBuffer(uint16_t x, uint16_t y) {
+PixelBuffer *Display::findBuffer(uint16_t x, uint16_t y) {
 
     bool b = false;
     uint8_t ibuffer = 0;
@@ -108,8 +108,8 @@ PixelBuffer *ST77XX::findBuffer(uint16_t x, uint16_t y) {
     return b ? buffer : 0;
 }
 
-void ST77XX::initPixelBuffer(PixelBuffer *buffer, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp,
-                             const uint16_t *palette) {
+void Display::initPixelBuffer(PixelBuffer *buffer, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp,
+                              const uint16_t *palette) {
 
     buffer->x = x;
     buffer->y = y;
@@ -136,8 +136,8 @@ void ST77XX::initPixelBuffer(PixelBuffer *buffer, uint16_t x, uint16_t y, uint16
     buffer->size = w * h >> buffer->log2_pixels_per_byte;
 }
 
-int16_t ST77XX::initBuffer(uint8_t ibuffer, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp,
-                           const uint16_t *palette) {
+int16_t Display::initBuffer(uint8_t ibuffer, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp,
+                            const uint16_t *palette) {
 
     PixelBuffer *buffer = &this->buffers[ibuffer];
 
@@ -155,7 +155,7 @@ int16_t ST77XX::initBuffer(uint8_t ibuffer, uint16_t x, uint16_t y, uint16_t w, 
     return ret;
 }
 
-int16_t ST77XX::initBuffer(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp, const uint16_t *palette) {
+int16_t Display::initBuffer(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t bpp, const uint16_t *palette) {
 
     int16_t ret = -1;
     uint8_t ibuffer = 0;
@@ -171,7 +171,7 @@ int16_t ST77XX::initBuffer(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8
     return ret;
 }
 
-void ST77XX::deleteBuffers() {
+void Display::deleteBuffers() {
 
     for (int i = 0; i < MAX_BUFFERS; i++) {
 
@@ -181,7 +181,7 @@ void ST77XX::deleteBuffers() {
     this->curr_buffer = NULL;
 }
 
-void ST77XX::scrollBuffer(uint8_t ibuffer, uint16_t x, uint16_t y) {
+void Display::scrollBuffer(uint8_t ibuffer, uint16_t x, uint16_t y) {
 
     PixelBuffer *buffer = &this->buffers[ibuffer];
 
@@ -192,7 +192,7 @@ void ST77XX::scrollBuffer(uint8_t ibuffer, uint16_t x, uint16_t y) {
     }
 }
 
-void ST77XX::renderAll(void) {
+void Display::renderAll(void) {
 
     for (int i = 0; i < MAX_BUFFERS; i++) {
 
@@ -200,7 +200,7 @@ void ST77XX::renderAll(void) {
     }
 }
 
-void ST77XX::renderBuffer(uint8_t ibuffer) {
+void Display::renderBuffer(uint8_t ibuffer) {
     this->renderBuffer(ibuffer, false);
 }
 
@@ -217,14 +217,14 @@ void ST77XX::renderBuffer(uint8_t ibuffer) {
  *          TRANSFERRING IT.
  *          BECAUSE OF THIS, WE CAN'T USE A DEBUGGER HERE AS THE OVERHEAD CAN CAUSE THE DMA TO OVERRUN THE BUFFER FILLING
  */
-void ST77XX::renderBuffer(uint8_t ibuffer, bool force) {
+void Display::renderBuffer(uint8_t ibuffer, bool force) {
 
     PixelBuffer *buffer = &this->buffers[ibuffer];
 
     this->renderBuffer(buffer, force);
 }
 
-void ST77XX::renderBuffer(PixelBuffer *buffer, bool force) {
+void Display::renderBuffer(PixelBuffer *buffer, bool force) {
 
     if (buffer->width > 0 && (buffer->dirty || force)) {
 
@@ -342,14 +342,14 @@ void ST77XX::renderBuffer(PixelBuffer *buffer, bool force) {
     }
 }
 
-void ST77XX::DMATxHalfCpltCallback(void) {
+void Display::DMATxHalfCpltCallback(void) {
     this->DMAHalfTransferCompleted = true;
 }
 
-void ST77XX::DMATxCpltCallback(void) {
+void Display::DMATxCpltCallback(void) {
 }
 
-void ST77XX::setBuffer(uint8_t ibuffer) {
+void Display::setBuffer(uint8_t ibuffer) {
 
     if (this->buffers[ibuffer].buffer) {
         this->curr_buffer = &this->buffers[ibuffer];
@@ -358,7 +358,7 @@ void ST77XX::setBuffer(uint8_t ibuffer) {
     }
 }
 
-void ST77XX::fillBuffer(uint8_t ibuffer, uint16_t color) {
+void Display::fillBuffer(uint8_t ibuffer, uint16_t color) {
 
     PixelBuffer *buffer = &this->buffers[ibuffer];
 
@@ -374,14 +374,14 @@ void ST77XX::fillBuffer(uint8_t ibuffer, uint16_t color) {
     buffer->dirty = true;
 }
 
-void ST77XX::fill(uint16_t color) {
+void Display::fill(uint16_t color) {
 
     for (int i = 0; i < MAX_BUFFERS; i++) {
         this->fillBuffer(i, color);
     }
 }
 
-void ST77XX::setPixel(uint16_t x, uint16_t y, uint16_t c) {
+void Display::setPixel(uint16_t x, uint16_t y, uint16_t c) {
 
 //    if (!useDma) {
 //        //select();
@@ -413,7 +413,7 @@ void ST77XX::setPixel(uint16_t x, uint16_t y, uint16_t c) {
     // }
 }
 
-void ST77XX::fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, uint16_t color) {
+void Display::fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, uint16_t color) {
 
     uint16_t i, j;
 
@@ -424,11 +424,11 @@ void ST77XX::fill(uint16_t xSta, uint16_t ySta, uint16_t xEnd, uint16_t yEnd, ui
         }
 }
 
-void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     writeLine(x1, y1, x2, y2, this->color);
 }
 
-void ST77XX::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color) {
+void Display::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color) {
 
     int y = y1;
     if (y1 > y2) {
@@ -462,11 +462,11 @@ void ST77XX::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color)
     buffer->dirty = true;
 }
 
-void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
     this->writeLine(x1, y1, x2, y2, color, 1);
 }
 
-void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t width) {
+void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t width) {
     //select();
     uint16_t t;
     int xerr = 0, yerr = 0, delta_x, delta_y, distance;
@@ -518,12 +518,12 @@ void ST77XX::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint1
     //Unselect();
 }
 
-void ST77XX::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     //select();
     writeRect(x1, y1, x2, y1, WHITE);
 }
 
-void ST77XX::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
     //select();
     writeLine(x1, y1, x2, y1, color);
     writeLine(x1, y1, x1, y2, color);
@@ -532,7 +532,7 @@ void ST77XX::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint1
     //Unselect();
 }
 
-void ST77XX::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
+void Display::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
     //select();
     int16_t f = 1 - r;
     int16_t ddF_x = 1;
@@ -568,7 +568,7 @@ void ST77XX::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
     //Unselect();
 }
 
-void ST77XX::invertColors(uint8_t invert) {
+void Display::invertColors(uint8_t invert) {
     //select();
     writeCommand(invert ? 0x21 /* INVON */ : 0x20 /* INVOFF */);
     //Unselect();
@@ -582,7 +582,7 @@ void ST77XX::invertColors(uint8_t invert) {
 //
 //}
 
-void ST77XX::writeChar(uint16_t x, uint16_t y, char ch, FontDef *font, uint16_t color, uint16_t bgcolor) {
+void Display::writeChar(uint16_t x, uint16_t y, char ch, FontDef *font, uint16_t color, uint16_t bgcolor) {
 
     uint32_t i, b, j;
     uint16_t ix, iy;
@@ -608,7 +608,7 @@ void ST77XX::writeChar(uint16_t x, uint16_t y, char ch, FontDef *font, uint16_t 
     }
 }
 
-void ST77XX::writeString(uint16_t x, uint16_t y, const char *str, FontDef *font, uint16_t color, uint16_t bgcolor) {
+void Display::writeString(uint16_t x, uint16_t y, const char *str, FontDef *font, uint16_t color, uint16_t bgcolor) {
     //select();
     while (*str) {
         if (x + font->width >= DISPLAY_X_PIXELS) {
@@ -636,47 +636,47 @@ void ST77XX::writeString(uint16_t x, uint16_t y, const char *str, FontDef *font,
     //Unselect();
 }
 
-void ST77XX::gotoXY(uint16_t x, uint16_t y) {
+void Display::gotoXY(uint16_t x, uint16_t y) {
     px = x;
     py = y;
 }
 
-void ST77XX::gotoCharXY(uint16_t x, uint16_t y) {
+void Display::gotoCharXY(uint16_t x, uint16_t y) {
     px = this->padding_x + (x * font->width);
     py = this->verticalSpacing + (y * (font->height + (this->verticalSpacing * 2)));
 }
 
-uint8_t ST77XX::getVerticalLineSpacing() {
+uint8_t Display::getVerticalLineSpacing() {
     return this->verticalSpacing;
 }
 
-void ST77XX::setVerticalLineSpacing(uint8_t pixels) {
+void Display::setVerticalLineSpacing(uint8_t pixels) {
     this->verticalSpacing = pixels;
 }
 
-void ST77XX::setColor(uint8_t c) {
+void Display::setColor(uint8_t c) {
     this->color = c;
 }
 
-void ST77XX::setBgColor(uint8_t c) {
+void Display::setBgColor(uint8_t c) {
     this->bgColor = c;
 }
 
-size_t ST77XX::write(const uint8_t *buffer, size_t size) {
+size_t Display::write(const uint8_t *buffer, size_t size) {
     writeString(px, py, (const char *) buffer, font, color, bgColor);
     return 0;
 }
 
-size_t ST77XX::write(uint8_t c) {
+size_t Display::write(uint8_t c) {
     writeChar(px, py, c, font, color, bgColor);
     return 0;
 }
 
-void ST77XX::setFont(FontDef *f) {
+void Display::setFont(FontDef *f) {
     this->font = f;
 }
 
-void ST77XX::test(void) {
+void Display::test(void) {
     fill(BLACK);
     writeString(0, 0, "Welcome to", (FontDef *) &Font_11x18, BLACK, WHITE);
     renderAll();
@@ -690,27 +690,27 @@ void ST77XX::test(void) {
     HAL_Delay(1000);
 }
 
-size_t ST77XX::print(const char str[]) {
+size_t Display::print(const char str[]) {
     return write(str);
 }
 
-size_t ST77XX::print(char c) {
+size_t Display::print(char c) {
     return write(c);
 }
 
-size_t ST77XX::print(unsigned char b, int base) {
+size_t Display::print(unsigned char b, int base) {
     return print((unsigned long) b, base);
 }
 
-size_t ST77XX::print(int n, int base) {
+size_t Display::print(int n, int base) {
     return print((long) n, base);
 }
 
-size_t ST77XX::print(unsigned int n, int base) {
+size_t Display::print(unsigned int n, int base) {
     return print((unsigned long) n, base);
 }
 
-size_t ST77XX::print(long n, int base) {
+size_t Display::print(long n, int base) {
     if (base == 0) {
         return write(n);
     } else if (base == 10) {
@@ -725,18 +725,18 @@ size_t ST77XX::print(long n, int base) {
     }
 }
 
-size_t ST77XX::print(unsigned long n, int base) {
+size_t Display::print(unsigned long n, int base) {
     if (base == 0)
         return write(n);
     else
         return printNumber(n, base);
 }
 
-size_t ST77XX::print(double n, int digits) {
+size_t Display::print(double n, int digits) {
     return printFloat(n, digits);
 }
 
-size_t ST77XX::printNumber(unsigned long n, uint8_t base) {
+size_t Display::printNumber(unsigned long n, uint8_t base) {
     char buf[8 * sizeof(long) + 1]; // Assumes 8-bit chars plus zero byte.
     char *str = &buf[sizeof(buf) - 1];
 
@@ -756,7 +756,7 @@ size_t ST77XX::printNumber(unsigned long n, uint8_t base) {
     return write(str);
 }
 
-size_t ST77XX::printFloat(double number, uint8_t digits) {
+size_t Display::printFloat(double number, uint8_t digits) {
     size_t n = 0;
 
     if (isnan(number))

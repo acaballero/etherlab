@@ -10,7 +10,7 @@
 #include "power_amp.h"
 #include "fatfs/fatfs.h"
 
-TitleBarWidget::TitleBarWidget(const Rect &parentRect, ILI9341 *display) : Widget(parentRect, display) {
+TitleBarWidget::TitleBarWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
     sdcard_signal.add(this, TitleBarWidget::signal_static_callback);
     battery::battery_signal.add(this, TitleBarWidget::signal_static_callback);
     power_amp::temp_signal.add(this, TitleBarWidget::signal_static_callback);

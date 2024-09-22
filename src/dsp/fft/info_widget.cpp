@@ -18,7 +18,7 @@ void InfoWidget::paint_callback() {
 
     display->setBgColor(C565_BLACK);
     display->setColor(C565_WHITE);
-    display->setFont((FontDef *) &Font_Fixed5x7);
+    display->setFont((FontDef *) &Font_7x10);
     display->gotoCharXY(0, 0);
     format_long(fft_params.span / 1000, buf);
 
@@ -31,17 +31,14 @@ void InfoWidget::paint_callback() {
     format_long(fft_fs, buf);
     display->print("ADC:", buf, " kHz");
 
-    display->gotoCharXY(25, 0);
-
-    snprintf(buf, 12, "Slices: %d", fft_params.n_slices);
-    display->print(buf);
-
     if (fft_params.decimation_factor > 1) {
 
         snprintf(buf, 6, "[x%d]", fft_params.decimation_factor);
-
         display->print(buf);
     }
+
+    snprintf(buf, 12, " Slices: %d", fft_params.n_slices);
+    display->print(buf);
 
     snprintf(buf, 6, " %.0f", fft_params.display_rbw);
     display->print(" RBW:", buf, " Hz");
@@ -74,7 +71,7 @@ void InfoWidget::paint_callback() {
     display->print(" AGC: ", buf, " V");
 
     if (status::systemStatus.code != status::ST_OK) {
-        display->gotoCharXY(0, 5);
+        display->gotoCharXY(0, 3);
         display->setColor(C565_RED);
         display->print(status::systemStatus.msg);
     }

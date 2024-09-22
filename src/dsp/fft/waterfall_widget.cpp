@@ -11,7 +11,7 @@ __attribute__((section(".fccmram")))
 #define PIXELS_PER_BYTE 2
 uint8_t waterfallBuffer[DISPLAY_X_PIXELS * FFT_WATERFALL_HEIGHT * PIXELS_PER_BYTE];
 
-WaterfallWidget::WaterfallWidget(const Rect &parentRect, ILI9341 *display) : Widget(parentRect, display) {
+WaterfallWidget::WaterfallWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
 
     this->display->convertPalette888to565(this->waterfall_palette_rgb256, this->waterfall_palette_rgb565, 16);
 

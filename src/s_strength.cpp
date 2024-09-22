@@ -28,7 +28,8 @@
 #define S_STRENGTH_V_DB_LOGAMP 0.02
 #define S_STRENGTH_S1_LOGAMP (S_STRENGTH_S9_LOGAMP - (8*6*S_STRENGTH_V_DB_LOGAMP))
 
-#define SQUELCH_HYSTERESIS 0.92
+// Minimum time to turn on squelch after the signal goes under the threshold
+#define SQUELCH_TIMEOUT_MS 500
 
 namespace sstrength {
 
@@ -39,8 +40,10 @@ namespace sstrength {
             .in_squelch = false,
             .level = config.squelch_level
     };
+    bool last_squelch_test;
     float s_strength;
     float s_level;
+    uint64_t last_activation_trigger_ms=0;
     periodic_task task(50, check_signal_strength);
 
     // Converts dBs to S-units
@@ -117,7 +120,7 @@ namespace sstrength {
 
         if (!ISTX && (config.squelch_auto || config.squelch_level > 0)) {
 
-            double squelch_level = 0;
+            double squelch_level;
 
             if (config.squelch_auto) {
                 // If squelch is in auto mode, it's level is calculated from the noise floor
@@ -126,13 +129,27 @@ namespace sstrength {
                 squelch_level = config.squelch_level;
             }
 
-            // Apply some hysteresis
-            if (!info.in_squelch) squelch_level *= SQUELCH_HYSTERESIS;
 
-            bool new_squelch = s_level < squelch_level;
+            bool emit=false;
+            bool in_squelch = s_level < squelch_level;
 
-            if (new_squelch != info.in_squelch) {
-                info.in_squelch = new_squelch;
+            if (in_squelch != last_squelch_test) {
+                if (in_squelch) {
+                    last_activation_trigger_ms = HAL_GetTick();
+                }
+                else {
+                    emit = true; // de-squelch immediately
+                }
+
+                last_squelch_test = in_squelch;
+            }
+            else if (in_squelch && last_activation_trigger_ms && HAL_GetTick() - last_activation_trigger_ms > SQUELCH_TIMEOUT_MS) {
+                emit = true;
+                last_activation_trigger_ms = 0;
+            }
+
+            if (emit) {
+                info.in_squelch = in_squelch;
                 info.level = config.squelch_level;
                 squelch_signal.emit(&info);
             }

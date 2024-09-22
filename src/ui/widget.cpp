@@ -189,11 +189,11 @@ void Widget::dirty_overlapping_children_in_rect(const Rect &child_rect) {
     }
 }
 
-ILI9341 *Widget::get_display() const {
+Display *Widget::get_display() const {
     return display;
 }
 
-void Widget::set_display(ILI9341 *display) {
+void Widget::set_display(Display *display) {
     Widget::display = display;
 }
 

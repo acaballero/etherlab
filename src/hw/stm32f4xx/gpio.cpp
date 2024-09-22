@@ -9,6 +9,7 @@
 // MCP23017 GPIO expansion port descriptors
 MCP23017_HandleTypeDef hmcp01;
 MCP23017_HandleTypeDef hmcp02;
+MCP23017_HandleTypeDef hmcp03; // Front panel
 
 /**
   * @brief GPIO Initialization Function
@@ -104,29 +105,36 @@ void MX_GPIO_Init(void) {
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin =  DISP_CE_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /****** TEST PINS **************/
     GPIO_InitStruct.Pin =  GPIO_PIN_13 | GPIO_PIN_11;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
     /* TOUCH_CE_PIN  */
     GPIO_InitStruct.Pin =  TOUCH_CE_PIN ;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(TOUCH_CE_PORT, &GPIO_InitStruct);
 
-    /*Configure GPIO pins : DISP_RST_PIN DISP_DC_PIN */
-    GPIO_InitStruct.Pin = DISP_RST_PIN | DISP_DC_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+    /*Configure GPIO pins : DISP_RST_PIN  */
+    GPIO_InitStruct.Pin = DISP_RST_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+    HAL_GPIO_Init(DISP_RST_PORT, &GPIO_InitStruct);
+
+    /*Configure GPIO pins : DISP_DC_PIN */
+    GPIO_InitStruct.Pin = DISP_DC_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(DISP_DC_PORT, &GPIO_InitStruct);
 
 
     /*Configure GPIO pins : POW_CTRL_SET_PIN POW_CTRL_CLK_PIN */
@@ -137,10 +145,10 @@ void MX_GPIO_Init(void) {
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /*Configure GPIO pin : ANALOG_KEYBOARD_INTERRUPT_PIN */
-    GPIO_InitStruct.Pin = ANALOG_KEYBOARD_INTERRUPT_PIN;
+    GPIO_InitStruct.Pin = FRONT_PANEL_INTERRUPT_PIN_A;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    HAL_GPIO_Init(ANALOG_KEYBOARD_INTERRUPT_PORT, &GPIO_InitStruct);
+    HAL_GPIO_Init(FRONT_PANEL_INTERRUPT_PIN_A_PORT, &GPIO_InitStruct);
 
     /* EXTI interrupt init*/
 

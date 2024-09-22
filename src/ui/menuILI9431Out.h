@@ -7,7 +7,7 @@ ILI9431 (with partial (multiple callbacks to draw a panel) DMA drawing)
 #ifndef MENU_ILI9431_OUT
 #define MENU_ILI9431_OUT
 
-#include "../../lib/ST77XX-STM32/ILI9341_fb.h"
+#include "../../lib/ST77XX-STM32/st7789_fb.h"
 #include "../../lib/Menu/src/menuDefs.h"
 
 namespace Menu {
@@ -16,10 +16,10 @@ namespace Menu {
 
     class menuILI9431Out : public gfxOut {
     public:
-        ILI9341 &gfx;
+        Display &gfx;
         const colorDef<uint16_t> (&colors)[nColors];
 
-        menuILI9431Out(ILI9341 &gfx, const colorDef<uint16_t> (&c)[nColors], idx_t *t, panelsList &p, idx_t resX = 6,
+        menuILI9431Out(Display &gfx, const colorDef<uint16_t> (&c)[nColors], idx_t *t, panelsList &p, idx_t resX = 6,
                        idx_t resY = 9)
                 : gfxOut(resX, resY, t, p, (menuOut::styles) (menuOut::redraw | menuOut::rasterDraw), 2), gfx(gfx), colors(c) {}
         //:gfxOut(gfx.width()/resX,gfx.height()/resY,resX,resY,false),colors(c),gfx(gfx) {}

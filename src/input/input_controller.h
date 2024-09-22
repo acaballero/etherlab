@@ -14,7 +14,6 @@
 #define DISPATCH_INMEDIATELY false
 #define MAX_EVENTS_IN_QUEUE 3
 
-
 extern InputPinController PinController;
 
 void onInputEvent(st_inputEvent e);

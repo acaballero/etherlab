@@ -5,7 +5,7 @@
 
 uint16_t BACK_COLOR = 0x0000;
 
-ILI9341::ILI9341(SPI_HandleTypeDef *spi_port) : ST77XX(spi_port) {
+ILI9341::ILI9341(SPI_HandleTypeDef *spi_port) : Display(spi_port) {
 }
 
 int16_t ILI9341::begin(void) {

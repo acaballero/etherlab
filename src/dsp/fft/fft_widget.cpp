@@ -7,7 +7,7 @@
 #include "fft.h"
 #include "agc.h"
 
-FFTWidget::FFTWidget(const Rect &parentRect, ILI9341 *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display),
+FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display),
                                                                                        style{s} {
 }
 

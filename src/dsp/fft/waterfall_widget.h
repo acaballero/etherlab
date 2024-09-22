@@ -15,7 +15,7 @@
 class WaterfallWidget : public Widget {
 public:
 
-    WaterfallWidget(const Rect &parentRect, ILI9341 *display);
+    WaterfallWidget(const Rect &parentRect, Display *display);
 
     void paint_callback() override;
 

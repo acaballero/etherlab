@@ -1,0 +1,162 @@
+#ifndef __ST7789_FB_H
+#define __ST7789_FB_H
+
+#include "hw/stm32.h"
+#include <stdint-gcc.h>
+#include <string.h>
+#include "ips_font.h"
+#include "Display_afb.h"
+
+#define ST7789_RST_PORT DISP_RST_PORT
+#define ST7789_RST_PIN DISP_RST_PIN
+#define ST7789_DC_PORT DISP_DC_PORT
+#define ST7789_DC_PIN DISP_DC_PIN
+#define ST7789_CS_PORT DISP_CE_PORT
+#define ST7789_CS_PIN DISP_CE_PIN
+#define ST7789_LED_PORT DISP_LED_PORT
+#define ST7789_LED_PIN DISP_LED_PIN
+
+#define ST7796S_NOP            0x00
+#define ST7796S_SWRESET        0x01
+
+#define ST7796S_RDDID          0x04
+#define ST7796S_RDDST          0x09
+#define ST7796S_RDMODE         0x0A
+#define ST7796S_RDMADCTL       0x0B
+#define ST7796S_RDPIXFMT       0x0C
+#define ST7796S_RDIMGFMT       0x0D
+#define ST7796S_RDSELFDIAG     0x0F
+
+#define ST7796S_SLPIN          0x10
+#define ST7796S_SLPOUT         0x11
+#define ST7796S_PTLON          0x12
+#define ST7796S_NORON          0x13
+
+#define ST7796S_INVOFF         0x20
+#define ST7796S_INVON          0x21
+//#define ST7796S_GAMMASET       0x26
+#define ST7796S_DISPOFF        0x28
+#define ST7796S_DISPON         0x29
+
+#define ST7796S_CASET          0x2A
+#define ST7796S_PASET          0x2B
+#define ST7796S_RAMWR          0x2C
+#define ST7796S_RAMRD          0x2E
+
+#define ST7796S_PTLAR          0x30
+#define ST7796S_VSCRDEF        0x33
+#define ST7796S_MADCTL         0x36
+#define ST7796S_VSCRSADD       0x37     /* Vertical Scrolling Start Address */
+#define ST7796S_PIXFMT         0x3A     /* COLMOD: Pixel Format Set */
+
+#define ST7796S_RGB_INTERFACE  0xB0     /* RGB Interface Signal Control */
+#define ST7796S_FRMCTR1        0xB1
+#define ST7796S_FRMCTR2        0xB2
+#define ST7796S_FRMCTR3        0xB3
+#define ST7796S_INVCTR         0xB4
+#define ST7796S_DFUNCTR        0xB6     /* Display Function Control */
+
+#define ST7796S_PWCTR1         0xC0
+#define ST7796S_PWCTR2         0xC1
+#define ST7796S_PWCTR3         0xC2
+#define ST7796S_PWCTR4         0xC3
+#define ST7796S_PWCTR5         0xC4
+#define ST7796S_VMCTR1         0xC5
+
+#define ST7796S_RDID1          0xDA
+#define ST7796S_RDID2          0xDB
+#define ST7796S_RDID3          0xDC
+#define ST7796S_RDID4          0xDD
+
+#define ST7796S_GMCTRP1        0xE0
+#define ST7796S_GMCTRN1        0xE1
+#define ST7796S_DGCTR1         0xE2
+#define ST7796S_DGCTR2         0xE3
+
+//-----------------------------------------------------------------------------
+#define ST7796S_MAD_RGB        0x08
+#define ST7796S_MAD_BGR        0x00
+
+#define ST7796S_MAD_VERTICAL   0x20
+#define ST7796S_MAD_X_LEFT     0x00
+#define ST7796S_MAD_X_RIGHT    0x40
+#define ST7796S_MAD_Y_UP       0x80
+#define ST7796S_MAD_Y_DOWN     0x00
+
+#define ST7796S_ORIENTATION 3
+
+#if ST7796S_COLORMODE == 0
+#define ST7796S_MAD_COLORMODE  ST7796S_MAD_RGB
+#else
+#define ST7796S_MAD_COLORMODE  ST7796S_MAD_BGR
+#endif
+
+#if (ST7796S_ORIENTATION == 0)
+#define ST7796S_SIZE_X                     ST7796S_LCD_PIXEL_WIDTH
+#define ST7796S_SIZE_Y                     ST7796S_LCD_PIXEL_HEIGHT
+#define ST7796S_MAD_DATA_RIGHT_THEN_UP     ST7796S_MAD_COLORMODE | ST7796S_MAD_X_RIGHT | ST7796S_MAD_Y_UP
+#define ST7796S_MAD_DATA_RIGHT_THEN_DOWN   ST7796S_MAD_COLORMODE | ST7796S_MAD_X_RIGHT | ST7796S_MAD_Y_DOWN
+#define ST7796S_MAD_DATA_RGBMODE           ST7796S_MAD_COLORMODE | ST7796S_MAD_X_LEFT  | ST7796S_MAD_Y_DOWN
+#elif (ST7796S_ORIENTATION == 1)
+#define ST7796S_SIZE_X                     ST7796S_LCD_PIXEL_HEIGHT
+#define ST7796S_SIZE_Y                     ST7796S_LCD_PIXEL_WIDTH
+#define ST7796S_MAD_DATA_RIGHT_THEN_UP     ST7796S_MAD_COLORMODE | ST7796S_MAD_X_RIGHT | ST7796S_MAD_Y_DOWN | ST7796S_MAD_VERTICAL
+#define ST7796S_MAD_DATA_RIGHT_THEN_DOWN   ST7796S_MAD_COLORMODE | ST7796S_MAD_X_LEFT  | ST7796S_MAD_Y_DOWN | ST7796S_MAD_VERTICAL
+#define ST7796S_MAD_DATA_RGBMODE           ST7796S_MAD_COLORMODE | ST7796S_MAD_X_RIGHT | ST7796S_MAD_Y_DOWN
+#elif (ST7796S_ORIENTATION == 2)
+#define ST7796S_SIZE_X                     ST7796S_LCD_PIXEL_WIDTH
+#define ST7796S_SIZE_Y                     ST7796S_LCD_PIXEL_HEIGHT
+#define ST7796S_MAD_DATA_RIGHT_THEN_UP     ST7796S_MAD_COLORMODE | ST7796S_MAD_X_LEFT  | ST7796S_MAD_Y_DOWN
+#define ST7796S_MAD_DATA_RIGHT_THEN_DOWN   ST7796S_MAD_COLORMODE | ST7796S_MAD_X_LEFT  | ST7796S_MAD_Y_UP
+#define ST7796S_MAD_DATA_RGBMODE           ST7796S_MAD_COLORMODE | ST7796S_MAD_X_RIGHT | ST7796S_MAD_Y_UP
+#elif (ST7796S_ORIENTATION == 3)
+#define ST7796S_SIZE_X                     ST7796S_LCD_PIXEL_HEIGHT
+#define ST7796S_SIZE_Y                     ST7796S_LCD_PIXEL_WIDTH
+#define ST7796S_MAD_DATA_RIGHT_THEN_UP     ST7796S_MAD_COLORMODE | ST7796S_MAD_X_LEFT  | ST7796S_MAD_Y_UP   | ST7796S_MAD_VERTICAL
+#define ST7796S_MAD_DATA_RIGHT_THEN_DOWN   ST7796S_MAD_COLORMODE | ST7796S_MAD_X_RIGHT | ST7796S_MAD_Y_UP   | ST7796S_MAD_VERTICAL
+#define ST7796S_MAD_DATA_RGBMODE           ST7796S_MAD_COLORMODE | ST7796S_MAD_X_LEFT  | ST7796S_MAD_Y_UP
+#endif
+
+#define ST7789_RST_Clr() HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_RESET)
+#define ST7789_RST_Set() HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_SET)
+
+#define ST7789_DC_Clr() HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_RESET)
+#define ST7789_DC_Set() HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_SET)
+
+#define ST7789_CS_Clr() HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_RESET)
+#define ST7789_CS_Set() HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_SET)
+
+class ST7789: public Display {
+
+public:
+
+    ST7789(SPI_HandleTypeDef *);
+
+    int16_t begin();
+
+    void select();
+
+    void unselect();
+
+    void reset();
+
+    int16_t stop();
+
+
+private:
+
+    void writeCommand(uint8_t data);
+
+    void writeData(uint8_t *buff, size_t buff_size);
+
+    void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+
+    virtual void InitDisplayDataTransfer();
+
+    virtual void EndDisplayDataTransfer();
+
+};
+
+
+#endif
+

@@ -8,8 +8,12 @@
 #include "handlers.h"
 #include <stm32f4xx.h>
 
+// IO Expanders
 i2cbitbang i2cport01(I2CBB_MCP23017, MCP23017_ADDRESS_20 << 1);  // We shift the address left because this is a 7-bit, left aligned addressed device
 i2cbitbang i2cport02(I2CBB_MCP23017, MCP23017_ADDRESS_24 << 1);
+
+// Front panel IO expander
+i2cbitbang i2cport03(I2CBB_MCP23017, MCP23017_ADDRESS_22 << 1);
 
 SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi4;
@@ -619,6 +623,7 @@ void BitBangI2C_setup() {
 
     i2cport01.setSpeed(SPEED_10k);
     i2cport02.setSpeed(SPEED_10k);
+    i2cport03.setSpeed(SPEED_10k);
 
     hmcp01.i2cbb = &i2cport01;
 
@@ -629,6 +634,11 @@ void BitBangI2C_setup() {
 
     mcp23017_iodir(&hmcp02, MCP23017_PORTA, MCP23017_IODIR_ALL_OUTPUT);
     mcp23017_iodir(&hmcp02, MCP23017_PORTB, MCP23017_IODIR_ALL_OUTPUT);
+
+    hmcp03.i2cbb = &i2cport03;
+
+    mcp23017_iodir(&hmcp03, MCP23017_PORTA, MCP23017_IODIR_ALL_OUTPUT);
+    mcp23017_iodir(&hmcp03, MCP23017_PORTB, MCP23017_IODIR_ALL_OUTPUT);
 
     //mcp23017_iodir(&hmcp, MCP23017_PORTB, MCP23017_IODIR_ALL_INPUT);
 

@@ -12,7 +12,7 @@
 class TitleBarWidget : public Widget {
 
 public:
-    TitleBarWidget(const Rect &parentRect, ILI9341 *display);
+    TitleBarWidget(const Rect &parentRect, Display *display);
 
     void paint_callback() override;
 

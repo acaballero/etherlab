@@ -8,12 +8,11 @@
 #include "../../lib/InputPin/GPIOInputPin.h"
 
 extern GPIOInputPin TouchPanelInterruptPin;
-extern GPIOInputPin AnalogKeyBoardInterruptPin;
+extern GPIOInputPin FrontPanelInterruptPin;
 extern GPIOInputPin BackBtnInputPin;
-void calibrateAnalogKeyboard();
-void analogKeyboardInterruptCallback();
 void touchPanelInterruptCallback();
 void backBtnInterruptCallback();
+void frontPanelInterruptCallback();
 extern int8_t analogKeyboardLastPressedButton;
 
 #endif //TRX_FRONTEND_INPUT_H

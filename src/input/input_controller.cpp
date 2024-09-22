@@ -16,6 +16,7 @@
 #include "standby.h"
 #include "radio.h"
 #include "ui/view_manager.h"
+#include "../../lib/ST77XX-STM32/XPT2046_touch.h"
 
 InputPinController PinController(INPUT_PIN_CONTROLLER_TIMER);
 
@@ -45,17 +46,17 @@ void inputControllerInit() {
     RotBInputPin.init();
     RotBtnInputPin.init();
     BackBtnInputPin.init();
-    AnalogKeyBoardInterruptPin.init();
+    FrontPanelInterruptPin.init();
     TouchPanelInterruptPin.init();
 
     // Add pins to controller
     PinController.addPin(&RotBtnInputPin);
     PinController.addPin(&RotAInputPin);
     PinController.addPin(&BackBtnInputPin);
-    PinController.addPin(&AnalogKeyBoardInterruptPin);
+    PinController.addPin(&FrontPanelInterruptPin);
     PinController.addPin(&TouchPanelInterruptPin);
 
-    calibrateAnalogKeyboard();
+    //calibrateAnalogKeyboard();
 
     // Set the debounce timer rate
     set_timer_sample_rate(INPUT_PIN_CONTROLLER_TIMER, INPUT_PIN_CONTROLLER_TIMER_CLOCK_HZ, 1000);
