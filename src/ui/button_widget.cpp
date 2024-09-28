@@ -37,14 +37,23 @@ void Button::paint_callback() {
 
     display->fill(1, 1, area.width - 1, area.height - 2, bg);
 
-    uint16_t text_width = font->width * strlen(text);
-    uint16_t text_height = font->height + 2;
+    uint16_t text_height = font->height;
 
-    display->gotoXY((area.width - text_width) / 2,
-                    (area.height - text_height) / 2);
-    display->setColor(fg);
-    display->setBgColor(bg);
-    display->write(text);
+    if (fn_writer) {
+        display->gotoXY(display->get_padding_x(),
+                        (area.height - text_height) / 2);
+        fn_writer();
+    }
+    else {
+        uint16_t text_width = font->width * strlen(text);
+
+
+        display->gotoXY((area.width - text_width) / 2,
+                        (area.height - text_height) / 2);
+        display->setColor(fg);
+        display->setBgColor(bg);
+        display->write(text);
+    }
 }
 
 void Button::on_focus() {

@@ -8,8 +8,9 @@
 
 #ifndef DISPLAY_X_PIXELS
 #if USING_HORIZONAL == 0 || USING_HORIZONAL == 1
-#define DISPLAY_X_PIXELS 480
-#define DISPLAY_Y_PIXELS 320
+#define DISPLAY_PADDING 10
+#define DISPLAY_X_PIXELS (480-(DISPLAY_PADDING<<1))
+#define DISPLAY_Y_PIXELS (320-(DISPLAY_PADDING<<1))
 #else
 #define DISPLAY_X_PIXELS 240
 #define DISPLAY_Y_PIXELS 240
@@ -94,7 +95,8 @@ public:
 
     virtual void reset() = 0;
 
-    void drawArea(Area *, Painter *);
+    void drawArea(Area *area, Painter *painter);
+    void drawArea(Area *, Painter *, bool pad_display);
 
     uint8_t renderString(uint8_t x, uint8_t y, uint16_t length);
 

@@ -8,12 +8,13 @@
 #include "inputEvent.h"
 #include "input_controller.h"
 #include "../lib/ST77XX-STM32/XPT2046_touch.h"
+#include "mcp23017.h"
 
 
-int8_t analogKeyboardLastPressedButton = -1;
+int8_t last_pressed_button_id = -1;
 GPIOInputPin FrontPanelInterruptPin(FRONT_PANEL_INTERRUPT_PIN_A, FRONT_PANEL_INTERRUPT_PIN_A_PORT, PINMODE_IT,
-                                        GPIO_NOPULL, 0,
-                                        frontPanelInterruptCallback);
+                                    GPIO_NOPULL, 0,
+                                    frontPanelInterruptCallback);
 
 GPIOInputPin TouchPanelInterruptPin(TOUCH_IRQ_PIN, TOUCH_IRQ_PORT, PINMODE_IT, GPIO_NOPULL, 2,
                                     touchPanelInterruptCallback);
@@ -41,8 +42,35 @@ void touchPanelInterruptCallback() {
     xpt2046_touch_check(&xpt2046_touch);
 }
 
-void frontPanelInterruptCallback() {
+uint8_t get_front_panel_int_pin() {
+    uint8_t reg = 0;
+    mcp23017_read(&hmcp03, REGISTER_INTFA, &reg);
+    for (int i = 0; i < 8; i++) if ((reg & (1 << i)) == (1 << i)) return i;
+    mcp23017_read(&hmcp03, REGISTER_INTFB, &reg);
+    for (int i = 0; i < 8; i++) if ((reg & (1 << i)) == (1 << i)) return i + 8;
+    return 16;
+}
 
+void frontPanelInterruptCallback() {
+    // Note this will be called twice since the interrupt fires also on rising edges
+    // and we're using an MCP23017 (one pulse per button change). The second time pin will be set to 16 so it has no
+    // effect
+    uint8_t pin = get_front_panel_int_pin();
+
+
+    if (pin < 16) {
+        if (last_pressed_button_id >= 0 && pin == last_pressed_button_id) {
+            onInputEvent({INPUT_EVENT_TYPE_BUTTON_RELEASE, pin});
+            last_pressed_button_id = -1;
+        } else {
+            onInputEvent({INPUT_EVENT_TYPE_BUTTON_PRESS, pin, 0, HAL_GetTick()});
+            last_pressed_button_id = pin;
+        }
+    }
+
+    uint8_t reg = 0;
+    mcp23017_read(&hmcp03, REGISTER_INTCAPA, &reg);
+    mcp23017_read(&hmcp03, REGISTER_INTCAPB, &reg);
 }
 
 /*void analogKeyboardInterruptCallback() {

@@ -9,7 +9,18 @@
 #define CLOCK_SOURCE_HSE_BYPASS_NO_USB 1 // 180 Mhz (48 MHz clocks at 45 MHz)
 #define CLOCK_SOURCE_HSE 2 // USB clock at 48 MHz
 #define CLOCK_SOURCE CLOCK_SOURCE_HSE
-
+#define OVERCLOCK 1
+#if OVERCLOCK
+#define PLL_N 352
+#define PLL_M 18
+#define PLL_P RCC_PLLP_DIV2
+#define PLL_Q 11
+#else
+#define PLL_N 187
+#define PLL_M 15
+#define PLL_P RCC_PLLP_DIV2
+#define PLL_Q 7
+#endif
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -38,10 +49,10 @@ void SystemClock_Config(void) {
     RCC_OscInitStruct.LSEState = RCC_LSE_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLM = 15;
-    RCC_OscInitStruct.PLL.PLLN = 187;
+    RCC_OscInitStruct.PLL.PLLM = PLL_M;
+    RCC_OscInitStruct.PLL.PLLN = PLL_N;
     RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-    RCC_OscInitStruct.PLL.PLLQ = 7;
+    RCC_OscInitStruct.PLL.PLLQ = PLL_Q;
     HAL_StatusTypeDef ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
     if (ret != HAL_OK)
     {

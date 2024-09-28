@@ -19,15 +19,15 @@ void View::paint_callback() {
 
 void View::paint() {
 
-    if( this->flags.visible ) {
+    if (this->flags.visible) {
 
-        if( this->flags.dirty ) {
+        if (this->flags.dirty) {
 
             // Clear background
-            display->drawArea(&this->area,this);
+            display->drawArea(&this->area, this, false);
 
             // Force-paint all children.
-            for(const auto child : this->children()) {
+            for (const auto child: this->children()) {
                 if (child->visible()) {
                     child->set_dirty();
                     child->paint();
@@ -35,11 +35,11 @@ void View::paint() {
                 }
             }
 
-            this->flags.dirty=false;
+            this->flags.dirty = false;
 
         } else {
             // Selectively paint all children.
-            for(const auto child : this->children()) {
+            for (const auto child: this->children()) {
                 if (child->visible()) {
                     child->paint();
                     child->set_clean();
@@ -51,30 +51,30 @@ void View::paint() {
     Widget::paint();
 }
 
-void View::add_child(Widget* const widget) {
-    if( widget ) {
-        if( widget->parent() == nullptr ) {
+void View::add_child(Widget *const widget) {
+    if (widget) {
+        if (widget->parent() == nullptr) {
             widget->set_parent(this);
             children_.push_back(widget);
         }
     }
 }
 
-void View::add_children(const std::initializer_list<Widget*> children) {
+void View::add_children(const std::initializer_list<Widget *> children) {
     children_.insert(std::end(children_), children);
-    for(auto child : children) {
+    for (auto child: children) {
         child->set_parent(this);
     }
 }
 
-void View::remove_child(Widget* const widget) {
-    if( widget ) {
+void View::remove_child(Widget *const widget) {
+    if (widget) {
         children_.erase(std::remove(children_.begin(), children_.end(), widget), children_.end());
         widget->set_parent(nullptr);
     }
 }
 
-const std::vector<Widget*>& View::children() const {
+const std::vector<Widget *> &View::children() const {
     return children_;
 }
 

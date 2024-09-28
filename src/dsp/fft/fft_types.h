@@ -96,7 +96,7 @@ typedef struct {
     uint8_t conversion_time_us = 3; // Conversion time of the ADCs
     bool enabled = true;
     uint8_t refresh_period_ms = 25; // Try 40 fps
-    uint16_t waterfall_refresh_period_ms = 400;
+    uint16_t waterfall_refresh_period_ms = 300;
 
     int16_t DCOffset_I = 0;
     int16_t DCOffset_Q = 0;

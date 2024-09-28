@@ -15,6 +15,7 @@ public:
     // The minimum debounce period is determined by the timer period, which, at the time of writing this, is 5ms
     GPIOInputPin(uint32_t pin,GPIO_TypeDef *port,PinMode mode, uint16_t debounce_ms, void (*onChange)()) : GPIOInputPin(pin,port,mode,GPIO_PULLUP,debounce_ms,onChange) {};
     GPIOInputPin(uint32_t pin,GPIO_TypeDef *port,PinMode mode, uint32_t pull, uint16_t debounce_ms, void (*onChange)()) : InputPin(mode,debounce_ms,onChange), pin(pin),port(port), pull(pull) {};
+    GPIOInputPin(uint32_t pin,GPIO_TypeDef *port,InterruptMode mode, uint32_t pull, uint16_t debounce_ms, void (*onChange)()) : InputPin(mode,debounce_ms,onChange), pin(pin),port(port), pull(pull) {};
     void init();
 
     GPIO_PinState read();

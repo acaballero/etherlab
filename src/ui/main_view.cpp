@@ -9,7 +9,7 @@
 #include "status.h"
 #include "view_manager.h"
 
-MainView::MainView() : View() {
+MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS+DISPLAY_PADDING*2,DISPLAY_Y_PIXELS+DISPLAY_PADDING*2}) {
 
     this->fft_w.set_show_fps(true);
     this->tune_w.set_visible(config.debug);

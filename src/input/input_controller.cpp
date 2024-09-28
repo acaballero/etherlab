@@ -120,7 +120,7 @@ void processEvent(st_inputEvent *e) {
 
                 switch (e->value) {
 
-                    case 1: // PTT
+                    case FPANEL_PAD_BUTTON_6: // PTT
                         MODE mode;
                         if (config.mode == ANALOG_RX || config.mode == ANALOG_TX) {
                             mode = config.mode == ANALOG_RX ? ANALOG_TX : ANALOG_RX;
@@ -150,7 +150,7 @@ void processEvent(st_inputEvent *e) {
             case INPUT_EVENT_TYPE_BUTTON_RELEASE:
 
                 switch (e->value) {
-                    case 1: // Release TX
+                    case FPANEL_PAD_BUTTON_6: // Release TX
                         if (lastEvent.type != INPUT_EVENT_TYPE_BUTTON_DBL_PRESS || lastEvent.value != e->value) {
                             main_board::setMode(config.mode == DIGITAL_TX ? DIGITAL_RX : ANALOG_RX);
                         }

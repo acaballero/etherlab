@@ -144,10 +144,10 @@ void MX_GPIO_Init(void) {
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /*Configure GPIO pin : ANALOG_KEYBOARD_INTERRUPT_PIN */
+    /*Configure GPIO pin : FRONT_PANEL_INTERRUPT_PIN_A */
     GPIO_InitStruct.Pin = FRONT_PANEL_INTERRUPT_PIN_A;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(FRONT_PANEL_INTERRUPT_PIN_A_PORT, &GPIO_InitStruct);
 
     /* EXTI interrupt init*/

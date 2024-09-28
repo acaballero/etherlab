@@ -35,9 +35,7 @@ void GPIOInputPin::init() {
     GPIO_InitStruct.Pin = this->pin;
 
     if (this->mode == PINMODE_IT) {
-
-        // In IT mode, the pin must be configured to interrupt at both edges. Otherwise, the current logic won't be able to properly track both states
-        GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+        GPIO_InitStruct.Mode = this->int_mode == INTERRUPTMODE_FALLING_RISING ? GPIO_MODE_IT_RISING_FALLING : GPIO_MODE_IT_FALLING;
     } else {
 
         GPIO_InitStruct.Mode = GPIO_MODE_INPUT;

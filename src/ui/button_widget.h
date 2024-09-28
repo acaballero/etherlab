@@ -53,6 +53,8 @@ public:
 
     void set_font(FontDef *font);
 
+    std::function<void()> fn_writer; // Handler to delegate the writing
+
 protected:
     uint16_t bg_color = C565_GREY_DARK;
     uint16_t shadow=C565_GREY_DARKER;

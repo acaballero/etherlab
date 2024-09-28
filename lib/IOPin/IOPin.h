@@ -15,6 +15,7 @@ public:
 
     virtual GPIO_PinState read() = 0;
     virtual void set(GPIO_PinState) = 0;
+    virtual GPIO_PinState toggle() = 0;
 
 protected:
 

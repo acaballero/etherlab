@@ -45,6 +45,7 @@ USBPrint usb;
 #include "hw/stm32f4xx/adc.h"
 #include "GPIOPin.h"
 #include "input/touch.h"
+#include "MCP23017Pin.h"
 
 
 #define ENABLE_GPIO_CLOCK (RCC->AHBENR |= RCC_AHBENR_GPIOEEN | RCC_AHBENR_GPIOBEN)
@@ -65,6 +66,7 @@ bool printADC = false;
 #define pinmask(P)((uint8_t)(1<<pinIndex(P)))
 
 GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
+MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB,&hmcp03,GPIO_MODE_OUTPUT_PP);
 
 unsigned long last_autosave_ms = 0;
 
@@ -108,6 +110,7 @@ void blink(uint32_t period_ms) {
 
 void stop_blink() {
     ledPin.set(GPIO_PIN_RESET);
+    powPin.set(GPIO_PIN_SET);
     HAL_TIM_Base_Stop_IT(&LED_TIMER_HANDLE);
 }
 
@@ -247,6 +250,8 @@ int main() {
 
 void TIM3_IRQHandler(void) {
     ledPin.toggle();
+    powPin.toggle();
+
     /* USER CODE END TIM1_UP_TIM10_IRQHandler 0 */
     HAL_TIM_IRQHandler(&LED_TIMER_HANDLE);
     /* USER CODE BEGIN TIM1_UP_TIM10_IRQHandler 1 */

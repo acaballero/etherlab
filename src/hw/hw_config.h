@@ -95,6 +95,7 @@
 #endif
 
 /* #2 MCP23017 Port expander bit positions (left one looking from power supply input) */
+
 // PORT_A
 #define GPIOEXP_MUTE 0
 #define GPIOEXP_AGC 1 // AGC on/off (output)
@@ -120,4 +121,26 @@
 #define POWCRL_PC2 (1<<2)
 #define POWCRL_P5  (1<<1)
 #define POWCRL_P12 1
+
+
+/* #3 MCP23017 Front panel */
+
+// PORT_A
+//#define GPIOEXP_FPANEL_PAD_BUTTON_1 0
+//#define GPIOEXP_FPANEL_PAD_BUTTON_2 1
+//#define GPIOEXP_FPANEL_PAD_BUTTON_3 2
+//#define GPIOEXP_FPANEL_PAD_BUTTON_4 3
+//#define GPIOEXP_FPANEL_PAD_BUTTON_5 4
+//#define GPIOEXP_FPANEL_PAD_BUTTON_6 5
+#define GPIOEXP_FPANEL_TX_LED 6
+//#define GPIOEXP_FPANEL_SPARE 7
+// PORT_B
+//#define GPIOEXP_FPANEL_DISPLAY_BUTTON_6 0
+//#define GPIOEXP_FPANEL_DISPLAY_BUTTON_5 1
+//#define GPIOEXP_FPANEL_DISPLAY_BUTTON_4 2
+//#define GPIOEXP_FPANEL_DISPLAY_BUTTON_3 3
+//#define GPIOEXP_FPANEL_DISPLAY_BUTTON_2 4
+//#define GPIOEXP_FPANEL_DISPLAY_BUTTON_1 5
+//#define GPIOEXP_FPANEL_BACKLIGHT 6
+#define GPIOEXP_FPANEL_STBY_LED 7
 

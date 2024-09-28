@@ -25,3 +25,8 @@ void MCP23017Pin::set(GPIO_PinState state) {
         mcp23017_write_gpio(this->handle, this->port);
     }
 }
+
+GPIO_PinState MCP23017Pin::toggle() {
+    GPIO_PinState state = read();
+    set(state==GPIO_PIN_SET ? GPIO_PIN_RESET : GPIO_PIN_SET);
+}

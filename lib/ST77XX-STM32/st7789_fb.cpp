@@ -134,14 +134,6 @@ int16_t ST7789::begin(void) {
     // Backlight on
     HAL_GPIO_WritePin(ST7789_LED_PORT, ST7789_LED_PIN, GPIO_PIN_RESET);
 
-    setAddressWindow(0,0,100,100);
-    for(int i=0; i<100*100;i++)
-    {
-        uint8_t data[] = {0x00};
-        writeData(data, sizeof(data));
-
-    }
-
 }
 
 int16_t ST7789::stop() {

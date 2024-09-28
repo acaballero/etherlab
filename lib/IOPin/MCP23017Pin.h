@@ -18,6 +18,7 @@ public:
 
     };
     GPIO_PinState read();
+    GPIO_PinState toggle();
     void set(GPIO_PinState);
 
 private:

@@ -14,7 +14,8 @@
 // HSE VALUE defined by compiler parameters to avoid warnings
 //#define HSE_VALUE ((uint32_t)26000000) /*!< Value of the External oscillator in Hz */
 #define CPU_CORE_FREQUENCY_HZ SystemCoreClock
-#define CPU_TIMER_PRESCALER_MS_HZ 168000
+//#define CPU_TIMER_PRESCALER_MS_HZ 168000
+#define CPU_TIMER_PRESCALER_MS_HZ 264000 // OVERCLOCKED (See clocks.cpp)
 
 #define DISABLE_SD_INIT 1
 #define ENABLE_SD_CARD 1

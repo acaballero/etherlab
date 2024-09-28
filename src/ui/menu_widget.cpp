@@ -6,6 +6,7 @@
 #include "menu_widget.h"
 #include "menu.h"
 #include "config.h"
+#include "../input/input.h"
 
 using namespace Menu;
 
@@ -49,17 +50,17 @@ bool MenuWidget::on_input(const st_inputEvent e) {
 
             switch (e.value) {
 
-                case 2: // MODULATION
+                case FPANEL_PAD_BUTTON_1: // MODULATION
                     nav.doNav(navCmd(enterCmd));
                     nav.doNav(navCmd(idxCmd, 0));
                     nav.doNav(navCmd(idxCmd, 0));
                     break;
-                case 3: // FILTER
+                case FPANEL_PAD_BUTTON_2: // FILTER
                     nav.doNav(navCmd(enterCmd));
                     nav.doNav(navCmd(idxCmd, 0));
                     nav.doNav(navCmd(idxCmd, 3));
                     break;
-                case 4: // SQUELCH
+                case FPANEL_PAD_BUTTON_3: // SQUELCH
                     nav.doNav(navCmd(enterCmd));
                     nav.doNav(navCmd(idxCmd, 0));
                     nav.doNav(navCmd(idxCmd, 5));
@@ -85,6 +86,38 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                         consumed = false;
                     }
 
+                    break;
+
+                case FPANEL_DISPLAY_BUTTON_1:
+                    nav.doNav(navCmd(enterCmd));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    break;
+                case FPANEL_DISPLAY_BUTTON_2:
+                    nav.doNav(navCmd(enterCmd));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    break;
+                case FPANEL_DISPLAY_BUTTON_3:
+                    nav.doNav(navCmd(enterCmd));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    break;
+                case FPANEL_DISPLAY_BUTTON_4:
+                    nav.doNav(navCmd(enterCmd));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    break;
+                case FPANEL_DISPLAY_BUTTON_5:
+                    nav.doNav(navCmd(enterCmd));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    break;
+                case FPANEL_DISPLAY_BUTTON_6:
+                    
+                    nav.doNav(navCmd(enterCmd));
+                    nav.doNav(navCmd(idxCmd, 0));
+                    nav.doNav(navCmd(idxCmd, 0));
                     break;
 
                 default:

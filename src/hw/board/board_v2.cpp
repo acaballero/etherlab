@@ -264,7 +264,7 @@ void if_setup() {
     uint8_t ret = cmx973_update();
 
     if (ret) {
-        //  DEBUGPRINT("Error updating CMX973: %d\n", ret)
+        status::handleError(status::ST_ERROR, "Error updating CMX973");
     }
 
     if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);

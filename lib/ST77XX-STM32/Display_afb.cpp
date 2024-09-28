@@ -36,6 +36,10 @@ bool Display::getEnabled() {
 }
 
 void Display::drawArea(Area *area, Painter *painter) {
+    drawArea(area, painter, true);
+}
+
+void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
     if (this->enabled) {
 
@@ -45,7 +49,17 @@ void Display::drawArea(Area *area, Painter *painter) {
 
         this->gotoXY(0, 0);
 
-        setAddressWindow(area->x, area->y, area->x + area->width - 1, area->y + area->height - 1);
+        uint16_t x = area->x;
+        uint16_t y = area->y;
+        if (pad_display) {
+            x += DISPLAY_PADDING;
+            y += DISPLAY_PADDING;
+        }
+
+        setAddressWindow(x,
+                         y,
+                         x + area->width - 1,
+                         y + area->height - 1);
 
         // Number of pixels in the area
         uint16_t buffer_size_pixels_remaining = area->size;
@@ -63,7 +77,7 @@ void Display::drawArea(Area *area, Painter *painter) {
         this->chunk_height = d * w == a ? d : d - ((a < 0) ^ (w < 0));
 
         // chunk_height should not be greater than the area height.
-        // A area can be small enough (less than half the buffer size) that it can be drawn in a single DMA transfer
+        // An area can be small enough (less than half the buffer size) that it can be drawn in a single DMA transfer
         if (this->chunk_height > area->height) this->chunk_height = area->height;
 
         uint16_t max_buffer_size = this->chunk_height * w;
@@ -300,7 +314,7 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
     uint16_t zy1 = this->current_line;
     uint16_t zy2 = this->current_line + this->chunk_height;
 
-    if (y1>y2) {
+    if (y1 > y2) {
         uint16_t aux = y1;
         y1 = y2;
         y2 = aux;
@@ -443,7 +457,7 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
 
 void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     //select();
-    writeRect(x1, y1, x2, y1, C565_WHITE);
+    writeRect(x1, y1, x2, y2, C565_WHITE);
 }
 
 void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
@@ -547,8 +561,7 @@ void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, ui
 
                     if ((b << j) & mask) {
                         c = color;
-                    }
-                    else {
+                    } else {
                         c = bgcolor;
                     }
 

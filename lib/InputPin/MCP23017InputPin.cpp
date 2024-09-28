@@ -37,14 +37,12 @@ void MCP23017InputPin::init() {
         mcp23017_writereg (this->handle,REGISTER_GPINTENA | this->port, data | (1<<this->pin));
 
         // In IT mode, the pin must be configured to interrupt at both edges. Otherwise, the current logic won't be able to properly track both states
-
-
     }
 
-    // Set input pullup
+    // Set input pull-up
     mcp23017_read (this->handle,REGISTER_GPPUA | this->port,&data);
     mcp23017_ggpu(this->handle, this->port, data | (1<<this->pin));
 
-    this->state=GPIO_PIN_SET; // Pullup
+    this->state=GPIO_PIN_SET; // Pull-up
 }
 

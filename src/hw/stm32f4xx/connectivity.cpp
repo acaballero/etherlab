@@ -9,7 +9,8 @@
 #include <stm32f4xx.h>
 
 // IO Expanders
-i2cbitbang i2cport01(I2CBB_MCP23017, MCP23017_ADDRESS_20 << 1);  // We shift the address left because this is a 7-bit, left aligned addressed device
+i2cbitbang i2cport01(I2CBB_MCP23017, MCP23017_ADDRESS_20
+        << 1);  // We shift the address left because this is a 7-bit, left aligned addressed device
 i2cbitbang i2cport02(I2CBB_MCP23017, MCP23017_ADDRESS_24 << 1);
 
 // Front panel IO expander
@@ -179,14 +180,14 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
         GPIO_InitStruct.Pin = GPIO_PIN_3;
         GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
         GPIO_InitStruct.Pull = GPIO_PULLUP;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; //GPIO_SPEED_FREQ_VERY_HIGH; // Low speed reduces EMI
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH; //GPIO_SPEED_FREQ_VERY_HIGH; // Low speed reduces EMI
         GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
         HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
         GPIO_InitStruct.Pin = GPIO_PIN_3;
         GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
         GPIO_InitStruct.Pull = GPIO_PULLUP;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; //GPIO_SPEED_FREQ_VERY_HIGH; // Low speed reduces EMI
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH; //GPIO_SPEED_FREQ_VERY_HIGH; // Low speed reduces EMI
         GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
         HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
@@ -237,7 +238,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
         GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_5 | GPIO_PIN_6;
         GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
         GPIO_InitStruct.Pull = GPIO_PULLUP;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; //GPIO_SPEED_FREQ_VERY_HIGH; // Low speed reduces EMI
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH; //GPIO_SPEED_FREQ_VERY_HIGH; // Low speed reduces EMI
         GPIO_InitStruct.Alternate = GPIO_AF5_SPI4;
         HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
@@ -637,23 +638,35 @@ void BitBangI2C_setup() {
 
     hmcp03.i2cbb = &i2cport03;
 
-    mcp23017_iodir(&hmcp03, MCP23017_PORTA, MCP23017_IODIR_ALL_OUTPUT);
-    mcp23017_iodir(&hmcp03, MCP23017_PORTB, MCP23017_IODIR_ALL_OUTPUT);
+    mcp23017_iodir(&hmcp03, MCP23017_PORTA, 0b00111111);
+    mcp23017_iodir(&hmcp03, MCP23017_PORTB, 0b00111111);
 
-    //mcp23017_iodir(&hmcp, MCP23017_PORTB, MCP23017_IODIR_ALL_INPUT);
+    // Activate internal pull-up
+    mcp23017_writereg(&hmcp03, REGISTER_GPPUA, 0b00111111);
+    mcp23017_writereg(&hmcp03, REGISTER_GPPUB, 0b00111111);
+
+    // Invert polarity
+    mcp23017_writereg(&hmcp03, REGISTER_IPOLA, 0b00111111);
+    mcp23017_writereg(&hmcp03, REGISTER_IPOLB, 0b00111111);
 
     // Configure interrupts
-    //mcp23017_writereg(&hmcp, REGISTER_IOCONA, 0b01100000);
+    mcp23017_writereg(&hmcp03, REGISTER_IOCONA, 0b01000000); // MIRROR + open drain + polarity
+    mcp23017_writereg(&hmcp03, REGISTER_IOCONB, 0b01000000);
+
+    // Interrupt enable
+    mcp23017_writereg(&hmcp03, REGISTER_GPINTENA, 0b00111111);
+    mcp23017_writereg(&hmcp03, REGISTER_GPINTENB, 0b00111111);
 
     // Read interrupt capture ports to clear them
-    //uint8_t d;
-    //mcp23017_read(&hmcp, REGISTER_INTCAPB, &d);
+    uint8_t d;
+    mcp23017_read(&hmcp03, REGISTER_INTCAPA, &d);
+    mcp23017_read(&hmcp03, REGISTER_INTCAPB, &d);
 
     // TEST
-    //    hmcp.gpio[MCP23017_PORTA]=0x0F;
-    //    hmcp.gpio[MCP23017_PORTB]=0xF0;
-    //    mcp23017_write_gpio(&hmcp,MCP23017_PORTA);
-    //    mcp23017_write_gpio(&hmcp,MCP23017_PORTB);
+    //hmcp03.gpio[MCP23017_PORTA] = 0x0F;
+    //hmcp03.gpio[MCP23017_PORTB] = 0xF0;
+    //mcp23017_write_gpio(&hmcp03, MCP23017_PORTA);
+    //mcp23017_write_gpio(&hmcp03, MCP23017_PORTB);
     //    hmcp.gpio[MCP23017_PORTA]=0xF0;
     //    hmcp.gpio[MCP23017_PORTB]=0x0F;
     //    mcp23017_write_gpio(&hmcp,MCP23017_PORTA);

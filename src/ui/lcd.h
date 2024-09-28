@@ -10,7 +10,6 @@
 
 #if LCD_ENABLED
 
-
 extern ST7789 lcd;
 
 #endif

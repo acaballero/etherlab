@@ -98,6 +98,9 @@ namespace main_board {
         sstrength::s_strength_signal.add(NULL, s_level_callback);
         battery::battery_signal.add(NULL, battery_callback);
         setModulationMode(config.modulation, true);
+
+        // Standby led
+        setGPIOExpPin(&hmcp03, MCP23017_PORTB, GPIOEXP_FPANEL_STBY_LED, true, true);
     }
 
     void setGPIO() {
@@ -131,11 +134,14 @@ namespace main_board {
         // level detector mosfet
         changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_AGC, !ISTX && config.agc_enabled, false);
 
+        changed = changed | setGPIOExpPin(&hmcp03, MCP23017_PORTA, GPIOEXP_FPANEL_TX_LED, ISTX, false);
+
         if (changed) {
             commitGPIOExpPort(&hmcp01, MCP23017_PORTA);
             commitGPIOExpPort(&hmcp01, MCP23017_PORTB);
             commitGPIOExpPort(&hmcp02, MCP23017_PORTA);
             commitGPIOExpPort(&hmcp02, MCP23017_PORTB);
+            commitGPIOExpPort(&hmcp03, MCP23017_PORTA);
         }
     }
 

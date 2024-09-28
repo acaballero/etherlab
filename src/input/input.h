@@ -13,6 +13,6 @@ extern GPIOInputPin BackBtnInputPin;
 void touchPanelInterruptCallback();
 void backBtnInterruptCallback();
 void frontPanelInterruptCallback();
-extern int8_t analogKeyboardLastPressedButton;
+extern int8_t last_pressed_button_id;
 
 #endif //TRX_FRONTEND_INPUT_H

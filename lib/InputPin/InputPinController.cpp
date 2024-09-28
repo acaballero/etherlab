@@ -90,9 +90,7 @@ void InputPinController::handlePinEXTI(uint16_t GPIO_Pin) {
             uint64_t t = HAL_GetTick();
             // Extend/start the timer and set the timeout to stop polling after the debounce period
             if (!htim.Instance->CCER) {
-
                 HAL_TIM_Base_Start_IT(&htim);
-
             }
 
             this->timer_timeout_ms = t;

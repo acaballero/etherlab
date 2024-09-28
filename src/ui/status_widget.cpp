@@ -7,71 +7,70 @@
 #include "../main_board.h"
 #include "radio.h"
 
-void StatusWidget::paint_callback() {
+void StatusWidget::init() {
 
-    char buf[20];
-    display->clear();
 
-    uint16_t fg_color, fg_color_auto, bg_color, dimm_color, disabled_color, disabled_bg;
+    btnBand.fn_writer = std::bind(&StatusWidget::band, this, &btnBand);
+    btnFilter1.fn_writer = std::bind(&StatusWidget::filter1, this, &btnFilter1);
+    btnFilter2.fn_writer = std::bind(&StatusWidget::filter2, this, &btnFilter2);
 
-    if (ISTX) {
-        fg_color = C565_GREY_LIGHT;
-        bg_color = C565_RED;
-        dimm_color = C565_BLACK;
-        disabled_bg = C565_GREY_DARK;
-        fg_color_auto = C565_WHITE;
-    } else {
-        fg_color = C565_BLACK;
-        bg_color = C565_WHITE;
-        dimm_color = C565_OLIVE;
-        disabled_color = C565_GREY_DARK;
-        disabled_bg = C565_GREY_LIGHT;
-        fg_color_auto = C565_MAGENTA;
+
+    add_children( {&btnModulation, &btnFrontend, &btnAgc, &btnBand, &btnFilter1, &btnFilter2});
+
+    for (Widget *btn : View::children()) {
+        ((Button *)btn)->set_font((FontDef *) &Font_Tiny8x8);
     }
+}
 
-    display->fillBuffer(bg_color);
-    display->setBgColor(bg_color);
-    display->setColor(fg_color);
 
-    display->setFont((FontDef *) &Font_Tiny8x8);
-    display->setVerticalLineSpacing(6);
-    display->setPadding(4,4);
-    display->gotoCharXY(0, 0);
-    display->print(radio::modulationNames[config.modulation]);
-    display->print(ISTX ? " TX" : " RX");
+void StatusWidget::mode() {
+    sprintf(buf, ISTX ? "TX" : "RX");
+}
 
+const char * StatusWidget::modulation() {
+    return radio::modulationNames[config.modulation];
+}
+
+char * StatusWidget::frontend() {
     if (!ISTX) {
-        print_separator();
         switch (config.frontend_path) {
             case radio::FRONTEND_PATH_THRU:
-                display->print("ATT:0");
+                sprintf(buf, "ATT:0");
                 break;
             case radio::FRONTEND_PATH_ATT:
-                display->print("ATT:10");
+                sprintf(buf, "ATT:10");
                 break;
             case radio::FRONTEND_PATH_LNA:
-                display->print("LNA");
+                sprintf(buf, "LNA");
                 break;
         }
+    }
+    return buf;
+}
 
-        print_separator();
+char * StatusWidget::agc_alc() {
+    if (!ISTX) {
 
         if (!config.agc_enabled) {
-            display->setColor(disabled_color);
+            //d->setColor(disabled_color);
             //display->setBgColor(disabled_bg);
         }
 
-        display->print("AGC");
-        display->setColor(fg_color);
-        display->setBgColor(bg_color);
+        sprintf(buf, "AGC");
+
+        btnAgc.set_fg(fg_color);
+
+        return buf;
 
     } else {
 //        if (config.alc_enabled) {
-//            print_separator();
+//
 //            display->print("ALC");
 //        }
     }
+}
 
+void StatusWidget::band(Widget *) {
     if (config.filter < radio::BAND_AUTO) {
         sprintf(buf, "%.3s", radio::bandNames[config.filter]);
     } else {
@@ -81,19 +80,21 @@ void StatusWidget::paint_callback() {
             sprintf(buf, "%.3s", radio::bandNames[this->_status.filter]);
         }
     }
-    print_separator();
-    display->print("}:", buf, "", dimm_color, config.filter < radio::BAND_AUTO ? fg_color : fg_color_auto, dimm_color);
 
+    display->print("}:", buf, "", dimm_color, config.filter < radio::BAND_AUTO ? fg_color : fg_color_auto, dimm_color);
+}
+
+void StatusWidget::filter1(Widget *) {
     if (config.if_filter != radio::IF_FILTER_AUTO) {
         sprintf(buf, "%s", radio::IFFilterNames[config.if_filter]);
     } else {
         sprintf(buf, "%s", radio::IFFilterNames[this->_status.if_filter]);
     }
-    print_separator();
     display->print("~:", buf, "", dimm_color, config.filter < radio::BAND_AUTO ? fg_color : fg_color_auto, dimm_color);
+}
 
-    //display->gotoCharXY(15, 13);
-    print_separator();
+void StatusWidget::filter2(Widget *) {
+
     display->print("B:");
 
     if (config.band < radio::BAND_AUTO) {
@@ -108,37 +109,34 @@ void StatusWidget::paint_callback() {
             display->print(radio::bandNames[this->_status.band]);
         }
     }
+}
 
+void StatusWidget::squelch() {
     if (!ISTX) {
         if (config.squelch_auto) {
             sprintf(buf, "A");
         } else {
             sprintf(buf, "%.1f", config.squelch_level);
         }
-        print_separator();
+
         display->print("S:", buf, "", dimm_color, fg_color, dimm_color);
     }
+}
 
-    display->setVerticalLineSpacing(2);
+void StatusWidget::audio() {
+
     display->setFont((FontDef *) &Font_11x18);
 
-    display->gotoXY(DISPLAY_X_PIXELS - 12, 0);
     if (main_board::getMute()) display->setColor(C565_GREY_DARK);
-    display->write(main_board::getMute() ? '}' : '|'); // characters for mute on/off icons
+
+    sprintf(buf, main_board::getMute() ? "}" : "|"); // characters for mute on/off icons
 
 }
 
-void StatusWidget::print_separator() {
-    const FontDef *font = display->getFont();
-    uint8_t vls = display->getVerticalLineSpacing();
-    uint16_t py = display->get_padding_y();
-    display->setVerticalLineSpacing(0);
-    display->setPadding(4, 0);
-    display->setFont((FontDef *) &Font_11x18);
-    display->print("{");
-    display->setFont(font);
-    display->setPadding(4, py);
-    display->setVerticalLineSpacing(vls);
+void StatusWidget::paint_callback() {
+
+    display->clear();
+
 }
 
 void StatusWidget::do_paint() {
@@ -158,9 +156,51 @@ void StatusWidget::do_paint() {
             main_board::getMute() ? true : false
     };
 
+
+
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
         this->set_dirty();
         _status = status;
-        display->drawArea(&this->area, this);
+
+
+        if (ISTX) {
+            fg_color = C565_GREY_LIGHT;
+            bg_color = C565_WHITE;
+            dimm_color = C565_BLACK;
+            disabled_bg = C565_GREY_DARK;
+            fg_color_auto = C565_WHITE;
+        } else {
+            fg_color = C565_BLACK;
+            bg_color = C565_WHITE;
+            dimm_color = C565_BLACK;
+            disabled_color = C565_GREY_DARK;
+            disabled_bg = C565_GREY_LIGHT;
+            fg_color_auto = C565_MAGENTA;
+        }
+
+        display->setBgColor(bg_color);
+        display->setColor(fg_color);
+
+        display->setFont((FontDef *) &Font_Tiny8x8);
+        display->setVerticalLineSpacing(6);
+        display->setPadding(4, 4);
+        display->gotoCharXY(0, 0);
+
+        btnModulation.set_text(modulation());
+        btnFrontend.set_text(frontend());
+        btnAgc.set_text(agc_alc());
+
+        for (Widget *btn : View::children()) {
+            ((Button *)btn)->set_bg(bg_color);
+        }
+
+        // Selectively paint all children.
+        for (const auto child: this->children()) {
+            if (child->visible()) {
+                child->paint();
+                child->set_clean();
+            }
+        }
     }
 }
+
