@@ -14,6 +14,8 @@
 #define ICON_USB 42
 #define ICON_DIGITAL 43
 #define ICON_ANALOG 44
+#define ICON_SOUND_ON 45
+#define ICON_SOUND_OFF 46
 
 enum FontEncoding {
     ROWS,

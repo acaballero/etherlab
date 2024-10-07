@@ -9,6 +9,7 @@
 #include "battery.h"
 #include "power_amp.h"
 #include "fatfs/fatfs.h"
+#include "main_board.h"
 
 TitleBarWidget::TitleBarWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
     sdcard_signal.add(this, TitleBarWidget::signal_static_callback);
@@ -202,11 +203,19 @@ void TitleBarWidget::paint_callback() {
     if (uptime > 8 * 60) {
         display->print(" G");
     }
+
+    // AUDIO
+
+    if (main_board::getMute()) display->setColor(C565_GREY_DARK);
+    display->print(" ");
+    display->setFont((FontDef *) &Font_Icons9x8);
+    display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
 }
 
 void TitleBarWidget::do_paint() {
 
-    st_topBar topBar = {dsp_status};
+    st_topBar topBar = {dsp_status,
+                        main_board::getMute() ? true : false};
 
     if (this->dirty() || !(topBar == this->status)) {
         this->status = topBar;

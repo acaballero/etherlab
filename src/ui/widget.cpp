@@ -84,7 +84,7 @@ void Widget::hidden(bool hide) {
 
 bool Widget::on_input(const st_inputEvent event) {
 
-    if (!visible()) return false;
+    if (!visible() || !enabled()) return false;
 
     bool consumed = false;
 
@@ -125,7 +125,7 @@ void Widget::focus(Widget *widget) {
 
 void Widget::set_focus(bool v) {
 
-    if (v != this->flags.focus) {
+    if (v != this->flags.focus && this->flags.enabled) {
         this->flags.focus = v;
         if (parent_) {
             if (v) {
@@ -221,6 +221,14 @@ void Widget::paint() {
 #endif
 }
 
+void Widget::set_font(FontDef *font) {
+    Widget::font = font;
+}
+
+void Widget::set_aling(Align a) {
+    align = a;
+}
+
 void Widget::set_show_fps(bool b) {
     this->show_fps = b;
     this->area.show_fps = b;
@@ -275,6 +283,14 @@ bool Widget::active() {
 
 void Widget::set_active(bool v) {
     flags.active = v;
+}
+
+bool Widget::enabled() {
+    return flags.enabled;
+}
+
+void Widget::set_enabled(bool v) {
+    flags.enabled = v;
 }
 
 

@@ -8,6 +8,11 @@
 #include <functional>
 #include "widget.h"
 
+enum ButtonStyle {
+    BUTTON_STYLE_3D = 0,
+    BUTTON_STYLE_FLAT
+};
+
 class Button : public Widget {
 public:
 
@@ -19,13 +24,18 @@ public:
 
     Button() : Widget() {};
 
-    Button(Rect parent_rect, Display *display,const char *t, uint16_t fg_color) : Widget(parent_rect, display), fg_color{fg_color} {
+    Button(Rect parent_rect, Display *display, const char *t, uint16_t fg_color) : Widget(parent_rect, display),
+                                                                                   fg_color{fg_color} {
         set_text(t);
     };
 
     void set_text(char const *value);
 
     char *get_text();
+
+    void set_value(char const *);
+
+    void set_unit(char const *);
 
     void on_focus() override;
 
@@ -37,6 +47,8 @@ public:
 
     uint16_t get_bg() const;
 
+    void set_color(uint16_t label,uint16_t text,uint16_t unit);
+
     void set_bg(uint16_t bg);
 
     uint16_t get_shadow() const;
@@ -45,20 +57,28 @@ public:
 
     void paint_callback() override;
 
-protected:
-    char text[MAX_SIZE];
-    uint16_t fg_color = C565_WHITE;
-public:
-    FontDef *get_font() const;
+    ButtonStyle get_style() const;
 
-    void set_font(FontDef *font);
+    void set_style(ButtonStyle style);
+
+    FontDef *get_font() const;
 
     std::function<void()> fn_writer; // Handler to delegate the writing
 
 protected:
+    char text[MAX_SIZE];
+    char value[MAX_SIZE];
+    char unit[MAX_SIZE];
+    uint16_t fg_color = C565_WHITE;
+    uint16_t fg_disabled_color = C565_GREY_LIGHT;
+    uint16_t fg_color_value = C565_BLUE;
+    uint16_t fg_color_unit = C565_GREY_LIGHT;
     uint16_t bg_color = C565_GREY_DARK;
-    uint16_t shadow=C565_GREY_DARKER;
-    FontDef *font = (FontDef *)&Font_11x18;
+    uint16_t bg_disabled_color = C565_GREY_DARKER;
+    uint16_t shadow = C565_GREY_DARKER;
+
+    ButtonStyle style = BUTTON_STYLE_FLAT;
+
     void do_paint() override;
 };
 

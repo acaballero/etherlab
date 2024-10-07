@@ -6,8 +6,8 @@
 #define TRX_FRONTEND_STATUS_WIDGET_H
 
 #include "view.h"
-#include "types.h"
 #include "button_widget.h"
+#include "../types.h"
 
 #define BTN_WIDTH (DISPLAY_X_PIXELS/6)
 class StatusWidget : public View {
@@ -44,10 +44,6 @@ protected:
     void filter1(Widget *);
 
     void filter2(Widget *);
-
-    void squelch();
-
-    void audio();
 
     char * frontend();
 

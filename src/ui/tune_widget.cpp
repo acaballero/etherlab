@@ -9,6 +9,7 @@
 #include "s_strength.h"
 #include "view.h"
 
+
 void TuneWidget::paint_callback() {
 
     char buf[50];

@@ -5,7 +5,6 @@
 #include "status_widget.h"
 #include "../config.h"
 #include "../main_board.h"
-#include "radio.h"
 
 void StatusWidget::init() {
 
@@ -15,10 +14,10 @@ void StatusWidget::init() {
     btnFilter2.fn_writer = std::bind(&StatusWidget::filter2, this, &btnFilter2);
 
 
-    add_children( {&btnModulation, &btnFrontend, &btnAgc, &btnBand, &btnFilter1, &btnFilter2});
+    add_children({&btnModulation, &btnFrontend, &btnAgc, &btnBand, &btnFilter1, &btnFilter2});
 
-    for (Widget *btn : View::children()) {
-        ((Button *)btn)->set_font((FontDef *) &Font_Tiny8x8);
+    for (Widget *btn: View::children()) {
+        ((Button *) btn)->set_font((FontDef *) &Font_Tiny8x8);
     }
 }
 
@@ -27,11 +26,11 @@ void StatusWidget::mode() {
     sprintf(buf, ISTX ? "TX" : "RX");
 }
 
-const char * StatusWidget::modulation() {
+const char *StatusWidget::modulation() {
     return radio::modulationNames[config.modulation];
 }
 
-char * StatusWidget::frontend() {
+char *StatusWidget::frontend() {
     if (!ISTX) {
         switch (config.frontend_path) {
             case radio::FRONTEND_PATH_THRU:
@@ -45,29 +44,26 @@ char * StatusWidget::frontend() {
                 break;
         }
     }
+    else {
+        sprintf(buf, "-");
+    }
     return buf;
 }
 
-char * StatusWidget::agc_alc() {
+char *StatusWidget::agc_alc() {
     if (!ISTX) {
 
-        if (!config.agc_enabled) {
-            //d->setColor(disabled_color);
-            //display->setBgColor(disabled_bg);
-        }
+        btnAgc.set_enabled(config.agc_enabled);
 
         sprintf(buf, "AGC");
 
         btnAgc.set_fg(fg_color);
 
-        return buf;
-
     } else {
-//        if (config.alc_enabled) {
-//
-//            display->print("ALC");
-//        }
+        sprintf(buf, "ALC");
     }
+
+    return buf;
 }
 
 void StatusWidget::band(Widget *) {
@@ -111,28 +107,6 @@ void StatusWidget::filter2(Widget *) {
     }
 }
 
-void StatusWidget::squelch() {
-    if (!ISTX) {
-        if (config.squelch_auto) {
-            sprintf(buf, "A");
-        } else {
-            sprintf(buf, "%.1f", config.squelch_level);
-        }
-
-        display->print("S:", buf, "", dimm_color, fg_color, dimm_color);
-    }
-}
-
-void StatusWidget::audio() {
-
-    display->setFont((FontDef *) &Font_11x18);
-
-    if (main_board::getMute()) display->setColor(C565_GREY_DARK);
-
-    sprintf(buf, main_board::getMute() ? "}" : "|"); // characters for mute on/off icons
-
-}
-
 void StatusWidget::paint_callback() {
 
     display->clear();
@@ -144,7 +118,6 @@ void StatusWidget::do_paint() {
     radio::BAND band = config.band == radio::BAND_AUTO ? radio::find_band(radio::get_frequency()) : config.band;
 
     st_status status = {
-            config.squelch_level,
             config.modulation,
             ISTX,
             band,
@@ -152,16 +125,13 @@ void StatusWidget::do_paint() {
             radio::if_filter,
             config.frontend_path,
             config.agc_enabled,
-            _status.f_carrier, // we won't show the frequency in the status bar, so use current_status value
-            main_board::getMute() ? true : false
+            _status.f_carrier // we won't show the frequency in the status bar, so use current_status value
+
     };
-
-
 
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
         this->set_dirty();
         _status = status;
-
 
         if (ISTX) {
             fg_color = C565_GREY_LIGHT;
@@ -190,13 +160,15 @@ void StatusWidget::do_paint() {
         btnFrontend.set_text(frontend());
         btnAgc.set_text(agc_alc());
 
-        for (Widget *btn : View::children()) {
-            ((Button *)btn)->set_bg(bg_color);
+        for (Widget *btn: View::children()) {
+            ((Button *) btn)->set_bg(bg_color);
+            btn->set_aling(ALIGN_CENTER);
         }
 
         // Selectively paint all children.
         for (const auto child: this->children()) {
             if (child->visible()) {
+                child->set_dirty();
                 child->paint();
                 child->set_clean();
             }

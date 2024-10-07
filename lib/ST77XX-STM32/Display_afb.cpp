@@ -149,12 +149,15 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                     if ((spi_port->Instance->CR1 & SPI_CR1_SPE) != SPI_CR1_SPE) {
                         spi_port->Instance->CR1 |= SPI_CR1_SPE;               //enable SPI
                     }
-                    *(__IO uint8_t *) &spi_port->Instance->DR = *((__IO uint8_t *) this->curr_buffer +
-                                                                  i);                        // Write data to be transmitted to the SPI data register
+                    *(__IO
+                    uint8_t *) &spi_port->Instance->DR = *((__IO
+                    uint8_t *) this->curr_buffer +
+                               i);                        // Write data to be transmitted to the SPI data register
                     //while (!(spi_port->Instance->SR & (SPI_SR_TXE)));     // Wait until transmit complete
                     //while (!(spi_port->Instance->SR & (SPI_SR_RXNE)));    // Wait until receive complete
                     while (spi_port->Instance->SR & (SPI_SR_BSY));        // Wait until SPI is not busy anymore
-                    uint8_t rxDat = *(__IO uint8_t *) &spi_port->Instance->DR;  // Return received data from SPI data register
+                    uint8_t rxDat = *(__IO
+                    uint8_t *) &spi_port->Instance->DR;  // Return received data from SPI data register
                     UNUSED(rxDat);
                     DISP_CE_PORT->BSRR |= DISP_CE_PIN;
                     //  HAL_TIM_Base_Start_IT(&htim15);
@@ -204,6 +207,90 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         this->drawing = false;
     }
 }
+
+// Function to draw a single corner using midpoint circle algorithm
+void Display::drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uint8_t quadrant, bool filled) {
+    int x = 0;
+    int y = radius;
+    int d = 3 - 2 * radius;
+
+    while (y >= x) {
+        if (filled) {
+            switch (quadrant) {
+                case 1: // Top-right
+                    writeLine(centerX, centerY - y, centerX + x, centerY - y);
+                    writeLine(centerX, centerY - x, centerX + y, centerY - x);
+                    break;
+                case 2: // Top-left
+                    writeLine(centerX - x, centerY - y, centerX, centerY - y);
+                    writeLine(centerX - y, centerY - x, centerX, centerY - x);
+                    break;
+                case 3: // Bottom-left
+                    writeLine(centerX - x, centerY + y, centerX, centerY + y);
+                    writeLine(centerX - y, centerY + x, centerX, centerY + x);
+                    break;
+                case 4: // Bottom-right
+                    writeLine(centerX, centerY + y, centerX + x, centerY + y);
+                    writeLine(centerX, centerY + x, centerX + y, centerY + x);
+                    break;
+            }
+        } else {
+            switch (quadrant) {
+                case 1: // Top-right
+                    setPixel(centerX + x, centerY - y, color);
+                    setPixel(centerX + y, centerY - x, color);
+                    break;
+                case 2: // Top-left
+                    setPixel(centerX - x, centerY - y, color);
+                    setPixel(centerX - y, centerY - x, color);
+                    break;
+                case 3: // Bottom-left
+                    setPixel(centerX - x, centerY + y, color);
+                    setPixel(centerX - y, centerY + x, color);
+                    break;
+                case 4: // Bottom-right
+                    setPixel(centerX + x, centerY + y, color);
+                    setPixel(centerX + y, centerY + x, color);
+                    break;
+            }
+        }
+
+        if (d < 0) {
+            d += 4 * x + 6;
+        } else {
+            d += 4 * (x - y) + 10;
+            y--;
+        }
+        x++;
+    }
+}
+
+void
+Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled) {
+    int x1 = x0 + radius, y1 = y0 + radius;
+    int x2 = x0 + width - radius, y2 = y0 + height - radius;
+
+    // Draw the rectangular body without corners
+    if (filled) {
+        for (int y = 0; y < height; y++) {
+            int startX = (y < radius || y >= height - radius) ? radius : 0;
+            int endX = (y < radius || y >= height - radius) ? width - radius : width;
+            writeLine(x0 + startX, y0 + y, x0 + endX - 1, y0 + y);
+        }
+    } else {
+        // Draw the straight lines for the sides and top/bottom
+        writeLine(x1, y0, x2, y0); // Top
+        writeLine(x1, height - 1, x2, height - 1); // Bottom
+        writeLine(x0, y1, x0, y2); // Left
+        writeLine(width - 1, y1, width - 1, y2); // Right
+    }
+    // Draw the four corners
+    drawCorner(x0 + width - radius - 1, y0 + radius, radius, 1, filled);     // Top-right
+    drawCorner(x0 + radius, y0 + radius, radius, 2, filled);                 // Top-left
+    drawCorner(x0 + radius, y0 + height - radius - 1, radius, 3, filled);    // Bottom-left
+    drawCorner(x0 + width - radius - 1, y0 + height - radius - 1, radius, 4, filled);  // Bottom-right
+}
+
 
 void Display::DMATxHalfCpltCallback(void) {
     this->DMAHalfTransferCompleted = true;

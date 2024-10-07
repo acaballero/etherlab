@@ -23,19 +23,33 @@ void Button::do_paint() {
 void Button::paint_callback() {
 
     uint16_t fg = fg_color, bg = bg_color;
+    display->clear();
 
-    if (is_focused() || active()) {
+    if (!enabled()) {
+        fg = fg_disabled_color, bg = bg_disabled_color;
+    }
+
+    else if (is_focused() || active()) {
         uint16_t tmp = fg;
         fg = bg;
         bg = tmp;
     }
 
-    display->writeRect(0, 0, area.width - 1, 1, C565_GREY_LIGHT);
-    display->writeRect(0, 0, 1, area.height-1, shadow);
-    display->writeRect(area.width - 2, 0, area.width - 1, area.height - 1, C565_GREY_LIGHT);
-    display->writeRect(0, area.height - 2, area.width - 1, area.height-1, shadow);
 
-    display->fill(1, 1, area.width - 1, area.height - 2, bg);
+    if (style == BUTTON_STYLE_3D) {
+        display->writeRect(0, 0, area.width - 1, 1, C565_GREY_LIGHT);
+        display->writeRect(0, 0, 1, area.height - 1, shadow);
+        display->writeRect(area.width - 2, 0, area.width - 1, area.height - 1, C565_GREY_LIGHT);
+        display->writeRect(0, area.height - 2, area.width - 1, area.height - 1, shadow);
+        display->fill(1, 1, area.width - 1, area.height - 2, bg);
+    } else {
+        display->setColor(bg);
+        display->drawRoundedRectangle(0, 0, area.width, area.height, 3, true);
+    }
+
+    display->setColor(fg);
+    display->setBgColor(bg);
+    display->setFont(font);
 
     uint16_t text_height = font->height;
 
@@ -43,16 +57,28 @@ void Button::paint_callback() {
         display->gotoXY(display->get_padding_x(),
                         (area.height - text_height) / 2);
         fn_writer();
-    }
-    else {
-        uint16_t text_width = font->width * strlen(text);
+    } else {
+        uint16_t lw = strlen(text);
+        uint16_t vw = strlen(value);
+        uint16_t uw = strlen(unit);
+        uint16_t w = (lw + vw + uw);
+        if (uw) w++;
 
+        int16_t width = w * (font->width);
+        int16_t x;
 
-        display->gotoXY((area.width - text_width) / 2,
-                        (area.height - text_height) / 2);
-        display->setColor(fg);
-        display->setBgColor(bg);
-        display->write(text);
+        if (align==ALIGN_CENTER) {
+            x = (area.width - width) / 2;
+        }
+        else if (align==ALIGN_RIGHT) {
+            x = area.width - width - display->get_padding_x();
+        }
+        else {
+            x = display->get_padding_x();
+        }
+
+        display->gotoXY(x, (area.height - font->height + 2) / 2);
+        display->print(text, value, unit, fg, fg_color_value, fg_color_unit);
     }
 }
 
@@ -96,7 +122,24 @@ uint16_t Button::get_fg() const {
 }
 
 void Button::set_fg(uint16_t fg) {
-    Button::fg_color = fg;
+    set_color(fg, fg_color_value, fg_color_unit);
+}
+
+
+void Button::set_value(const char *t) {
+    strncpy(value, t, MAX_SIZE);
+    set_dirty();
+}
+
+void Button::set_unit(const char *t) {
+    strncpy(unit, t, MAX_SIZE);
+    set_dirty();
+}
+
+void Button::set_color(uint16_t l, uint16_t v, uint16_t u) {
+    fg_color = l;
+    fg_color_value = v;
+    fg_color_unit = u;
 }
 
 uint16_t Button::get_bg() const {
@@ -119,6 +162,10 @@ FontDef *Button::get_font() const {
     return font;
 }
 
-void Button::set_font(FontDef *font) {
-    Button::font = font;
+ButtonStyle Button::get_style() const {
+    return style;
+}
+
+void Button::set_style(ButtonStyle style) {
+    Button::style = style;
 }

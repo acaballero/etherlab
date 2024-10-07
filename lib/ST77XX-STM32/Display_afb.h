@@ -96,6 +96,7 @@ public:
     virtual void reset() = 0;
 
     void drawArea(Area *area, Painter *painter);
+
     void drawArea(Area *, Painter *, bool pad_display);
 
     uint8_t renderString(uint8_t x, uint8_t y, uint16_t length);
@@ -157,6 +158,8 @@ public:
     void writeChar(char ch);
 
     void writeString(uint16_t x, uint16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor);
+
+    void drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled);
 
     size_t write(uint8_t uint8_t);
 
@@ -237,6 +240,7 @@ public:
     volatile bool drawing = false;
     bool use_dma = true;
 
+
 protected:
 
     static void fillCallback(Display *, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
@@ -270,6 +274,8 @@ private:
     size_t printNumber(unsigned long, uint8_t);
 
     size_t printFloat(double, uint8_t);
+
+    void drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uint8_t quadrant, bool filled);
 };
 
 #endif

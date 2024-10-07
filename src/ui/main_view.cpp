@@ -13,6 +13,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS+DISPLAY_PADDING*2,DISPLAY_Y_
 
     this->fft_w.set_show_fps(true);
     this->tune_w.set_visible(config.debug);
+    this->radio_w.set_visible(!config.debug);
     this->info_w.set_visible(config.debug);
     this->info_w.set_show_fps(config.debug);
     this->menu_w.set_show_fps(config.debug);
@@ -30,6 +31,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS+DISPLAY_PADDING*2,DISPLAY_Y_
                          &this->header_w,
                          &this->tune_w,
                          &this->smeter_w,
+                         &this->radio_w,
                          &this->powmeter_w,
                          &this->info_w,
                          &this->status_w,
@@ -51,17 +53,20 @@ void MainView::do_paint() {
         info_w.set_visible(false);
         smeter_w.set_visible(false);
         powmeter_w.set_visible(false);
+        radio_w.set_visible(false);
         menu_w.set_visible(false);
     } else {
         if (menuStatus == IDLE) {
             if (config.debug) {
                 smeter_w.set_visible(false);
+                radio_w.set_visible(false);
                 powmeter_w.set_visible(false);
                 tune_w.set_visible(true);
                 info_w.set_visible(true);
             }
             else {
                 smeter_w.set_visible(!ISTX);
+                radio_w.set_visible(true);
                 powmeter_w.set_visible(ISTX);
                 tune_w.set_visible(false);
                 info_w.set_visible(false);
@@ -69,6 +74,7 @@ void MainView::do_paint() {
             menu_w.set_visible(false);
         } else {
             tune_w.set_visible(false);
+            radio_w.set_visible(false);
             smeter_w.set_visible(false);
             powmeter_w.set_visible(false);
             info_w.set_visible(false);

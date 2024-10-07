@@ -32,7 +32,7 @@ void KeypadView::init() {
 
     label_widget.set_font((FontDef *) &Font_7x10);
     label_widget.set_color(C565_GREY_LIGHT);
-    label_widget.set_align_right(true);
+    label_widget.set_aling(ALIGN_CENTER);
     add_child(&label_widget);
 
     add_child(&text_widget);
@@ -96,7 +96,7 @@ void KeypadView::set_value(double new_value, uint8_t digits, const char *units, 
 
     ftoa(buff, MAX_DIGITS, new_value, frac_digits);
 
-    label_widget.set_text(label);
+    label_widget.set_label(label);
 
     update_text();
 
@@ -151,7 +151,7 @@ void KeypadView::on_button(Button &button) {
 }
 
 void KeypadView::update_text() {
-    text_widget.set_text(buff);
+    text_widget.set_label(buff);
 }
 
 void KeypadView::do_paint() {

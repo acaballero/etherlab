@@ -11,6 +11,12 @@
 #include <vector>
 
 
+enum Align {
+    ALIGN_LEFT,
+    ALIGN_RIGHT,
+    ALIGN_CENTER
+};
+
 class Widget : public Painter {
 public:
 
@@ -87,11 +93,19 @@ public:
 
     void set_active(bool v);
 
+    bool enabled();
+
+    void set_enabled(bool v);
+
     uint8_t get_z_index() const;
 
     void set_z_index(uint8_t z_index);
 
+    void set_font(FontDef *);
+
     uint32_t id = 0;
+
+    void set_aling(Align);
 
 protected:
     void dirty_overlapping_children_in_rect(const Rect &child_rect);
@@ -106,6 +120,10 @@ protected:
 
     Widget *parent_{nullptr};
 
+    FontDef *font = (FontDef *) &Font_Tiny8x8;
+
+    Align align = ALIGN_LEFT;
+
     // FPS measurement
     float fps;
     bool show_fps;
@@ -117,6 +135,7 @@ protected:
         bool visible: 1;        // Paint the widget or not?
         bool focus: 1;          // Widget has focus
         bool active: 1;
+        bool enabled: 1;
     };
 
     flags_t flags{
@@ -124,7 +143,8 @@ protected:
             .hidden = false,
             .visible = true,
             .focus = false,
-            .active = false
+            .active = false,
+            .enabled = true
     };
 
     static const std::vector<Widget *> no_children;

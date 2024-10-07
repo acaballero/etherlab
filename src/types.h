@@ -55,9 +55,19 @@ struct st_freq_mem {
     }
 };
 
+// Radio status info
+struct st_radio_status {
+    float squelch_level;
+    bool tx;
+
+    bool operator==(const st_radio_status &st) const {
+        return squelch_level == st.squelch_level
+               && tx == st.tx;
+    }
+};
+
 // Status bar info
 struct st_status {
-    float squelch_level;
     MODULATION_MODE modulation;
     bool tx;
     radio::BAND band;
@@ -66,12 +76,10 @@ struct st_status {
     radio::FRONTEND_PATH frontend_path;
     bool agc;
     unsigned long f_carrier;
-    bool mute = false;
+
 
     bool operator==(const st_status &st) const {
         return modulation == st.modulation
-               && squelch_level == st.squelch_level
-               && mute == st.mute
                && tx == st.tx
                && frontend_path == st.frontend_path
                && band == st.band
@@ -85,9 +93,11 @@ struct st_status {
 // Top bar info
 struct st_topBar {
     st_dspStatus *dspState;
+    bool mute;
 
     bool operator==(const st_topBar &st) const {
-        return *dspState == *st.dspState;
+        return *dspState == *st.dspState
+        && mute == st.mute;
     }
 };
 
