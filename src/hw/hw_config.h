@@ -2,7 +2,8 @@
 // Created by Angel Dust on 01/11/2019.
 //
 
-#pragma once
+#ifndef __HWCONFIG__
+#define __HWCONFIG__
 
 #define BOARD_VERSION 2
 
@@ -41,19 +42,23 @@
 #define DEBUG_SD_CARD 0
 #define LCD_ENABLED 1
 
-// Enable real-time DSP functions (capture, replay, demodulate...) Not suitable for low speed MCUs
+// Enable real-time DSP functions (capture, replay, demodulate...) Not suitable
+// for low speed MCUs
 #define DSP_ENABLED 1
 
-// Enable USB serial interface (uses around 6kb of data space, 2Kb for Rx/Tx buffers plus some big structures)
+// Enable USB serial interface (uses around 6kb of data space, 2Kb for Rx/Tx
+// buffers plus some big structures)
 #define USB_ENABLED 1
 
 // Enable SWO pin for serial debugging
 #define SWO_ENABLED 1
 #define ENABLE_LOGGER 1
 
-//#define FILTER_BANK_SHIFT_REG_SIZE 16 // There are 2 filter bank boards, chaining 2 8-bit shift registers.
+//#define FILTER_BANK_SHIFT_REG_SIZE 16 // There are 2 filter bank boards,
+// chaining 2 8-bit shift registers.
 
-#define CONFIG_AUTOSAVE_SECS 300 // Autosave config every CONFIG_AUTOSAVE_SECS seconds
+#define CONFIG_AUTOSAVE_SECS                                                   \
+   300 // Autosave config every CONFIG_AUTOSAVE_SECS seconds
 
 #define V_REF 3.2f
 
@@ -76,52 +81,61 @@
 
 // PORT_B (inverted logic in pins 3 - 7)
 #ifdef STM32F4xx
-// The LNA,attenuator and pass-thru must be exclusively activated. Note the LNA has inverted logic
-#define GPIOEXP_FRONT_THRU 1 // Frontend pass-thru
+// The LNA,attenuator and pass-thru must be exclusively activated. Note the LNA
+// has inverted logic
+#define GPIOEXP_FRONT_THRU 1       // Frontend pass-thru
 #define GPIOEXP_FRONT_ATTENUATOR 2 // Frontend attenuator
-#define GPIOEXP_FM_MODULATOR 3 // Goes to PB-1 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_FM_MODULATOR                                                   \
+   3                  // Goes to PB-1 (+5v) of the power switch board (0 is on)
 #define GPIOEXP_LNA 4 // Goes to PB-2 (+5v) of the power switch board (0 is on)
-#define GPIOEXP_5VIF_RX 5 // 1st mixer board. Goes to PB-3 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_5VIF_RX                                                        \
+   5 // 1st mixer board. Goes to PB-3 (+5v) of the power switch board (0 is on)
 #define GPIOEXP_FM_DETECTOR 6 // Goes to PB-4 (+5v) of the power switch boad
-#define GPIOEXP_AM_DETECTOR 7  // Goes to PB-5 (+5v) of the power switch boad
+#define GPIOEXP_AM_DETECTOR 7 // Goes to PB-5 (+5v) of the power switch boad
 #else
-#define GPIOEXP_70CM_AMP 0 // Goes to PB2CTRL (+9v) of the power switch boad (the one with 3906s for switching the power rail)
+#define GPIOEXP_70CM_AMP                                                       \
+   0 // Goes to PB2CTRL (+9v) of the power switch boad (the one with 3906s for
+     // switching the power rail)
 #define GPIOEXP_70CM_AMP_BYPASS 2
-#define GPIOEXP_FM_MODULATOR 3 // Goes to PB-1 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_FM_MODULATOR                                                   \
+   3                  // Goes to PB-1 (+5v) of the power switch board (0 is on)
 #define GPIOEXP_LNA 4 // Goes to PB-2 (+5v) of the power switch board (0 is on)
-#define GPIOEXP_5VIF_RX 5 // 1st mixer board. Goes to PB-3 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_5VIF_RX                                                        \
+   5 // 1st mixer board. Goes to PB-3 (+5v) of the power switch board (0 is on)
 #define GPIOEXP_FM_DETECTOR 6 // Goes to PB-4 (+5v) of the power switch boad
-#define GPIOEXP_AM_DETECTOR 7  // Goes to PB-5 (+5v) of the power switch boad
+#define GPIOEXP_AM_DETECTOR 7 // Goes to PB-5 (+5v) of the power switch boad
 #endif
 
-/* #2 MCP23017 Port expander bit positions (left one looking from power supply input) */
+/* #2 MCP23017 Port expander bit positions (left one looking from power supply
+ * input) */
 
 // PORT_A
 #define GPIOEXP_MUTE 0
 #define GPIOEXP_AGC 1 // AGC on/off (output)
 #define GPIOEXP_ALC 2 // ALC on/off (output)
-#define GPIOEXP_RX 3 // +5v (20 ma.) RX (1) / TX (0)
+#define GPIOEXP_RX 3  // +5v (20 ma.) RX (1) / TX (0)
 
 #define GPIOEXP_ENABLE_POW_CTRL_SHIFT_REG 5
 #define GPIOEXP_POW_AMP_BIAS 6
-#define GPIOEXP_RSSI_LEVEL_ADAPTER 7 // Log amplifiers (FM & AM analog demodulators) signal strength voltage shifter
+#define GPIOEXP_RSSI_LEVEL_ADAPTER                                             \
+   7 // Log amplifiers (FM & AM analog demodulators) signal strength voltage
+     // shifter
 
 // PORT_B (normal logic)
 
 #define GPIOEXP_2ND_15KHZ_FILTER 2 // Second 15 Khz. IF filter switch
-#define GPIOEXP_5VIF_TX 3 // +5v TX (1) / RX (0)
+#define GPIOEXP_5VIF_TX 3          // +5v TX (1) / RX (0)
 #define GPIOEXP_10MHHZ_MIXER 7
 
 /* Power control bit weights */
-#define POWCRL_PA1 (1<<7)
-#define POWCRL_PA2 (1<<6)
-#define POWCRL_PB1 (1<<5)
-#define POWCRL_PB2 (1<<4)
-#define POWCRL_PC1 (1<<3)
-#define POWCRL_PC2 (1<<2)
-#define POWCRL_P5  (1<<1)
+#define POWCRL_PA1 (1 << 7)
+#define POWCRL_PA2 (1 << 6)
+#define POWCRL_PB1 (1 << 5)
+#define POWCRL_PB2 (1 << 4)
+#define POWCRL_PC1 (1 << 3)
+#define POWCRL_PC2 (1 << 2)
+#define POWCRL_P5 (1 << 1)
 #define POWCRL_P12 1
-
 
 /* #3 MCP23017 Front panel */
 
@@ -144,3 +158,4 @@
 //#define GPIOEXP_FPANEL_BACKLIGHT 6
 #define GPIOEXP_FPANEL_STBY_LED 7
 
+#endif

@@ -5,21 +5,25 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "stm32f4xx.h"
 #include <stdio.h>
-#include <stm32f4xx.h>
 
 #define ENABLE_LOGGER 1
 
-#define constrain(amt, low, high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#define constrain(amt, low, high)                                              \
+   ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
-#define delayUS_ASM(us) do {\
-    asm volatile (    "MOV R0,%[loops]\n\t"\
-            "1: \n\t"\
-            "SUB R0, #1\n\t"\
-            "CMP R0, #0\n\t"\
-            "BNE 1b \n\t" : : [loops] "r" (16*us) : "memory"\
-              );\
-} while(0)
+#define delayUS_ASM(us)                                                        \
+   do {                                                                        \
+      asm volatile("MOV R0,%[loops]\n\t"                                       \
+                   "1: \n\t"                                                   \
+                   "SUB R0, #1\n\t"                                            \
+                   "CMP R0, #0\n\t"                                            \
+                   "BNE 1b \n\t"                                               \
+                   :                                                           \
+                   : [loops] "r"(16 * us)                                      \
+                   : "memory");                                                \
+   } while (0)
 
 unsigned long millis();
 
@@ -41,14 +45,14 @@ uint16_t analogRead(uint8_t pinNumber);
 #define DIN2_PIN 4
 #define DAC_MIN 0
 #define DAC_MAX 4096
-#define DAC_BITS  10
-#define ADC_BITS  10
+#define DAC_BITS 10
+#define ADC_BITS 10
 
-#define min2(a, b) ((a)<(b)?(a):(b))
-#define max2(a, b) ((a)>(b)?(a):(b))
+#define min2(a, b) ((a) < (b) ? (a) : (b))
+#define max2(a, b) ((a) > (b) ? (a) : (b))
 
-//static double PRECISION = 0.00000000000001;
-//static int MAX_NUMBER_STRING_SIZE = 32;
+// static double PRECISION = 0.00000000000001;
+// static int MAX_NUMBER_STRING_SIZE = 32;
 
 typedef float float32_t;
 
@@ -66,11 +70,13 @@ void removeCommas(char *str);
 
 float format_eng(char *dest, float value, const char *units, char *new_units);
 
-float format_eng(char *dest, float value, const char *units, char *new_units, uint8_t dec_places);
+float format_eng(char *dest, float value, const char *units, char *new_units,
+                 uint8_t dec_places);
 
 float fasterlog2(float);
 
-void extract_file_and_path(const char *fileandpath, char *path, char *file, size_t size);
+void extract_file_and_path(const char *fileandpath, char *path, char *file,
+                           size_t size);
 
 float fasterlog(float);
 
@@ -82,7 +88,8 @@ void print_vector_complex_f32(float *v, uint16_t len);
 
 void min_max_f32(float *v, uint16_t size, float *min, float *max);
 
-void min_max_f32(float *v, uint16_t size, float *min, float *max, float discard);
+void min_max_f32(float *v, uint16_t size, float *min, float *max,
+                 float discard);
 
 char *ftoa(char *dest, size_t size, double val, int dec);
 
@@ -94,17 +101,15 @@ char *ftoa(char *dest, size_t size, double val, int dec);
 extern volatile uint8_t logEventIndex;
 extern bool scopeLog;
 extern volatile bool eventLogEnabled;
-enum LogEventType {
-    ADC_READ, PID_CALC, SCOPE_LOOP
-};
+enum LogEventType { ADC_READ, PID_CALC, SCOPE_LOOP };
 
 typedef struct {
 
-    uint8_t type;
-    uint32_t time;
-    uint32_t elapsed;
-    bool end;
-    float data;
+   uint8_t type;
+   uint32_t time;
+   uint32_t elapsed;
+   bool end;
+   float data;
 } logevent_st_t;
 
 /*
@@ -125,8 +130,6 @@ void logValue(const char *,float value);
 
 extern logevent_st_t logEvents[LOG_MAX_ITEMS];
 */
-
-
 
 void logEvent(uint8_t type, float value, uint8_t end);
 
@@ -169,4 +172,4 @@ float mv_to_adc(int millivolts, float adc_vref, int adc_max);
  */
 char *dtoa(char *s, double n);
 
-#endif //UTILS_H
+#endif // UTILS_H

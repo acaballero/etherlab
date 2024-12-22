@@ -11,18 +11,15 @@
 #include "button_widget.h"
 #include "lcd.h"
 
-
 class RadioStatusWidget : public View {
-public:
-
+  public:
     RadioStatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
 
     void paint_callback() override;
 
-protected:
-
+  protected:
     st_radio_status _status;
-    const uint8_t btn_height = 20;
+    const uint8_t btn_height = 40;
 
     uint16_t fg_color, bg_color, dimm_color;
 
@@ -41,8 +38,6 @@ protected:
     char *squelch();
 
     char *gain();
-
-
 };
 
-#endif //TRX_RADIO_STATUS_WIDGET_H
+#endif // TRX_RADIO_STATUS_WIDGET_H

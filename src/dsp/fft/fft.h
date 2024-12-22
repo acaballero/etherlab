@@ -33,70 +33,64 @@ typedef float32_t fft_type;
 
 extern arm_cfft_instance_f32 S_cfft;
 
-extern void (*arm_cfft)(
-        const arm_cfft_instance_f32 *,
-        float32_t *,
-        uint8_t,
-        uint8_t);
+extern void (*arm_cfft)(const arm_cfft_instance_f32 *, float32_t *, uint8_t,
+                        uint8_t);
 
-extern void (*arm_cmplx_mag)(
-        float32_t *pSrc,
-        float32_t *pDst,
-        uint32_t numSamples);
-
+extern void (*arm_cmplx_mag)(float32_t *pSrc, float32_t *pDst,
+                             uint32_t numSamples);
 
 enum FFT_STATUS {
-    FFT_STATUS_READY, FFT_STATUS_ADQUIRING, FFT_STATUS_IDLE, FFT_STATUS_FAULT
+   FFT_STATUS_READY,
+   FFT_STATUS_ADQUIRING,
+   FFT_STATUS_IDLE,
+   FFT_STATUS_FAULT
 };
 
+typedef struct st_fft_params {
 
+   uint32_t span;
 
-typedef struct {
+   uint16_t size;
 
-    uint32_t span;
+   // Resolution bandwidth per bin
+   float rbw;
 
-    uint16_t size;
+   // Number of usable bins of each FFT
+   uint16_t nbins;
 
-    // Resolution bandwidth per bin
-    float rbw;
+   uint16_t total_bins;
 
-    // Number of usable bins of each FFT
-    uint16_t nbins;
+   // Usable bandwidth (half the bandwidth, actually) of each slice
+   uint32_t bw = 0;
 
-    uint16_t total_bins;
+   uint8_t n_slices = 1;
 
-    // Usable bandwidth (half the bandwidth, actually) of each slice
-    uint32_t bw = 0;
+   uint8_t decimation_factor = 0; // 0: not initialized
 
-    uint8_t n_slices = 1;
+   uint32_t sample_freq = 0;
 
-    uint8_t decimation_factor = 0; // 0: not initialized
+   float bin_width_px = MAXFLOAT;
 
-    uint32_t sample_freq = 0;
+   // Slice width, in screen pixels
+   uint16_t slice_w_px = 0;
 
-    float bin_width_px = MAXFLOAT;
+   // Start bin of each FFT
+   uint8_t start_bin = 0;
 
-    // Slice width, in screen pixels
-    uint16_t slice_w_px = 0;
+   // Resolution bandwidth at the display
+   float display_rbw = 0;
 
-    // Start bin of each FFT
-    uint8_t start_bin = 0;
+   // Absolute start frequency of the span
+   uint64_t span_f_start;
 
-    // Resolution bandwidth at the display
-    float display_rbw = 0;
+   // Starting intermediate frequency of the span
+   uint64_t span_if_start;
 
-    // Absolute start frequency of the span
-    uint64_t span_f_start;
+   void calc();
 
-    // Starting intermediate frequency of the span
-    uint64_t span_if_start;
-
-    void calc();
-
-    bool valid();
+   bool valid();
 
 } st_fft_params;
-
 
 complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b);
 void processFFT(float32_t *v);
@@ -107,7 +101,7 @@ uint8_t getPeak(uint8_t start_bin, uint8_t end_bin, fft_type &peak_v);
 void adquireFFTAsync();
 void reorderBins(complex_t_f32 *v);
 void calcFFTRange();
-uint8_t findFreqs(int *arr_idx_freqs,uint8_t max);
+uint8_t findFreqs(int *arr_idx_freqs, uint8_t max);
 extern periodic_task fft_task;
 
 extern st_fft_params fft_params;
@@ -120,11 +114,10 @@ extern bool fft_min_db_auto;
 extern bool fft_estimateIQBalance;
 extern uint16_t fft_calc_noise_floor_period_ms;
 extern float fft_noise_floor_db; // Noise floor in dB
-//extern float fft_range;
+// extern float fft_range;
 extern bool fft_mag_overload;
 extern volatile FFT_STATUS fft_status;
 extern fft_type fft_peak_v;
-
 
 extern FIFO fft_fifo;
 extern fft_type fft_display[FTT_DISPLAY_WIDTH];
@@ -134,4 +127,4 @@ extern buffer_t<float32_t> fft_slice_buffer;
 extern fft_type fft_output[FFT_N];
 extern float window[FFT_N];
 
-#endif //TRX_FRONTEND_FFT_H
+#endif // TRX_FRONTEND_FFT_H

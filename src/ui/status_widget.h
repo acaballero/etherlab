@@ -9,45 +9,43 @@
 #include "button_widget.h"
 #include "../types.h"
 
-#define BTN_WIDTH (DISPLAY_X_PIXELS/6)
+#define BTN_WIDTH (DISPLAY_X_PIXELS / 6)
 class StatusWidget : public View {
-public:
+ public:
+   StatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
+   void paint_callback() override;
 
-    StatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
-    void paint_callback() override;
+ protected:
+   st_status _status;
 
-protected:
+   uint16_t fg_color, fg_color_auto, bg_color, dimm_color, disabled_color, disabled_bg;
 
-    st_status _status;
+   Button btnModulation{{0, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
+   Button btnFrontend{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
+   Button btnAgc{{BTN_WIDTH * 2, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
+   Button btnBand{{BTN_WIDTH * 3, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
+   Button btnFilter1{{BTN_WIDTH * 4, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
+   Button btnFilter2{{BTN_WIDTH * 5, 0, BTN_WIDTH, area.height}, display, "", C565_BLACK};
 
-    uint16_t fg_color, fg_color_auto, bg_color, dimm_color, disabled_color, disabled_bg;
+   char buf[20];
 
-    Button btnModulation{{0,0,BTN_WIDTH-1,area.height},display,"",C565_BLACK};
-    Button btnFrontend{{BTN_WIDTH,0,BTN_WIDTH-1,area.height},display,"",C565_BLACK};
-    Button btnAgc{{BTN_WIDTH*2,0,BTN_WIDTH-1,area.height},display,"",C565_BLACK};
-    Button btnBand{{BTN_WIDTH*3,0,BTN_WIDTH-1,area.height},display,"",C565_BLACK};
-    Button btnFilter1{{BTN_WIDTH*4,0,BTN_WIDTH-1,area.height},display,"",C565_BLACK};
-    Button btnFilter2{{BTN_WIDTH*5,0,BTN_WIDTH,area.height},display,"",C565_BLACK};
+   void do_paint() override;
 
-    char buf[20];
+   void init();
 
-    void do_paint() override;
+   void mode();
 
-    void init();
+   const char *modulation();
 
-    void mode();
+   void band(Widget *);
 
-    const char * modulation();
+   void filter1(Widget *);
 
-    void band(Widget *);
+   void filter2(Widget *);
 
-    void filter1(Widget *);
+   char *frontend();
 
-    void filter2(Widget *);
-
-    char * frontend();
-
-    char * agc_alc();
+   char *agc_alc();
 };
 
-#endif //TRX_FRONTEND_STATUS_WIDGET_H
+#endif // TRX_FRONTEND_STATUS_WIDGET_H

@@ -1,0 +1,18 @@
+Diagnostics:
+  Suppress: "pp_including_mainfile_in_preamble"
+CompileFlags:
+  Add:
+    ["-isystem","/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/7.2.1",
+     "-isystem","/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/7.2.1/arm-none-eabi"
+    ]
+    
+  Remove:
+  
+    - "--target=arm-none-eabi"
+    - "--driver-mode=g++"
+    - "-resource-dir"
+    - "--"
+     
+ 
+
+  

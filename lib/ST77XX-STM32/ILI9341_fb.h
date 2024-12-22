@@ -1,7 +1,6 @@
 #ifndef __ILI9341_FB_H
 #define __ILI9341_FB_H
 
-
 // landscape
 
 // default orientation
@@ -12,23 +11,21 @@
 */
 // rotate right
 
-
 #define ILI9341_CMD 0
 #define ILI9341_DATA 1
 
-#define ILI9341_MADCTL_MY  0x80
-#define ILI9341_MADCTL_MX  0x40
-#define ILI9341_MADCTL_MV  0x20
-#define ILI9341_MADCTL_ML  0x10
+#define ILI9341_MADCTL_MY 0x80
+#define ILI9341_MADCTL_MX 0x40
+#define ILI9341_MADCTL_MV 0x20
+#define ILI9341_MADCTL_ML 0x10
 #define ILI9341_MADCTL_RGB 0x00
 #define ILI9341_MADCTL_BGR 0x08
-#define ILI9341_MADCTL_MH  0x04
+#define ILI9341_MADCTL_MH 0x04
 
-#define DISPLAY_X_PIXELS  320
+#define DISPLAY_X_PIXELS 320
 #define DISPLAY_Y_PIXELS 240
-#define ILI9341_ROTATION ( ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR) // 90º
+#define ILI9341_ROTATION (ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR) // 90º
 //#define ILI9341_ROTATION (ILI9341_MADCTL_MX | ILI9341_MADCTL_MY | ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR)  // 270º
-
 
 // rotate left
 /*
@@ -45,7 +42,7 @@
 */
 
 #include "hw/stm32.h"
-#include <stdint-gcc.h>
+#include <stdint.h>
 #include <string.h>
 #include "ips_font.h"
 #include "Display_afb.h"
@@ -66,7 +63,6 @@
 
 #define USING_HORIZONAL 2
 
-
 #define ILI9341_RST_Clr() HAL_GPIO_WritePin(ILI9341_RST_PORT, ILI9341_RST_PIN, GPIO_PIN_RESET)
 #define ILI9341_RST_Set() HAL_GPIO_WritePin(ILI9341_RST_PORT, ILI9341_RST_PIN, GPIO_PIN_SET)
 
@@ -76,39 +72,34 @@
 #define ILI9341_CS_Clr() HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_RESET)
 #define ILI9341_CS_Set() HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_SET)
 
+class ILI9341 : public Display {
 
-class ILI9341: public Display {
+ public:
+   ILI9341(SPI_HandleTypeDef *);
 
-public:
+   int16_t begin();
 
-    ILI9341(SPI_HandleTypeDef *);
+   int16_t stop();
 
-    int16_t begin();
+   void select();
 
-    int16_t stop();
+   void unselect();
 
-    void select();
+   void reset();
 
-    void unselect();
+   uint16_t getPixel(uint16_t x, uint16_t y);
 
-    void reset();
+ private:
+   // void init(void);
+   void writeCommand(uint8_t data);
 
-    uint16_t getPixel(uint16_t x, uint16_t y);
+   void writeData(uint8_t *buff, size_t buff_size);
 
-private:
+   void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
 
-    //void init(void);
-    void writeCommand(uint8_t data);
+   virtual void InitDisplayDataTransfer();
 
-    void writeData(uint8_t *buff, size_t buff_size);
-
-    void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
-
-    virtual void InitDisplayDataTransfer();
-
-    virtual void EndDisplayDataTransfer();
+   virtual void EndDisplayDataTransfer();
 };
 
-
 #endif
-

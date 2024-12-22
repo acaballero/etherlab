@@ -1,12 +1,11 @@
 #ifndef __MENU_H
 #define __MENU_H
 
-
 #include "hw/stm32.h"
-#include <cmath>
+#include <math.h>
 #include "../../lib/Menu/src/menu.h"
 
-enum MenuStatus {ACTIVE,IDLE};
+enum MenuStatus { ACTIVE, IDLE };
 Menu::result doAlert(Menu::eventMask e, Menu::prompt &item);
 void menu_setup();
 void menu_exit();

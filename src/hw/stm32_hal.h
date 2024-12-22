@@ -18,4 +18,4 @@
 
 #endif
 
-#endif //TRX_FRONTEND_STM32_HAL_H
+#endif // TRX_FRONTEND_STM32_HAL_H

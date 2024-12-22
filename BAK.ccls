@@ -1,0 +1,26 @@
+
+%compile_commands.json
+%h -x
+%h c++-header
+/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-g++
+-std=c++17
+-mthumb
+-mcpu=cortex-m4
+-DSTM32F427xx
+-I/home/ahcr/dev/trx/lib
+-I/home/ahcr/dev/trx/include 
+-Isrc
+-Iinclude
+-I/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/7.2.1/include
+-I/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/7.2.1/
+-I/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/7.2.1/arm-none-eabi
+-I/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/7.2.1/arm-none-eabi/thumb
+-I/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arb-none-eabi
+-I/home/ahcr/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/Device/ST/STM32F4xx/Include
+-I/home/ahcr/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/Include
+-I/home/ahcr/.platformio/packages/framework-stm32cubef4/Drivers/STM32F4xx_HAL_Driver/Inc
+-I/home/ahcr/.platformio/packages/framework-stm32cubef4/Drivers/STM32F4xx_HAL_Driver/Src
+-I/home/ahcr/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/DSP/Include
+
+
+

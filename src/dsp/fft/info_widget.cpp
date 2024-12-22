@@ -10,76 +10,77 @@
 
 void InfoWidget::paint_callback() {
 
+   uint8_t buf_size = 30;
+   char buf[buf_size];
 
-    uint8_t buf_size = 30;
-    char buf[buf_size];
+   display->clear();
 
-    display->clear();
+   display->setBgColor(C565_BLACK);
+   display->setColor(C565_WHITE);
+   display->setFont((FontDef *)&Font_7x10);
+   display->gotoCharXY(0, 0);
+   format_long(fft_params.span / 1000, buf);
 
-    display->setBgColor(C565_BLACK);
-    display->setColor(C565_WHITE);
-    display->setFont((FontDef *) &Font_7x10);
-    display->gotoCharXY(0, 0);
-    format_long(fft_params.span / 1000, buf);
+   display->print("Span:", buf, " kHz");
 
-    display->print("Span:", buf, " kHz");
+   uint16_t fft_fs = fft_params.sample_freq / 1000 / fft_params.decimation_factor;
 
-    uint16_t fft_fs = fft_params.sample_freq / 1000 / fft_params.decimation_factor;
+   display->gotoCharXY(13, 0);
 
-    display->gotoCharXY(13, 0);
+   format_long(fft_fs, buf);
+   display->print("ADC:", buf, " kHz");
 
-    format_long(fft_fs, buf);
-    display->print("ADC:", buf, " kHz");
+   if (fft_params.decimation_factor > 1) {
 
-    if (fft_params.decimation_factor > 1) {
+      snprintf(buf, 6, "[x%d]", fft_params.decimation_factor);
+      display->print(buf);
+   }
 
-        snprintf(buf, 6, "[x%d]", fft_params.decimation_factor);
-        display->print(buf);
-    }
+   display->gotoCharXY(0, 1);
 
-    snprintf(buf, 12, " Slices: %d", fft_params.n_slices);
-    display->print(buf);
+   snprintf(buf, 12, " #: %d", fft_params.n_slices);
+   display->print(buf);
 
-    snprintf(buf, 6, " %.0f", fft_params.display_rbw);
-    display->print(" RBW:", buf, " Hz");
+   snprintf(buf, 6, " %.0f", fft_params.display_rbw);
+   display->print(" RBW:", buf, " Hz");
 
-    display->gotoCharXY(0, 1);
+   display->gotoCharXY(0, 2);
 
-    format_long(fft_peak_f, buf);
+   format_long(fft_peak_f, buf);
 
-    display->print("Peak:", buf, " Hz");
+   display->print("Peak:", buf, " Hz");
 
-    snprintf(buf, 12, " %.1f dB", fft_peak);
-    display->print(buf);
+   snprintf(buf, 12, " %.1f dB", fft_peak);
+   display->print(buf);
 
-    snprintf(buf, 6, "%4d", (int) fft_noise_floor_db);
-    display->print(" N.Floor: ", buf, " dB");
+   snprintf(buf, 6, "%4d", (int)fft_noise_floor_db);
+   display->print(" N.Floor: ", buf, " dB");
 
-    display->gotoCharXY(0, 2);
+   display->gotoCharXY(0, 3);
 
-    format_long(radio::f_dsp_if / 1000, buf);
+   format_long(radio::f_dsp_if / 1000, buf);
 
-    display->print("Center:", buf, " kHz");
+   display->print("IF:", buf, " kHz");
 
-    snprintf(buf, 4, "%.1f", sstrength::db_to_s_strength(fft_noise_floor_db));
-    display->print(" N.Floor S: ", buf, "");
+   snprintf(buf, 4, "%.1f", sstrength::db_to_s_strength(fft_noise_floor_db));
+   display->print(" N.Floor S: ", buf, "");
 
-    snprintf(buf, 4, "%d", agc::get_gain());
-    display->print(" Gain: ", buf, "dB");
+   // snprintf(buf, 4, "%d", agc::get_gain());
+   // display->print(" Gain: ", buf, "dB");
 
-    snprintf(buf, 4, "%.1f", agc::agc_voltage);
-    display->print(" AGC: ", buf, " V");
+   snprintf(buf, 4, "%.1f", agc::agc_voltage);
+   display->print(" AGC: ", buf, " V");
 
-    if (status::systemStatus.code != status::ST_OK) {
-        display->gotoCharXY(0, 3);
-        display->setColor(C565_RED);
-        display->print(status::systemStatus.msg);
-    }
+   if (status::systemStatus.code != status::ST_OK) {
+      display->gotoCharXY(0, 4);
+      display->setColor(C565_RED);
+      display->print(status::systemStatus.msg);
+   }
 }
 
 void InfoWidget::do_paint() {
 
-    if (this->dirty()) {
-        display->drawArea(&this->area, this);
-    }
+   if (this->dirty()) {
+      display->drawArea(&this->area, this);
+   }
 }

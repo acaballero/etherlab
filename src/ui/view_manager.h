@@ -9,11 +9,11 @@
 #include "keypad_view.h"
 
 namespace view_manager {
-    extern KeypadView keypadView;
-    extern MainView mainView;
-    extern View *currentView;
-    void push(View *);
-    void init();
-}
+extern KeypadView keypadView;
+extern MainView mainView;
+extern View *currentView;
+void push(View *);
+void init();
+} // namespace view_manager
 
 #endif // VIEW_MANAGER_H

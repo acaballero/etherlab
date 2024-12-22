@@ -1,5 +1,6 @@
 .pioenvs
 .piolibdeps
+.cache
 CMakeListsPrivate.txt
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/.gitignore
@@ -35,3 +36,7 @@ CMakeListsPrivate.txt
 /cmake-build-genericstm32f303cc/
 /.pio/
 /cmake-build-genericstm32f427vgt-mingw/
+.gitignore
+CMakeFiles/3.22.1/CompilerIdCXX/a.out
+CMakeFiles/3.22.1/CompilerIdC/
+CMakeLists.txt.bak

@@ -3,7 +3,8 @@
 #ifndef TRX_FRONTEND_STM32_H
 #define TRX_FRONTEND_STM32_H
 
-//#define TICK_INT_PRIORITY ((uint32_t)0) // The tick interrupt has the highest priority
+//#define TICK_INT_PRIORITY ((uint32_t)0) // The tick interrupt has the highest
+// priority
 
 #ifndef STM32F4xx
 #define STM32F4xx
@@ -12,7 +13,8 @@
 #ifdef STM32F4xx
 
 // HSE VALUE defined by compiler parameters to avoid warnings
-//#define HSE_VALUE ((uint32_t)26000000) /*!< Value of the External oscillator in Hz */
+//#define HSE_VALUE ((uint32_t)26000000) /*!< Value of the External oscillator
+// in Hz */
 #define CPU_CORE_FREQUENCY_HZ SystemCoreClock
 //#define CPU_TIMER_PRESCALER_MS_HZ 168000
 #define CPU_TIMER_PRESCALER_MS_HZ 264000 // OVERCLOCKED (See clocks.cpp)
@@ -54,29 +56,29 @@
 /* DSP task timer linkage */
 #define TASKS_TIMER_TYPEDEF TIM14
 #define TASKS_TIMER_HANDLE htim14
-#define TASKS_TIMER_TYPEDEF_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER<<1) // TIM14 is on the APB1 BUS
+#define TASKS_TIMER_TYPEDEF_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM14 is on the APB1 BUS
 
 /* LED blink timer linkage */
 #define LED_TIMER_TYPEDEF TIM3
 #define LED_TIMER_HANDLE htim3
-#define LED_TIMER_TYPEDEF_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER<<1) // TIM14 is on the APB1 BUS
+#define LED_TIMER_TYPEDEF_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM14 is on the APB1 BUS
 
 /* LCD SPI Linkage */
 #define LCD_SPI_HANDLE hspi2 // link the LCD SPI to hspi2 instance, defined in the includes
 
 /* Input pin controller timer linkage */
 #define INPUT_PIN_CONTROLLER_TIMER TIM13
-#define INPUT_PIN_CONTROLLER_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER<<1) // TIM13 is on the APB1 BUS
+#define INPUT_PIN_CONTROLLER_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM13 is on the APB1 BUS
 
 #define ADC_DMA_TIMER TIM2
-#define ADC_DMA_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER<<1) // TIM2 is on the APB1 BUS
+#define ADC_DMA_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM2 is on the APB1 BUS
 
 #define DAC_TIMER TIM6
-#define DAC_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER<<1) // TIM6 is on the APB1 BUS
+#define DAC_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM6 is on the APB1 BUS
 
 #else
 
-#define HSE_VALUE    ((uint32_t)16000000) /*!< Value of the External oscillator in Hz */
+#define HSE_VALUE ((uint32_t)16000000) /*!< Value of the External oscillator in Hz */
 #define CPU_CORE_FREQUENCY_HZ SystemCoreClock
 #define CPU_TIMER_PRESCALER_HZ_MS 72000
 /* FATFS handle linkage */
@@ -117,4 +119,4 @@
 
 #endif
 
-#endif //TRX_FRONTEND_STM32_H
+#endif // TRX_FRONTEND_STM32_H
