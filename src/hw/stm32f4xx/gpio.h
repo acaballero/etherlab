@@ -1,4 +1,4 @@
-#pragma  once
+#pragma once
 
 #include "../../../lib/MCP23017/mcp23017.h"
 
@@ -7,6 +7,7 @@ extern MCP23017_HandleTypeDef hmcp02;
 extern MCP23017_HandleTypeDef hmcp03;
 
 #define ROT_BTN_EXTI_IRQn EXTI15_10_IRQn
+
 #define LED_0_PIN GPIO_PIN_8
 #define LED_0_GPIO_PORT GPIOD
 #define LED_1_PIN GPIO_PIN_9
@@ -27,6 +28,15 @@ extern MCP23017_HandleTypeDef hmcp03;
 #define DISP_CE_PORT GPIOA
 #define DISP_LED_PIN GPIO_PIN_5
 #define DISP_LED_PORT GPIOD
+#define UNUSEDDEFINE 2
+
+#ifdef PEPE
+#define TESTTTTTT 2
+#else
+
+#define TESTTT 1
+
+#endif
 
 // Touch panel
 #define TOUCH_CE_PIN GPIO_PIN_6
@@ -55,7 +65,6 @@ extern MCP23017_HandleTypeDef hmcp03;
 // #define ANALOG_KEYBOARD_INTERRUPT_PORT GPIOE
 #define FRONT_PANEL_INTERRUPT_PIN_A GPIO_PIN_0
 #define FRONT_PANEL_INTERRUPT_PIN_A_PORT GPIOE
-
 
 /* These are the channels enabled in ADC3 */
 #define S_STRENGTH_ADC_CHANNEL ADC_CHANNEL_12

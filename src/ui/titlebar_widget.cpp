@@ -4,6 +4,7 @@
 
 #include <scanner.h>
 #include <rf_coupler.h>
+#include "ips_font.h"
 #include "titlebar_widget.h"
 #include "config.h"
 #include "battery.h"
@@ -30,12 +31,12 @@ void TitleBarWidget::paint_callback() {
 
     display->setColor(C565_WHITE);
     display->setBgColor(C565_BLACK);
-    display->setFont((FontDef *) &Font_Tiny8x8);
+    display->setFont((FontDef *)&Font_Tiny8x8);
 
 #if ENABLE_RTC
     st_datetime datetime = rtc_get_date_time();
 
-    //sprintf(buff, "%02d/%02d %02d:%02d  ",date.Month,date.Date,time.Hours,time.Minutes);
+    // sprintf(buff, "%02d/%02d %02d:%02d  ",date.Month,date.Date,time.Hours,time.Minutes);
     sprintf(buff, "%02d:%02d ", datetime.time.Hours, datetime.time.Minutes);
     display->print(buff);
 #else
@@ -47,54 +48,55 @@ void TitleBarWidget::paint_callback() {
         char c;
 
         switch (battery::battery_info.status) {
-            case battery::BATTERY_STATUS_LOW:
-                color = C565_RED;
-                c = ICON_BATT_LOW;
-                break;
-            case battery::BATTERY_STATUS_MEDIUM:
-                color = C565_GREENYELLOW;
-                c = ICON_BATT_MID;
-                break;
-            case battery::BATTERY_STATUS_HIGH:
-                color = C565_GREEN;
-                c = ICON_BATT_FULL;
-                break;
-            case battery::BATTERY_STATUS_CHARGING:
-                color = C565_MAGENTA;
-                c = ICON_BATT_CHARGING;
-                break;
+        case battery::BATTERY_STATUS_LOW:
+            color = C565_RED;
+            c = ICON_BATT_LOW;
+            break;
+        case battery::BATTERY_STATUS_MEDIUM:
+            color = C565_GREENYELLOW;
+            c = ICON_BATT_MID;
+            break;
+        case battery::BATTERY_STATUS_HIGH:
+            color = C565_GREEN;
+            c = ICON_BATT_FULL;
+            break;
+        case battery::BATTERY_STATUS_CHARGING:
+            color = C565_MAGENTA;
+            c = ICON_BATT_CHARGING;
+            break;
+        case battery::BATTERY_STATUS_UNDEFINED:
+            c = ICON_BATT_MID;
+            break;
         }
 
-
-        display->setFont((FontDef *) &Font_Icons9x8);
+        display->setFont((FontDef *)&Font_Icons9x8);
         display->setColor(color);
         display->writeChar(c);
-        display->setFont((FontDef *) &Font_Tiny8x8);
+        display->setFont((FontDef *)&Font_Tiny8x8);
         display->setColor(C565_WHITE);
-        //display->print(battery_info.voltage, 2);
+        // display->print(battery_info.voltage, 2);
         display->print(" ");
     }
 
-
-    display->setFont((FontDef *) &Font_Icons9x8);
+    display->setFont((FontDef *)&Font_Icons9x8);
 
 #if ENABLE_SD_CARD
     switch (sdcard_info.status) {
-        case sdcard_STATUS::MountError:
-            color = C565_YELLOW;
-            break;
-        case sdcard_STATUS::IOError:
-            color = C565_RED;
-            break;
-        case sdcard_STATUS::Present:
-            color = C565_WHITE;
-            break;
-        case sdcard_STATUS::NotPresent:
-            color = C565_GREY_DARK;
-            break;
-        case sdcard_STATUS::Mounted:
-            color = C565_GREEN;
-            break;
+    case sdcard_STATUS::MountError:
+        color = C565_YELLOW;
+        break;
+    case sdcard_STATUS::IOError:
+        color = C565_RED;
+        break;
+    case sdcard_STATUS::Present:
+        color = C565_WHITE;
+        break;
+    case sdcard_STATUS::NotPresent:
+        color = C565_GREY_DARK;
+        break;
+    case sdcard_STATUS::Mounted:
+        color = C565_GREEN;
+        break;
     }
 
     display->setColor(color);
@@ -104,18 +106,18 @@ void TitleBarWidget::paint_callback() {
     display->writeChar(ICON_SD_CARD);
 #endif
 
-    display->setFont((FontDef *) &Font_Tiny8x8);
+    display->setFont((FontDef *)&Font_Tiny8x8);
     display->print(" ");
-    display->setFont((FontDef *) &Font_Icons9x8);
+    display->setFont((FontDef *)&Font_Icons9x8);
 
 #if USB_ENABLED
     switch (getConnectionStatus()) {
-        case USB_CONN_STATUS_CONNECTED:
-            color = C565_GREY_LIGHT;
-            break;
-        case USB_CONN_STATUS_DISCONNECTED:
-            color = C565_GREY_DARK;
-            break;
+    case USB_CONN_STATUS_CONNECTED:
+        color = C565_GREY_LIGHT;
+        break;
+    case USB_CONN_STATUS_DISCONNECTED:
+        color = C565_GREY_DARK;
+        break;
     }
 
     display->setColor(color);
@@ -126,9 +128,9 @@ void TitleBarWidget::paint_callback() {
 #endif
 
     display->setColor(C565_GREY_LIGHT);
-    display->setFont((FontDef *) &Font_Tiny8x8);
+    display->setFont((FontDef *)&Font_Tiny8x8);
     display->print(" ");
-    display->setFont((FontDef *) &Font_Icons9x8);
+    display->setFont((FontDef *)&Font_Icons9x8);
 
     color = C565_GREY_LIGHT;
     if (ISANALOG) {
@@ -146,7 +148,7 @@ void TitleBarWidget::paint_callback() {
         display->writeChar(ICON_DIGITAL);
     }
 
-    display->setFont((FontDef *) &Font_Tiny8x8);
+    display->setFont((FontDef *)&Font_Tiny8x8);
 
     if (power_amp::temp >= power_amp::params.MIN_TEMP) {
 
@@ -206,16 +208,16 @@ void TitleBarWidget::paint_callback() {
 
     // AUDIO
 
-    if (main_board::getMute()) display->setColor(C565_GREY_DARK);
+    if (main_board::getMute())
+        display->setColor(C565_GREY_DARK);
     display->print(" ");
-    display->setFont((FontDef *) &Font_Icons9x8);
+    display->setFont((FontDef *)&Font_Icons9x8);
     display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
 }
 
 void TitleBarWidget::do_paint() {
 
-    st_topBar topBar = {dsp_status,
-                        main_board::getMute() ? true : false};
+    st_topBar topBar = {dsp_status, main_board::getMute() ? true : false};
 
     if (this->dirty() || !(topBar == this->status)) {
         this->status = topBar;
@@ -224,8 +226,4 @@ void TitleBarWidget::do_paint() {
     }
 }
 
-void TitleBarWidget::on_info_changed_signal(void *) {
-    this->set_dirty();
-}
-
-
+void TitleBarWidget::on_info_changed_signal(void *) { this->set_dirty(); }

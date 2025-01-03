@@ -15,21 +15,21 @@ void MessageWidget::paint_callback() {
     display->fillBuffer(C565_BLACK);
     display->setBgColor(C565_BLACK);
     display->setVerticalLineSpacing(6);
-    display->setPadding(4,4);
+    display->setPadding(4, 4);
 
-    display->writeRect(0,0,area.width-1,area.height-1,border_color);
-    display->fill(1,1,area.width-1,title_font->height+3,border_color);
+    display->writeRect(0, 0, area.width - 1, area.height - 1, border_color);
+    display->fill(1, 1, area.width - 1, title_font->height + 3, border_color);
 
     uint8_t pad_x = display->get_padding_x();
     uint8_t pad_y = display->get_padding_y();
 
-    display->gotoXY(pad_x,pad_y);
+    display->gotoXY(pad_x, pad_y);
     display->setFont(title_font);
     display->setColor(title_color);
     display->setBgColor(border_color);
     display->print(title);
 
-    display->gotoXY(pad_x,pad_y+title_font->height+display->getVerticalLineSpacing());
+    display->gotoXY(pad_x, pad_y + title_font->height + display->getVerticalLineSpacing());
     display->setFont(text_font);
     display->setColor(text_color);
     display->setBgColor(C565_BLACK);
@@ -42,6 +42,8 @@ bool MessageWidget::on_input(const st_inputEvent event) {
         display->drawArea(&this->area, this);
         return true;
     }
+
+    return false;
 }
 
 void MessageWidget::do_paint() {

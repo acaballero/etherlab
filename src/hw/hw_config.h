@@ -57,8 +57,7 @@
 //#define FILTER_BANK_SHIFT_REG_SIZE 16 // There are 2 filter bank boards,
 // chaining 2 8-bit shift registers.
 
-#define CONFIG_AUTOSAVE_SECS                                                   \
-   300 // Autosave config every CONFIG_AUTOSAVE_SECS seconds
+#define CONFIG_AUTOSAVE_SECS 300 // Autosave config every CONFIG_AUTOSAVE_SECS seconds
 
 #define V_REF 3.2f
 
@@ -85,25 +84,20 @@
 // has inverted logic
 #define GPIOEXP_FRONT_THRU 1       // Frontend pass-thru
 #define GPIOEXP_FRONT_ATTENUATOR 2 // Frontend attenuator
-#define GPIOEXP_FM_MODULATOR                                                   \
-   3                  // Goes to PB-1 (+5v) of the power switch board (0 is on)
-#define GPIOEXP_LNA 4 // Goes to PB-2 (+5v) of the power switch board (0 is on)
-#define GPIOEXP_5VIF_RX                                                        \
-   5 // 1st mixer board. Goes to PB-3 (+5v) of the power switch board (0 is on)
-#define GPIOEXP_FM_DETECTOR 6 // Goes to PB-4 (+5v) of the power switch boad
-#define GPIOEXP_AM_DETECTOR 7 // Goes to PB-5 (+5v) of the power switch boad
+#define GPIOEXP_FM_MODULATOR 3     // Goes to PB-1 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_LNA 4              // Goes to PB-2 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_5VIF_RX 5          // 1st mixer board. Goes to PB-3 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_FM_DETECTOR 6      // Goes to PB-4 (+5v) of the power switch boad
+#define GPIOEXP_AM_DETECTOR 7      // Goes to PB-5 (+5v) of the power switch boad
 #else
-#define GPIOEXP_70CM_AMP                                                       \
-   0 // Goes to PB2CTRL (+9v) of the power switch boad (the one with 3906s for
-     // switching the power rail)
+#define GPIOEXP_70CM_AMP 0 // Goes to PB2CTRL (+9v) of the power switch boad (the one with 3906s for
+// switching the power rail)
 #define GPIOEXP_70CM_AMP_BYPASS 2
-#define GPIOEXP_FM_MODULATOR                                                   \
-   3                  // Goes to PB-1 (+5v) of the power switch board (0 is on)
-#define GPIOEXP_LNA 4 // Goes to PB-2 (+5v) of the power switch board (0 is on)
-#define GPIOEXP_5VIF_RX                                                        \
-   5 // 1st mixer board. Goes to PB-3 (+5v) of the power switch board (0 is on)
-#define GPIOEXP_FM_DETECTOR 6 // Goes to PB-4 (+5v) of the power switch boad
-#define GPIOEXP_AM_DETECTOR 7 // Goes to PB-5 (+5v) of the power switch boad
+#define GPIOEXP_FM_MODULATOR 3 // Goes to PB-1 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_LNA 4          // Goes to PB-2 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_5VIF_RX 5      // 1st mixer board. Goes to PB-3 (+5v) of the power switch board (0 is on)
+#define GPIOEXP_FM_DETECTOR 6  // Goes to PB-4 (+5v) of the power switch boad
+#define GPIOEXP_AM_DETECTOR 7  // Goes to PB-5 (+5v) of the power switch boad
 #endif
 
 /* #2 MCP23017 Port expander bit positions (left one looking from power supply
@@ -117,9 +111,8 @@
 
 #define GPIOEXP_ENABLE_POW_CTRL_SHIFT_REG 5
 #define GPIOEXP_POW_AMP_BIAS 6
-#define GPIOEXP_RSSI_LEVEL_ADAPTER                                             \
-   7 // Log amplifiers (FM & AM analog demodulators) signal strength voltage
-     // shifter
+#define GPIOEXP_RSSI_LEVEL_ADAPTER 7 // Log amplifiers (FM & AM analog demodulators) signal strength voltage
+                                     // shifter
 
 // PORT_B (normal logic)
 

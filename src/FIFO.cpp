@@ -5,36 +5,33 @@
 #include "FIFO.h"
 #include <string.h> // memcpy
 
-
-#define FIFO_INCR_IX(ix, n) {ix++;if(ix==n)ix=0;}
-#define FREE() {(uint32_t)(size-count)}
-#define AVAILABLE() {(uint32_t)this->count}
+#define FIFO_INCR_IX(ix, n)                                                                                                                                    \
+    {                                                                                                                                                          \
+        ix++;                                                                                                                                                  \
+        if (ix == n)                                                                                                                                           \
+            ix = 0;                                                                                                                                            \
+    }
+#define FREE() ((uint32_t)(size - count))
+#define AVAILABLE() ((uint32_t)this->count)
 
 void FIFO::reset() {
     this->read_ix = this->write_ix = 0;
     this->count = 0;
 }
 
-uint32_t FIFO::available() {
-
-    return AVAILABLE();
-
-};
+uint32_t FIFO::available() { return AVAILABLE(); };
 
 uint32_t FIFO::available(char **dest) {
     *dest = this->data + this->read_ix;
     return this->available();
 };
 
-uint32_t FIFO::free() {
-    return FREE();
-};
+uint32_t FIFO::free() { return FREE(); };
 
 uint32_t FIFO::free(char **start) {
     *start = this->data + this->write_ix;
     return FREE();
 };
-
 
 FIFO_ERROR FIFO::write(char *origin, uint32_t n) {
 
@@ -54,8 +51,6 @@ FIFO_ERROR FIFO::write(char *origin, uint32_t n) {
     this->count += n;
 
     return n ? FIFO_ERROR_OVERRUN : FIFO_ERROR_NONE;
-
-
 }
 
 /*
@@ -79,7 +74,8 @@ FIFO_ERROR FIFO::writeBlock(char *origin, uint32_t n) {
 inline void FIFO::feed_unsafe(uint32_t n) {
     this->write_ix += n;
     this->count += n;
-    if (this->write_ix >= this->size) this->write_ix = this->write_ix - this->size;
+    if (this->write_ix >= this->size)
+        this->write_ix = this->write_ix - this->size;
 }
 
 FIFO_ERROR FIFO::feed(uint32_t n) {
@@ -91,7 +87,6 @@ FIFO_ERROR FIFO::feed(uint32_t n) {
     } else {
         return FIFO_ERROR_OVERRUN;
     }
-
 }
 
 /*
@@ -100,7 +95,8 @@ FIFO_ERROR FIFO::feed(uint32_t n) {
 FIFO_ERROR FIFO::consume(uint32_t n, char **dest) {
 
     uint32_t av = AVAILABLE();
-    if (av < n) return FIFO_ERROR_UNDERRUN;
+    if (av < n)
+        return FIFO_ERROR_UNDERRUN;
     else {
         *dest = this->data + this->read_ix;
         this->read_ix += n;
@@ -119,10 +115,6 @@ FIFO_ERROR FIFO::consume(uint32_t n, char **dest) {
     // return n?FIFO_ERROR_UNDERRUN:FIFO_ERROR_NONE;
 }
 
-uint32_t FIFO::getSize() const {
-    return size;
-}
+uint32_t FIFO::getSize() const { return size; }
 
-void FIFO::setSize(uint32_t size) {
-    FIFO::size = size;
-}
+void FIFO::setSize(uint32_t size) { FIFO::size = size; }
