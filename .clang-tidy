@@ -1,0 +1,2 @@
+Checks: '-*,modernize-use-override,clang-diagnostic-missing-declarations'
+WarningsAsErrors: ''

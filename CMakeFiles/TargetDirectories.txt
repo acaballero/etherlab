@@ -1,0 +1,6 @@
+/home/ahcr/dev/trx/CMakeFiles/Upload.dir
+/home/ahcr/dev/trx/CMakeFiles/Production.dir
+/home/ahcr/dev/trx/CMakeFiles/Debug.dir
+/home/ahcr/dev/trx/CMakeFiles/Z_DUMMY_TARGET.dir
+/home/ahcr/dev/trx/CMakeFiles/edit_cache.dir
+/home/ahcr/dev/trx/CMakeFiles/rebuild_cache.dir
