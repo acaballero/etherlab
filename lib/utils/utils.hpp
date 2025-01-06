@@ -10,20 +10,21 @@
 
 #define ENABLE_LOGGER 1
 
-#define constrain(amt, low, high)                                              \
-   ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
+#ifndef constrain
+#define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
+#endif
 
-#define delayUS_ASM(us)                                                        \
-   do {                                                                        \
-      asm volatile("MOV R0,%[loops]\n\t"                                       \
-                   "1: \n\t"                                                   \
-                   "SUB R0, #1\n\t"                                            \
-                   "CMP R0, #0\n\t"                                            \
-                   "BNE 1b \n\t"                                               \
-                   :                                                           \
-                   : [loops] "r"(16 * us)                                      \
-                   : "memory");                                                \
-   } while (0)
+#define delayUS_ASM(us)                                                                                                                                        \
+    do {                                                                                                                                                       \
+        asm volatile("MOV R0,%[loops]\n\t"                                                                                                                     \
+                     "1: \n\t"                                                                                                                                 \
+                     "SUB R0, #1\n\t"                                                                                                                          \
+                     "CMP R0, #0\n\t"                                                                                                                          \
+                     "BNE 1b \n\t"                                                                                                                             \
+                     :                                                                                                                                         \
+                     : [loops] "r"(16 * us)                                                                                                                    \
+                     : "memory");                                                                                                                              \
+    } while (0)
 
 unsigned long millis();
 
@@ -70,13 +71,11 @@ void removeCommas(char *str);
 
 float format_eng(char *dest, float value, const char *units, char *new_units);
 
-float format_eng(char *dest, float value, const char *units, char *new_units,
-                 uint8_t dec_places);
+float format_eng(char *dest, float value, const char *units, char *new_units, uint8_t dec_places);
 
 float fasterlog2(float);
 
-void extract_file_and_path(const char *fileandpath, char *path, char *file,
-                           size_t size);
+void extract_file_and_path(const char *fileandpath, char *path, char *file, size_t size);
 
 float fasterlog(float);
 
@@ -88,8 +87,7 @@ void print_vector_complex_f32(float *v, uint16_t len);
 
 void min_max_f32(float *v, uint16_t size, float *min, float *max);
 
-void min_max_f32(float *v, uint16_t size, float *min, float *max,
-                 float discard);
+void min_max_f32(float *v, uint16_t size, float *min, float *max, float discard);
 
 char *ftoa(char *dest, size_t size, double val, int dec);
 
@@ -105,11 +103,11 @@ enum LogEventType { ADC_READ, PID_CALC, SCOPE_LOOP };
 
 typedef struct {
 
-   uint8_t type;
-   uint32_t time;
-   uint32_t elapsed;
-   bool end;
-   float data;
+    uint8_t type;
+    uint32_t time;
+    uint32_t elapsed;
+    bool end;
+    float data;
 } logevent_st_t;
 
 /*

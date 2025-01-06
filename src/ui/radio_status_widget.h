@@ -19,12 +19,13 @@ class RadioStatusWidget : public View {
 
   protected:
     st_radio_status _status;
-    const uint8_t btn_height = 40;
+    const uint8_t btn_height = 30;
 
     uint16_t fg_color, bg_color, dimm_color;
 
     Label lblMode{{0, 0, area.width / 2 - 1, btn_height - 1}};
-    Button btnSquelch{{area.width / 2 + 1, 0, area.width / 2 - 1, btn_height - 1}, &lcd, "", C565_BLACK};
+    Button btnVFO{{area.width / 2 + 1, 0, area.width / 2 - 1, btn_height - 1}, &lcd, "", C565_BLACK};
+    Button btnSquelch{{area.width / 2 + 1, btn_height, area.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
     Button btnGain{{0, btn_height, area.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
 
     char buf[20];
@@ -38,6 +39,8 @@ class RadioStatusWidget : public View {
     char *squelch();
 
     char *gain();
+
+    char *vfo();
 };
 
 #endif // TRX_RADIO_STATUS_WIDGET_H

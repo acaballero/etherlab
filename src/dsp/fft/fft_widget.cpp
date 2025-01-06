@@ -2,19 +2,17 @@
 // Created by Angel Dust on 18/04/2021.
 //
 
+#include "Display_afb.h"
 #include "config.h"
 #include "fft_widget.h"
 #include "fft.h"
 #include "agc.h"
 
-FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display),
-                                                                                       style{s} {
-}
+FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {}
 
 void FFTWidget::draw_bandwidth() {
     int16_t bm_s, bm_e, bm_m;
-    int16_t px_if_width =
-            (uint8_t) (radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / fft_params.display_rbw) >> 1;
+    int16_t px_if_width = (uint8_t)(radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / fft_params.display_rbw) >> 1;
     bm_m = DISPLAY_X_PIXELS >> 1;
 
     if (config.modulation == SSB_USB) {
@@ -46,12 +44,12 @@ void FFTWidget::draw_freq_marks() {
 
     while (n) {
         data = config.freqs[arr_idx_freqs[n - 1]];
-        uint16_t x = ((float) (data.freq - fft_params.span_f_start) / (float) (fft_params.span)) * FTT_DISPLAY_WIDTH;
+        uint16_t x = ((float)(data.freq - fft_params.span_f_start) / (float)(fft_params.span)) * FTT_DISPLAY_WIDTH;
         if (x < FFT_ZONE_WIDTH) {
             // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
             display->writeVertLine(x, 1, FFT_HEIGHT, C565_GREY_LIGHT);
             display->gotoXY(x - (strlen(data.name) << 1), 0);
-            display->setFont((FontDef *) &Font_Micro4x6);
+            display->setFont((FontDef *)&Font_Micro4x6);
             display->setColor(C565_WHITE);
             display->setBgColor(C565_GREY_LIGHT);
             display->write(data.name);
@@ -66,7 +64,7 @@ void FFTWidget::draw_span_marks() {
     uint8_t y0 = 2;
     uint16_t x2 = FFT_ZONE_WIDTH - 30;
     uint16_t span = fft_params.span / 1000 / 2;
-    display->setFont((FontDef *) &Font_Fixed5x7);
+    display->setFont((FontDef *)&Font_Fixed5x7);
     display->setColor(C565_GREY_LIGHT);
     display->setBgColor(C565_GREY_DARKER);
     display->setVerticalLineSpacing(2);
@@ -79,7 +77,7 @@ void FFTWidget::draw_span_marks() {
     display->gotoXY(x2 + 3, y0 + 2);
     sprintf(buf, "+%3dk", span);
     display->print(buf);
-    display->setFont((FontDef *) &Font_7x10);
+    display->setFont((FontDef *)&Font_7x10);
 }
 
 void FFTWidget::draw_h_labels() {
@@ -95,21 +93,22 @@ void FFTWidget::draw_h_labels() {
     uint32_t delta_khz = config.fft.span / n_divs / 1000;
     uint16_t delta_x = DISPLAY_X_PIXELS / n_divs;
 
-    display->setFont((FontDef *) &Font_Fixed5x7);
+    display->setFont((FontDef *)&Font_Fixed5x7);
     display->setColor(C565_GREY_LIGHT);
+    display->setBgColor(C565_TRANSPARENT);
 
     // Start
-    float f_khz = (config.f_carrier / 1000) - (((n_divs - 1) >> 1) * delta_khz);
+    float f_khz = (config.vfo[config.vfo_ix].freq / 1000) - (((n_divs - 1) >> 1) * delta_khz);
     uint16_t x = (DISPLAY_X_PIXELS >> 1) - (((n_divs >> 1) - 1) * delta_x);
 
     for (int i = 0; i < n_divs - 1; i++) {
-        float f_mhz = (float) f_khz / 1000.0f;
+        float f_mhz = (float)f_khz / 1000.0f;
         if (delta_khz > 200) {
             sprintf(buf, "%.1f", f_mhz);
         } else {
             sprintf(buf, "%.2f", f_mhz);
         }
-        display->gotoXY(x - (((int) strlen(buf)) * 2), FFT_HEIGHT + 3);
+        display->gotoXY(x - (((int)strlen(buf)) * 2), FFT_HEIGHT + 3);
         display->print(buf);
         f_khz += delta_khz;
         x += delta_x;
@@ -138,9 +137,8 @@ void FFTWidget::draw_peak() {
 
 void FFTWidget::draw_noise_floor() {
     if (fft_calc_noise_floor_period_ms > 0) {
-        uint16_t py = FFT_HEIGHT - (uint8_t) (
-                ((float) (fft_noise_floor_db - config.fft.min_db) / (float) (config.fft.max_db - config.fft.min_db)) *
-                (float) FFT_HEIGHT);
+        uint16_t py =
+            FFT_HEIGHT - (uint8_t)(((float)(fft_noise_floor_db - config.fft.min_db) / (float)(config.fft.max_db - config.fft.min_db)) * (float)FFT_HEIGHT);
         display->writeLine(0, py, FFT_ZONE_WIDTH - 1, py, C565_PINK);
     }
 }
@@ -167,16 +165,16 @@ void FFTWidget::draw_spectrum_line() {
 void FFTWidget::draw_spectrum() {
 
     switch (style) {
-        case FFT_SPECTRUM_STYLE_LINE:
-            draw_spectrum_line();
-            break;
-        case FFT_SPECTRUM_STYLE_FILL:
-            draw_spectrum_fill();
-            break;
-        case FFT_SPECTRUM_STYLE_LINE_FILL:
-            draw_spectrum_fill();
-            draw_spectrum_line();
-            break;
+    case FFT_SPECTRUM_STYLE_LINE:
+        draw_spectrum_line();
+        break;
+    case FFT_SPECTRUM_STYLE_FILL:
+        draw_spectrum_fill();
+        break;
+    case FFT_SPECTRUM_STYLE_LINE_FILL:
+        draw_spectrum_fill();
+        draw_spectrum_line();
+        break;
     }
 
     display->setBgColor(C565_BLACK);
@@ -206,7 +204,7 @@ void FFTWidget::paint_callback() {
 
     // uint16_t start;
 
-    //GPIOA->BSRR= GPIO_PIN_15;
+    // GPIOA->BSRR= GPIO_PIN_15;
 
     draw_bandwidth();
 
@@ -214,7 +212,7 @@ void FFTWidget::paint_callback() {
 
     draw_spectrum();
 
-    //GPIOA->BSRR= GPIO_PIN_15 << 16;
+    // GPIOA->BSRR= GPIO_PIN_15 << 16;
 
     draw_peak();
 
@@ -234,13 +232,9 @@ void FFTWidget::do_paint() {
     }
 }
 
-void FFTWidget::set_style(FFT_SPECTRUM_STYLE v) {
-    style = v;
-}
+void FFTWidget::set_style(FFT_SPECTRUM_STYLE v) { style = v; }
 
-FFT_SPECTRUM_STYLE FFTWidget::get_style() {
-    return style;
-}
+FFT_SPECTRUM_STYLE FFTWidget::get_style() { return style; }
 
 void FFTWidget::set_colors(uint16_t line, uint16_t fill) {
     spectrum_line_color = line;

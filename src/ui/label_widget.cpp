@@ -17,19 +17,17 @@ void Label::paint_callback() {
     uint16_t vw = strlen(value);
     uint16_t uw = strlen(unit);
     uint16_t w = (lw + vw + uw);
-    if (lw && vw) w++;
-    if (uw) w++;
+    // if (lw && vw) w++;
+    // if (uw) w++;
 
     int16_t width = w * (font->width + 1);
     int16_t x;
 
-    if (align==ALIGN_CENTER) {
+    if (align == ALIGN_CENTER) {
         x = (area.width - width) / 2;
-    }
-    else if (align==ALIGN_RIGHT) {
+    } else if (align == ALIGN_RIGHT) {
         x = area.width - width - display->get_padding_x();
-    }
-    else {
+    } else {
         x = display->get_padding_x();
     }
 
@@ -39,7 +37,6 @@ void Label::paint_callback() {
 
     display->gotoXY(x, (area.height - font->height + 2) / 2);
     display->print(label, value, unit, fg_color, fg_color_value, fg_color_unit);
-
 }
 
 void Label::do_paint() {
@@ -63,13 +60,10 @@ void Label::set_unit(const char *t) {
     set_dirty();
 }
 
-void Label::set_color(uint16_t c) {
-    set_color(c, fg_color_value, fg_color_unit);
-}
+void Label::set_color(uint16_t c) { set_color(c, fg_color_value, fg_color_unit); }
 
 void Label::set_color(uint16_t l, uint16_t v, uint16_t u) {
     fg_color = l;
     fg_color_value = v;
     fg_color_unit = u;
 }
-

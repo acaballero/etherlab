@@ -4,14 +4,14 @@
 
 #include "InputPinController.h"
 #include "../../lib/utils/utils.hpp"
+#include <sys/_stdint.h>
 
 InputPinController::InputPinController(TIM_TypeDef *timer) {
-
 
     // Initialization of the timer used to check for the settling of the pin value once a transition has been detected
 
     TIM_MasterConfigTypeDef sMasterConfig = {0};
-    //TIM_OC_InitTypeDef sConfigOC = {0};
+    // TIM_OC_InitTypeDef sConfigOC = {0};
 
     htim.Instance = timer;
     htim.Init.Prescaler = 7200;
@@ -58,7 +58,7 @@ void InputPinController::handleTimerInterrupt() {
     HAL_TIM_IRQHandler(&htim);
 
     // If the debouncing timer has been on for two debouncing periods from the last time a pin changed its value, stop it
-    if (t - this->timer_timeout_ms > this->max_debounce_period << 1) {
+    if ((t - this->timer_timeout_ms) > (uint64_t)(this->max_debounce_period << 1)) {
         HAL_TIM_Base_Stop_IT(&htim);
     }
 }

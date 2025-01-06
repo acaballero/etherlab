@@ -9,39 +9,38 @@
 #include "s_strength.h"
 #include "view.h"
 
-
 void TuneWidget::paint_callback() {
 
     char buf[50];
 
     display->clear();
 
-/*if (si5351.dev_status.LOS) {
+    /*if (si5351.dev_status.LOS) {
 
-    display->gotoCharXY(1, 2);
-    display->print("* CLK FAIL ");
-    display->print(si5351.dev_status.LOS);
-    display->print(" *");
+        display->gotoCharXY(1, 2);
+        display->print("* CLK FAIL ");
+        display->print(si5351.dev_status.LOS);
+        display->print(" *");
 
-}
-else */
+    }
+    else */
 
-//#if SI5351_ENABLED
-//    if (si5351.dev_status.LOL_A || si5351.dev_status.LOL_B) {
-//
-//        display->gotoCharXY(1, 2);
-//        display->print("*PLL LOCK FAIL*");
-//
-//    }
-//#endif
+    //#if SI5351_ENABLED
+    //    if (si5351.dev_status.LOL_A || si5351.dev_status.LOL_B) {
+    //
+    //        display->gotoCharXY(1, 2);
+    //        display->print("*PLL LOCK FAIL*");
+    //
+    //    }
+    //#endif
 
-/*
-    display->gotoCharXY(1, 2);
-    display->print(direction);
-    */
+    /*
+        display->gotoCharXY(1, 2);
+        display->print(direction);
+        */
 
     display->setBgColor(C565_BLACK);
-    display->setFont((FontDef *) &Font_7x10);
+    display->setFont((FontDef *)&Font_7x10);
 
     format_long(radio::mixers[0].getLo() / 1000, buf);
     display->gotoCharXY(0, 0);
@@ -81,12 +80,12 @@ else */
     } else {
 
         // Low pass
-        s_level = s_level - 0.1*(s_level - sstrength::s_level);
+        s_level = s_level - 0.1 * (s_level - sstrength::s_level);
         s_level = fmax(s_level, 0);
 
-        sprintf(buf, "%d.%d", (int) (s_level), (int) (s_level * 10) % 10);
+        sprintf(buf, "%d.%d", (int)(s_level), (int)(s_level * 10) % 10);
 
-        display->setFont((FontDef *) &Font_7x10);
+        display->setFont((FontDef *)&Font_7x10);
         display->gotoCharXY(0, 1);
         display->print("S: ", buf, "");
 
@@ -101,11 +100,9 @@ else */
 
         // Show voltage
 
-        //display->gotoCharXY(20, 1);
-        //display->print(" ");
-        //display->print(sstrength::s_strength);
-
-            
+        // display->gotoCharXY(20, 1);
+        // display->print(" ");
+        // display->print(sstrength::s_strength);
     }
 }
 
