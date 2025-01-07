@@ -16,7 +16,7 @@
 #include "ui/view_manager.h"
 
 #if ENABLE_FFT
- 
+
 #include "dsp/dsp.h" // adc.h requires FFT_TYPE to be declared first
 
 #endif
@@ -45,8 +45,7 @@ USBPrint usb;
 #include "hw/stm32f4xx/adc.h"
 #include "input/touch.h"
 
-#define ENABLE_GPIO_CLOCK                                                      \
-   (RCC->AHBENR |= RCC_AHBENR_GPIOEEN | RCC_AHBENR_GPIOBEN)
+#define ENABLE_GPIO_CLOCK (RCC->AHBENR |= RCC_AHBENR_GPIOEEN | RCC_AHBENR_GPIOBEN)
 #define HIGH GPIO_PIN_SET
 #define LOW GPIO_PIN_RESET
 
@@ -61,8 +60,7 @@ bool printADC = false;
 #define pinmask(P) ((uint8_t)(1 << pinIndex(P)))
 
 GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
-MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB, &hmcp03,
-                   GPIO_MODE_OUTPUT_PP);
+MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB, &hmcp03, GPIO_MODE_OUTPUT_PP);
 
 unsigned long last_autosave_ms = 0;
 
@@ -88,76 +86,76 @@ bool change_calibration = false;
 
 void checkAutoSaveConfig() {
 
-   unsigned long m = 0; // HAL_GetTick();
+    unsigned long m = 0; // HAL_GetTick();
 
-   if ((m - last_autosave_ms) > (CONFIG_AUTOSAVE_SECS * 1000)) {
-      last_autosave_ms = m;
-      //  saveConfig();
-   }
+    if ((m - last_autosave_ms) > (CONFIG_AUTOSAVE_SECS * 1000)) {
+        last_autosave_ms = m;
+        //  saveConfig();
+    }
 }
 
 /*
  * Bliks the led with a period of period_ms microseconds
  */
 void blink(uint32_t period_ms) {
-   HAL_TIM_Base_Start_IT(&LED_TIMER_HANDLE);
-   update_timer(LED_TIMER_TYPEDEF, period_ms, LED_TIMER_TYPEDEF_CLOCK_HZ);
+    HAL_TIM_Base_Start_IT(&LED_TIMER_HANDLE);
+    update_timer(LED_TIMER_TYPEDEF, period_ms, LED_TIMER_TYPEDEF_CLOCK_HZ);
 }
 
 void stop_blink() {
-   ledPin.set(GPIO_PIN_RESET);
-   powPin.set(GPIO_PIN_SET);
-   HAL_TIM_Base_Stop_IT(&LED_TIMER_HANDLE);
+    ledPin.set(GPIO_PIN_RESET);
+    powPin.set(GPIO_PIN_SET);
+    HAL_TIM_Base_Stop_IT(&LED_TIMER_HANDLE);
 }
 
 void standby_signal_callback(void *thisptr, void *args) {
-   if (standby::power_mode == standby::POWER_MODE_SLEEP) {
-      blink(100000000);
-   } else {
-      stop_blink();
-   }
+    if (standby::power_mode == standby::POWER_MODE_SLEEP) {
+        blink(100000000);
+    } else {
+        stop_blink();
+    }
 }
 
 void frequency_signal_callback(void *thisptr, void *args) {
 
-   radio::st_freq_event event = *((radio::st_freq_event *)args);
+    radio::st_freq_event event = *((radio::st_freq_event *)args);
 
-   switch (event.event) {
+    switch (event.event) {
 
-   case radio::BEFORE_UPDATE:
-      // Prevent audio transients
-      main_board::setMute(GPIO_PIN_SET);
-      break;
-   case radio::AFTER_UPDATE:
-      main_board::setMute(GPIO_PIN_RESET);
+        case radio::BEFORE_UPDATE:
+            // Prevent audio transients
+            main_board::setMute(GPIO_PIN_SET);
+            break;
+        case radio::AFTER_UPDATE:
+            main_board::setMute(GPIO_PIN_RESET);
 
-      if (config.filter == radio::BAND_AUTO) {
-         main_board::set_filter();
-         main_board::set_if_filter(config.if_filter);
-      }
-      view_manager::mainView.Waterfall()->centerSpectrum();
-      break;
-   }
+            if (config.filter == radio::BAND_AUTO) {
+                main_board::set_filter();
+                main_board::set_if_filter(config.if_filter);
+            }
+            view_manager::mainView.Waterfall()->centerSpectrum();
+            break;
+    }
 }
 
 void test() {
-   // Go to a  function to avoid having to use the menu again and again
-   nav.doNav(Menu::navCmd(Menu::enterCmd));
-   nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-   nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
+    // Go to a  function to avoid having to use the menu again and again
+    nav.doNav(Menu::navCmd(Menu::enterCmd));
+    nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
+    nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
 }
 
 bool dsptested = false;
 
 void view_loop() {
-   // TODO: Delegate dirty state management to the widget itself based on
-   // information change messages and refresh rate
+    // TODO: Delegate dirty state management to the widget itself based on
+    // information change messages and refresh rate
 
-   view_manager::mainView.TuneInfo()->set_dirty();
-   view_manager::mainView.FFTInfo()->set_dirty();
-   view_manager::mainView.Menu()->set_dirty();
+    view_manager::mainView.TuneInfo()->set_dirty();
+    view_manager::mainView.FFTInfo()->set_dirty();
+    view_manager::mainView.Menu()->set_dirty();
 
-   view_manager::currentView->paint();
+    view_manager::currentView->paint();
 }
 
 //
@@ -181,79 +179,78 @@ void view_loop() {
 
 int main() {
 
-   setup();
-   radio::freq_signal.add(NULL, frequency_signal_callback);
-   standby::signal.add(NULL, standby_signal_callback);
-   HAL_Delay(10);
+    setup();
+    radio::freq_signal.add(NULL, frequency_signal_callback);
+    standby::signal.add(NULL, standby_signal_callback);
 
-   view_manager::init();
+    view_manager::init();
 
-   while (1) {
+    while (1) {
 
-      if (standby::power_mode == standby::POWER_MODE_ON) {
+        if (standby::power_mode == standby::POWER_MODE_ON) {
 
-         if (change_drive_strength) {
-            lo_strength(0, config.lo_drive_strength_0);
-            lo_strength(1, config.lo_drive_strength_1);
-            lo_strength(2, config.lo_drive_strength_1);
-            change_drive_strength = false;
-         }
+            if (change_drive_strength) {
+                lo_strength(0, config.lo_drive_strength_0);
+                lo_strength(1, config.lo_drive_strength_1);
+                lo_strength(2, config.lo_drive_strength_1);
+                change_drive_strength = false;
+            }
 
-         if (change_calibration) {
-            calibrate_freq();
-            radio::update_freq();
-            change_calibration = false;
-         }
+            if (change_calibration) {
+                calibrate_freq();
+                radio::update_freq();
+                change_calibration = false;
+            }
 
-         checkAutoSaveConfig();
-         radio::loop();
-         agc::loop();
+            checkAutoSaveConfig();
+            radio::loop();
+            agc::loop();
 
 #if LCD_ENABLED
 
 #if ENABLE_FFT && DSP_ENABLED
-         fft_task.loop();
+            fft_task.loop();
 #endif
 
 #if ENABLE_SD_CARD
-         sdcard_loop();
+            sdcard_loop();
 #endif
-         view_task.loop();
+            view_task.loop();
 #endif
 
-         scanner::loop();
-         sstrength::loop();
-         battery::loop();
-         power_amp::loop();
-         dsp_loop();
-         rf_coupler::loop();
-         // touch::loop(); // Not required. Dome by interrupts
-      }
+            scanner::loop();
+            sstrength::loop();
+            battery::loop();
+            power_amp::loop();
+            dsp_loop();
+            rf_coupler::loop();
+            // touch::loop(); // Not required. Dome by interrupts
+        }
 
 #if USB_ENABLED
-      cat_protocol::loop(); // CAT protocol
+        cat_protocol::loop(); // CAT protocol
 #endif
-      dispatchEvents();
+        dispatchEvents();
 
-      if (!dsptested) {
+        if (!dsptested) {
 #if DEBUG_SD_CARD
-         test_sd_card();
+            test_sd_card();
 #endif
-         // test();
-         dsptested = true;
-      }
-   }
+            // test();
+            dsptested = true;
+        }
+    }
 }
 
 void TIM3_IRQHandler(void) {
-   ledPin.toggle();
-   powPin.toggle();
+    ledPin.toggle();
+    powPin.toggle();
 
-   /* USER CODE END TIM1_UP_TIM10_IRQHandler 0 */
-   HAL_TIM_IRQHandler(&LED_TIMER_HANDLE);
-   /* USER CODE BEGIN TIM1_UP_TIM10_IRQHandler 1 */
+    /* USER CODE END TIM1_UP_TIM10_IRQHandler 0 */
+    HAL_TIM_IRQHandler(&LED_TIMER_HANDLE);
+    /* USER CODE BEGIN TIM1_UP_TIM10_IRQHandler 1 */
 
-   /* USER CODE END TIM1_UP_TIM10_IRQHandler 1 */
+    /* USER CODE END TIM1_UP_TIM10_IRQHandler 1 */
 }
 
 #if SWO_ENABLED
@@ -265,13 +262,13 @@ void TIM3_IRQHandler(void) {
  */
 int _write(int file, char *ptr, int len) {
 
-   int DataIdx;
+    int DataIdx;
 
-   for (DataIdx = 0; DataIdx < len; DataIdx++) {
-      ITM_SendChar(*ptr++);
-   }
+    for (DataIdx = 0; DataIdx < len; DataIdx++) {
+        ITM_SendChar(*ptr++);
+    }
 
-   return len;
+    return len;
 }
 
 void _putchar(char c) { ITM_SendChar(c); }

@@ -8,7 +8,7 @@
 #include "widget.h"
 #include <functional>
 
-enum ButtonStyle { BUTTON_STYLE_3D = 0, BUTTON_STYLE_FLAT };
+enum ButtonStyle { BUTTON_STYLE_3D = 0, BUTTON_STYLE_FLAT, LABEL_STYLE_HOLLOW };
 
 class Button : public Widget {
   public:

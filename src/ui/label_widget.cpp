@@ -3,15 +3,22 @@
 //
 
 #include "label_widget.h"
+#include "ui/button_widget.h"
+#include <math.h>
 
 void Label::paint_callback() {
 
     display->clear();
-    display->setColor(bg_color);
-    display->drawRoundedRectangle(0, 0, area.width, area.height, 3, false);
-    display->setColor(fg_color);
+
     display->setBgColor(bg_color);
     display->setFont(font);
+
+    if (has_border) {
+        display->setColor(bg_color);
+        display->drawRoundedRectangle(0, 0, area.width, area.height, 3, style != LABEL_STYLE_HOLLOW);
+    }
+
+    display->setColor(fg_color);
 
     uint16_t lw = strlen(label);
     uint16_t vw = strlen(value);
@@ -20,11 +27,11 @@ void Label::paint_callback() {
     // if (lw && vw) w++;
     // if (uw) w++;
 
-    int16_t width = w * (font->width + 1);
+    int16_t width = w * (font->width);
     int16_t x;
 
     if (align == ALIGN_CENTER) {
-        x = (area.width - width) / 2;
+        x = ceil((float)(area.width - width) / 2.0);
     } else if (align == ALIGN_RIGHT) {
         x = area.width - width - display->get_padding_x();
     } else {
@@ -38,6 +45,10 @@ void Label::paint_callback() {
     display->gotoXY(x, (area.height - font->height + 2) / 2);
     display->print(label, value, unit, fg_color, fg_color_value, fg_color_unit);
 }
+
+ButtonStyle Label::get_style() const { return style; }
+
+void Label::set_style(ButtonStyle style) { Label::style = style; }
 
 void Label::do_paint() {
     if (this->dirty()) {
@@ -67,3 +78,9 @@ void Label::set_color(uint16_t l, uint16_t v, uint16_t u) {
     fg_color_value = v;
     fg_color_unit = u;
 }
+
+uint16_t Label::get_bg() const { return bg_color; }
+
+void Label::set_bg(uint16_t bg) { Label::bg_color = bg; }
+
+void Label::set_has_border(bool b) { has_border = b; }

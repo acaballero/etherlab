@@ -180,10 +180,10 @@ void zipIQSamples(fft_type *srcReal, fft_type *srcImag, complex_t_f32 *dest, uin
 
 inline float get_window_ampl_corr_factor() {
     switch (config.fft.window) {
-    case FFT_WINDOW_HAMMING:
-        return 1.85f;
-    default:
-        return 1;
+        case FFT_WINDOW_HAMMING:
+            return 1.85f;
+        default:
+            return 1;
     }
 }
 

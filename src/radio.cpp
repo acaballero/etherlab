@@ -216,6 +216,11 @@ void change_step(int amount) {
     }
 }
 
+uint8_t toggle_vfo() {
+    set_vfo(get_vfo() == 0 ? 1 : 0);
+    return get_vfo();
+}
+
 void set_vfo(uint8_t vfo_ix) {
     if (vfo_ix != config.vfo_ix) {
         config.vfo_ix = vfo_ix;

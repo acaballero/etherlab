@@ -36,7 +36,7 @@ char *RadioStatusWidget::mode() {
 }
 
 char *RadioStatusWidget::vfo() {
-    format_long(radio::get_frequency(), buf);
+    format_long(radio::get_vfo_frequency(radio::get_vfo()), buf);
     return buf;
 }
 
@@ -56,7 +56,7 @@ char *RadioStatusWidget::squelch() {
 
 void RadioStatusWidget::do_paint() {
 
-    st_radio_status status = {config.squelch_level, ISTX};
+    st_radio_status status = {config.squelch_level, ISTX, radio::get_vfo(), agc::get_gain()};
 
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
 
@@ -122,4 +122,7 @@ void RadioStatusWidget::do_paint() {
     }
 }
 
-void RadioStatusWidget::paint_callback() { display->clear(); }
+void RadioStatusWidget::paint_callback() {
+    // TODO: Clear only the first time. Now causes flicker (first black then the buttons)
+    display->clear();
+}

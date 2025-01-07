@@ -16,36 +16,36 @@ Si5351 si5351;
 
 adf4350_init_param adf4350Params = {
 
-        .clkin=ADF4351_XTAL_FREQ,
-        .channel_spacing=500,
-        .power_up_frequency=40000000,
-        .reference_div_factor=0,
-        .reference_doubler_enable=0,
-        .reference_div2_enable=1,
+    .clkin = ADF4351_XTAL_FREQ,
+    .channel_spacing = 500,
+    .power_up_frequency = 40000000,
+    .reference_div_factor = 0,
+    .reference_doubler_enable = 0,
+    .reference_div2_enable = 1,
 
-        // r2_user_settings
-        .phase_detector_polarity_positive_enable=1,
-        .lock_detect_precision_6ns_enable=0,
-        .lock_detect_function_integer_n_enable=0,
-        .charge_pump_current=7, // Must match loop filter desiign
-        .muxout_select=6, // 0: three-state, 1: VDD, 2: GND, 3: R counter, 4: N divider, 5: analog_lock, 6: digital lock
-        .low_spur_mode_enable=1,
+    // r2_user_settings
+    .phase_detector_polarity_positive_enable = 1,
+    .lock_detect_precision_6ns_enable = 0,
+    .lock_detect_function_integer_n_enable = 0,
+    .charge_pump_current = 7, // Must match loop filter desiign
+    .muxout_select = 6,       // 0: three-state, 1: VDD, 2: GND, 3: R counter, 4: N divider, 5: analog_lock, 6: digital lock
+    .low_spur_mode_enable = 1,
 
-        // r3_user_settings
-        .cycle_slip_reduction_enable=0, // Caution with this. Enabling it caused huge spurs at 2.5 KHz offset (with 500 Hz channel spacing. Offset increases with spacing). Enabling it also requires 50% duty cycle reference so maybe div2 ref is also required
-        .charge_cancellation_enable=0,
-        .anti_backlash_3ns_enable=0,
-        .band_select_clock_mode_high_enable=1,
-        .clk_divider_12bit=0,
-        .clk_divider_mode=0,
+    // r3_user_settings
+    .cycle_slip_reduction_enable = 0, // Caution with this. Enabling it caused huge spurs at 2.5 KHz offset (with 500 Hz channel spacing. Offset increases with
+                                      // spacing). Enabling it also requires 50% duty cycle reference so maybe div2 ref is also required
+    .charge_cancellation_enable = 0,
+    .anti_backlash_3ns_enable = 0,
+    .band_select_clock_mode_high_enable = 1,
+    .clk_divider_12bit = 0,
+    .clk_divider_mode = 0,
 
-        // r4_user_settings
-        .aux_output_enable=0,
-        .aux_output_fundamental_enable=0,
-        .mute_till_lock_enable=1,
-        .output_power=3,//0:-4dbm,1:-1,2:+2,3:+5
-        .aux_output_power=0
-};
+    // r4_user_settings
+    .aux_output_enable = 0,
+    .aux_output_fundamental_enable = 0,
+    .mute_till_lock_enable = 1,
+    .output_power = 3, // 0:-4dbm,1:-1,2:+2,3:+5
+    .aux_output_power = 0};
 
 IF_GAIN vga_gain = config.hw.cmx973_vga;
 IF_GAIN vgb_gain = config.hw.cmx973_vga;
@@ -63,7 +63,6 @@ si5351_drive lo_power_to_si5351_drive_strength(LO_POWER lo_power) {
             return SI5351_DRIVE_6MA;
     }
 }
-
 
 uint8_t lo_power_to_adf4350_drive_strength(LO_POWER lo_power) {
     switch (lo_power) {
@@ -122,6 +121,8 @@ int16_t if_gain_to_db(IF_GAIN if_gain) {
             return -24;
         case IF_GAIN_MINUS30:
             return -30;
+        default:
+            status::handleError(status::ST_ERROR, "Undefined IF_GAIN value");
     }
 }
 
@@ -130,12 +131,11 @@ int calc_max_input_dbm() {
     if (vga_gain == IF_GAIN_0 && vgb_gain == IF_GAIN_0) {
         return -42;
     } else if (vga_gain <= IF_GAIN_MINUS18 && vgb_gain == IF_GAIN_0) {
-        return -36 + if_gain_to_db(vga_gain)/2;
+        return -36 + if_gain_to_db(vga_gain) / 2;
     } else {
-        return -42 - (if_gain_to_db(vga_gain) +  if_gain_to_db(vgb_gain))/2;
+        return -42 - (if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain)) / 2;
     }
 }
-
 
 void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
 
@@ -157,18 +157,13 @@ void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
     }
 }
 
-int get_max_input_dbm() {
-    return cmx973_input_ip3;
-}
-
+int get_max_input_dbm() { return cmx973_input_ip3; }
 
 /**
  * Returns the overall gain
  * @return
  */
-int board_gain() {
-    return if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain) + 60;
-}
+int board_gain() { return if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain) + 60; }
 
 void lo_enable(uint8_t stage, bool enabled) {
     switch (stage) {
@@ -196,7 +191,8 @@ bool lo_freq(uint8_t stage, uint64_t freq) {
             ok = si5351.set_freq(freq * SI5351_FREQ_MULT, SI5351_2LO_CLK) == HAL_OK;
             break;
         case 2:
-            ok = si5351.set_freq(freq * SI5351_FREQ_MULT, SI5351_IF_CLK) == HAL_OK;;
+            ok = si5351.set_freq(freq * SI5351_FREQ_MULT, SI5351_IF_CLK) == HAL_OK;
+            ;
             break;
     }
 
@@ -218,7 +214,7 @@ void calibrate_freq() {
     si5351.set_correction(config.if_correction * SI5351_FREQ_MULT, SI5351_PLL_INPUT_XO);
 
     // PLLB frequency is fixed (so we can use it as VCXO and pull its frequency)
-    //si5351.set_freq_manual(config.f_2nd_lo*SI5351_FREQ_MULT,SI5351_PLLB_FREQ,SI5351_2LO_CLK,0);
+    // si5351.set_freq_manual(config.f_2nd_lo*SI5351_FREQ_MULT,SI5351_PLLB_FREQ,SI5351_2LO_CLK,0);
     si5351.set_freq(radio::mixers[1].getLo() * SI5351_FREQ_MULT, SI5351_2LO_CLK);
 
     lo_setup();
@@ -277,38 +273,38 @@ void if_setup() {
     bool b = si5351.init(Si5351_I2C_HANDLE, SI5351_CRYSTAL_LOAD_10PF, SI5351_XTAL_FREQ, config.f_correction, 0);
 
     if (!b) {
-        //DEBUGPRINT("Error initalizing Si5351\n", 0);
+        // DEBUGPRINT("Error initalizing Si5351\n", 0);
     }
 
     /*** TEST ***/
-    //si5351.set_ref_freq(25000000, SI5351_PLL_INPUT_CLKIN);
-    //si5351.pll_reset(SI5351_PLLB);
+    // si5351.set_ref_freq(25000000, SI5351_PLL_INPUT_CLKIN);
+    // si5351.pll_reset(SI5351_PLLB);
 
-    //si5351.set_pll_input(SI5351_PLLB, SI5351_PLL_INPUT_CLKIN);
-    //si5351.set_clock_source(SI5351_CLK1, SI5351_CLK_SRC_MS);
-    //si5351.update_status();
+    // si5351.set_pll_input(SI5351_PLLB, SI5351_PLL_INPUT_CLKIN);
+    // si5351.set_clock_source(SI5351_CLK1, SI5351_CLK_SRC_MS);
+    // si5351.update_status();
 
     //   si5351.set_correction(config.if_correction*SI5351_FREQ_MULT, SI5351_PLL_INPUT_XO);
     //  si5351.set_vcxo(SI5351_PLLB_FREQ,100);
 
-    //si5351.set_ms_source(SI5351_CLK1, SI5351_PLLB);
-    //si5351.drive_strength(SI5351_CLK1, SI5351_DRIVE_2MA);
+    // si5351.set_ms_source(SI5351_CLK1, SI5351_PLLB);
+    // si5351.drive_strength(SI5351_CLK1, SI5351_DRIVE_2MA);
 
-    //si5351.set_freq(50000000 * SI5351_FREQ_MULT, SI5351_CLK1);
+    // si5351.set_freq(50000000 * SI5351_FREQ_MULT, SI5351_CLK1);
 
-//
-//   PLLB frequency is fixed (so we can use it as VCXO and pull its frequency)
-//
+    //
+    //   PLLB frequency is fixed (so we can use it as VCXO and pull its frequency)
+    //
 
-    //si5351.set_freq_manual(80000000*SI5351_FREQ_MULT,SI5351_PLLB_FREQ,SI5351_CLK1,0);
+    // si5351.set_freq_manual(80000000*SI5351_FREQ_MULT,SI5351_PLLB_FREQ,SI5351_CLK1,0);
 
-    //si5351.set_clock_source(SI5351_CLK1, SI5351_CLK_SRC_XTAL);
+    // si5351.set_clock_source(SI5351_CLK1, SI5351_CLK_SRC_XTAL);
 
-    //si5351.update_status();
+    // si5351.update_status();
 
-    //si5351.output_enable(SI5351_CLK1, 0);
+    // si5351.output_enable(SI5351_CLK1, 0);
 
-    //si5351.write_regs(const_cast<si5351b_revb_register_t *>(si5351b_revb_registers), sizeof si5351b_revb_registers / sizeof si5351b_revb_registers[0]);
+    // si5351.write_regs(const_cast<si5351b_revb_register_t *>(si5351b_revb_registers), sizeof si5351b_revb_registers / sizeof si5351b_revb_registers[0]);
 
     // Set the PLLs reference from crystal
     si5351.set_pll_input(SI5351_PLLA, SI5351_PLL_INPUT_XO);
@@ -329,7 +325,7 @@ void if_setup() {
     si5351.drive_strength(SI5351_IF_CLK, lo_power_to_si5351_drive_strength(config.lo_drive_strength_1));
     si5351.output_enable(SI5351_IF_CLK, 0);
 
-    //si5351.set_vcxo(SI5351_PLLB_FREQ,100);
+    // si5351.set_vcxo(SI5351_PLLB_FREQ,100);
 
     calibrate_freq();
 }
@@ -360,7 +356,7 @@ bool radio_config(st_radio_config radioConfig) {
         DAC_DMA_Start(&hdac1);
 
         // Starting the DAC causes a DC transient. Wait for it to stop
-        //HAL_Delay(300);
+        // HAL_Delay(300);
         if_direction(RF_DIRECTION_TX);
     } else {
 
@@ -387,7 +383,6 @@ void setup_board_peripherals() {
 
     lo_setup();
     if_setup(); // IF mod/demod setup
-
 }
 
 int power_down_lo_clocks() {
@@ -405,5 +400,3 @@ int power_up_lo_clocks() {
     int32_t status = adf4350_out_powerdown(false);
     return status >= 0 && ret == 0 ? 0 : -1;
 }
-
-

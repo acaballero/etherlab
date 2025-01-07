@@ -4,42 +4,43 @@
 
 #include "signal_generator_widget.h"
 #include "../../../lib/utils/utils.hpp"
+#include "dsp/dsp_common.h"
 
 void SignalGeneratorWidget::paint_callback() {
 
     char buff[20];
 
     this->display->clear();
-
-    uint16_t c = C565_WHITE;
+    //    uint16_t c = C565_WHITE;
 
     switch (this->task_status->status) {
         case DSP_STATUS_RUNNING:
-            c = C565_BLUE;
+            //  c = C565_BLUE;
             sprintf(buff, "Running\n");
             break;
         case DSP_STATUS_STOPPED:
             if (this->task_status->error == DSP_ERR_NONE) {
                 if (this->task_status->stop_ms) {
-                    c = C565_GREEN;
+                    //   c = C565_GREEN;
                     sprintf(buff, "Finished\n");
                 } else {
-                    c = C565_GREY_LIGHT;
+                    //   c = C565_GREY_LIGHT;
                     sprintf(buff, "Stopped\n");
                 }
             } else {
-                c = C565_RED;
+                //   c = C565_RED;
                 sprintf(buff, "Error\n");
                 break;
             }
             break;
         case DSP_STATUS_PENDING:
-            c = C565_WHITE;
+            //   c = C565_WHITE;
             sprintf(buff, "Pending\n");
             break;
+        case DSP_STATUS_STOPPING:
+            sprintf(buff, "Stopping\n");
+            break;
     }
-
-
 }
 
 void SignalGeneratorWidget::do_paint() {
@@ -50,10 +51,6 @@ void SignalGeneratorWidget::do_paint() {
     }
 }
 
-void SignalGeneratorWidget::setTaskStatus(st_dspStatus *status) {
-    SignalGeneratorWidget::task_status = status;
-}
+void SignalGeneratorWidget::setTaskStatus(st_dspStatus *status) { SignalGeneratorWidget::task_status = status; }
 
-void SignalGeneratorWidget::setProcessorStatus(st_dspStatus *status) {
-    SignalGeneratorWidget::processor_status = status;
-}
+void SignalGeneratorWidget::setProcessorStatus(st_dspStatus *status) { SignalGeneratorWidget::processor_status = status; }

@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/_stdint.h>
 #include "radio.h"
 #include "dsp/dsp_common.h"
 
@@ -45,8 +46,10 @@ struct st_freq_mem {
 struct st_radio_status {
     float squelch_level;
     bool tx;
+    uint8_t vfo_ix;
+    int gain;
 
-    bool operator==(const st_radio_status &st) const { return squelch_level == st.squelch_level && tx == st.tx; }
+    bool operator==(const st_radio_status &st) const { return squelch_level == st.squelch_level && tx == st.tx && vfo_ix == st.vfo_ix && gain == st.gain; }
 };
 
 // Status bar info
@@ -78,8 +81,11 @@ struct st_freqInfo {
     unsigned long f_carrier;
     unsigned long f_step;
     radio::RPT_MODE repeater_mode;
+    uint8_t vfo_ix;
 
-    bool operator==(const st_freqInfo &st) const { return f_carrier == st.f_carrier && f_step == st.f_step && repeater_mode == st.repeater_mode; }
+    bool operator==(const st_freqInfo &st) const {
+        return f_carrier == st.f_carrier && f_step == st.f_step && repeater_mode == st.repeater_mode && vfo_ix == st.vfo_ix;
+    }
 };
 
 // scale info

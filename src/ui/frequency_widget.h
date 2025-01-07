@@ -20,7 +20,8 @@ class FrequencyWidget : public View {
     void init();
     bool on_input(const st_inputEvent event) override;
 
-    Label lblRpt{{0, 1, area.width / 3, area.height - 2}};
+    Label lblRpt{{0, 1, area.width / 4, area.height - 2}};
+    Label lblVFO{{(area.width / 4) + 2, 1, 24, area.height - 2}};
 };
 
 #endif // TRX_FRONTEND_FREQUENCY_WIDGET_H
