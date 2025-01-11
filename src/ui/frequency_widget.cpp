@@ -29,6 +29,8 @@ void FrequencyWidget::paint_callback() {
     char buf[20], buf2[20];
     uint16_t fg_color;
 
+    // TODO: Views containing child widgets that also render themselves like this have to clear the buffer at every pass. This causes flickr because
+    // first, the view is rendered, and then their children. One way to prevent this can be rendering just areas where there's no children.
     display->clear();
 
     if (config.repeater_mode != radio::RPT_MODE_OFF) {
@@ -36,9 +38,9 @@ void FrequencyWidget::paint_callback() {
         sprintf(buf, "%d", config.repeater_offset / 1000);
 
         if (config.repeater_mode == radio::RPT_MODE_NEGATIVE) {
-            lblRpt.set_label("RX-");
+            lblRpt.set_label(ISTX ? "TX+" : "RX-");
         } else {
-            lblRpt.set_label("TX+");
+            lblRpt.set_label(ISTX ? "RX-" : "TX+");
         }
 
         lblRpt.set_value(buf);
@@ -50,7 +52,7 @@ void FrequencyWidget::paint_callback() {
     lblVFO.set_label(radio::get_vfo() == 0 ? "A" : "B");
 
     format_long(radio::get_frequency(), buf2);
-    sprintf(buf, "%12s", buf2);
+    sprintf(buf, "%14s", buf2);
 
     display->setBgColor(C565_TRANSPARENT);
 
@@ -62,23 +64,23 @@ void FrequencyWidget::paint_callback() {
 
     uint16_t x = (area.width / 4) + 24 + 4;
 
-    display->writeString(x, 0, buf, (FontDef *)&Font_11x18, fg_color, C565_TRANSPARENT);
+    FontDef *font = (FontDef *)&Font_11x18;
+    display->writeString(x, 0, buf, font, fg_color, C565_TRANSPARENT);
     display->setColor(C565_GREY_LIGHT);
-    display->setFont((FontDef *)&Font_7x10);
-    display->setPadding(0, 5);
-    display->print("Hz");
 
-    uint8_t dec_place = 10 - (uint8_t)log10((double)config.vfo[config.vfo_ix].step);
-    uint16_t start_line = x + (dec_place * 11);
+    uint8_t dec_place = (uint8_t)log10((double)config.vfo[config.vfo_ix].step) + 1;
+    uint16_t start_line = area.width - (dec_place * font->width);
 
-    if (config.vfo[config.vfo_ix].step > 100) {
-        start_line -= 6; // sip hundreds separator
+    if (dec_place > 3) {
+        start_line -= font->width - font->trim_punct_end - font->trim_punct_start; // sip hundreds separator
     }
-    if (config.vfo[config.vfo_ix].step > 100000) {
-        start_line -= 6; // skip thousands separator
+    if (dec_place > 6) {
+        start_line -= font->width - font->trim_punct_end - font->trim_punct_start; // skip thousands separator
     }
 
-    display->writeRect(start_line, 17, start_line + 10, 17);
+    display->writeRect(start_line + 2, 16, start_line + 2, 17);
+    display->writeRect(start_line + 1, 17, start_line + 3, 17);
+    display->writeRect(start_line, 18, start_line + 4, 18);
 }
 
 void FrequencyWidget::do_paint() {
@@ -109,6 +111,8 @@ bool FrequencyWidget::on_input(const st_inputEvent event) {
             view_manager::keypadView.on_changed = [](double v) { radio::set_frequency((uint64_t)v); };
             view_manager::push(&view_manager::keypadView);
             return true;
+        default:
+            return false;
     }
 
     return false;

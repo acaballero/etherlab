@@ -11,7 +11,7 @@
 
 class Label : public Widget {
   public:
-    static const uint8_t MAX_SIZE = 20;
+    static const uint8_t MAX_SIZE = 30;
 
     Label() { set_label(""); }
 

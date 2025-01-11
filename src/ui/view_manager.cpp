@@ -55,7 +55,7 @@ void init() {
     status::status_signal.add(NULL, main_view_warning_callback);
 
     splashView.paint();
-    HAL_Delay(3 * 1000);
+    HAL_Delay(1500);
 
     push(&mainView);
     keypadView.on_hide_fn = pop;

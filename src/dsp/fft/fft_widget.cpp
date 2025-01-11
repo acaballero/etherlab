@@ -7,6 +7,7 @@
 #include "fft_widget.h"
 #include "fft.h"
 #include "agc.h"
+#include "ips_font.h"
 
 FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {}
 
@@ -42,16 +43,28 @@ void FFTWidget::draw_freq_marks() {
     uint8_t n = findFreqs(arr_idx_freqs, 4);
     st_freq_mem data;
 
+    int text_width, padding = 3, padding_v = 3;
+    FontDef *font = (FontDef *)&Font_Fixed5x7;
+    display->setFont(font);
+    int height = font->height + padding_v * 2 - 1;
+    int margin_top = 1;
+
     while (n) {
         data = config.freqs[arr_idx_freqs[n - 1]];
         uint16_t x = ((float)(data.freq - fft_params.span_f_start) / (float)(fft_params.span)) * FTT_DISPLAY_WIDTH;
-        if (x < FFT_ZONE_WIDTH) {
+        text_width = strlen(data.name) * font->width;
+        int x0 = x - (text_width / 2) - padding;
+        int x1 = x0 + padding * 2 + text_width;
+        if (x0 >= 0 && x1 < FFT_ZONE_WIDTH) {
+
             // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
-            display->writeVertLine(x, 1, FFT_HEIGHT, C565_GREY_LIGHT);
-            display->gotoXY(x - (strlen(data.name) << 1), 0);
-            display->setFont((FontDef *)&Font_Micro4x6);
-            display->setColor(C565_WHITE);
-            display->setBgColor(C565_GREY_LIGHT);
+            display->writeVertLine(x, margin_top + height, FFT_HEIGHT, C565_GREY_DARKER);
+
+            display->setColor(C565_GREY_DARKER);
+            display->setBgColor(C565_DARKEST);
+            display->drawRoundedRectangle(x0, margin_top, text_width + padding * 2, height, 3, false);
+            display->gotoXY(x - (text_width / 2), margin_top + padding_v);
+            display->setColor(C565_GREY_LIGHT);
             display->write(data.name);
         }
         n--;
@@ -165,16 +178,16 @@ void FFTWidget::draw_spectrum_line() {
 void FFTWidget::draw_spectrum() {
 
     switch (style) {
-    case FFT_SPECTRUM_STYLE_LINE:
-        draw_spectrum_line();
-        break;
-    case FFT_SPECTRUM_STYLE_FILL:
-        draw_spectrum_fill();
-        break;
-    case FFT_SPECTRUM_STYLE_LINE_FILL:
-        draw_spectrum_fill();
-        draw_spectrum_line();
-        break;
+        case FFT_SPECTRUM_STYLE_LINE:
+            draw_spectrum_line();
+            break;
+        case FFT_SPECTRUM_STYLE_FILL:
+            draw_spectrum_fill();
+            break;
+        case FFT_SPECTRUM_STYLE_LINE_FILL:
+            draw_spectrum_fill();
+            draw_spectrum_line();
+            break;
     }
 
     display->setBgColor(C565_BLACK);

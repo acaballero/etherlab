@@ -18,7 +18,7 @@
   ;; Start OpenOCD
   (message "Starting OpenOCD...")
   (start-process "openocd" "*openocd*"
-		 "/home/ahcr/.platformio/packages/tool-openocd/bin/openocd" "-f" "/home/ahcr/.platformio/packages/tool-openocd/openocd/scripts/board/stm32f4discovery.cfg")
+		 "/home/ahcr/.platformio/packages/tool-openocd/bin/openocd" "-d0" "-f" "/home/ahcr/.platformio/packages/tool-openocd/openocd/scripts/board/stm32f4discovery.cfg")
 
   ;; Wait a bit for OpenOCD to initialize
   (sleep-for 2)

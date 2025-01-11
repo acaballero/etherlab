@@ -6,7 +6,9 @@
 #include "../config.h"
 #include "../main_board.h"
 #include "../agc.h"
+#include "Display_afb.h"
 #include "radio.h"
+#include "ui/button_widget.h"
 
 void RadioStatusWidget::init() {
 
@@ -43,7 +45,7 @@ char *RadioStatusWidget::vfo() {
 char *RadioStatusWidget::squelch() {
     if (!ISTX) {
         if (config.squelch_auto) {
-            sprintf(buf, "A");
+            sprintf(buf, "auto");
         } else if (config.squelch_level == 0) {
             sprintf(buf, "0");
         } else {
@@ -60,8 +62,9 @@ void RadioStatusWidget::do_paint() {
 
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
 
-        display->drawArea(&this->area, this);
         this->set_dirty();
+        display->drawArea(&this->area, this);
+
         _status = status;
 
         if (ISTX) {
@@ -83,15 +86,16 @@ void RadioStatusWidget::do_paint() {
         display->setPadding(4, 4);
         display->gotoCharXY(0, 0);
 
-        // Labels
         lblMode.set_label(mode());
-        lblMode.set_color(ISTX ? C565_RED : C565_GREEN);
 
-        // Buttons
         if (ISTX) {
 
             btnSquelch.set_visible(false);
             btnGain.set_visible(false);
+
+            lblMode.set_color(C565_WHITE);
+            lblMode.set_bg(C565_RED);
+            lblMode.set_style(ButtonStyle::BUTTON_STYLE_FLAT);
 
         } else {
 
@@ -109,6 +113,10 @@ void RadioStatusWidget::do_paint() {
             btnSquelch.set_bg(bg_color);
             btnGain.set_fg(fg_color);
             btnGain.set_bg(bg_color);
+
+            lblMode.set_color(C565_GREEN);
+            lblMode.set_bg(C565_TRANSPARENT);
+            lblMode.set_style(ButtonStyle::LABEL_STYLE_HOLLOW);
         }
 
         // Selectively paint all children.

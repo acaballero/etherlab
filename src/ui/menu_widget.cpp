@@ -42,21 +42,16 @@ bool MenuWidget::on_input(const st_inputEvent e) {
         case INPUT_EVENT_TYPE_BUTTON_PRESS:
         case INPUT_EVENT_TYPE_BUTTON_DBL_PRESS:
 
-            if (e.value != BTN_ENCODER && e.value != KEY_BACK) {
-                if (menuStatus == ACTIVE) {
-                    // If a key from the keypad is pressed we close the menu to start navigating from scratch
-                    menu_exit();
-                    return true;
-                }
-            }
+            // if (e.value != BTN_ENCODER && e.value != KEY_BACK) {
+            //     if (menuStatus == ACTIVE) {
+            //         // If a key from the keypad is pressed we close the menu to start navigating from scratch
+            //         menu_exit();
+            //         return true;
+            //     }
+            // }
 
             switch (e.value) {
 
-                case FPANEL_PAD_BUTTON_1: // MODULATION
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    break;
                 case FPANEL_PAD_BUTTON_2: // VFO
                     radio::toggle_vfo();
                     break;
@@ -94,15 +89,27 @@ bool MenuWidget::on_input(const st_inputEvent e) {
 
                     break;
 
-                case FPANEL_DISPLAY_BUTTON_1: // MODULATION
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 0));
+                case FPANEL_DISPLAY_BUTTON_1: // LEFT / MODULATION
+
+                    if (menuStatus == ACTIVE) {
+                        strIn.write('-');
+                        nav.doInput(strIn);
+
+                    } else {
+                        nav.doNav(navCmd(enterCmd));
+                        nav.doNav(navCmd(idxCmd, 0));
+                        nav.doNav(navCmd(idxCmd, 0));
+                    }
                     break;
-                case FPANEL_DISPLAY_BUTTON_2: // FRONTEND
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 4));
-                    nav.doNav(navCmd(idxCmd, 3));
+                case FPANEL_DISPLAY_BUTTON_2: // RIGHT / FRONTEND
+                    if (menuStatus == ACTIVE) {
+                        strIn.write('+');
+                        nav.doInput(strIn);
+                    } else {
+                        nav.doNav(navCmd(enterCmd));
+                        nav.doNav(navCmd(idxCmd, 4));
+                        nav.doNav(navCmd(idxCmd, 3));
+                    }
                     break;
                 case FPANEL_DISPLAY_BUTTON_3: // AGC
                     nav.doNav(navCmd(enterCmd));

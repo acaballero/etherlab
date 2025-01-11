@@ -6,21 +6,18 @@
 #include "pow_meter_widget.h"
 #include "../config.h"
 
-
 PowerMeterWidget::PowerMeterWidget(Rect parent_rect, Display *display) : Widget(parent_rect, display) {
 
     float f_swr_block_size = 0.1;
     float f_dbm_block_size = 0.1;
 
-    dbm_nblocks = ((float) max_dbm / (float) dbm_tick_spacing);
-
-    int margin = MARGIN; // minimum_margin;
+    dbm_nblocks = ((float)max_dbm / (float)dbm_tick_spacing);
 
     while (f_swr_block_size != round(f_swr_block_size) || f_dbm_block_size != round(f_dbm_block_size)) {
         // Adjust the margin so the block size is an integer number of pixels for both bars
-        f_swr_block_size = ((float) (this->area.width - margin) / ((float) max_swr - 1.0));
-        f_dbm_block_size = ((float) (this->area.width - margin) / dbm_nblocks);
-        margin++;
+        f_swr_block_size = ((float)(this->area.width - margin_right - margin) / ((float)max_swr - 1.0));
+        f_dbm_block_size = ((float)(this->area.width - margin_right - margin) / (float)dbm_nblocks);
+        margin_right++;
     }
 
     dbm_block_size = f_dbm_block_size;
@@ -29,7 +26,7 @@ PowerMeterWidget::PowerMeterWidget(Rect parent_rect, Display *display) : Widget(
 
 void PowerMeterWidget::paint_callback() {
     display->clear();
-    display->setFont((FontDef *) &Font_Fixed5x7);
+    display->setFont((FontDef *)&Font_Fixed5x7);
     display->setBgColor(C565_BLACK);
 
     paint_power();
@@ -39,16 +36,16 @@ void PowerMeterWidget::paint_callback() {
 void PowerMeterWidget::paint_power() {
     char buf[6];
 
-    int max_x = (dbm_nblocks * dbm_block_size);
-    int x = (info.p_for_dbm / (float) max_dbm) * max_x;
-    int y1 = P_METER_LINE_HEIGHT + 4;
+    int max_x = margin + (dbm_nblocks * dbm_block_size);
+    int x = (info.p_for_dbm / (float)max_dbm) * max_x;
+    int y1 = margin_top + 4;
     int y2 = y1 + DBM_BAR_HEIGHT;
     uint16_t color;
 
     // Tick values
     for (int level = 0; level <= dbm_nblocks; level++) {
         buf[0] = 0;
-        int px = dbm_block_size * level;
+        int px = dbm_block_size * level + margin;
         int tick_size = 1;
 
         if (level == 0) {
@@ -71,23 +68,22 @@ void PowerMeterWidget::paint_power() {
     }
 
     // Horizontal line
-    display->writeLine(0, y1 - 4, max_x, y1 - 4, C565_GREY_DARK);
+    display->writeLine(margin, y1 - 4, max_x, y1 - 4, C565_GREY_DARK);
 
     // Bar
-    for (int ix = 0; ix < x; ix++) {
-        if (ix % (dbm_block_size) != 0) {
+    for (int ix = margin; ix < x; ix++) {
+        if ((ix - margin) % (dbm_block_size) != 0) {
             display->writeVertLine(ix, y1, y2, C565_WHITE);
         }
     }
 }
 
-
 void PowerMeterWidget::paint_swr() {
     char buf[6];
 
-    int max_x = (max_swr - 1) * swr_block_size;
-    int x = ((info.swr - 1.0) / ((float) max_swr - 1.0)) * (float) max_x;
-    int y1 = P_METER_LINE_HEIGHT + 4 + DBM_BAR_HEIGHT + 2;
+    int max_x = margin + (max_swr - 1) * swr_block_size;
+    int x = ((info.swr - 1.0) / ((float)max_swr - 1.0)) * (float)max_x;
+    int y1 = margin_top + 4 + DBM_BAR_HEIGHT + 2;
     int y2 = y1 + SWR_BAR_HEIGHT;
     uint16_t color;
 
@@ -108,7 +104,7 @@ void PowerMeterWidget::paint_swr() {
 
         if (buf[0]) {
             display->setColor(color);
-            display->gotoXY(max_x - px - (int) strlen(buf) * 3, y2 + 6);
+            display->gotoXY(max_x - px - (int)strlen(buf) * 3, y2 + 6);
             display->write(buf);
         }
 
@@ -117,7 +113,7 @@ void PowerMeterWidget::paint_swr() {
     }
 
     // Horizontal line
-    display->writeLine(0, y2 + 4, max_x, y2 + 4, C565_GREY_DARK);
+    display->writeLine(margin, y2 + 4, max_x, y2 + 4, C565_GREY_DARK);
 
     // Bar
     for (int ix = 0; ix < x; ix++) {
@@ -137,20 +133,18 @@ void PowerMeterWidget::paint_swr() {
 
 void PowerMeterWidget::do_paint() {
 
-    rf_coupler::rf_coupler_info current_info{
-            .v_for = 0,
-            .v_ref=0,
-            .p_for_dbm=rf_coupler::info.p_for_dbm,
-            .p_ref_dbm=0,
-            .swr=rf_coupler::info.swr};
+    rf_coupler::rf_coupler_info current_info{.v_for = 0, .v_ref = 0, .p_for_dbm = rf_coupler::info.p_for_dbm, .p_ref_dbm = 0, .swr = rf_coupler::info.swr};
 
     // Round to 2 decimals and constrain
     current_info.p_for_dbm = constrain(current_info.p_for_dbm, 0, max_dbm);
-    current_info.p_for_dbm = (float) ((int) (current_info.p_for_dbm * 100)) / (float) 100;
+    current_info.p_for_dbm = (float)((int)(current_info.p_for_dbm * 100)) / (float)100;
     current_info.swr = constrain(current_info.swr, 1, max_swr);
-    current_info.swr = (float) ((int) (current_info.swr * 100)) / (float) 100;
+    current_info.swr = (float)((int)(current_info.swr * 100)) / (float)100;
 
-    if (this->dirty() || !(info == current_info)) { // Update only if status has changed
+    current_info.swr = 2.5;
+    current_info.p_for_dbm = max_dbm / 2;
+
+    if (true || this->dirty() || !(info == current_info)) { // Update only if status has changed
         this->set_dirty();
         info = current_info;
         display->drawArea(&this->area, this);

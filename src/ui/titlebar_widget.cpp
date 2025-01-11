@@ -4,6 +4,7 @@
 
 #include <scanner.h>
 #include <rf_coupler.h>
+#include <sys/_stdint.h>
 #include "ips_font.h"
 #include "titlebar_widget.h"
 #include "config.h"
@@ -22,16 +23,18 @@ TitleBarWidget::TitleBarWidget(const Rect &parentRect, Display *display) : Widge
 
 void TitleBarWidget::paint_callback() {
 
+    FontDef *font = (FontDef *)&Font_Tiny8x8;
+    uint8_t margin = (area.height - font->height) / 2;
     uint16_t color = C565_BLACK;
     char buff[20];
 
     display->clear();
 
-    display->gotoXY(0, 3);
+    display->gotoXY(0, margin);
 
     display->setColor(C565_WHITE);
     display->setBgColor(C565_BLACK);
-    display->setFont((FontDef *)&Font_Tiny8x8);
+    display->setFont(font);
 
 #if ENABLE_RTC
     st_datetime datetime = rtc_get_date_time();
@@ -48,25 +51,25 @@ void TitleBarWidget::paint_callback() {
         char c;
 
         switch (battery::battery_info.status) {
-        case battery::BATTERY_STATUS_LOW:
-            color = C565_RED;
-            c = ICON_BATT_LOW;
-            break;
-        case battery::BATTERY_STATUS_MEDIUM:
-            color = C565_GREENYELLOW;
-            c = ICON_BATT_MID;
-            break;
-        case battery::BATTERY_STATUS_HIGH:
-            color = C565_GREEN;
-            c = ICON_BATT_FULL;
-            break;
-        case battery::BATTERY_STATUS_CHARGING:
-            color = C565_MAGENTA;
-            c = ICON_BATT_CHARGING;
-            break;
-        case battery::BATTERY_STATUS_UNDEFINED:
-            c = ICON_BATT_MID;
-            break;
+            case battery::BATTERY_STATUS_LOW:
+                color = C565_RED;
+                c = ICON_BATT_LOW;
+                break;
+            case battery::BATTERY_STATUS_MEDIUM:
+                color = C565_GREENYELLOW;
+                c = ICON_BATT_MID;
+                break;
+            case battery::BATTERY_STATUS_HIGH:
+                color = C565_GREEN;
+                c = ICON_BATT_FULL;
+                break;
+            case battery::BATTERY_STATUS_CHARGING:
+                color = C565_MAGENTA;
+                c = ICON_BATT_CHARGING;
+                break;
+            case battery::BATTERY_STATUS_UNDEFINED:
+                c = ICON_BATT_MID;
+                break;
         }
 
         display->setFont((FontDef *)&Font_Icons9x8);
@@ -82,21 +85,21 @@ void TitleBarWidget::paint_callback() {
 
 #if ENABLE_SD_CARD
     switch (sdcard_info.status) {
-    case sdcard_STATUS::MountError:
-        color = C565_YELLOW;
-        break;
-    case sdcard_STATUS::IOError:
-        color = C565_RED;
-        break;
-    case sdcard_STATUS::Present:
-        color = C565_WHITE;
-        break;
-    case sdcard_STATUS::NotPresent:
-        color = C565_GREY_DARK;
-        break;
-    case sdcard_STATUS::Mounted:
-        color = C565_GREEN;
-        break;
+        case sdcard_STATUS::MountError:
+            color = C565_YELLOW;
+            break;
+        case sdcard_STATUS::IOError:
+            color = C565_RED;
+            break;
+        case sdcard_STATUS::Present:
+            color = C565_WHITE;
+            break;
+        case sdcard_STATUS::NotPresent:
+            color = C565_GREY_DARK;
+            break;
+        case sdcard_STATUS::Mounted:
+            color = C565_GREEN;
+            break;
     }
 
     display->setColor(color);
@@ -112,12 +115,12 @@ void TitleBarWidget::paint_callback() {
 
 #if USB_ENABLED
     switch (getConnectionStatus()) {
-    case USB_CONN_STATUS_CONNECTED:
-        color = C565_GREY_LIGHT;
-        break;
-    case USB_CONN_STATUS_DISCONNECTED:
-        color = C565_GREY_DARK;
-        break;
+        case USB_CONN_STATUS_CONNECTED:
+            color = C565_GREY_LIGHT;
+            break;
+        case USB_CONN_STATUS_DISCONNECTED:
+            color = C565_GREY_DARK;
+            break;
     }
 
     display->setColor(color);

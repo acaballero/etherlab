@@ -116,9 +116,8 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
 #if DEBUG_LCD
             if (area->show_fps) {
-                // this->curr_buffer = buffer;
-                this->writeString(0, 0, str, (FontDef *)&Font_7x10, C565_BLACK, C565_WHITE);
-                this->writeLine(0, 10, 21, 10, C565_BLACK);
+                this->writeString(0, curr_area->height - 11, str, (FontDef *)&Font_7x10, C565_BLACK, C565_WHITE);
+                this->writeLine(0, curr_area->height - 12, 21, curr_area->height - 12, C565_WHITE);
             }
 #endif
             this->busy = false;
@@ -207,41 +206,41 @@ void Display::drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uin
     while (y >= x) {
         if (filled) {
             switch (quadrant) {
-            case 1: // Top-right
-                writeLine(centerX, centerY - y, centerX + x, centerY - y);
-                writeLine(centerX, centerY - x, centerX + y, centerY - x);
-                break;
-            case 2: // Top-left
-                writeLine(centerX - x, centerY - y, centerX, centerY - y);
-                writeLine(centerX - y, centerY - x, centerX, centerY - x);
-                break;
-            case 3: // Bottom-left
-                writeLine(centerX - x, centerY + y, centerX, centerY + y);
-                writeLine(centerX - y, centerY + x, centerX, centerY + x);
-                break;
-            case 4: // Bottom-right
-                writeLine(centerX, centerY + y, centerX + x, centerY + y);
-                writeLine(centerX, centerY + x, centerX + y, centerY + x);
-                break;
+                case 1: // Top-right
+                    writeLine(centerX, centerY - y, centerX + x, centerY - y);
+                    writeLine(centerX, centerY - x, centerX + y, centerY - x);
+                    break;
+                case 2: // Top-left
+                    writeLine(centerX - x, centerY - y, centerX, centerY - y);
+                    writeLine(centerX - y, centerY - x, centerX, centerY - x);
+                    break;
+                case 3: // Bottom-left
+                    writeLine(centerX - x, centerY + y, centerX, centerY + y);
+                    writeLine(centerX - y, centerY + x, centerX, centerY + x);
+                    break;
+                case 4: // Bottom-right
+                    writeLine(centerX, centerY + y, centerX + x, centerY + y);
+                    writeLine(centerX, centerY + x, centerX + y, centerY + x);
+                    break;
             }
         } else {
             switch (quadrant) {
-            case 1: // Top-right
-                setPixel(centerX + x, centerY - y, color);
-                setPixel(centerX + y, centerY - x, color);
-                break;
-            case 2: // Top-left
-                setPixel(centerX - x, centerY - y, color);
-                setPixel(centerX - y, centerY - x, color);
-                break;
-            case 3: // Bottom-left
-                setPixel(centerX - x, centerY + y, color);
-                setPixel(centerX - y, centerY + x, color);
-                break;
-            case 4: // Bottom-right
-                setPixel(centerX + x, centerY + y, color);
-                setPixel(centerX + y, centerY + x, color);
-                break;
+                case 1: // Top-right
+                    setPixel(centerX + x, centerY - y, color);
+                    setPixel(centerX + y, centerY - x, color);
+                    break;
+                case 2: // Top-left
+                    setPixel(centerX - x, centerY - y, color);
+                    setPixel(centerX - y, centerY - x, color);
+                    break;
+                case 3: // Bottom-left
+                    setPixel(centerX - x, centerY + y, color);
+                    setPixel(centerX - y, centerY + x, color);
+                    break;
+                case 4: // Bottom-right
+                    setPixel(centerX + x, centerY + y, color);
+                    setPixel(centerX + y, centerY + x, color);
+                    break;
             }
         }
 
@@ -268,10 +267,10 @@ void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uin
         }
     } else {
         // Draw the straight lines for the sides and top/bottom
-        writeLine(x1, y0, x2, y0);                 // Top
-        writeLine(x1, height - 1, x2, height - 1); // Bottom
-        writeLine(x0, y1, x0, y2);                 // Left
-        writeLine(width - 1, y1, width - 1, y2);   // Right
+        writeLine(x1, y0, x2, y0);                           // Top
+        writeLine(x1, y0 + height - 1, x2, y0 + height - 1); // Bottom
+        writeLine(x0, y1, x0, y2);                           // Left
+        writeLine(x0 + width - 1, y1, x0 + width - 1, y2);   // Right
     }
     // Draw the four corners
     drawCorner(x0 + width - radius - 1, y0 + radius, radius, 1, filled);              // Top-right
@@ -645,7 +644,18 @@ void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, ui
 
             data = data + (((ch - 32) * font->width) << incr);
 
-            for (j = 0, px = x; j < font->width; j++, px++) {
+            // Commas and periods don't look good with monospaced fonts. So we remove
+            // one blank column from each side
+            uint8_t j1, jn;
+            if (ch == ',' || ch == '.' || ch == ':') {
+                j1 = font->trim_punct_start;
+                jn = font->width - font->trim_punct_end;
+            } else {
+                j1 = 0;
+                jn = font->width;
+            }
+
+            for (j = j1, px = x; j < jn; j++, px++) {
 
                 b = font->size == 2 ? ((uint16_t *)data)[j] : ((uint8_t *)data)[j << incr];
 

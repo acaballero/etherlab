@@ -5,7 +5,7 @@
 #include <math.h>
 #include "../../lib/Menu/src/menu.h"
 
-enum MenuStatus { ACTIVE, IDLE };
+enum MenuStatus { ACTIVE, IDLE, UNKNOWN };
 Menu::result doAlert(Menu::eventMask e, Menu::prompt &item);
 void menu_setup();
 void menu_exit();
