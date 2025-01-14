@@ -49,7 +49,7 @@ class Widget : public Painter {
 
     void hidden(bool hide);
 
-    void paint();
+    virtual void paint();
 
     virtual void on_show(){};
 
@@ -140,7 +140,7 @@ class Widget : public Painter {
 
     void update_overlaps();
 
-    virtual void do_paint() = 0;
+    virtual void before_paint() = 0;
 };
 
 #endif /*__WIDGET_H__*/

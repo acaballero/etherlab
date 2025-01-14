@@ -81,25 +81,21 @@ void FrequencyWidget::paint_callback() {
     display->writeRect(start_line + 2, 16, start_line + 2, 17);
     display->writeRect(start_line + 1, 17, start_line + 3, 17);
     display->writeRect(start_line, 18, start_line + 4, 18);
+
+    for (const auto child : this->children()) {
+        display->setOffset(child->screen_rect().left(), child->screen_rect().top() - 1, child->screen_rect().width() - 1, child->screen_rect().height() - 1);
+        child->paint_callback();
+        display->clearOffset();
+    }
 }
 
-void FrequencyWidget::do_paint() {
+void FrequencyWidget::before_paint() {
 
     st_freqInfo freqInfo = {(unsigned long)radio::get_frequency(), config.vfo[config.vfo_ix].step, config.repeater_mode, radio::get_vfo()};
 
     if (this->dirty() || !(freqInfo == this->status)) {
         this->status = freqInfo;
-        display->drawArea(&this->area, this);
         this->set_dirty();
-
-        // Selectively paint all children.
-        for (const auto child : this->children()) {
-            if (child->visible()) {
-                child->set_dirty();
-                child->paint();
-                child->set_clean();
-            }
-        }
     }
 }
 

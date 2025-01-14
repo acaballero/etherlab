@@ -106,8 +106,4 @@ void TuneWidget::paint_callback() {
     }
 }
 
-void TuneWidget::do_paint() {
-    if (this->dirty()) {
-        display->drawArea(&this->area, this);
-    }
-}
+void TuneWidget::before_paint() { this->set_dirty(); }

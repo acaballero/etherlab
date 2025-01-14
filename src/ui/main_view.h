@@ -73,7 +73,7 @@ class MainView : public View {
     MessageWidget msg_w{
         {6, MENU_START_Y, DISPLAY_X_PIXELS - 12, INFO_HEIGHT - 6}, &lcd, (FontDef *)&Font_11x18, (FontDef *)&Font_7x10, C565_GREY_DARK, C565_RED, C565_WHITE};
 
-    void do_paint() override;
+    void before_paint() override;
 };
 
 #endif // TRX_FRONTEND_MAIN_VIEW_H

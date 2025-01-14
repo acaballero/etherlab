@@ -154,7 +154,7 @@ void KeypadView::update_text() {
     text_widget.set_label(buff);
 }
 
-void KeypadView::do_paint() {
+void KeypadView::before_paint() {
 
 }
 

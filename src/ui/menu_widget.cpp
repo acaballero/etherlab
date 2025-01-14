@@ -25,12 +25,7 @@ void MenuWidget::paint_callback() {
     nav.doOutput();
 }
 
-void MenuWidget::do_paint() {
-
-    if (this->dirty()) {
-        display->drawArea(&this->area, this);
-    }
-}
+void MenuWidget::before_paint() {}
 
 bool MenuWidget::on_input(const st_inputEvent e) {
 

@@ -15,8 +15,6 @@ class RadioStatusWidget : public View {
   public:
     RadioStatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
 
-    void paint_callback() override;
-
   protected:
     st_radio_status _status;
     const uint8_t btn_height = 30;
@@ -30,7 +28,7 @@ class RadioStatusWidget : public View {
 
     char buf[20];
 
-    void do_paint() override;
+    void before_paint() override;
 
     void init();
 

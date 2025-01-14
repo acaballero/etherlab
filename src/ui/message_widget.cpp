@@ -46,9 +46,8 @@ bool MessageWidget::on_input(const st_inputEvent event) {
     return false;
 }
 
-void MessageWidget::do_paint() {
+void MessageWidget::before_paint() {
     if (this->dirty()) {
-        display->drawArea(&this->area, this);
         set_focus(true);
     }
 }

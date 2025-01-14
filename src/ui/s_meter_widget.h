@@ -34,7 +34,7 @@ class SMeterWidget : public Widget {
 
   protected:
     static constexpr int margin_top = 8;
-    void do_paint() override;
+    void before_paint() override;
 
     float get_s_level(float current, float smooth_factor);
 

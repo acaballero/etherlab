@@ -15,7 +15,7 @@ void Label::paint_callback() {
 
     if (has_border) {
         display->setColor(bg_color);
-        display->drawRoundedRectangle(0, 0, area.width, area.height, 3, style != LABEL_STYLE_HOLLOW);
+        display->drawRoundedRectangle(0, 0, parent_rect().width(), parent_rect().height(), 3, style != LABEL_STYLE_HOLLOW);
     }
 
     display->setColor(fg_color);
@@ -31,9 +31,9 @@ void Label::paint_callback() {
     int16_t x;
 
     if (align == ALIGN_CENTER) {
-        x = ceil((float)(area.width - width) / 2.0);
+        x = ceil((float)(parent_rect().width() - width) / 2.0);
     } else if (align == ALIGN_RIGHT) {
-        x = area.width - width - display->get_padding_x();
+        x = parent_rect().width() - width - display->get_padding_x();
     } else {
         x = display->get_padding_x();
     }
@@ -42,7 +42,7 @@ void Label::paint_callback() {
         x = 0;
     }
 
-    display->gotoXY(x, (area.height - font->height + 2) / 2);
+    display->gotoXY(x, (parent_rect().height() - font->height + 2) / 2);
     display->print(label, value, unit, fg_color, fg_color_value, fg_color_unit);
 }
 
@@ -50,11 +50,7 @@ ButtonStyle Label::get_style() const { return style; }
 
 void Label::set_style(ButtonStyle style) { Label::style = style; }
 
-void Label::do_paint() {
-    if (this->dirty()) {
-        display->drawArea(&this->area, this);
-    }
-}
+void Label::before_paint() {}
 
 void Label::set_label(const char *t) {
     strncpy(label, t, MAX_SIZE);

@@ -11,7 +11,7 @@
 #include "io/wav.h"
 
 class SignalGeneratorWidget : public Widget {
-public:
+  public:
     using Widget::Widget;
 
     void paint_callback() override;
@@ -20,12 +20,11 @@ public:
 
     void setTaskStatus(st_dspStatus *status);
 
-protected:
-
-    void do_paint() override;
+  protected:
+    void before_paint() override;
 
     st_dspStatus *processor_status;
     st_dspStatus *task_status;
 };
 
-#endif //TRX_FRONTEND_SIGNAL_GENERATOR_WIDGET_H
+#endif // TRX_FRONTEND_SIGNAL_GENERATOR_WIDGET_H

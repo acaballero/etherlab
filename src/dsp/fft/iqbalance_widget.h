@@ -15,7 +15,7 @@ public:
 
     void paint_callback() override;
 
-    void do_paint() override;
+    void before_paint() override;
 };
 
 

@@ -43,10 +43,10 @@ void SignalGeneratorWidget::paint_callback() {
     }
 }
 
-void SignalGeneratorWidget::do_paint() {
+void SignalGeneratorWidget::before_paint() {
     uint64_t m = HAL_GetTick();
     if (m - this->last_refresh_ms > 100 || this->dirty()) {
-        this->display->drawArea(&this->area, this);
+
         this->set_dirty();
     }
 }

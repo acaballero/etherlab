@@ -8,7 +8,7 @@ void CaptureWidget::paint_callback() {
 
     char buff[30];
     this->display->clear();
-    this->display->setFont((FontDef *) &Font_Tiny8x8);
+    this->display->setFont((FontDef *)&Font_Tiny8x8);
     this->display->gotoCharXY(0, 0);
     this->display->setColor(C565_WHITE);
     this->display->setBgColor(C565_TRANSPARENT);
@@ -22,14 +22,12 @@ void CaptureWidget::paint_callback() {
             seconds_elapsed = (this->task_status->stop_ms - this->task_status->start_ms) / 1000.0;
         }
 
-        float drop_rate = this->processor_status->processed_blocks ? (((float) this->processor_status->fifo_overruns /
-                                                                       (float) this->processor_status->processed_blocks) *
-                                                                      100.0) : 0;
-        float bytes_processed =
-                (this->processor_status->processed_blocks) * this->processor_status->block_size_bytes;
+        float drop_rate = this->processor_status->processed_blocks
+                              ? (((float)this->processor_status->fifo_overruns / (float)this->processor_status->processed_blocks) * 100.0)
+                              : 0;
+        float bytes_processed = (this->processor_status->processed_blocks) * this->processor_status->block_size_bytes;
 
-        float bytes_stored =
-                (this->task_status->processed_blocks) * DSP_FIFO_BLOCK_BYTES;
+        float bytes_stored = (this->task_status->processed_blocks) * DSP_FIFO_BLOCK_BYTES;
 
         uint16_t c = C565_WHITE;
 
@@ -86,19 +84,14 @@ void CaptureWidget::paint_callback() {
     }
 }
 
-void CaptureWidget::do_paint() {
+void CaptureWidget::before_paint() {
     uint64_t m = HAL_GetTick();
     if (m - this->last_refresh_ms > 100 || this->dirty()) {
-        this->display->drawArea(&this->area, this);
+
         this->set_dirty();
     }
 }
 
-void CaptureWidget::setTaskStatus(st_dspStatus *status) {
-    CaptureWidget::task_status = status;
-}
+void CaptureWidget::setTaskStatus(st_dspStatus *status) { CaptureWidget::task_status = status; }
 
-void CaptureWidget::setProcessorStatus(st_dspStatus *status) {
-    CaptureWidget::processor_status = status;
-}
-
+void CaptureWidget::setProcessorStatus(st_dspStatus *status) { CaptureWidget::processor_status = status; }

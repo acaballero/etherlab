@@ -30,7 +30,7 @@ public:
 
 protected:
 
-    void do_paint() override;
+    void before_paint() override;
 
     bool show_actions = false;
     st_dspStatus *processor_status;

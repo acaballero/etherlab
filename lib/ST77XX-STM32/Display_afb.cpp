@@ -2,6 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <hw/stm32.h>
+#include <sys/_stdint.h>
 #include "Painter.hpp"
 
 #define min2(a, b) ((a) < (b) ? (a) : (b))
@@ -23,7 +24,31 @@ void Display::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8
     }
 }
 
-void Display::clear() { memset(this->curr_buffer, 0, this->chunk_height * this->curr_area->width * 2); }
+void Display::clear() {
+
+    if (ow == 0) {
+        // We are drawing in the whole area so we can just memset
+        memset(this->curr_buffer, 0, this->chunk_height * this->curr_area->width * 2);
+    } else {
+
+        // The memory of the rectangle is not contiguous in the area
+        fillBuffer(C565_BLACK);
+    }
+}
+
+void Display::setOffset(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+    ox = x;
+    oy = y;
+    ow = w;
+    oh = h;
+}
+
+void Display::clearOffset() {
+    ox = 0;
+    oy = 0;
+    ow = 0;
+    oh = 0;
+}
 
 void Display::setEnabled(bool b) { this->enabled = b; }
 
@@ -89,7 +114,7 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         }
 
         this->current_line = 0;
-        uint16_t dy = area->y;
+        // uint16_t dy = area->y;
 
         this->curr_buffer = b565_buffer;
 
@@ -124,7 +149,7 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
             // NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
 
             this->current_line += this->chunk_height;
-            dy += this->chunk_height;
+            // dy += this->chunk_height;
 
             if (!this->use_dma) {
                 // Transfer the buffer without DMA
@@ -199,6 +224,7 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
 // Function to draw a single corner using midpoint circle algorithm
 void Display::drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uint8_t quadrant, bool filled) {
+
     int x = 0;
     int y = radius;
     int d = 3 - 2 * radius;
@@ -255,6 +281,7 @@ void Display::drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uin
 }
 
 void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled) {
+
     int x1 = x0 + radius, y1 = y0 + radius;
     int x2 = x0 + width - radius, y2 = y0 + height - radius;
 
@@ -272,7 +299,7 @@ void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uin
         writeLine(x0, y1, x0, y2);                           // Left
         writeLine(x0 + width - 1, y1, x0 + width - 1, y2);   // Right
     }
-    // Draw the four corners
+    // Draw the four cornerscd
     drawCorner(x0 + width - radius - 1, y0 + radius, radius, 1, filled);              // Top-right
     drawCorner(x0 + radius, y0 + radius, radius, 2, filled);                          // Top-left
     drawCorner(x0 + radius, y0 + height - radius - 1, radius, 3, filled);             // Bottom-left
@@ -289,8 +316,17 @@ void Display::DMATxCpltCallback(void) {}
 uint16_t Display::getColor() { return this->color; }
 
 void Display::fillBuffer(uint16_t c) {
-    for (uint16_t i = 0; i < this->chunk_height * this->curr_area->width; i++) {
-        *(curr_buffer + i) = c;
+
+    if (ow == 0) {
+        for (uint16_t i = 0; i < this->chunk_height * this->curr_area->width; i++) {
+            *(curr_buffer + i) = c;
+        }
+    } else {
+        for (uint16_t i = 0; i < ow; i++) {
+            for (uint16_t j = 0; j < oh; j++) {
+                setPixel(i, j, c);
+            }
+        }
     }
 }
 
@@ -328,14 +364,17 @@ void Display::setPixel(uint16_t x, uint16_t y, uint16_t c) {
     // it within a area drawing callback function (in which you have around 18 instructions to draw a pixel ( 72Mhz(core) / ( 18Mhz(spi) * 16 (bits/pixel) )
     // / 4 (cycles per instruction, but can be slower due to bus waiting) ) So, if we have to fill a area, use the buffer (getBuffer) instead with
     // incremental offset
-    Area *area = this->curr_area;
+    x += ox;
+    y += oy;
+
+    uint16_t width = this->curr_area->width;
 
     if (y >= this->current_line && y < this->current_line + this->chunk_height) {
 
         uint16_t dy = y - this->current_line;
 
         // index of the pixel in the DMA buffer
-        uint16_t ix = ((dy * area->width) + x); // >> buffer->log2_pixels_per_byte;
+        uint16_t ix = ((dy * width) + x); // >> buffer->log2_pixels_per_byte;
 
         *(curr_buffer + ix) = c;
     }
@@ -344,6 +383,10 @@ void Display::setPixel(uint16_t x, uint16_t y, uint16_t c) {
 void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) { writeLine(x1, y1, x2, y2, this->color); }
 
 void Display::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color) {
+
+    x += ox;
+    y1 += oy;
+    y2 += oy;
 
     int y = y1;
     if (y1 > y2) {
@@ -377,10 +420,15 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
 
 void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t width) {
 
-    Area *area = this->curr_area;
+    x1 += ox;
+    y1 += oy;
+    x2 += ox;
+    y2 += oy;
 
-    uint16_t zy1 = this->current_line;
-    uint16_t zy2 = this->current_line + this->chunk_height;
+    uint16_t rect_width = this->curr_area->width;
+
+    int zy1 = this->current_line;
+    int zy2 = this->current_line + this->chunk_height;
 
     if (y1 > y2) {
         uint16_t aux = y1;
@@ -417,7 +465,7 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
                 longLen += ipy;
                 for (int j = 0x8000 + (x1 << 16); ipy <= longLen; ++ipy) {
                     if (ipy >= zy1 && ipy < zy2) {
-                        ipx = (ipy - this->current_line) * area->width; // offset in the buffer
+                        ipx = (ipy - this->current_line) * rect_width; // offset in the buffer
                         *(this->curr_buffer + ipx + (j >> 16)) = color;
                     }
 
@@ -428,7 +476,7 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
             longLen += ipy;
             for (int j = 0x8000 + (x1 << 16); ipy >= longLen; --ipy) {
                 if (ipy >= zy1 && ipy < zy2) {
-                    ipx = (ipy - this->current_line) * area->width; // offset in the buffer
+                    ipx = (ipy - this->current_line) * rect_width; // offset in the buffer
                     *(this->curr_buffer + ipx + (j >> 16)) = color;
                 }
 
@@ -442,7 +490,7 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
             for (int j = 0x8000 + (y1 << 16); x1 <= x2; ++x1) {
                 ipy = (j >> 16);
                 if (ipy >= zy1 && ipy < zy2) {
-                    ipx = (ipy - this->current_line) * area->width; // offset in the buffer
+                    ipx = (ipy - this->current_line) * rect_width; // offset in the buffer
                     *(this->curr_buffer + ipx + x1) = color;
                 }
                 j += decInc;
@@ -453,7 +501,7 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
         for (int j = 0x8000 + (y1 << 16); x2 >= x1; --x2) {
             ipy = (j >> 16);
             if (ipy >= zy1 && ipy < zy2) {
-                ipx = (ipy - this->current_line) * area->width; // offset in the buffer
+                ipx = (ipy - this->current_line) * rect_width; // offset in the buffer
                 *(this->curr_buffer + ipx + x2) = color;
             }
             j -= decInc;
@@ -581,17 +629,21 @@ void Display::invertColors(uint8_t invert) {
 }
 
 void Display::writeChar(char ch) {
+
     this->writeChar(px, py, ch, font, color, bgColor);
     this->px += font->width;
 }
 
 void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor) {
 
+    x += ox;
+    y += oy;
+
     uint16_t i, b, j;
-    uint16_t px, py = y, dy, y1, y2;
+    int px, py = y, dy, y1, y2;
     uint16_t c;
 
-    Area *area = this->curr_area;
+    uint16_t width = this->curr_area->width;
 
     y1 = this->current_line;
     y2 = this->current_line + this->chunk_height;
@@ -635,7 +687,7 @@ void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, ui
                     }
 
                     if (c != C565_TRANSPARENT) {
-                        uint16_t ix = ((dy * area->width) + px); // >> buffer->log2_pixels_per_byte;
+                        uint16_t ix = ((dy * width) + px); // >> buffer->log2_pixels_per_byte;
                         *(this->curr_buffer + ix) = c;
                     }
                 }
@@ -668,7 +720,7 @@ void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, ui
                     }
 
                     if (c != C565_TRANSPARENT) {
-                        uint16_t ix = ((dy * area->width) + px); // >> buffer->log2_pixels_per_byte;
+                        uint16_t ix = ((dy * width) + px); // >> buffer->log2_pixels_per_byte;
                         *(this->curr_buffer + ix) = c;
                     }
                 }

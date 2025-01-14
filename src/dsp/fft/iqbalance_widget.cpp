@@ -51,18 +51,12 @@ void IQBalanceWidget::paint_callback() {
             uint16_t ex = px + bar_w;
 
             while (px < ex) {
-                display->setPixel(px, h - gainY,
-                                  precPoints[i] > FFT_IQ_BALANCER_MIN_PRECISSION ? C565_WHITE : C565_RED);
-                display->setPixel(px, h - phaseY,
-                                  precPoints[i] > FFT_IQ_BALANCER_MIN_PRECISSION ? C565_CYAN : C565_BLUE);
+                display->setPixel(px, h - gainY, precPoints[i] > FFT_IQ_BALANCER_MIN_PRECISSION ? C565_WHITE : C565_RED);
+                display->setPixel(px, h - phaseY, precPoints[i] > FFT_IQ_BALANCER_MIN_PRECISSION ? C565_CYAN : C565_BLUE);
                 px++;
             }
         }
     }
 }
 
-void IQBalanceWidget::do_paint() {
-    if (this->dirty()) {
-        display->drawArea(&this->area, this);
-    }
-}
+void IQBalanceWidget::before_paint() {}

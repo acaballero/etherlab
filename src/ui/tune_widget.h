@@ -8,16 +8,15 @@
 #include "widget.h"
 #include "types.h"
 
-class TuneWidget: public Widget {
-public:
-
+class TuneWidget : public Widget {
+  public:
     using Widget::Widget;
 
     void paint_callback() override;
 
-protected:
-    void do_paint() override;
-    float s_level=0;
+  protected:
+    void before_paint() override;
+    float s_level = 0;
 };
 
-#endif //TRX_FRONTEND_TUNE_WIDGET_H
+#endif // TRX_FRONTEND_TUNE_WIDGET_H

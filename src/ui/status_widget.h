@@ -13,6 +13,7 @@
 class StatusWidget : public View {
   public:
     StatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
+
     void paint_callback() override;
 
   protected:
@@ -31,8 +32,6 @@ class StatusWidget : public View {
 
     char buf[20];
 
-    void do_paint() override;
-
     void init();
 
     void mode();
@@ -48,6 +47,8 @@ class StatusWidget : public View {
     char *frontend();
 
     char *agc_alc();
+
+    void before_paint() override;
 };
 
 #endif // TRX_FRONTEND_STATUS_WIDGET_H

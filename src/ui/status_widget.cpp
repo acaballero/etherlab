@@ -101,9 +101,7 @@ void StatusWidget::filter2(Widget *) {
     }
 }
 
-void StatusWidget::paint_callback() { display->clear(); }
-
-void StatusWidget::do_paint() {
+void StatusWidget::before_paint() {
 
     radio::BAND band = config.band == radio::BAND_AUTO ? radio::find_band(radio::get_frequency()) : config.band;
 
@@ -114,9 +112,9 @@ void StatusWidget::do_paint() {
     };
 
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
-        this->set_dirty();
-        display->drawArea(&this->area, this);
+
         _status = status;
+        this->set_dirty();
         if (ISTX) {
             fg_color = C565_GREY_LIGHT;
             bg_color = C565_WHITE;
@@ -170,15 +168,25 @@ void StatusWidget::do_paint() {
         for (Widget *btn : View::children()) {
             ((Button *)btn)->set_bg(bg_color);
             btn->set_aling(ALIGN_CENTER);
+            btn->set_dirty();
         }
+    }
+}
 
-        // Selectively paint all children.
-        for (const auto child : this->children()) {
-            if (child->visible()) {
-                child->set_dirty();
-                child->paint();
-                child->set_clean();
-            }
+void StatusWidget::paint_callback() {
+
+    display->clear();
+
+    for (const auto child : this->children()) {
+        if (child->visible()) {
+            uint16_t top = child->parent_rect().top();
+            uint16_t left = child->parent_rect().left();
+            uint16_t height = child->parent_rect().height();
+            uint16_t width = child->parent_rect().width();
+
+            display->setOffset(left, top, width, height);
+            child->paint_callback();
+            display->clearOffset();
         }
     }
 }

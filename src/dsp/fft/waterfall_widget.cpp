@@ -15,8 +15,7 @@ WaterfallWidget::WaterfallWidget(const Rect &parentRect, Display *display) : Wid
 
     this->display->convertPalette888to565(this->waterfall_palette_rgb256, this->waterfall_palette_rgb565, 16);
 
-    memset(waterfallBuffer, FFT_WATERFALL_DEFAULT_COLOR_INDEX + (FFT_WATERFALL_DEFAULT_COLOR_INDEX << 4),
-           sizeof(waterfallBuffer));
+    memset(waterfallBuffer, FFT_WATERFALL_DEFAULT_COLOR_INDEX + (FFT_WATERFALL_DEFAULT_COLOR_INDEX << 4), sizeof(waterfallBuffer));
 
     this->waterfallFreq = radio::get_frequency();
 }
@@ -26,10 +25,10 @@ void WaterfallWidget::centerSpectrum() {
     if (waterfallFreq == 0) {
         waterfallFreq = radio::get_frequency(); // initialize it
     } else {
-        volatile int32_t f_offset = (int32_t) waterfallFreq - (int32_t) radio::get_frequency();
+        volatile int32_t f_offset = (int32_t)waterfallFreq - (int32_t)radio::get_frequency();
 
         // Calculate the equivalent width in buffer bytes
-        int16_t offset_pixels = round((float) f_offset / fft_params.display_rbw / PIXELS_PER_BYTE);
+        int16_t offset_pixels = round((float)f_offset / fft_params.display_rbw / PIXELS_PER_BYTE);
 
         // To scroll horizontally, we 'memmove' the buffer, then erase the unwanted pixels
         // Remember there's 4-bit by pixel, so we divide the displacement by two
@@ -84,8 +83,8 @@ void WaterfallWidget::paint_callback() {
 
     uint16_t *buffer = display->getBuffer();
 
-    pbyte = waterfallBuffer + (this->display->current_line * (width
-            >> 1)); // position in the buffer (we know x1 and x2 are always 0 and DISPLAY_X_PIXELS in this buffer)
+    pbyte = waterfallBuffer +
+            (this->display->current_line * (width >> 1)); // position in the buffer (we know x1 and x2 are always 0 and DISPLAY_X_PIXELS in this buffer)
     uint8_t *pend = waterfallBuffer + ((this->display->current_last_line + 1) * (width >> 1));
     uint8_t byte;
 
@@ -121,7 +120,7 @@ void WaterfallWidget::paint_callback() {
     }
 }
 
-void WaterfallWidget::do_paint() {
+void WaterfallWidget::before_paint() {
 
     if (this->dirty()) {
 
@@ -141,16 +140,14 @@ void WaterfallWidget::do_paint() {
 
             db = constrain(db, config.fft.min_db, FFT_MAX_DB);
 
-            uint8_t color = (uint8_t) (
-                    ((float) (db - config.fft.min_db) / (float) (FFT_MAX_DB - config.fft.min_db)) *
-                    (float) FFT_WATERFALL_NCOLORS - 1);
+            uint8_t color = (uint8_t)(((float)(db - config.fft.min_db) / (float)(FFT_MAX_DB - config.fft.min_db)) * (float)FFT_WATERFALL_NCOLORS - 1);
 
             // IF fft_display is represented in display 'Y' coordinates (not in dBs)
-            //int py = fft_display[i];
+            // int py = fft_display[i];
 
-            //uint8_t color = (uint8_t) (
-            //        ((float) (FFT_HEIGHT - py) / (float) (FFT_HEIGHT)) *
-            //        (float) (FFT_WATERFALL_NCOLORS - 1));
+            // uint8_t color = (uint8_t) (
+            //         ((float) (FFT_HEIGHT - py) / (float) (FFT_HEIGHT)) *
+            //         (float) (FFT_WATERFALL_NCOLORS - 1));
 
 #if DEBUG_LCD
             if (color < 2)
@@ -168,8 +165,5 @@ void WaterfallWidget::do_paint() {
 
             waterfallBuffer[ix] = mask | ((color % 16) << shift);
         }
-
-        display->drawArea(&this->area, this);
     }
 }
-

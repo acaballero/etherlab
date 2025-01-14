@@ -56,15 +56,13 @@ char *RadioStatusWidget::squelch() {
     return buf;
 }
 
-void RadioStatusWidget::do_paint() {
+void RadioStatusWidget::before_paint() {
 
     st_radio_status status = {config.squelch_level, ISTX, radio::get_vfo(), agc::get_gain()};
 
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
 
-        this->set_dirty();
-        display->drawArea(&this->area, this);
-
+        //  this->dirty();
         _status = status;
 
         if (ISTX) {
@@ -118,19 +116,5 @@ void RadioStatusWidget::do_paint() {
             lblMode.set_bg(C565_TRANSPARENT);
             lblMode.set_style(ButtonStyle::LABEL_STYLE_HOLLOW);
         }
-
-        // Selectively paint all children.
-        for (const auto child : this->children()) {
-            if (child->visible()) {
-                child->set_dirty();
-                child->paint();
-                child->set_clean();
-            }
-        }
     }
-}
-
-void RadioStatusWidget::paint_callback() {
-    // TODO: Clear only the first time. Now causes flicker (first black then the buttons)
-    display->clear();
 }

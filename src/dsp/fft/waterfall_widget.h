@@ -23,7 +23,7 @@ class WaterfallWidget : public Widget {
     void moveSpectrum(int16_t);
 
   protected:
-    void do_paint() override;
+    void before_paint() override;
 
     const uint32_t waterfall_palette_rgb256[FFT_WATERFALL_NCOLORS] = {0x0000,   0x000085, 0x0000c8, 0x4B00e3, 0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
                                                                       0xdc6a55, 0xed852a, 0xffa000, 0xffbf55, 0xffcf7f, 0xffdfaa, 0xffefd4, 0xffffff};

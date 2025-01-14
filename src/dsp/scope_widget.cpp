@@ -26,9 +26,6 @@ void ScopeWidget::paint_callback() {
 #endif
 
    }*/
-
 }
 
-void ScopeWidget::do_paint() {
-    display->drawArea(&this->area, this);
-}
+void ScopeWidget::before_paint() {}

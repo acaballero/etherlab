@@ -37,7 +37,7 @@ class KeypadView : public View {
 
    bool on_input(const st_inputEvent event) override;
 
-   void do_paint() override;
+   void before_paint() override;
 
  private:
    bool show_multipliers = true;

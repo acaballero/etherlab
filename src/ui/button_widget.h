@@ -78,7 +78,7 @@ class Button : public Widget {
 
     ButtonStyle style = BUTTON_STYLE_FLAT;
 
-    void do_paint() override;
+    void before_paint() override;
 };
 
 #endif // TRX_FRONTEND_BUTTON_WIDGET_H

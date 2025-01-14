@@ -45,7 +45,7 @@ class Label : public Widget {
     ButtonStyle style = LABEL_STYLE_HOLLOW;
     bool has_border = true;
 
-    void do_paint() override;
+    void before_paint() override;
 };
 
 #endif // TRX_FRONTEND_LABEL_H

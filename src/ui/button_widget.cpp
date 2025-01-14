@@ -14,10 +14,9 @@ char *Button::get_text() { return text; }
 
 void Button::set_two_lines(bool b) { two_lines = b; }
 
-void Button::do_paint() {
+void Button::before_paint() {
     if (this->dirty()) {
         display->setFont(font);
-        display->drawArea(&this->area, this);
     }
 }
 
@@ -37,14 +36,14 @@ void Button::paint_callback() {
     }
 
     if (style == BUTTON_STYLE_3D) {
-        display->writeRect(0, 0, area.width - 1, 1, C565_GREY_LIGHT);
-        display->writeRect(0, 0, 1, area.height - 1, shadow);
-        display->writeRect(area.width - 2, 0, area.width - 1, area.height - 1, C565_GREY_LIGHT);
-        display->writeRect(0, area.height - 2, area.width - 1, area.height - 1, shadow);
-        display->fill(1, 1, area.width - 1, area.height - 2, bg);
+        display->writeRect(0, 0, parent_rect().width() - 1, 1, C565_GREY_LIGHT);
+        display->writeRect(0, 0, 1, parent_rect().height() - 1, shadow);
+        display->writeRect(parent_rect().width() - 2, 0, parent_rect().width() - 1, parent_rect().height() - 1, C565_GREY_LIGHT);
+        display->writeRect(0, parent_rect().height() - 2, parent_rect().width() - 1, parent_rect().height() - 1, shadow);
+        display->fill(1, 1, parent_rect().width() - 1, parent_rect().height() - 2, bg);
     } else {
         display->setColor(bg);
-        display->drawRoundedRectangle(0, 0, area.width, area.height, 3, true);
+        display->drawRoundedRectangle(0, 0, parent_rect().width(), parent_rect().height(), 3, true);
     }
 
     display->setColor(fg);
@@ -54,7 +53,7 @@ void Button::paint_callback() {
     uint16_t text_height = font->height;
 
     if (fn_writer) {
-        display->gotoXY(display->get_padding_x(), (area.height - text_height) / 2);
+        display->gotoXY(display->get_padding_x(), (parent_rect().height() - text_height) / 2);
         fn_writer();
     } else {
         uint16_t lw = strlen(text);
@@ -64,9 +63,9 @@ void Button::paint_callback() {
         if (two_lines) {
 
             uint16_t w = (vw + uw) * font->width;
-            uint16_t xlabel = (area.width - lw * font->width) / 2;
-            uint16_t xval = (area.width - w) / 2;
-            uint16_t ylabel = (area.height - (font->height + 1) * 2) / 2;
+            uint16_t xlabel = (parent_rect().width() - lw * font->width) / 2;
+            uint16_t xval = (parent_rect().width() - w) / 2;
+            uint16_t ylabel = (parent_rect().height() - (font->height + 1) * 2) / 2;
             uint16_t yval = ylabel + font->height + 3;
             display->gotoXY(xlabel, ylabel);
             display->print(text);
@@ -84,14 +83,14 @@ void Button::paint_callback() {
             int16_t x;
 
             if (align == ALIGN_CENTER) {
-                x = (area.width - width) / 2;
+                x = (parent_rect().width() - width) / 2;
             } else if (align == ALIGN_RIGHT) {
-                x = area.width - width - display->get_padding_x();
+                x = parent_rect().width() - width - display->get_padding_x();
             } else {
                 x = display->get_padding_x();
             }
 
-            display->gotoXY(x, (area.height - font->height + 2) / 2);
+            display->gotoXY(x, (parent_rect().height() - font->height + 2) / 2);
             display->print(text, value, unit, fg, fg_color_value, fg_color_unit);
         }
     }
@@ -115,20 +114,20 @@ bool Button::on_input(const st_inputEvent event) {
     }
 
     switch (event.type) {
-    case INPUT_EVENT_TYPE_TOUCH_START:
-        set_active(true);
-        set_dirty();
-        return true;
+        case INPUT_EVENT_TYPE_TOUCH_START:
+            set_active(true);
+            set_dirty();
+            return true;
 
-    case INPUT_EVENT_TYPE_TOUCH_END:
-        set_active(false);
-        set_dirty();
-        if (on_select) {
-            on_select(*this);
-        }
-        return true;
-    default:
-        return false;
+        case INPUT_EVENT_TYPE_TOUCH_END:
+            set_active(false);
+            set_dirty();
+            if (on_select) {
+                on_select(*this);
+            }
+            return true;
+        default:
+            return false;
     }
 }
 

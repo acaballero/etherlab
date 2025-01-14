@@ -39,7 +39,7 @@ protected:
     uint16_t title_color;
     const uint16_t text_color;
 
-    void do_paint() override;
+    void before_paint() override;
 };
 
 #endif //TRX_FRONTEND_MESSAGE_WIDGET_H

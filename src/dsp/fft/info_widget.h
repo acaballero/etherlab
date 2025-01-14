@@ -16,7 +16,7 @@ public:
     void paint_callback() override;
 
 protected:
-    void do_paint() override;
+    void before_paint() override;
 };
 
 #endif //TRX_FRONTEND_INFO_WIDGET_H

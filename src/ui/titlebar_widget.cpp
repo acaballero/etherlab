@@ -218,13 +218,12 @@ void TitleBarWidget::paint_callback() {
     display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
 }
 
-void TitleBarWidget::do_paint() {
+void TitleBarWidget::before_paint() {
 
     st_topBar topBar = {dsp_status, main_board::getMute() ? true : false};
 
     if (this->dirty() || !(topBar == this->status)) {
         this->status = topBar;
-        display->drawArea(&this->area, this);
         this->set_dirty();
     }
 }

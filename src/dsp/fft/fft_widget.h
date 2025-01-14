@@ -11,19 +11,18 @@
 
 #define FFT_HEIGHT 70
 #define FFT_X_AXIS_HEIGHT 12
-#define FFT_WIDGET_HEIGHT (FFT_HEIGHT+FFT_X_AXIS_HEIGHT)
+#define FFT_WIDGET_HEIGHT (FFT_HEIGHT + FFT_X_AXIS_HEIGHT)
 #define FFT_ZONE_WIDTH (DISPLAY_X_PIXELS - DBSCALE_WIDTH)
 
 class FFTWidget : public Widget {
-public:
-
+  public:
     FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s);
     void set_style(FFT_SPECTRUM_STYLE style);
     void set_colors(uint16_t line, uint16_t fill);
     void paint_callback() override;
 
-protected:
-    void do_paint() override;
+  protected:
+    void before_paint() override;
     void draw_bandwidth();
     void draw_freq_marks();
     void draw_span_marks();
@@ -45,4 +44,4 @@ protected:
     bool refresh_x_axis;
 };
 
-#endif //TRX_FRONTEND_FFT_WIDGET_H
+#endif // TRX_FRONTEND_FFT_WIDGET_H

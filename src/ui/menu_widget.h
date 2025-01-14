@@ -18,7 +18,7 @@ public:
     bool on_input(const st_inputEvent event) override;
 
 protected:
-    void do_paint() override;
+    void before_paint() override;
 };
 
 #endif //TRX_FRONTEND_MENU_WIDGET_H

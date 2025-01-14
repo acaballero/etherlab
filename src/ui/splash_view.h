@@ -21,7 +21,7 @@ class SplashView : public View {
 
     void init();
 
-    void do_paint() override;
+    void before_paint() override;
 
   private:
     Label lblTitle{{30, TOP + 0, WIDTH - 60, 30}};

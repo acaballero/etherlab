@@ -21,7 +21,7 @@ protected:
 
     st_scale current_scale;
 
-    void do_paint() override;
+    void before_paint() override;
 };
 
 

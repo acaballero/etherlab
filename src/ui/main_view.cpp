@@ -30,7 +30,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
                  &this->dbscale_w, &this->frequency_w, &this->iqbal_w, &this->waterfall_w, &this->fft_w, &this->msg_w});
 }
 
-void MainView::do_paint() {
+void MainView::before_paint() {
 
    if (msg_w.visible()) {
       tune_w.set_visible(false);

@@ -145,11 +145,7 @@ class Display {
 
     void fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
 
-    void fillZone(uint16_t color);
-
     void fillBuffer(uint16_t color);
-
-    void scrollZone(uint8_t ibuffer, uint16_t x, uint16_t y);
 
     void writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor);
 
@@ -222,6 +218,11 @@ class Display {
 
     bool getEnabled();
 
+    // Sets the offset box, inside the current area, to which constraint the drawing
+    void setOffset(uint16_t, uint16_t, uint16_t, uint16_t);
+
+    void clearOffset();
+
     void setEnabled(bool);
 
     bool getWrapText() const;
@@ -244,6 +245,10 @@ class Display {
   private:
     bool enabled = true;
     bool wrap_text = true;
+    uint16_t ox = 0; // offset x
+    uint16_t oy = 0; // offset y
+    uint16_t ow = 0; // offset width
+    uint16_t oh = 0; // offset height
     uint16_t px = 0;
     uint16_t py = 0;
     uint16_t padding_x = 0, padding_y = 0;

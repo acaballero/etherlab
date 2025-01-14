@@ -131,7 +131,7 @@ void PowerMeterWidget::paint_swr() {
     }
 }
 
-void PowerMeterWidget::do_paint() {
+void PowerMeterWidget::before_paint() {
 
     rf_coupler::rf_coupler_info current_info{.v_for = 0, .v_ref = 0, .p_for_dbm = rf_coupler::info.p_for_dbm, .p_ref_dbm = 0, .swr = rf_coupler::info.swr};
 
@@ -147,6 +147,5 @@ void PowerMeterWidget::do_paint() {
     if (true || this->dirty() || !(info == current_info)) { // Update only if status has changed
         this->set_dirty();
         info = current_info;
-        display->drawArea(&this->area, this);
     }
 }

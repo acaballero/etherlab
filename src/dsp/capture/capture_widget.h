@@ -11,17 +11,17 @@
 #include "../../../lib/utils/utils.hpp"
 
 class CaptureWidget : public Widget {
-public:
+  public:
     using Widget::Widget;
 
     void paint_callback() override;
     void setProcessorStatus(st_dspStatus *status);
     void setTaskStatus(st_dspStatus *status);
 
-protected:
-    void do_paint() override;
-    st_dspStatus* processor_status;
-    st_dspStatus* task_status;
+  protected:
+    void before_paint() override;
+    st_dspStatus *processor_status;
+    st_dspStatus *task_status;
 };
 
-#endif //TRX_FRONTEND_REPLAY_WIDGET_H
+#endif // TRX_FRONTEND_REPLAY_WIDGET_H

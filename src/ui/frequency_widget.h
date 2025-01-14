@@ -18,7 +18,7 @@ class FrequencyWidget : public View {
   protected:
     static constexpr uint8_t MARGIN = 3;
     st_freqInfo status;
-    void do_paint() override;
+    void before_paint() override;
     void init();
     bool on_input(const st_inputEvent event) override;
 

@@ -102,14 +102,13 @@ st_meter_widget_state SMeterWidget::get_state() {
     return new_state;
 }
 
-void SMeterWidget::do_paint() {
+void SMeterWidget::before_paint() {
 
     st_meter_widget_state current_state = get_state();
 
     if (this->dirty() || !(current_state == state)) { // Update only if status has changed
         this->set_dirty();
         state = current_state;
-        display->drawArea(&this->area, this);
     }
 }
 
@@ -123,7 +122,7 @@ bool SMeterWidget::on_input(const st_inputEvent event) {
             view_manager::keypadView.on_changed = [](double v) { sstrength::set_squelch((float)v); };
             view_manager::push(&view_manager::keypadView);
             return true;
+        default:
+            return false;
     }
-
-    return false;
 }

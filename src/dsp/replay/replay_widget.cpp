@@ -40,9 +40,8 @@ void ReplayWidget::paint_callback() {
             break;
     }
 
-
-    //this->display->setFont((FontDef *)&Font_Fixed5x7);
-    this->display->setFont((FontDef *) &Font_Tiny8x8);
+    // this->display->setFont((FontDef *)&Font_Fixed5x7);
+    this->display->setFont((FontDef *)&Font_Tiny8x8);
     this->display->setVerticalLineSpacing(1);
 
     this->display->gotoCharXY(0, 0);
@@ -75,7 +74,6 @@ void ReplayWidget::paint_callback() {
                 this->display->print("Rate: ", buff, units);
             }
 
-
             if (this->wi.carrier_freq) {
                 format_eng(buff, this->wi.carrier_freq, "Hz\n", units, 3);
                 this->display->print("Freq: ", buff, units);
@@ -83,7 +81,6 @@ void ReplayWidget::paint_callback() {
 
             format_eng(buff, this->finfo.fsize, "b\n", units);
             this->display->print("Size: ", buff, units);
-
 
             break;
     }
@@ -95,16 +92,13 @@ void ReplayWidget::paint_callback() {
         } else {
             seconds_elapsed = (this->task_status->stop_ms - this->task_status->start_ms) / 1000.0;
         }
-        float drop_rate = this->processor_status->processed_blocks ? ((float) this->processor_status->fifo_underruns /
-                                                                      (float) this->processor_status->processed_blocks) *
-                                                                     100.0 : 0;
-        float bytes_processed =
-                (this->processor_status->processed_blocks - this->processor_status->fifo_underruns) *
-                this->processor_status->block_size_bytes;
+        float drop_rate = this->processor_status->processed_blocks
+                              ? ((float)this->processor_status->fifo_underruns / (float)this->processor_status->processed_blocks) * 100.0
+                              : 0;
+        float bytes_processed = (this->processor_status->processed_blocks - this->processor_status->fifo_underruns) * this->processor_status->block_size_bytes;
 
         float bytes_read =
-                (this->processor_status->processed_blocks - this->processor_status->fifo_underruns) *
-                this->processor_status->decimated_block_size_bytes;
+            (this->processor_status->processed_blocks - this->processor_status->fifo_underruns) * this->processor_status->decimated_block_size_bytes;
 
         char new_units[5];
         this->display->setColor(C565_WHITE);
@@ -118,28 +112,23 @@ void ReplayWidget::paint_callback() {
         this->display->print("Miss: ", buff, "%\n");
     }
 
-    if (this->wi.format!=FSTATUS_NONE && show_actions) {
-        this->display->setFont((FontDef *) &Font_Fixed5x7);
+    if (this->wi.format != FSTATUS_NONE && show_actions) {
+        this->display->setFont((FontDef *)&Font_Fixed5x7);
         this->display->gotoCharXY(0, 6);
         this->display->print("Long press to delete");
     }
 }
 
-void ReplayWidget::do_paint() {
+void ReplayWidget::before_paint() {
     uint64_t m = HAL_GetTick();
     if (m - this->last_refresh_ms > 100 || this->dirty()) {
-        this->display->drawArea(&this->area, this);
         this->set_dirty();
     }
 }
 
-void ReplayWidget::setTaskStatus(st_dspStatus *status) {
-    ReplayWidget::task_status = status;
-}
+void ReplayWidget::setTaskStatus(st_dspStatus *status) { ReplayWidget::task_status = status; }
 
-void ReplayWidget::setProcessorStatus(st_dspStatus *status) {
-    ReplayWidget::processor_status = status;
-}
+void ReplayWidget::setProcessorStatus(st_dspStatus *status) { ReplayWidget::processor_status = status; }
 
 void ReplayWidget::setWaveInfo(WaveInfo wi) {
     ReplayWidget::wi = wi;

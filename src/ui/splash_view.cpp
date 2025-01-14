@@ -45,4 +45,4 @@ void SplashView::init() {
     add_child(&lblText3);
 }
 
-void SplashView::do_paint() {}
+void SplashView::before_paint() {}
