@@ -8,7 +8,7 @@
 #include "signal.h"
 #include "scanner.h"
 #include "periodic_task.h"
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 /*
  * Bits 4-7 int the PORT_A of the hmcp01 MCP23017 instance corresponding

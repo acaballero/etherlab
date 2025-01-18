@@ -20,8 +20,7 @@ extern void Error_Handler(void);
 
 class InputPinController {
 
-public:
-
+  public:
     InputPinController(TIM_TypeDef *timer);
 
     void addPin(InputPin *pin);
@@ -30,20 +29,19 @@ public:
 
     void handlePinEXTI(uint16_t GPIO_Pin);
 
-
-private:
-
-    InputPin *pins [PINCTRL_MAX_PINS];
+  private:
+    InputPin *pins[PINCTRL_MAX_PINS];
     TIM_HandleTypeDef htim;
-    uint8_t npins=0;
+    uint8_t npins = 0;
 
     /*
      * Max debounce period of all the controlled pins. We use it to set the debouncing timer timeout long enough to check for the settling of the slowest pin
      * TODO: The idea here is to use one timer for all the pins and poll only as long as there's one pin who needs to be debounced
      *       Of course this could be further optimized, but we are not considering more than one transition at a time for the moment
-     *       I don't know if this class will be used in a scenario of simultaneous transitions (multiple keys at a time?), but that's the idea of the polling scheme
+     *       I don't know if this class will be used in a scenario of simultaneous transitions (multiple keys at a time?), but that's the idea behind the
+     * polling scheme
      */
-    uint16_t max_debounce_period=0;
+    uint16_t max_debounce_period = 0;
 
     /*
      * Las time the timer was started (some time after which no debounce check is needed in any button)
@@ -51,5 +49,4 @@ private:
     uint64_t timer_timeout_ms;
 };
 
-
-#endif //TRX_FRONTEND_INPUTPINCONTROLLER_H
+#endif // TRX_FRONTEND_INPUTPINCONTROLLER_H

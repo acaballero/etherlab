@@ -6,6 +6,7 @@
 import socket
 import time
 
+
 class Stream:
     """
     Stream of messages for one of the 32 ITM channels.
@@ -32,23 +33,27 @@ class Stream:
     # Max number of characters for a stream before a newline needs to occur
     MAX_LINE_LENGTH = 2048
 
-    def __init__(self, id, header = '', tcl_socket = None):
-        self.id = id;
+    def __init__(self, id, header="", tcl_socket=None):
+        self.id = id
         self._buffer = []
         self._header = header
         self.tcl_socket = tcl_socket
 
     def add_char(self, c):
         if len(self._buffer) >= self.MAX_LINE_LENGTH:
-            self._output('SWO_PARSER.PY WARNING: stream ' + str(self.id) +
-                         ' received ' + str(self.MAX_LINE_LENGTH) +
-                         ' bytes without receiving a newline. Did you forget one?')
-            self._output(self._header + ''.join(self._buffer) + c)
+            self._output(
+                "SWO_PARSER.PY WARNING: stream "
+                + str(self.id)
+                + " received "
+                + str(self.MAX_LINE_LENGTH)
+                + " bytes without receiving a newline. Did you forget one?"
+            )
+            self._output(self._header + "".join(self._buffer) + c)
             self._buffer = []
             return
 
-        if c == '\n':
-            self._output(self._header + ''.join(self._buffer))
+        if c == "\n":
+            self._output(self._header + "".join(self._buffer))
             self._buffer = []
             return
 
@@ -61,7 +66,7 @@ class Stream:
     def _output(self, s):
         print(s)
         if self.tcl_socket is not None:
-            self.tcl_socket.sendall(b'puts "' + s.encode('utf-8') + b'"\r\n\x1a')
+            self.tcl_socket.sendall(b'puts "' + s.encode("utf-8") + b'"\r\n\x1a')
 
 
 class StreamManager:
@@ -73,9 +78,10 @@ class StreamManager:
     the correct stream.
 
     """
+
     def __init__(self):
         self.streams = dict()
-        self._itmbuffer = b''
+        self._itmbuffer = b""
 
     def add_stream(self, stream):
         self.streams[stream.id] = stream
@@ -92,12 +98,11 @@ class StreamManager:
         parse_itm_bytes.
 
         """
-        if (line.startswith(b'type target_trace data ') and
-                line.endswith(b'\r\n')
-        ):
+        if line.startswith(b"type target_trace data ") and line.endswith(b"\r\n"):
 
-            itm_bytes = int(line[23:-2],16).to_bytes(len(line[23:-2])//2,
-                                                     byteorder='big')
+            itm_bytes = int(line[23:-2], 16).to_bytes(
+                len(line[23:-2]) // 2, byteorder="big"
+            )
 
             self.parse_itm_bytes(itm_bytes)
 
@@ -109,7 +114,7 @@ class StreamManager:
         """
 
         bstring = self._itmbuffer + bstring
-        self._itmbuffer = b''
+        self._itmbuffer = b""
 
         while len(bstring) > 0:
             header = bstring[0]
@@ -119,7 +124,7 @@ class StreamManager:
                 bstring = bstring[1:]
                 continue
 
-            payload_size = 2**(header & 0x03 - 1)
+            payload_size = 2 ** (header & 0x03 - 1)
             stream_id = header >> 3
 
             if payload_size >= len(bstring):
@@ -128,24 +133,22 @@ class StreamManager:
 
             if stream_id in self.streams:
 
-               # try:
-                    #print("size:"+str(payload_size))
-                    #//print(bstring[1:payload_size+1])
-                    s = bstring[1:payload_size+1].decode('ascii')
-                    self.streams[stream_id].add_chars(s)
-               # except:
-               #     print(bstring[1:payload_size+1].hex('-'))
-               #    print("-")
+                # try:
+                # print("size:"+str(payload_size))
+                # //print(bstring[1:payload_size+1])
+                s = bstring[1 : payload_size + 1].decode("ascii")
+                self.streams[stream_id].add_chars(s)
+            # except:
+            #     print(bstring[1:payload_size+1].hex('-'))
+            #    print("-")
 
-
-
-            bstring = bstring[payload_size+1:]
+            bstring = bstring[payload_size + 1 :]
 
 
 #### Main program ####
 
 # Set up the socket to the OpenOCD Tcl server
-HOST = 'localhost'
+HOST = "localhost"
 PORT = 6666
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
 
@@ -155,7 +158,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
         try:
             print("Connecting to OpenOCD ({}/100)".format(counter))
             tcl_socket.connect((HOST, PORT))
-            connected=True
+            connected = True
+            print("Connected")
         except socket.error as error:
             print("Connection Failed {}".format(error))
             time.sleep(5)
@@ -165,19 +169,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
 
     # Create a stream manager and add three streams
     streams = StreamManager()
-    streams.add_stream(Stream(0, '', tcl_socket))
-    streams.add_stream(Stream(1, 'WARNING: ', tcl_socket))
-    streams.add_stream(Stream(2, 'ERROR: ', tcl_socket))
+    streams.add_stream(Stream(0, "", tcl_socket))
+    streams.add_stream(Stream(1, "WARNING: ", tcl_socket))
+    streams.add_stream(Stream(2, "ERROR: ", tcl_socket))
 
     # Enable the tcl_trace output
-    tcl_socket.sendall(b'tcl_trace on\n\x1a')
+    tcl_socket.sendall(b"tcl_trace on\n\x1a")
 
     tcl_socket.sendall(b'puts "swoparser.py waiting for ITM data..."\r\n\x1a')
 
-    tcl_buf = b''
+    tcl_buf = b""
     while True:
         # Wait for new data from the socket
-        data = b''
+        data = b""
         while len(data) == 0:
             try:
                 data = tcl_socket.recv(1024)
@@ -187,7 +191,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
         tcl_buf = tcl_buf + data
 
         # Tcl messages are terminated with a 0x1A byte
-        temp = tcl_buf.split(b'\x1a',1)
+        temp = tcl_buf.split(b"\x1a", 1)
         while len(temp) == 2:
             # Parse the Tcl message
             streams.parse_tcl(temp[0])
@@ -195,9 +199,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
             # Remove that message from tcl_buf and grab another message from
             # the buffer if the is one
             tcl_buf = temp[1]
-            temp = tcl_buf.split(b'\x1a',1)
-
+            temp = tcl_buf.split(b"\x1a", 1)
 
     # Turn off the trace data before closing the port
     # XXX: There currently isn't a way for the code to actually reach this line
-    tcl_socket.sendall(b'tcl_trace off\n\x1a')
+    tcl_socket.sendall(b"tcl_trace off\n\x1a")

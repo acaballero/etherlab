@@ -3,8 +3,19 @@
 //
 
 #include "keypad_view.h"
+#include "Display_afb.h"
+#include "ips_font.h"
+#include "ui/button_widget.h"
+#include "ui/widget.h"
+#include "utils.hpp"
 
 bool KeypadView::on_input(const st_inputEvent event) {
+
+    bool consumed = Widget::on_input(event);
+
+    if (consumed) {
+        return consumed;
+    }
 
     switch (event.type) {
         case INPUT_EVENT_TYPE_ENCODER:
@@ -15,25 +26,64 @@ bool KeypadView::on_input(const st_inputEvent event) {
                 focused_button = 0;
             }
             buttons[focused_button].set_focus(true);
-            return true;
+            consumed = true;
+            break;
         case INPUT_EVENT_TYPE_TOUCH_START:
 
-            return true;
+            consumed = true;
+            break;
+
+        case INPUT_EVENT_TYPE_BUTTON_PRESS:
+        case INPUT_EVENT_TYPE_BUTTON_DBL_PRESS:
+
+            switch (event.value) {
+
+                case KEY_BACK:
+                    button_close.set_focus(true);
+                    break;
+                case FPANEL_DISPLAY_BUTTON_1:
+                    this->on_button(button_M);
+                    break;
+                case FPANEL_DISPLAY_BUTTON_2:
+                    this->on_button(button_K);
+                    break;
+                case FPANEL_DISPLAY_BUTTON_3:
+                    this->on_button(button_1);
+                    break;
+                case FPANEL_DISPLAY_BUTTON_5:
+                    del_char();
+                    break;
+                case FPANEL_DISPLAY_BUTTON_6:
+                    this->set_visible(false);
+                    break;
+                default:
+                    button_close.set_focus(true);
+                    break;
+            }
+
+            consumed = true;
+            break;
+        default:
+            consumed = false;
+            break;
     }
 
-    return false;
+    return consumed;
 }
 
 void KeypadView::init() {
 
-    const auto button_fn = [this](Button &button) {
-        this->on_button(button);
-    };
+    const auto button_fn = [this](Button &button) { this->on_button(button); };
 
-    label_widget.set_font((FontDef *) &Font_7x10);
-    label_widget.set_color(C565_GREY_LIGHT);
+    label_widget.set_font((FontDef *)&Font_7x10);
     label_widget.set_aling(ALIGN_CENTER);
+    label_widget.set_border_radius(false, true, true, false);
     add_child(&label_widget);
+
+    text_widget.set_font((FontDef *)&Font_11x18);
+
+    text_widget.set_border_radius(true, false, false, true);
+    text_widget.set_aling(ALIGN_RIGHT);
 
     add_child(&text_widget);
 
@@ -46,40 +96,32 @@ void KeypadView::init() {
         add_child(button);
 
         button->id = n;
-        button->on_highlight = [this](Button &button) {
-            focused_button = button.id;
-        };
+        button->on_highlight = [this](Button &button) { focused_button = button.id; };
         button->on_select = button_fn;
-        button->set_parent_rect({
-                                        (n % (cols - 1)) * button_w,
-                                        (n / (cols - 1)) * button_h + button_h,
-                                        button_w, button_h
-                                });
+        button->set_style(BUTTON_STYLE_3D);
+        button->set_aling(ALIGN_CENTER);
+        button->set_parent_rect({(n % (cols - 1)) * button_w, (n / (cols - 1)) * button_h + button_h, button_w, button_h});
         button->set_text(label);
-
     }
 
-    add_children({&button_M,
-                  &button_K,
-                  &button_1,
-                  &button_close
-                 });
+    add_children({&button_M, &button_K, &button_1, &button_close, &display_panel_buttons});
 
     button_M.on_select = button_fn;
     button_K.on_select = button_fn;
     button_1.on_select = button_fn;
 
-    button_close.on_select = [this](Button &) {
-        this->set_visible(false);
-    };
+    button_close.on_select = [this](Button &) { this->set_visible(false); };
+
+    display_panel_buttons.set_labels(display_buttons_labels);
 }
 
-void KeypadView::on_focus() {
-    button_close.set_focus(true);
-}
+void KeypadView::on_focus() { button_close.set_focus(true); }
 
 double KeypadView::value() const {
-    return atof(buff);
+    char b[MAX_DIGITS];
+    strncpy(b, buff, MAX_DIGITS);
+    removeChars(b, " .");
+    return atof(b);
 }
 
 void KeypadView::set_value(double new_value, uint8_t digits, const char *units, const char *label) {
@@ -102,6 +144,20 @@ void KeypadView::set_value(double new_value, uint8_t digits, const char *units, 
 
     // Clear text next time
     index = 0;
+}
+
+void KeypadView::del_char() {
+
+    if (index > 0) {
+        index--;
+        buff[index] = 0;
+        update_text();
+        if (index > strlen(buff)) { // A thousand separator has been removed
+            index--;
+            buff[index] = 0;
+            update_text();
+        }
+    }
 }
 
 void KeypadView::on_button(Button &button) {
@@ -129,16 +185,15 @@ void KeypadView::on_button(Button &button) {
     } else if (*s == '.') {
 
         int j;
-        for (j = 0; j < index && buff[j] != '.'; j++);
+        for (j = 0; j < index && buff[j] != '.'; j++)
+            ;
         // append period if there are no period
         if (index == j && index < MAX_DIGITS) {
             buff[index++] = '.';
         }
 
     } else if (*s == '<') {
-        if (index > 0) {
-            index--;
-        }
+        del_char();
 
     } else {
         if (index < MAX_DIGITS) {
@@ -151,12 +206,21 @@ void KeypadView::on_button(Button &button) {
 }
 
 void KeypadView::update_text() {
+
+    double v = value();
+
+    printf("updating %f", v);
+    double i;
+    double fracPart = modf(v, &i);
+    char fracStr[10];
+    itoa(fracPart, fracStr, 10);
+
+    format_long(i, buff, 0, ' ');
+    sprintf(buff + strlen(buff), "%s", fracStr + 1);
     text_widget.set_label(buff);
 }
 
-void KeypadView::before_paint() {
-
-}
+void KeypadView::before_paint() {}
 
 void KeypadView::with_multipliers(bool v) {
     show_multipliers = v;

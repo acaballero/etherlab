@@ -4,7 +4,7 @@
 
 #include "InputPinController.h"
 #include "../../lib/utils/utils.hpp"
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 InputPinController::InputPinController(TIM_TypeDef *timer) {
 

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <hw/stm32.h>
-#include <sys/_stdint.h>
+#include <stdint.h>
 #include "Painter.hpp"
 
 #define min2(a, b) ((a) < (b) ? (a) : (b))
@@ -24,15 +24,15 @@ void Display::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8
     }
 }
 
-void Display::clear() {
+void Display::clear(uint16_t color) {
 
     if (ow == 0) {
         // We are drawing in the whole area so we can just memset
-        memset(this->curr_buffer, 0, this->chunk_height * this->curr_area->width * 2);
+        memset(this->curr_buffer, color, this->chunk_height * this->curr_area->width * 2);
     } else {
 
         // The memory of the rectangle is not contiguous in the area
-        fillBuffer(C565_BLACK);
+        fillBuffer(color);
     }
 }
 
@@ -281,6 +281,11 @@ void Display::drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uin
 }
 
 void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled) {
+    drawRoundedRectangle(x0, y0, width, height, radius, filled, true, true, true, true);
+}
+
+void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled, bool top_left, bool top_right,
+                                   bool bottom_left, bool bottom_right) {
 
     int x1 = x0 + radius, y1 = y0 + radius;
     int x2 = x0 + width - radius, y2 = y0 + height - radius;
@@ -288,8 +293,8 @@ void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uin
     // Draw the rectangular body without corners
     if (filled) {
         for (int y = 0; y < height; y++) {
-            int startX = (y < radius || y >= height - radius) ? radius : 0;
-            int endX = (y < radius || y >= height - radius) ? width - radius : width;
+            int startX = ((top_left && y < radius) || (bottom_left && y >= height - radius)) ? radius : 0;
+            int endX = ((top_right && y < radius) || (bottom_right && y >= height - radius)) ? width - radius : width;
             writeLine(x0 + startX, y0 + y, x0 + endX - 1, y0 + y);
         }
     } else {
@@ -300,10 +305,18 @@ void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uin
         writeLine(x0 + width - 1, y1, x0 + width - 1, y2);   // Right
     }
     // Draw the four cornerscd
-    drawCorner(x0 + width - radius - 1, y0 + radius, radius, 1, filled);              // Top-right
-    drawCorner(x0 + radius, y0 + radius, radius, 2, filled);                          // Top-left
-    drawCorner(x0 + radius, y0 + height - radius - 1, radius, 3, filled);             // Bottom-left
-    drawCorner(x0 + width - radius - 1, y0 + height - radius - 1, radius, 4, filled); // Bottom-right
+    if (top_right) {
+        drawCorner(x0 + width - radius - 1, y0 + radius, radius, 1, filled); // Top-right
+    }
+    if (top_left) {
+        drawCorner(x0 + radius, y0 + radius, radius, 2, filled); // Top-left
+    }
+    if (bottom_left) {
+        drawCorner(x0 + radius, y0 + height - radius - 1, radius, 3, filled); // Bottom-left
+    }
+    if (bottom_right) {
+        drawCorner(x0 + width - radius - 1, y0 + height - radius - 1, radius, 4, filled); // Bottom-right
+    }
 }
 
 void Display::DMATxHalfCpltCallback(void) {
@@ -361,9 +374,9 @@ void Display::fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t 
 void Display::setPixel(uint16_t x, uint16_t y, uint16_t c) {
 
     // Have in mind this function is too slow (around 17 assembler instructions) to call
-    // it within a area drawing callback function (in which you have around 18 instructions to draw a pixel ( 72Mhz(core) / ( 18Mhz(spi) * 16 (bits/pixel) )
-    // / 4 (cycles per instruction, but can be slower due to bus waiting) ) So, if we have to fill a area, use the buffer (getBuffer) instead with
-    // incremental offset
+    // it within a area drawing callback function (in which you have around 18 instructions to draw a pixel ( 72Mhz(core) / ( 18Mhz(spi) * 16
+    // (bits/pixel) ) / 4 (cycles per instruction, but can be slower due to bus waiting) ) So, if we have to fill a area, use the buffer
+    // (getBuffer) instead with incremental offset
     x += ox;
     y += oy;
 

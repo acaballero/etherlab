@@ -6,7 +6,7 @@
 #define TRX_FRONTEND_CONFIG_H
 
 #include <stdio.h>
-#include <sys/_stdint.h>
+#include <stdint.h>
 #include "hw/stm32_hal.h"
 #include "hw/hw_config.h"
 #include "dsp/fft/fft_types.h"
@@ -96,10 +96,7 @@ typedef struct st_config //__attribute__ ((packed))
     ST_HW_CONFIG hw;
 
     // Stations memory
-    st_freq_mem freqs[FREQ_MEM_SIZE] = {
-        {144300000, SSB_LSB, "TEST 1"},
-        {144400000, FM, "TEST 2"},
-    };
+    st_freq_mem freqs[FREQ_MEM_SIZE] = {{144300000, SSB_LSB, "TEST 1"}, {144400000, FM, "TEST 2"}};
 } Config;
 
 extern Config config;

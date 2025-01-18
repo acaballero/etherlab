@@ -112,6 +112,7 @@ void Widget::set_focus(bool v) {
         if (parent_) {
             if (v) {
                 parent_->focus(this);
+                this->on_focus();
             } else {
                 // Remove focus from other children
                 for (const auto child : children()) {

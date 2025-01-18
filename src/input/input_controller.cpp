@@ -90,8 +90,9 @@ void processEvent(st_inputEvent *e) {
         return;
     }
 
-    if (!e->time_us)
+    if (!e->time_us) {
         e->time_us = HAL_GetTick();
+    }
 
     if (e->type == INPUT_EVENT_TYPE_BUTTON_PRESS && e->value == lastEvent.value) {
 

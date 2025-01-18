@@ -8,7 +8,7 @@
 #include "label_widget.h"
 #include "view.h"
 #include "types.h"
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 class FrequencyWidget : public View {
   public:

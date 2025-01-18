@@ -6,16 +6,28 @@
 #include "ui/button_widget.h"
 #include <math.h>
 
+void Label::set_padding(uint16_t p) { padding = p; }
+
+uint16_t Label::get_padding() { return padding; }
+
+void Label::set_border_radius(bool top_left, bool top_right, bool bottom_right, bool bottom_left) {
+    border_radius[0] = top_left;
+    border_radius[1] = top_right;
+    border_radius[2] = bottom_right;
+    border_radius[3] = bottom_left;
+}
+
 void Label::paint_callback() {
 
-    display->clear();
+    display->clear(canvas_bg_color);
 
     display->setBgColor(bg_color);
     display->setFont(font);
 
     if (has_border) {
         display->setColor(bg_color);
-        display->drawRoundedRectangle(0, 0, parent_rect().width(), parent_rect().height(), 3, style != LABEL_STYLE_HOLLOW);
+        display->drawRoundedRectangle(0, 0, parent_rect().width(), parent_rect().height(), 3, style != LABEL_STYLE_HOLLOW, border_radius[0], border_radius[1],
+                                      border_radius[3], border_radius[2]);
     }
 
     display->setColor(fg_color);
@@ -33,9 +45,9 @@ void Label::paint_callback() {
     if (align == ALIGN_CENTER) {
         x = ceil((float)(parent_rect().width() - width) / 2.0);
     } else if (align == ALIGN_RIGHT) {
-        x = parent_rect().width() - width - display->get_padding_x();
+        x = parent_rect().width() - width - padding;
     } else {
-        x = display->get_padding_x();
+        x = padding;
     }
 
     if (x < 0) {
@@ -56,6 +68,8 @@ void Label::set_label(const char *t) {
     strncpy(label, t, MAX_SIZE);
     set_dirty();
 }
+
+char *Label::get_label() { return label; }
 
 void Label::set_value(const char *t) {
     strncpy(value, t, MAX_SIZE);
@@ -80,3 +94,5 @@ uint16_t Label::get_bg() const { return bg_color; }
 void Label::set_bg(uint16_t bg) { Label::bg_color = bg; }
 
 void Label::set_has_border(bool b) { has_border = b; }
+
+void Label::set_canvas_bg_color(uint16_t c) { canvas_bg_color = c; }

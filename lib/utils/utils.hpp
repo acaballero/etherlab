@@ -61,13 +61,15 @@ void enableTimers();
 
 void disableTimers();
 
-void format_long(long x, char *buf);
+void format_long(int64_t x, char *buf);
 
-void format_long(long x, char *buf, uint8_t length);
+void format_long(int64_t x, char *buf, uint8_t length, char thou_separator = '.');
 
 int strcicmp(char const *a, char const *b);
 
-void removeCommas(char *str);
+void removePunct(char *str);
+
+void removeChars(char *str, const char *chars);
 
 float format_eng(char *dest, float value, const char *units, char *new_units);
 
@@ -78,6 +80,8 @@ float fasterlog2(float);
 void extract_file_and_path(const char *fileandpath, char *path, char *file, size_t size);
 
 float fasterlog(float);
+
+void trim(char *);
 
 int endsWith(const char *str, const char *suffix);
 

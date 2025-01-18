@@ -2,17 +2,20 @@
 // Created by Angel Dust on 12/07/2024.
 //
 #include "view_manager.h"
+#include "Display_afb.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
+#include "ui/keyboard_view.h"
 #include "ui/splash_view.h"
 
 namespace view_manager {
 
-static const uint8_t MAX_VIEWS = 4;
+static const uint8_t MAX_VIEWS = 6;
 
 MainView mainView;
 SplashView splashView;
-KeypadView keypadView{{0, HEADER_HEIGHT + 2, DISPLAY_X_PIXELS, KeypadView::HEIGHT}};
+KeypadView keypadView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, KeypadView::HEIGHT}};
+KeyboardView keyboardView{{0, HEADER_HEIGHT, KeyboardView::WIDTH, KeyboardView::HEIGHT}};
 View *breadcrumb[MAX_VIEWS];
 View *currentView;
 int view_index = -1;
@@ -34,8 +37,10 @@ void pop() {
     if (view_index >= 0) {
         currentView->set_visible(false);
         currentView = breadcrumb[--view_index];
+
         currentView->set_visible(true);
         currentView->set_dirty();
+        currentView->set_focus(true);
         currentView->paint();
     }
 }
@@ -59,5 +64,6 @@ void init() {
 
     push(&mainView);
     keypadView.on_hide_fn = pop;
+    keyboardView.on_hide_fn = pop;
 }
 } // namespace view_manager

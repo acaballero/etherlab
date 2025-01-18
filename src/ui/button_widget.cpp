@@ -3,7 +3,8 @@
 //
 
 #include "button_widget.h"
-#include <sys/_stdint.h>
+#include "input/inputEvent.h"
+#include <stdint.h>
 
 void Button::set_text(char const *t) {
     strncpy(text, t, MAX_SIZE);
@@ -30,9 +31,9 @@ void Button::paint_callback() {
     }
 
     else if (is_focused() || active()) {
-        uint16_t tmp = fg;
-        fg = bg;
-        bg = tmp;
+
+        fg = fg_color_focused;
+        bg = bg_color_focused;
     }
 
     if (style == BUTTON_STYLE_3D) {
@@ -104,8 +105,8 @@ void Button::on_focus() {
 
 bool Button::on_input(const st_inputEvent event) {
 
-    if (event.type == INPUT_EVENT_TYPE_BUTTON_PRESS) {
-        if (event.value) {
+    if (event.type == INPUT_EVENT_TYPE_BUTTON_PRESS || event.type == INPUT_EVENT_TYPE_BUTTON_DBL_PRESS) {
+        if (event.value && event.value == BTN_ENCODER) {
             if (on_select) {
                 on_select(*this);
                 return true;

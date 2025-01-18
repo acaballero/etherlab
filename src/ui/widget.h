@@ -61,9 +61,8 @@ class Widget : public Painter {
 
     virtual const std::vector<Widget *> &children() const;
 
-    virtual // State management methods.
-        void
-        set_dirty();
+    // State management methods.
+    virtual void set_dirty();
 
     bool dirty() const;
 

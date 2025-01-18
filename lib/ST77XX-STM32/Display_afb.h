@@ -137,7 +137,7 @@ class Display {
 
     uint16_t getColor();
 
-    void clear();
+    void clear(uint16_t color = 0);
 
     void gotoXY(uint16_t x, uint16_t y);
 
@@ -152,6 +152,9 @@ class Display {
     void writeChar(char ch);
 
     void writeString(uint16_t x, uint16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor);
+
+    void drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled, bool top_left, bool top_right,
+                              bool bottom_left, bool bottom_right);
 
     void drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled);
 

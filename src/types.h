@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <sys/_stdint.h>
+#include <stdint.h>
 #include "radio.h"
 #include "dsp/dsp_common.h"
 #include "ui/menu.h"
@@ -33,13 +33,28 @@ enum LO_POWER { LO_POWER_LOW, LO_POWER_MEDIUM, LO_POWER_HIGH };
 struct st_freq_mem {
     unsigned long freq;
     MODULATION_MODE mode;
-    char name[FREQ_MEM_NAME_SIZE + 1] = "          "; // Must be allocated beforehand or the menu won't let increase it's size beyond the NULL char
-    // Copy
-    st_freq_mem &operator=(st_freq_mem &o) {
+    char name[FREQ_MEM_NAME_SIZE + 1] = ""; // Must be allocated beforehand or the menu won't let increase it's size beyond the NULL char
+
+    // Default constructor
+    st_freq_mem() : freq(0), mode(SSB_LSB), name{""} {};
+
+    st_freq_mem(unsigned long f, MODULATION_MODE m, const char *n) : freq(f), mode(m) {
+        strncpy(name, n, FREQ_MEM_NAME_SIZE);
+        name[FREQ_MEM_NAME_SIZE] = '\0'; // Ensure null-termination
+    }
+
+    st_freq_mem(const st_freq_mem &o) {
         strncpy(name, o.name, FREQ_MEM_NAME_SIZE);
         mode = o.mode;
         freq = o.freq;
-        return o;
+    }
+
+    // Copy
+    st_freq_mem &operator=(const st_freq_mem &o) {
+        strncpy(name, o.name, FREQ_MEM_NAME_SIZE);
+        mode = o.mode;
+        freq = o.freq;
+        return *this;
     }
 };
 

@@ -4,7 +4,7 @@
 
 #include <scanner.h>
 #include <rf_coupler.h>
-#include <sys/_stdint.h>
+#include <stdint.h>
 #include "ips_font.h"
 #include "titlebar_widget.h"
 #include "config.h"

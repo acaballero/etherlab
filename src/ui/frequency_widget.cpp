@@ -9,7 +9,7 @@
 #include "scanner.h"
 #include "ui/button_widget.h"
 #include "view_manager.h"
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 void FrequencyWidget::init() {
 

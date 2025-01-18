@@ -6,4 +6,4 @@ SortIncludes: false
 ColumnLimit: 160
 NamespaceIndentation: Inner
 IndentCaseLabels: true
-AllowShortBlocksOnASingleLine: Never
+AllowShortBlocksOnASingleLine: false

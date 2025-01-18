@@ -17,8 +17,7 @@ extern Menu::menuNode fileSubmenu;
 // We avoid allocating memory here, instead we read all info from SD
 class FSO {
 
-public:
-
+  public:
     DIR dir;
     FIL *file;
     FILINFO fileinfo;
@@ -113,7 +112,7 @@ public:
                 }
             } while (fres == FR_OK && !found);
         }
-        return found ? cnt : 0; //stay at menu start if not found
+        return found ? cnt : 0; // stay at menu start if not found
     }
 
     // Get folder content entry by index
@@ -132,8 +131,8 @@ public:
 };
 
 class SDMenuT : public Menu::menuNode, public FSO {
-public:
-    char folderName[PATH_SIZE] = "/"; //set this to other folder when needed
+  public:
+    char folderName[PATH_SIZE] = "/"; // set this to other folder when needed
     char selectedFolder[PATH_SIZE] = "/";
     char selectedFile[PATH_SIZE] = "";
     char focusedFolder[PATH_SIZE] = "/";
@@ -142,40 +141,27 @@ public:
     bool canSelect = true;
     bool canDelete = true;
 
-    void enable_selection() {
-        this->canSelect = true;
-    }
+    void enable_selection() { this->canSelect = true; }
 
-    void disable_selection() {
-        this->canSelect = false;
-    }
+    void disable_selection() { this->canSelect = false; }
 
-    void enable_deletion() {
-        this->canDelete = true;
-    }
+    void enable_deletion() { this->canDelete = true; }
 
-    void disable_deletion() {
-        this->canDelete = false;
-    }
+    void disable_deletion() { this->canDelete = false; }
 
     // Using menuNode::menuNode
     // do not use default constructors as we wont allocate for data
-    SDMenuT(constText *title, const char *at, Menu::action act = Menu::doNothing,
-            Menu::eventMask mask = Menu::noEvent)
-            : menuNode(title, 0, NULL, act, mask,
-                       Menu::noStyle, (Menu::systemStyles) (Menu::_menuData | Menu::_canNav)) {
-    }
+    SDMenuT(constText *title, const char *at, Menu::action act = Menu::doNothing, Menu::eventMask mask = Menu::noEvent)
+        : menuNode(title, 0, NULL, act, mask, Menu::noStyle, (Menu::systemStyles)(Menu::_menuData | Menu::_canNav)) {}
 
-    FRESULT begin() {
-        return this->begin(folderName);
-    }
+    FRESULT begin() { return this->begin(folderName); }
 
     void refresh() {
         curr_folder_count = -1;
         count();
-        //if (curr_folder_count>=focusedFileIx) {
-        //    focusedFileIx = curr_folder_count-1;
-        //}
+        // if (curr_folder_count>=focusedFileIx) {
+        //     focusedFileIx = curr_folder_count-1;
+        // }
     }
 
     FRESULT begin(const char *path) {
@@ -194,22 +180,19 @@ public:
         }
     }
 
-    static void end() {
-        unlock_sd_card();
-    }
+    static void end() { unlock_sd_card(); }
 
-    //this requires latest menu version to virtualize data tables
-    Menu::prompt &operator[](
-            Menu::idx_t i) const override { return *(Menu::prompt *) this; }//this will serve both as menu and as its own prompt
+    // this requires latest menu version to virtualize data tables
+    Menu::prompt &operator[](Menu::idx_t i) const override { return *(Menu::prompt *)this; } // this will serve both as menu and as its own prompt
 
     Menu::result sysHandler(SYS_FUNC_PARAMS) override {
         switch (event) {
             case Menu::enterEvent:
-                if (nav.root->navFocus != nav.target) {// On sd card entry
+                if (nav.root->navFocus != nav.target) { // On sd card entry
                     // restore context
-                    char *selectedFile = ((SDMenuT *) (&item))->selectedFile;
+                    char *selectedFile = ((SDMenuT *)(&item))->selectedFile;
                     if (selectedFile[0]) {
-                        nav.sel = ((SDMenuT *) (&item))->entryIdx(selectedFile) + 1;
+                        nav.sel = ((SDMenuT *)(&item))->entryIdx(selectedFile) + 1;
                     } else {
                         nav.sel = 0;
                     }
@@ -238,7 +221,7 @@ public:
         }
 
         switch (cmd.cmd) {
-            case Menu::idxCmd:  // Options
+            case Menu::idxCmd: // Options
 
                 // nav.event(enterEvent);
 
@@ -291,14 +274,13 @@ public:
                     // Previous folder
                     Menu::idx_t len = strlen(folderName);
                     if (len) {
-                        folderName[len - 1] = '\0'; // remove last '/'
-                        Menu::idx_t at =
-                                (strrchr(folderName, '/') - folderName) + 1;   // search next index after the last '/'
-                        memcpy(&fn, folderName + at, len - at); // copy last folder name
+                        folderName[len - 1] = '\0';                                   // remove last '/'
+                        Menu::idx_t at = (strrchr(folderName, '/') - folderName) + 1; // search next index after the last '/'
+                        memcpy(&fn, folderName + at, len - at);                       // copy last folder name
                         folderName[at] = '\0';
                     }
                     SDMenuT::openFolder(folderName);
-                    dirty = true;//redraw menu
+                    dirty = true; // redraw menu
                     nav.sel = SDMenuT::entryIdx(fn) + 1;
                 }
 
@@ -315,13 +297,11 @@ public:
     }
 
     // Print menu and items as this is a virtual data menu
-    Menu::Used printTo(Menu::navRoot &root, bool sel, Menu::menuOut &out, Menu::idx_t idx, Menu::idx_t len,
-                       Menu::idx_t pn) override {
+    Menu::Used printTo(Menu::navRoot &root, bool sel, Menu::menuOut &out, Menu::idx_t idx, Menu::idx_t len, Menu::idx_t pn) override {
 
         char fname[PATH_SIZE];
 
         if (root.navFocus != this) {
-
 
             // Show given title or filename if selected
             if (!strcmp(selectedFile, "")) {
@@ -338,13 +318,12 @@ public:
         } else if (idx == -1) {
             // When menu open (show folder name)
 
-            ((Menu::menuNodeShadow *) shadow)->sz = SDMenuT::count() + 1;
+            ((Menu::menuNodeShadow *)shadow)->sz = SDMenuT::count() + 1;
             char *fn = folderName;
             return out.printRaw(fn, len);
         } else {
 
             Menu::idx_t i = out.tops[root.level] + idx;
-
 
             if (i < 1) {
                 out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
@@ -372,4 +351,4 @@ public:
 
 extern SDMenuT filePicker;
 
-#endif //TRX_FRONTEND_SD_FILEPICKER_MENU_H
+#endif // TRX_FRONTEND_SD_FILEPICKER_MENU_H

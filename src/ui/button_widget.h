@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_BUTTON_WIDGET_H
 #define TRX_FRONTEND_BUTTON_WIDGET_H
 
+#include "Display_afb.h"
 #include "widget.h"
 #include <functional>
 
@@ -12,7 +13,7 @@ enum ButtonStyle { BUTTON_STYLE_3D = 0, BUTTON_STYLE_FLAT, LABEL_STYLE_HOLLOW };
 
 class Button : public Widget {
   public:
-    static const size_t MAX_SIZE = 6;
+    static const size_t MAX_SIZE = 8;
 
     std::function<void(Button &)> on_select{};
 
@@ -20,7 +21,12 @@ class Button : public Widget {
 
     Button() : Widget(){};
 
-    Button(Rect parent_rect, Display *display, const char *t, uint16_t fg_color) : Widget(parent_rect, display), fg_color{fg_color} { set_text(t); };
+    Button(Rect parent_rect, Display *display, const char *t, uint16_t fg_color, uint16_t bg_color = C565_GREY_LIGHT, ButtonStyle style = BUTTON_STYLE_FLAT,
+           Align aling = ALIGN_LEFT)
+        : Widget(parent_rect, display), fg_color{fg_color}, bg_color{bg_color}, style(style) {
+        set_aling(aling);
+        set_text(t);
+    };
 
     void set_text(char const *value);
 
@@ -68,11 +74,13 @@ class Button : public Widget {
 
     int fd = 1;
 
-    uint16_t fg_color = C565_WHITE;
+    uint16_t fg_color = C565_DARKEST;
     uint16_t fg_disabled_color = C565_GREY_LIGHT;
     uint16_t fg_color_value = C565_BLUE;
     uint16_t fg_color_unit = C565_GREY_LIGHT;
-    uint16_t bg_color = C565_GREY_DARK;
+    uint16_t fg_color_focused = C565_BLACK;
+    uint16_t bg_color = C565_GREY_LIGHT;
+    uint16_t bg_color_focused = C565_WHITE;
     uint16_t bg_disabled_color = C565_GREY_DARKER;
     uint16_t shadow = C565_GREY_DARKER;
 

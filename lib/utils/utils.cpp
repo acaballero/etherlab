@@ -131,6 +131,40 @@ void logEvent(uint8_t type, float value, uint8_t end = 0) {
     }
 }
 
+// Function to trim leading and trailing spaces fom a char*
+void trim(char *str) {
+
+    if (str == nullptr) {
+        return;
+    }
+
+    // Leading spaces
+    char *start = str;
+    while (*start && *start == ' ') {
+        ++start;
+    }
+
+    // If the string is empty after trimming leading spaces, return it
+    if (*start == '\0') {
+        *str = '\0'; // Set to empty string
+        return;
+    }
+
+    // Trim trailing spaces by finding the end of the string
+    char *end = start + std::strlen(start) - 1;
+    while (end > start && *end == ' ') {
+        --end;
+    }
+
+    // Null-terminate the trimmed string
+    *(end + 1) = '\0';
+
+    // Copy the trimmed string back to the original position
+    if (start != str) {
+        std::memmove(str, start, end - start + 2); // +2 to include the null terminator
+    }
+}
+
 void printLog() {
 
     //  disableTimers();
@@ -343,25 +377,25 @@ float format_eng(char *dest, float value, const char *units, char *new_units, ui
     return tval;
 }
 
-void format_long(long n, char *out) { format_long(n, out, 0); }
+void format_long(int64_t n, char *out) { format_long(n, out, 0); }
 
-void format_long(long n, char *out, uint8_t length) {
+void format_long(int64_t n, char *out, uint8_t length, char thow_separator) {
 
     int c;
     char buf[20];
     char *p;
 
     if (length) {
-        sprintf(buf, "%0*ld", length, n);
+        sprintf(buf, "%0*lld", length, n);
     } else {
-        sprintf(buf, "%ld", n);
+        sprintf(buf, "%lld", n);
     }
 
     c = 2 - strlen(buf) % 3;
     for (p = buf; *p != 0; p++) {
         *out++ = *p;
         if (c == 1) {
-            *out++ = '.';
+            *out++ = thow_separator;
         }
         c = (c + 1) % 3;
     }
@@ -392,15 +426,37 @@ void extract_file_and_path(const char *fileandpath, char *path, char *file, size
     }
 }
 
-void removeCommas(char *str) {
+void removePunct(char *str) {
     // To keep track of non-space character count
     int count = 0;
 
     // Traverse the given string. If current character
     // is not space, then place it at index 'count++'
-    for (int i = 0; str[i]; i++)
-        if (str[i] != ',' && str[i] != '.')
+    for (int i = 0; str[i]; i++) {
+        if (str[i] != ',' && str[i] != '.' && str[i] != ' ') {
             str[count++] = str[i]; // here count is
+        }
+    }
+    // incremented
+    str[count] = '\0';
+}
+
+void removeChars(char *str, const char *chars) {
+    // To keep track of non-space character count
+    int count = 0;
+
+    // Traverse the given string. If current character
+    // is not space, then place it at index 'count++'
+    for (int i = 0; str[i]; i++) {
+        int j = 0;
+        int n = strlen(chars);
+        while (j < n && str[i] != chars[j]) {
+            j++;
+        }
+        if (j == n) {
+            str[count++] = str[i]; // here count is
+        }
+    }
     // incremented
     str[count] = '\0';
 }

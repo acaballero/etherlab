@@ -1,2 +1,2 @@
-Checks: '-*,modernize-use-override,clang-diagnostic-missing-declarations'
+Checks: '-*,modernize-use-override,clang-diagnostic-missing-declarations,readability-braces-around-statements'
 WarningsAsErrors: ''

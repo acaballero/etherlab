@@ -7,6 +7,7 @@
 #include "../../lib/Menu/src/menuIO/chainStream.h"
 #include "../../lib/Menu/src/menuIO/stringIn.h"
 #include "../../lib/Menu/src/plugin/userMenu.h"
+#include "types.h"
 #include "ui/menuILI9431Out.h"
 #include "dsp/dsp_ui.h"
 #include "ui/scanner_ui.h"
@@ -19,6 +20,9 @@
 #include "../../lib/utils/utils.hpp"
 #include "view_manager.h"
 #include "s_strength.h"
+#include <cstring>
+#include "status.h"
+#include "settings.h"
 
 using namespace Menu;
 
@@ -30,13 +34,6 @@ MenuStatus menuStatus = IDLE;
 //     printf("%d\n", e);
 //     return proceed;
 // }
-
-class altPrompt : public prompt {
-  public:
-    altPrompt(constMEM promptShadow &p) : prompt(p) {}
-
-    Used printTo(navRoot &root, bool sel, menuOut &out, idx_t idx, idx_t len, idx_t) override { return out.printRaw(F("special prompt!"), len); }
-};
 
 result changeModulation(eventMask e) {
     main_board::setModulationMode(config.modulation, true);
@@ -285,7 +282,7 @@ MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::capture
  * ***************** MEMORY MENU *******************
  */
 
-// Currently editing st_freq_mem
+// st_freq_mem temporary register
 st_freq_mem tempFreqMem;
 char tempFreqBuf[] = "000,000,000";
 
@@ -301,20 +298,68 @@ result saveTarget(eventMask e, navNode &nav) {
     navNode &nn = nav.root->path[nav.root->level - 1];
     idx_t n = nn.sel; // get selection of previous level
     char *ptr;
-    removeCommas(tempFreqBuf);
+    removePunct(tempFreqBuf);
     tempFreqMem.freq = strtol(tempFreqBuf, &ptr, 10);
     config.freqs[n] = tempFreqMem;
+
+    using namespace status;
+    if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {
+        handleError(ST_INFO, "Configuration saved");
+    } else {
+        handleError(ST_ERROR, "Error saving configuration");
+    }
     return quit;
+}
+
+class labelPrompt : public prompt {
+  public:
+    char *value;
+
+    labelPrompt(const char *text, char *value, action a = doNothing, eventMask e = noEvent, styles s = noStyle,
+                systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)))
+        : prompt(text, a, e, s, ss), value(value) {}
+    Used printTo(navRoot &root, bool sel, menuOut &out, idx_t idx, idx_t len, idx_t) override {
+        len -= out.printRaw(shadow->text, len);
+        len -= out.printRaw(": ", len);
+        out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
+        len -= out.printRaw(value, len);
+
+        return len;
+    }
+};
+
+result edit_freq_name(eventMask e, navNode &nav) {
+
+    view_manager::keyboardView.set_text(tempFreqMem.name);
+    view_manager::keyboardView.set_label("Name");
+    view_manager::keyboardView.set_size(FREQ_MEM_NAME_SIZE);
+    view_manager::keyboardView.on_changed = [](char *str) { strncpy(tempFreqMem.name, str, FREQ_MEM_NAME_SIZE); };
+    view_manager::push(&view_manager::keyboardView);
+    return proceed;
+}
+
+result edit_freq(eventMask e, navNode &nav) {
+    view_manager::keypadView.set_value(tempFreqMem.freq, 0, "Hz", "Frequency");
+    view_manager::keypadView.on_changed = [](double v) {
+        tempFreqMem.freq = v;
+        char buf[16];
+        format_long(tempFreqMem.freq, buf);
+        sprintf(tempFreqBuf, "%s", buf);
+    };
+    view_manager::push(&view_manager::keypadView);
+    return proceed;
 }
 
 Menu::select<MODULATION_MODE> &freqMemModulationMenu =
     *new Menu::select<MODULATION_MODE>("Modulation", tempFreqMem.mode, sizeof(modulationValues) / sizeof(prompt *), modulationValues, updateRadio, exitEvent);
 
+labelPrompt freqNameMenu((const char *)"Name", tempFreqMem.name, edit_freq_name, enterEvent, noStyle);
+labelPrompt freqEditMenu((const char *)"Frequency", tempFreqBuf, edit_freq, enterEvent, noStyle);
+
 // If you want to print the data record name as the title,
 // then you MUST create a customized print menu to replace this default one
-MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, EDIT("Name", tempFreqMem.name, alphaNumMask, doNothing, noEvent, noStyle),
-     SUBMENU(freqMemModulationMenu), EDIT("Frequency (khz)", tempFreqBuf, digitMask, doNothing, noEvent, noStyle), OP("Save", saveTarget, enterEvent),
-     EXIT("<Back"));
+MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqNameMenu), SUBMENU(freqMemModulationMenu), OBJ(freqEditMenu),
+     OP("Save", saveTarget, enterEvent), EXIT("<Back"));
 
 // Custom frequency memory menu
 struct FreqMemoryMenu : UserMenu {
@@ -383,8 +428,8 @@ result freqMemorySelectedEvent(eventMask e, navNode &nav) {
             tempFreqMem.mode = config.modulation;
         }
 
-        char buf[12];
-        format_long(tempFreqMem.freq, buf, 9);
+        char buf[16];
+        format_long(tempFreqMem.freq, buf);
         sprintf(tempFreqBuf, "%s", buf);
     }
     // nav.sel can be stored for future reference

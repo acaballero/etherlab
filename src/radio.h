@@ -8,7 +8,7 @@
 #include "stdio.h"
 #include "Signal.h"
 #include "mixer.h"
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 namespace radio {
 

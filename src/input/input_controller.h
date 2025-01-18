@@ -12,7 +12,7 @@
  * Dispatches the events in the interrupt callback
  */
 #define DISPATCH_INMEDIATELY false
-#define MAX_EVENTS_IN_QUEUE 3
+#define MAX_EVENTS_IN_QUEUE 10
 
 extern InputPinController PinController;
 
@@ -30,5 +30,4 @@ void TIM8_UP_TIM13_IRQHandler(void);
 }
 #endif
 
-
-#endif //TRX_FRONTEND_INPUT_CONTROLLER_H
+#endif // TRX_FRONTEND_INPUT_CONTROLLER_H
