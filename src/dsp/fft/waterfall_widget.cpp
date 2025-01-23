@@ -6,10 +6,10 @@
 #include "config.h"
 #include "fft.h"
 
+#define PIXELS_BYTE 2
+
 /* 4-bit per pixel, 16-color buffer */
-__attribute__((section(".fccmram")))
-#define PIXELS_PER_BYTE 2
-uint8_t waterfallBuffer[DISPLAY_X_PIXELS * FFT_WATERFALL_HEIGHT * PIXELS_PER_BYTE];
+__attribute__((section(".fccmram"))) uint8_t waterfallBuffer[DISPLAY_X_PIXELS * FFT_WATERFALL_HEIGHT * PIXELS_BYTE];
 
 WaterfallWidget::WaterfallWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
 
@@ -28,7 +28,7 @@ void WaterfallWidget::centerSpectrum() {
         volatile int32_t f_offset = (int32_t)waterfallFreq - (int32_t)radio::get_frequency();
 
         // Calculate the equivalent width in buffer bytes
-        int16_t offset_pixels = round((float)f_offset / fft_params.display_rbw / PIXELS_PER_BYTE);
+        int16_t offset_pixels = round((float)f_offset / fft_params.display_rbw / PIXELS_BYTE);
 
         // To scroll horizontally, we 'memmove' the buffer, then erase the unwanted pixels
         // Remember there's 4-bit by pixel, so we divide the displacement by two
@@ -38,7 +38,7 @@ void WaterfallWidget::centerSpectrum() {
         if (offset_pixels != 0) {
             moveSpectrum(offset_pixels);
             // Update the waterfall frequency which will differ from f_carrier as we have moved it by multiples of bin_offset
-            waterfallFreq -= offset_pixels * fft_params.display_rbw * PIXELS_PER_BYTE;
+            waterfallFreq -= offset_pixels * fft_params.display_rbw * PIXELS_BYTE;
         }
     }
 }
@@ -51,22 +51,22 @@ void WaterfallWidget::moveSpectrum(int16_t bin_offset) {
     uint16_t width = this->size().width();
 
     // check for overflow
-    bin_offset = constrain(bin_offset, -width / PIXELS_PER_BYTE, width / PIXELS_PER_BYTE);
+    bin_offset = constrain(bin_offset, -width / PIXELS_BYTE, width / PIXELS_BYTE);
 
     void *orig = bin_offset > 0 ? waterfallBuffer : waterfallBuffer - bin_offset;
     void *dest = bin_offset > 0 ? waterfallBuffer + bin_offset : waterfallBuffer;
 
-    memmove(dest, orig, (width * (FFT_WATERFALL_HEIGHT / PIXELS_PER_BYTE)) - bin_offset);
+    memmove(dest, orig, (width * (FFT_WATERFALL_HEIGHT / PIXELS_BYTE)) - bin_offset);
 
     // Clear the start or end of the buffer
-    uint16_t xs = bin_offset > 0 ? 0 : (width / PIXELS_PER_BYTE) + bin_offset;
+    uint16_t xs = bin_offset > 0 ? 0 : (width / PIXELS_BYTE) + bin_offset;
     uint16_t xe = xs + abs(bin_offset);
 
     uint8_t defByteVal = FFT_WATERFALL_DEFAULT_COLOR_INDEX + (FFT_WATERFALL_DEFAULT_COLOR_INDEX << 4);
 
     while (xs < xe) {
         for (uint16_t y = 0; y < FFT_WATERFALL_HEIGHT; y++) {
-            waterfallBuffer[(y * (width / PIXELS_PER_BYTE)) + xs] = defByteVal;
+            waterfallBuffer[(y * (width / PIXELS_BYTE)) + xs] = defByteVal;
         }
         xs++;
     }
@@ -92,7 +92,7 @@ void WaterfallWidget::paint_callback() {
 
         byte = *pbyte;
 
-        for (uint8_t j = 0; j < PIXELS_PER_BYTE; j++) { // 2 pixels per byte
+        for (uint8_t j = 0; j < PIXELS_BYTE; j++) { // 2 pixels per byte
 
             colorIndex = byte & 0x000FU;
 
@@ -128,8 +128,8 @@ void WaterfallWidget::before_paint() {
 
         // Scroll buffer down by a pixel. Remember there's 4-bit by pixel, so we divide the displacement by two
 
-        uint16_t delta = width / PIXELS_PER_BYTE;
-        memmove(waterfallBuffer + delta, waterfallBuffer, (width * (FFT_WATERFALL_HEIGHT / PIXELS_PER_BYTE)) - delta);
+        uint16_t delta = width / PIXELS_BYTE;
+        memmove(waterfallBuffer + delta, waterfallBuffer, (width * (FFT_WATERFALL_HEIGHT / PIXELS_BYTE)) - delta);
 
         // Set the first row of pixels
         uint16_t ix = 0;

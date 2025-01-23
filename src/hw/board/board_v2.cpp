@@ -123,6 +123,7 @@ int16_t if_gain_to_db(IF_GAIN if_gain) {
             return -30;
         default:
             status::handleError(status::ST_ERROR, "Undefined IF_GAIN value");
+            return 0;
     }
 }
 

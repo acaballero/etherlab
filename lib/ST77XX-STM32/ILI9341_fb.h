@@ -22,8 +22,12 @@
 #define ILI9341_MADCTL_BGR 0x08
 #define ILI9341_MADCTL_MH 0x04
 
+#ifndef DISPLAY_X_PIXELS
 #define DISPLAY_X_PIXELS 320
+#endif
+#ifndef DISPLAY_Y_PIXELS
 #define DISPLAY_Y_PIXELS 240
+#endif
 #define ILI9341_ROTATION (ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR) // 90º
 //#define ILI9341_ROTATION (ILI9341_MADCTL_MX | ILI9341_MADCTL_MY | ILI9341_MADCTL_MV | ILI9341_MADCTL_BGR)  // 270º
 
@@ -74,32 +78,32 @@
 
 class ILI9341 : public Display {
 
- public:
-   ILI9341(SPI_HandleTypeDef *);
+  public:
+    ILI9341(SPI_HandleTypeDef *);
 
-   int16_t begin();
+    int16_t begin();
 
-   int16_t stop();
+    int16_t stop();
 
-   void select();
+    void select();
 
-   void unselect();
+    void unselect();
 
-   void reset();
+    void reset();
 
-   uint16_t getPixel(uint16_t x, uint16_t y);
+    uint16_t getPixel(uint16_t x, uint16_t y);
 
- private:
-   // void init(void);
-   void writeCommand(uint8_t data);
+  private:
+    // void init(void);
+    void writeCommand(uint8_t data);
 
-   void writeData(uint8_t *buff, size_t buff_size);
+    void writeData(uint8_t *buff, size_t buff_size);
 
-   void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+    void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
 
-   virtual void InitDisplayDataTransfer();
+    virtual void InitDisplayDataTransfer();
 
-   virtual void EndDisplayDataTransfer();
+    virtual void EndDisplayDataTransfer();
 };
 
 #endif

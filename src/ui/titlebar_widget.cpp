@@ -67,6 +67,7 @@ void TitleBarWidget::paint_callback() {
                 color = C565_MAGENTA;
                 c = ICON_BATT_CHARGING;
                 break;
+            default:
             case battery::BATTERY_STATUS_UNDEFINED:
                 c = ICON_BATT_MID;
                 break;

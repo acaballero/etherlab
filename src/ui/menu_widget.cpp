@@ -111,22 +111,17 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                     nav.doNav(navCmd(idxCmd, 0));
                     nav.doNav(navCmd(idxCmd, 4));
                     break;
-                case FPANEL_DISPLAY_BUTTON_4: // FILTER 1
+                case FPANEL_DISPLAY_BUTTON_5: // FILTER 1
                     nav.doNav(navCmd(enterCmd));
                     nav.doNav(navCmd(idxCmd, 0));
                     nav.doNav(navCmd(idxCmd, 2));
                     break;
-                case FPANEL_DISPLAY_BUTTON_5: // FILTER 2
+                case FPANEL_DISPLAY_BUTTON_6: // FILTER 2
                     nav.doNav(navCmd(enterCmd));
                     nav.doNav(navCmd(idxCmd, 0));
                     nav.doNav(navCmd(idxCmd, 3));
                     break;
-                case FPANEL_DISPLAY_BUTTON_6: // BAND
-
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 1));
-                    break;
+                case FPANEL_DISPLAY_BUTTON_4: // BAND
 
                 default:
 

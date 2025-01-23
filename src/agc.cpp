@@ -42,12 +42,12 @@ float get_agc(bool filter) {
 
 int frontend_gain() {
     switch (config.frontend_path) {
-    case radio::FRONTEND_PATH_ATT:
-        return -10;
-    case radio::FRONTEND_PATH_THRU:
-        return 0;
-    case radio::FRONTEND_PATH_LNA:
-        return 20;
+        case radio::FRONTEND_PATH_ATT:
+            return -10;
+        case radio::FRONTEND_PATH_THRU:
+            return 0;
+        case radio::FRONTEND_PATH_LNA:
+            return 20;
     }
 }
 

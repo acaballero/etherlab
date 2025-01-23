@@ -12,7 +12,7 @@
 #define S_LEVELS 9
 #define DB_LEVELS 6
 #define MAX_S_LEVEL (S_LEVELS + DB_LEVELS)
-#define S_METER_LINE_HEIGHT 8
+#define S_METER_LINE_HEIGHT 10
 #define MAJOR_TICK_GAP 1
 
 struct st_meter_widget_state {

@@ -35,7 +35,7 @@ void FrequencyWidget::paint_callback() {
 
     if (config.repeater_mode != radio::RPT_MODE_OFF) {
 
-        sprintf(buf, "%d", config.repeater_offset / 1000);
+        sprintf(buf, "%d", (int)config.repeater_offset / 1000);
 
         if (config.repeater_mode == radio::RPT_MODE_NEGATIVE) {
             lblRpt.set_label(ISTX ? "TX+" : "RX-");

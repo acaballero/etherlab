@@ -8,6 +8,7 @@
 #include "../agc.h"
 #include "Display_afb.h"
 #include "radio.h"
+#include "printf.h"
 #include "ui/button_widget.h"
 
 void RadioStatusWidget::init() {
@@ -38,7 +39,7 @@ char *RadioStatusWidget::mode() {
 }
 
 char *RadioStatusWidget::vfo() {
-    format_long(radio::get_vfo_frequency(radio::get_vfo()), buf);
+    format_long(radio::get_vfo_frequency(radio::get_vfo() ? 0 : 1), buf);
     return buf;
 }
 
@@ -49,8 +50,10 @@ char *RadioStatusWidget::squelch() {
         } else if (config.squelch_level == 0) {
             sprintf(buf, "0");
         } else {
-            sprintf(buf, " %0.1f", config.squelch_level);
+            sprintf_(buf, "%0.1f", config.squelch_level); // force use custom sprintf (lib)
         }
+    } else {
+        sprintf(buf, "-");
     }
 
     return buf;

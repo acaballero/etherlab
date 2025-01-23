@@ -8,7 +8,6 @@ GPIO_PinState MCP23017Pin::read() {
 
     mcp23017_read_gpio(this->handle, this->port);
     return (GPIO_PinState)(this->handle->gpio[this->port] & (1 << this->pin));
-
 }
 
 void MCP23017Pin::set(GPIO_PinState state) {
@@ -21,12 +20,14 @@ void MCP23017Pin::set(GPIO_PinState state) {
         this->handle->gpio[this->port] &= ~(1 << pin);
     }
 
-    if (curr_state!=this->handle->gpio[this->port]) {
+    if (curr_state != this->handle->gpio[this->port]) {
         mcp23017_write_gpio(this->handle, this->port);
     }
 }
 
 GPIO_PinState MCP23017Pin::toggle() {
     GPIO_PinState state = read();
-    set(state==GPIO_PIN_SET ? GPIO_PIN_RESET : GPIO_PIN_SET);
+    GPIO_PinState new_state = state == GPIO_PIN_SET ? GPIO_PIN_RESET : GPIO_PIN_SET;
+    set(new_state);
+    return new_state;
 }

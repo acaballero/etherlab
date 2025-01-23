@@ -5,6 +5,7 @@
 #include "scanner_ui.h"
 
 #include <io/file_factory.h>
+#include <sys/_stdint.h>
 #include "ui/menu.h"
 #include "status.h"
 #include "scanner.h"
@@ -16,8 +17,8 @@ scanner::st_scanner_info scanner_config;
 
 Menu::result configue_scanner(Menu::eventMask e); // Forward declaration
 
-labelPrompt freqEditMin((const char *)"Frequency", tempFreqBuf, edit_freq, enterEvent, noStyle);
-labelPrompt freqEditMax((const char *)"Frequency", tempFreqBuf, edit_freq, enterEvent, noStyle);
+Menu::numberPrompt<uint64_t> freqEditMin((const char *)"Freq. from", &scanner_config.freq_min);
+Menu::numberPrompt<uint64_t> freqEditMax((const char *)"Freq. to", &scanner_config.freq_max);
 
 // menu_frequency::FreqEditField freqEdit_min("Start freq", (Menu::callback) configue_scanner);
 // menu_frequency::FreqEditField freqEdit_max("Stop freq", (Menu::callback) configue_scanner);
@@ -39,15 +40,13 @@ void configure() {
             break;
     }
 
-    scanner_config.freq_min = freq_min;
-    scanner_config.freq_max = freq_max;
-    freqEditMin.set_max(scanner_config.freq_max);
-    freqEditMax.set_min(scanner_config.freq_min);
+    freqEditMin.max = scanner_config.freq_max;
+    freqEditMax.min = scanner_config.freq_min;
 
     scanner::configure(scanner_config);
 }
 
-void scanner_callback(void *thisptr, void *args) {
+void scanner_callback(void *, void *args) {
     scanner::st_scanner_info *config = (scanner::st_scanner_info *)args;
     scanner_config = *config;
 }
@@ -55,6 +54,7 @@ void scanner_callback(void *thisptr, void *args) {
 Menu::result on_menu_event(Menu::eventMask e) {
 
     switch (e) {
+
         case Menu::enterEvent:
 
             if (scanner_config.freq_min == 0) {
@@ -64,21 +64,22 @@ Menu::result on_menu_event(Menu::eventMask e) {
                                   .squelch = config.squelch_level,
                                   .pause_ms = 2000,
                                   .period_s = 1,
+                                  .save_found = false,
                                   .direction = FORWARD,
                                   .mode = scanner::scanner_config.mode};
             }
 
-            freqEditMin.set_frequency(scanner_config.freq_min);
-            freqEditMax.set_frequency(scanner_config.freq_max);
-
+            // Subscribe to scanner signals
             scanner::signal.add(NULL, scanner_callback);
 
             configure();
 
             break;
+
         case Menu::exitEvent:
             break;
     }
+
     return Menu::proceed;
 }
 
@@ -109,6 +110,6 @@ TOGGLE(scanner_config.status, scanEnableToggle, "Status: ", configue_scanner, en
 MENU(menuScan, "Scan", on_menu_event, (Menu::eventMask)(enterEvent | exitEvent), noStyle, SUBMENU(scanEnableToggle), SUBMENU(directionMenu),
      FIELD(scanner_config.freq_step, "Step:", " Hz", 1000, 1000000, 1000, 0, configue_scanner, enterEvent, noStyle),
      FIELD(scanner_config.period_s, "Period:", " s", 1, 60000, 1, 0, configue_scanner, enterEvent, noStyle),
-     FIELD(scanner_config.pause_ms, "Scan pause:", " ms", 0, 10000, 1000, 0, configue_scanner, enterEvent, noStyle), SUBMENU(modeMenu), OBJ(freqEdit_min),
-     OBJ(freqEdit_max), EXIT("<Back"));
+     FIELD(scanner_config.pause_ms, "Scan pause:", " ms", 0, 10000, 1000, 0, configue_scanner, enterEvent, noStyle), SUBMENU(modeMenu), OBJ(freqEditMin),
+     OBJ(freqEditMax), EXIT("<Back"));
 } // namespace scanner_ui

@@ -7,6 +7,7 @@
 #include "../../lib/Menu/src/menuIO/chainStream.h"
 #include "../../lib/Menu/src/menuIO/stringIn.h"
 #include "../../lib/Menu/src/plugin/userMenu.h"
+#include "menuBase.h"
 #include "types.h"
 #include "ui/menuILI9431Out.h"
 #include "dsp/dsp_ui.h"
@@ -21,6 +22,7 @@
 #include "view_manager.h"
 #include "s_strength.h"
 #include <cstring>
+#include <sys/_stdint.h>
 #include "status.h"
 #include "settings.h"
 
@@ -311,22 +313,43 @@ result saveTarget(eventMask e, navNode &nav) {
     return quit;
 }
 
-class labelPrompt : public prompt {
-  public:
-    char *value;
+// Explicit template instantiations for specific types
+template Used numberPrompt<double>::printTo(navRoot &, bool, menuOut &, idx_t, idx_t, idx_t);
+template Used numberPrompt<uint64_t>::printTo(navRoot &, bool, menuOut &, idx_t, idx_t, idx_t);
 
-    labelPrompt(const char *text, char *value, action a = doNothing, eventMask e = noEvent, styles s = noStyle,
-                systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)))
-        : prompt(text, a, e, s, ss), value(value) {}
-    Used printTo(navRoot &root, bool sel, menuOut &out, idx_t idx, idx_t len, idx_t) override {
-        len -= out.printRaw(shadow->text, len);
-        len -= out.printRaw(": ", len);
-        out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
-        len -= out.printRaw(value, len);
+template <typename T> idx_t numberPrompt<T>::printTo(navRoot &, bool sel, menuOut &out, idx_t, idx_t len, idx_t) {
+    len -= out.printRaw(shadow->text, len);
+    len -= out.printRaw(": ", len);
+    out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
+    char buf[20];
 
-        return len;
+    if (std::is_same<T, double>::value) {
+        sprintf(buf, "%f", (double)*value);
+    } else {
+        format_long((int64_t)*value, buf, 0, thow_separator);
     }
-};
+
+    len -= out.printRaw(buf, len);
+
+    out.setColor(Menu::unitColor, sel, Menu::enabledStatus, false);
+    len -= out.printRaw(" ", len);
+    len -= out.printRaw(unit, len);
+    return len;
+}
+
+template result numberPrompt<double>::eventHandler(eventMask, navNode &, idx_t);
+template result numberPrompt<uint64_t>::eventHandler(eventMask, navNode &, idx_t);
+
+template <typename T> result numberPrompt<T>::eventHandler(eventMask e, navNode &, idx_t) {
+
+    if (e == Menu::enterEvent) {
+        view_manager::keypadView.set_value(*value, 0, unit, shadow->text);
+        view_manager::keypadView.on_changed = [this](double v) { *value = v; };
+        view_manager::push(&view_manager::keypadView);
+    }
+
+    return proceed;
+}
 
 result edit_freq_name(eventMask e, navNode &nav) {
 

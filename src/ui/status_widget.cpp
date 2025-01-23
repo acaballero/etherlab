@@ -5,6 +5,7 @@
 #include "status_widget.h"
 #include "../config.h"
 #include "../main_board.h"
+#include "radio.h"
 #include "ui/menu.h"
 #include <functional>
 
@@ -60,21 +61,21 @@ char *StatusWidget::agc_alc() {
     return buf;
 }
 
-void StatusWidget::band(Widget *) {
+void StatusWidget::filter1(Widget *) {
     if (config.filter < radio::BAND_AUTO) {
-        sprintf(buf, "%.3s", radio::bandNames[config.filter]);
+        sprintf(buf, "%.4s", radio::bandNames[config.filter]);
     } else {
         if (this->_status.filter == radio::BAND_ALL) {
             sprintf(buf, "*");
         } else {
-            sprintf(buf, "%.3s", radio::bandNames[this->_status.filter]);
+            sprintf(buf, "%.4s", this->_status.filter >= radio::BAND_AUTO ? "None" : radio::bandNames[this->_status.filter]);
         }
     }
 
     display->print("}:", buf, "", dimm_color, config.filter < radio::BAND_AUTO ? fg_color : fg_color_auto, dimm_color);
 }
 
-void StatusWidget::filter1(Widget *) {
+void StatusWidget::filter2(Widget *) {
     if (config.if_filter != radio::IF_FILTER_AUTO) {
         sprintf(buf, "%s", radio::IFFilterNames[config.if_filter]);
     } else {
@@ -83,21 +84,21 @@ void StatusWidget::filter1(Widget *) {
     display->print("~:", buf, "", dimm_color, config.filter < radio::BAND_AUTO ? fg_color : fg_color_auto, dimm_color);
 }
 
-void StatusWidget::filter2(Widget *) {
+void StatusWidget::band(Widget *) {
 
     display->print("B:");
 
-    if (config.band < radio::BAND_AUTO) {
-        display->print(radio::bandNames[config.band]);
+    if (config.band == radio::BAND_NONE) {
+        display->print("-");
     } else {
-        if (config.band == radio::BAND_NONE) {
-            display->print("*");
+
+        if (config.band == radio::BAND_ALL) {
+            display->print("* ");
         }
 
-        if (this->_status.band < radio::BAND_AUTO) {
-            display->setColor(config.filter < radio::BAND_AUTO ? fg_color : fg_color_auto);
-            display->print(radio::bandNames[this->_status.band]);
-        }
+        display->setColor(config.band == radio::BAND_AUTO ? fg_color_auto : fg_color);
+
+        display->print(radio::bandNames[radio::get_band()]);
     }
 }
 

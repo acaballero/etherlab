@@ -112,7 +112,7 @@ void set_band();
 void set_vfo(uint8_t);
 uint8_t toggle_vfo();
 uint8_t get_vfo();
-uint64_t get_band();
+BAND get_band();
 void loop();
 bool is_freq_inverted();
 

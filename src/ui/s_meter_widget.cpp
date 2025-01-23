@@ -4,6 +4,7 @@
 
 #include "s_meter_widget.h"
 #include "../config.h"
+#include "ips_font.h"
 #include "s_strength.h"
 #include "frequency_widget.h"
 #include "view_manager.h"
@@ -17,13 +18,17 @@ void SMeterWidget::paint_callback() {
     int max_x = s9_x + (DB_LEVELS * block_size) + padding;
     int x = (state.s_level / (float)MAX_S_LEVEL) * max_x;
     int peak_x = (state.peak_s_level / (float)MAX_S_LEVEL) * max_x;
-    int y1 = margin_top + 4;
-    int y2 = y1 + S_METER_LINE_HEIGHT;
+    FontDef *font = (FontDef *)&Font_Fixed5x7;
+    int font_h = font->height;
+    int y1 = margin_top + font_h + 1;
+    int major_tick_size = 2;
+    int y2 = y1 + S_METER_LINE_HEIGHT + 2 * (major_tick_size + 1);
+
     uint16_t color = C565_WHITE;
 
     display->clear();
 
-    display->setFont((FontDef *)&Font_Fixed5x7);
+    display->setFont(font);
 
     display->setBgColor(C565_BLACK);
 
@@ -37,7 +42,7 @@ void SMeterWidget::paint_callback() {
             sprintf(buf, "S");
             color = C565_WHITE;
         } else if (level % 2 != 0) {
-            tick_size = 2;
+            tick_size = major_tick_size;
             if (level > S_LEVELS) {
                 if (((level - 1) % 4 != 0)) {
                     sprintf(buf, "+%i", (level - S_LEVELS) * 10);
@@ -51,18 +56,18 @@ void SMeterWidget::paint_callback() {
 
         if (buf[0]) {
             display->setColor(color);
-            display->gotoXY(px - ((int)strlen(buf) * 2), 1);
+            display->gotoXY(px - (((int)strlen(buf) * font->width) / 2), margin_top);
             display->write(buf);
         }
 
         // Tick
-        display->writeLine(px, y1 - 4, px, y1 - 4 + tick_size, C565_GREY_DARK);
-        display->writeLine(px, y2 + 4 - tick_size, px, y2 + 4, C565_GREY_DARK);
+        display->writeLine(px, y1, px, y1 + tick_size, C565_GREY_DARK);
+        display->writeLine(px, y2 - tick_size, px, y2, C565_GREY_DARK);
     }
 
     // Horizontal lines
-    display->writeLine(padding, y1 - 4, max_x, y1 - 4, C565_GREY_DARK);
-    display->writeLine(padding, y2 + 4, max_x, y2 + 4, C565_GREY_DARK);
+    display->writeLine(padding, y1, max_x, y1, C565_GREY_DARK);
+    display->writeLine(padding, y2, max_x, y2, C565_GREY_DARK);
 
     // Bar
     for (int ix = 0; ix < x; ix++) {
@@ -72,18 +77,19 @@ void SMeterWidget::paint_callback() {
             } else {
                 color = C565_WHITE;
             }
-            display->writeVertLine(ix + padding, y1, y2, color);
+            display->writeVertLine(ix + padding, y1 + major_tick_size + 1, y2 - major_tick_size - 1, color);
         }
     }
 
     // Peak
-    display->writeVertLine(peak_x + padding, y1, y2, C565_CYAN);
-    display->writeVertLine(peak_x + 1 + padding, y1, y2, C565_CYAN);
+    display->writeVertLine(peak_x + padding, y1 + major_tick_size + 1, y2 - major_tick_size - 1, C565_CYAN);
+    display->writeVertLine(peak_x + 1 + padding, y1 + major_tick_size + 1, y2 - major_tick_size - 1, C565_CYAN);
 
     // AGC flag
     if (config.agc_enabled) {
         display->setColor(C565_GREY_LIGHT);
-        display->gotoXY(max_x - 15, y1 + 2);
+        display->setFont((FontDef *)&Font_Fixed5x7);
+        display->gotoXY(max_x - (display->getFont()->width * 3) - 5, y1 + (((y2 - y1) - display->getFont()->height + 1) / 2));
         display->print("AGC");
     }
 }

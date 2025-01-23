@@ -235,6 +235,7 @@ void change_frequency(int amount) {
     scanner::stop();
 }
 
+// This does not change the frequency immediatelly so it cal be called from an IRQhandler.
 void set_frequency(uint64_t f) { config.vfo[config.vfo_ix].freq = f; }
 
 uint64_t get_vfo_frequency(uint8_t vfo_ix) {
@@ -274,6 +275,8 @@ void update_freq() {
     // TODO: Do not use pointers to void in callbacks
     event = {config.vfo[config.vfo_ix].freq, AFTER_UPDATE};
     freq_signal.emit(&event);
+
+    radio::f_last = config.vfo[config.vfo_ix].freq;
 }
 
 int get_pll_multiple(__uint64_t f_freq) {
@@ -329,7 +332,7 @@ BAND find_band(unsigned long f) {
     return band;
 }
 
-uint64_t get_band() { return find_band(config.vfo[config.vfo_ix].freq); }
+BAND get_band() { return find_band(config.vfo[config.vfo_ix].freq); }
 
 void set_band() {
     config.f_min = bands[config.band].freq_start;
@@ -377,10 +380,9 @@ void task_loop() {
         }
 
         if (config.vfo[config.vfo_ix].freq != radio::f_last) {
+            // Still different?
             update_freq();
         }
-
-        radio::f_last = config.vfo[config.vfo_ix].freq;
     }
 }
 } // namespace radio

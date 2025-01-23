@@ -241,9 +241,7 @@
 // allocating space for elements and shadows -------------------------------------
 #define DECL_EXIT_(cnt, exitText)                                                                                                                              \
     constText title_##cnt[] MEMMODE = exitText;                                                                                                                \
-    constMEM MEMMODE Menu::promptShadows opShadows##cnt = {(Menu::callback)Menu::doExit, Menu::_Exit,\  
-    title_##cnt,                                                                                                                                               \
-                                                           Menu::enterEvent};                                                                                  \
+    constMEM MEMMODE Menu::promptShadows opShadows##cnt = {(Menu::callback)Menu::doExit, Menu::_Exit, title_##cnt, Menu::enterEvent};                          \
     Menu::prompt op##cnt(opShadows##cnt.obj);
 // constMEM Menu::promptShadow& opShadow##cnt=*(Menu::promptShadow*)&opShadowRaw##cnt;
 #define DECL_ITEM_(cnt, objType, text, aFn, mask, ss, ...)                                                                                                     \

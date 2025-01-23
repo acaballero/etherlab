@@ -106,10 +106,7 @@ class navRoot {
         refresh();
     }
     inline void refresh() { out.refresh(); }
-    navNode &node() const {
-        navNode n = path[level];
-        return path[level];
-    }
+    navNode &node() const { return path[level]; }
     inline menuNode &active() const { return *node().target; }
     inline prompt &selected() const { return active()[node().sel]; }
     bool changed(const menuOut &out);

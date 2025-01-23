@@ -141,9 +141,6 @@ void PowerMeterWidget::before_paint() {
     current_info.swr = constrain(current_info.swr, 1, max_swr);
     current_info.swr = (float)((int)(current_info.swr * 100)) / (float)100;
 
-    current_info.swr = 2.5;
-    current_info.p_for_dbm = max_dbm / 2;
-
     if (true || this->dirty() || !(info == current_info)) { // Update only if status has changed
         this->set_dirty();
         info = current_info;
