@@ -1,0 +1,238 @@
+//
+// Created by Angel Dust on 12/07/2024.
+//
+
+#include "option_buttons_view.h"
+#include "Display_afb.h"
+#include "ips_font.h"
+#include "status.h"
+#include "ui/button_widget.h"
+#include "ui/main_view.h"
+#include "ui/widget.h"
+#include "utils.hpp"
+#include <sys/_stdint.h>
+
+bool OptionButtonsView::update_focus() {
+
+    if (focused_button < 0) {
+        focused_button = index - 1;
+    } else if (focused_button >= index) {
+        focused_button = 0;
+    }
+
+    uint16_t page_size = cols * (rows - 1);
+    uint16_t new_offset = offset;
+
+    if ((focused_button - offset) >= page_size) {
+        // Page down
+        new_offset = focused_button - page_size + cols;
+        new_offset -= (new_offset % cols);
+
+    } else if (focused_button < offset) {
+        // Page up
+        new_offset = (focused_button / cols) * cols;
+    }
+
+    bool update = new_offset != offset;
+    offset = new_offset;
+    update_buttons(update);
+
+    buttons[focused_button].set_focus(true);
+    return true;
+}
+
+bool OptionButtonsView::on_input(const st_inputEvent event) {
+
+    bool consumed = Widget::on_input(event);
+
+    if (consumed) {
+        return consumed;
+    }
+
+    switch (event.type) {
+        case INPUT_EVENT_TYPE_ENCODER:
+            focused_button += event.value;
+            consumed = update_focus();
+            break;
+        case INPUT_EVENT_TYPE_TOUCH_START:
+
+            consumed = true;
+            break;
+
+        case INPUT_EVENT_TYPE_BUTTON_PRESS:
+        case INPUT_EVENT_TYPE_BUTTON_DBL_PRESS:
+
+            switch (event.value) {
+
+                case KEY_BACK:
+                    this->set_visible(false);
+                    break;
+                case FPANEL_DISPLAY_BUTTON_1:
+                    focused_button += event.value;
+                    consumed = update_focus();
+                    break;
+                case FPANEL_DISPLAY_BUTTON_2:
+                    focused_button += event.value;
+                    consumed = update_focus();
+                    break;
+                case FPANEL_DISPLAY_BUTTON_3:
+
+                    break;
+                case FPANEL_DISPLAY_BUTTON_5:
+
+                    break;
+                case FPANEL_DISPLAY_BUTTON_6:
+                    this->set_visible(false);
+                    break;
+                default:
+                    button_close.set_focus(true);
+                    break;
+            }
+
+            consumed = true;
+            break;
+        default:
+            consumed = false;
+            break;
+    }
+
+    return consumed;
+}
+
+void OptionButtonsView::add_item(const char *text, std::function<void(Button &)> on_select_handler, bool selected, uint16_t fg_color, uint16_t text_bg_color) {
+
+    if (index < MAX_BUTTONS) {
+        Button *button = &buttons[index];
+
+        add_child(button);
+
+        button->id = index;
+        button->on_highlight = [this](Button &button) { focused_button = button.id; };
+
+        if (on_select_handler) {
+            button->on_select = on_select_handler;
+        } else if (on_select) {
+            button->on_select = [this](Button &button) { on_select(button.id); };
+        }
+        button->set_style(BUTTON_STYLE_3D);
+        button->set_aling(ALIGN_CENTER);
+        button->set_fg(fg_color);
+        button->set_text_bg(text_bg_color);
+        button->set_text(text);
+        button->set_visible(true);
+        button->set_focus(selected);
+
+        index++;
+
+        if (selected) {
+            update_focus();
+        } else {
+            update_buttons(true);
+        }
+    } else {
+        status::handleError(status::ST_ERROR, "OptionButtonsView: maxed items");
+    }
+}
+
+void OptionButtonsView::set_title(const char *text) { label_widget.set_label(text); }
+
+void OptionButtonsView::clear() {
+    for (Button &button : buttons) {
+        remove_child(&button);
+    }
+    index = 0;
+    offset = 0;
+}
+
+void OptionButtonsView::update_buttons(bool update_layout = false) {
+
+    if (!index) {
+        return;
+    }
+
+    rows = ((index - 1) / cols) + 1 + 1; // Add one for back and arrow buttons
+
+    if (rows > max_rows) {
+        rows = max_rows;
+    }
+
+    // Calculate optimum sizes
+    button_w = WIDTH / cols;
+
+    uint16_t height = (button_h * rows) + STATUS_HEIGHT + TITLE_HEIGHT;
+    if (update_layout) {
+        set_parent_rect({0, (DISPLAY_Y_PIXELS - height) / 2, WIDTH, height});
+    }
+
+    int page_size = cols * (rows - 1);
+
+    for (int i = 0; i < index; i++) {
+        buttons[i].set_visible(i >= offset && i - offset < page_size);
+
+        if (update_layout) {
+            buttons[i].set_parent_rect({((i - offset) % (cols)) * button_w, (((i - offset) / (cols)) * button_h) + TITLE_HEIGHT + 2, button_w, button_h});
+        }
+    }
+
+    bool all_visible = page_size >= index;
+    bool need_arrows = !all_visible && show_arrows;
+
+    button_next.set_visible(need_arrows);
+    button_prev.set_visible(need_arrows);
+
+    if (need_arrows) {
+        button_next.set_enabled(offset + page_size < index);
+        button_prev.set_enabled(offset > 0);
+    }
+
+    if (update_layout) {
+        button_prev.set_parent_rect({0, ((rows - 1) * button_h) + TITLE_HEIGHT + 2, button_w, button_h});
+        button_next.set_parent_rect({button_w, ((rows - 1) * button_h) + TITLE_HEIGHT + 2, button_w, button_h});
+
+        button_close.set_parent_rect({(cols - 1) * button_w, ((rows - 1) * button_h) + TITLE_HEIGHT + 2, button_w, button_h});
+        display_panel_buttons.set_parent_rect({0, height - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT});
+    }
+}
+
+void OptionButtonsView::set_show_arrows(bool b) { show_arrows = b; }
+
+void OptionButtonsView::init() {
+
+    label_widget.set_font((FontDef *)&Font_7x10);
+    label_widget.set_aling(ALIGN_CENTER);
+
+    add_child(&label_widget);
+
+    add_children({&button_close, &button_next, &button_prev, &display_panel_buttons});
+
+    button_close.on_select = [this](Button &) { this->set_visible(false); };
+
+    display_panel_buttons.set_labels(display_buttons_labels);
+}
+
+void OptionButtonsView::on_focus() { button_close.set_focus(true); }
+
+void OptionButtonsView::before_paint() {
+    // Prevent redrawing the background but the first time
+    if (dirty()) {
+        //   set_clean();
+    }
+}
+
+void OptionButtonsView::paint_callback() {
+
+    display->clear();
+
+    for (const auto child : this->children()) {
+        if (child->visible()) {
+            uint16_t top = child->parent_rect().top();
+            uint16_t left = child->parent_rect().left();
+            uint16_t height = child->parent_rect().height();
+            uint16_t width = child->parent_rect().width();
+
+            display->setOffset(left, top, width, height);
+            child->paint_callback();
+            display->clearOffset();
+        }
+    }
+}
