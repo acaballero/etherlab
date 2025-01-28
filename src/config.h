@@ -39,7 +39,7 @@ typedef struct st_config //__attribute__ ((packed))
 
     uint8_t power_ctrl = 0; // Power control byte (8 power control lines)
 
-    uint8_t filter = radio::BAND_AUTO; // Bypass
+    radio::BAND filter = radio::BAND_AUTO; // Bypass
     radio::IF_FILTER if_filter = radio::IF_FILTER_AUTO;
     radio::FRONTEND_PATH frontend_path = radio::FRONTEND_PATH_LNA; // LNA enabled
     MODULATION_MODE modulation = FM;

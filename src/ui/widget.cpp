@@ -16,6 +16,7 @@ Rect Widget::screen_rect() const { return parent() ? (parent_rect() + parent()->
 Rect Widget::parent_rect() const { return _parent_rect; }
 
 void Widget::set_parent_rect(const Rect new_parent_rect) {
+
     _parent_rect = new_parent_rect;
     this->set_area();
     set_dirty();
@@ -69,9 +70,9 @@ void Widget::hidden(bool hide) {
 
 bool Widget::on_input(const st_inputEvent event) {
 
-    if (!visible() || !enabled())
+    if (!visible() || !enabled()) {
         return false;
-
+    }
     bool consumed = false;
 
     for (const auto child : children()) {

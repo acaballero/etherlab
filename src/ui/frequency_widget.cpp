@@ -62,20 +62,21 @@ void FrequencyWidget::paint_callback() {
         fg_color = C565_YELLOW;
     }
 
-    uint16_t x = (area.width / 4) + 24 + 4;
+    uint16_t x = (area.width / 4) + 31 + 4;
 
     FontDef *font = (FontDef *)&Font_11x18;
     display->writeString(x, 0, buf, font, fg_color, C565_TRANSPARENT);
     display->setColor(C565_GREY_LIGHT);
 
     uint8_t dec_place = (uint8_t)log10((double)config.vfo[config.vfo_ix].step) + 1;
-    uint16_t start_line = area.width - (dec_place * font->width);
+    uint8_t trim = font->trim_punct_end + font->trim_punct_start;
+    uint16_t start_line = area.width - (dec_place * font->width) - (trim * 3);
 
     if (dec_place > 3) {
-        start_line -= font->width - font->trim_punct_end - font->trim_punct_start; // sip hundreds separator
+        start_line -= font->width - trim; // sip hundreds separator
     }
     if (dec_place > 6) {
-        start_line -= font->width - font->trim_punct_end - font->trim_punct_start; // skip thousands separator
+        start_line -= font->width - trim; // skip thousands separator
     }
 
     display->writeRect(start_line + 2, 16, start_line + 2, 17);

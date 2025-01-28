@@ -241,6 +241,7 @@ void fftInit() {
 
     fftUI::set_spectrum_style(config.fft.spectrum_style);
     fftUI::set_spectrum_colors(config.fft.spectrum_line_color, config.fft.spectrum_fill_color);
+    fftUI::init_waterfall();
 }
 
 void resetIQBalancer() { fftIQBalancer.reset(); }
@@ -255,6 +256,7 @@ uint32_t fft_max_span() { return config.fft.max_slices * FFT_BANDWIDTH * 2; }
  * - Sample rate
  * - FFT number of usable bins
  * - Number of slides needed
+ 
  * - FFT size
  * - RBW
  * - screen pixel/bin ratio
@@ -268,8 +270,9 @@ bool fft_config(uint32_t span) {
 
     // Max span check
     uint32_t max_span = fft_max_span();
-    if (span > max_span)
+    if (span > max_span) {
         span = max_span;
+    }
 
     st_fft_params params{.span = span};
     bool found = false;
@@ -455,8 +458,9 @@ void calculateNoiseFloor() {
 
         config.fft.min_db = fft_noise_floor_db - 10;
 
-        if (config.fft.min_db > config.fft.max_db)
+        if (config.fft.min_db > config.fft.max_db) {
             config.fft.min_db = config.fft.max_db;
+        }
     }
 }
 
@@ -545,8 +549,9 @@ inline fft_type fft_output_db(fft_type v) {
     db = 10.0f * fasterlog(1000.0f * (float)pow(v, 2.0) / 400.0);
 
     // logEvent(110,4,0);
-    if (db < config.fft.min_db)
+    if (db < config.fft.min_db) {
         db = FFT_MIN_DB;
+    }
     // else if (db > config.fft.max_db)
     //     db = config.fft.max_db;
 
@@ -778,7 +783,6 @@ void adquireFFTAsync() {
     uint16_t fft_buff_size = fft_params.size * fft_params.decimation_factor;
 
     if (fft_params.decimation_factor > 1) {
-
         // If we are decimating (using FIR filtering), we have to discard the FIR filter group delay samples
         fft_buff_size += FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft_params.decimation_factor;
     }
@@ -869,7 +873,7 @@ void fft_work() {
 
         uint8_t peak_ix = getPeak(fft_params.start_bin, fft_params.start_bin + fft_params.nbins, fft_peak_v);
 
-        if (fft_output)
+        if (fft_output) {
 
             // Only consider a peak value if it's above a threshold from the current noise floor
             if (fft_peak_v > FFT_SIGNAL_THRESHOLD_DB + fft_noise_floor_db && fft_peak < fft_peak_v) {
@@ -879,6 +883,7 @@ void fft_work() {
 
                 fft_peak_f = fft_params.span_if_start + fft_params.rbw * fft_peak_bin; // config.vfo[config.vfo_ix].freq + (rbw*(peak_ix-(FFT_N>>1)))*1000;
             }
+        }
     }
 }
 
@@ -926,7 +931,7 @@ void updateFFT() {
             view_manager::mainView.IQBalance()->set_dirty();
         }
     } else {
-        if (m - last_waterfall_ms > config.fft.waterfall_refresh_period_ms) {
+        if (m - last_waterfall_ms > fftUI::get_waterfall_period()) {
             last_waterfall_ms = m;
             view_manager::mainView.IQBalance()->set_visible(false);
             view_manager::mainView.Waterfall()->set_visible(true);

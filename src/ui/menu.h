@@ -1,12 +1,15 @@
 #ifndef __MENU_H
 #define __MENU_H
 
+#include "Display_afb.h"
 #include "hw/stm32.h"
+#include <functional>
 #include <math.h>
 #include <sys/_stdint.h>
 #include <type_traits>
 #include "../../lib/Menu/src/menu.h"
 #include "menuBase.h"
+#include "ui/menuILI9431Out.h"
 #include "utils.hpp"
 
 enum MenuStatus { ACTIVE, IDLE, UNKNOWN };
@@ -22,9 +25,20 @@ extern Menu::menuNode fileSubmenu;
 extern enum MenuStatus menuStatus;
 extern const char *constMEM alphaNum MEMMODE;
 extern const char *constMEM alphaNumMask[1] MEMMODE;
-extern Menu::prompt *colorValues[23];
 
 namespace Menu {
+
+template <typename T> struct menu_option_st {
+    const char *name;
+    T value;
+    uint16_t fg_color = C565_TEXT_FG;
+    uint16_t bg_color = C565_TEXT_BG;
+};
+
+template <typename T> using menu_options_t = menu_option_st<T> *;
+
+extern menu_option_st<uint16_t> color_options[23];
+
 class labelPrompt : public Menu::prompt {
   public:
     char *value;
@@ -39,6 +53,39 @@ class labelPrompt : public Menu::prompt {
         len -= out.printRaw(value, len);
 
         return len;
+    }
+};
+
+template <typename T> class optionsPrompt : public Menu::prompt {
+  public:
+    T &value;
+    menu_options_t<T> options;
+    size_t size;
+    std::function<void(T)> on_select;
+
+    optionsPrompt(const char *text, menu_options_t<T> options, T &value, size_t size, std::function<void(T)> on_select = nullptr, eventMask e = enterEvent,
+                  styles s = noStyle, systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)));
+
+    Used printTo(navRoot &, bool sel, menuOut &out, idx_t, idx_t len, idx_t) override {
+
+        menu_option_st<T> *option = find_option(value);
+        len -= out.printRaw(shadow->text, len);
+        len -= out.printRaw(": ", len);
+        out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
+        reinterpret_cast<menuILI9431Out *>(&out)->gfx.setBgColor(option->bg_color);
+        len -= out.printRaw(option->name, len);
+        out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
+
+        return len;
+    }
+
+  protected:
+    menu_option_st<T> *find_option(T &value) {
+        int i;
+        for (i = 0; i < size && options[i].value != value; i++) {
+            ;
+        }
+        return i >= size ? &options[0] : &options[i]; // Defaults to first element if not found
     }
 };
 

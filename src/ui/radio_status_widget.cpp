@@ -9,6 +9,7 @@
 #include "Display_afb.h"
 #include "radio.h"
 #include "printf.h"
+#include "dsp/fft/fft.h"
 #include "ui/button_widget.h"
 
 void RadioStatusWidget::init() {

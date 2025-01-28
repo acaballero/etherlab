@@ -46,6 +46,7 @@ void TitleBarWidget::paint_callback() {
     display->print("TRX_100");
 #endif
 
+    display->set_trim_enabled(false);
     if (battery::battery_info.status != battery::BATTERY_STATUS_UNDEFINED) {
 
         char c;
@@ -212,11 +213,14 @@ void TitleBarWidget::paint_callback() {
 
     // AUDIO
 
-    if (main_board::getMute())
+    if (main_board::getMute()) {
         display->setColor(C565_GREY_DARK);
+    }
     display->print(" ");
     display->setFont((FontDef *)&Font_Icons9x8);
     display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
+
+    display->set_trim_enabled(true);
 }
 
 void TitleBarWidget::before_paint() {

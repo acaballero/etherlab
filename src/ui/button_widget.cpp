@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 void Button::set_text(char const *t) {
-    strncpy(text, t, MAX_SIZE);
+    strncpy(text, t, MAX_CHARS);
     set_dirty();
 }
 
@@ -16,6 +16,7 @@ char *Button::get_text() { return text; }
 void Button::set_two_lines(bool b) { two_lines = b; }
 
 void Button::before_paint() {
+
     if (this->dirty()) {
         display->setFont(font);
     }
@@ -37,9 +38,9 @@ void Button::paint_callback() {
     }
 
     if (style == BUTTON_STYLE_3D) {
-        display->writeRect(0, 0, parent_rect().width() - 1, 1, C565_GREY_LIGHT);
+        display->writeRect(0, 0, parent_rect().width() - 1, 1, shadow_light);
         display->writeRect(0, 0, 1, parent_rect().height() - 1, shadow);
-        display->writeRect(parent_rect().width() - 2, 0, parent_rect().width() - 1, parent_rect().height() - 1, C565_GREY_LIGHT);
+        display->writeRect(parent_rect().width() - 2, 0, parent_rect().width() - 1, parent_rect().height() - 1, shadow_light);
         display->writeRect(0, parent_rect().height() - 2, parent_rect().width() - 1, parent_rect().height() - 1, shadow);
         display->fill(1, 1, parent_rect().width() - 1, parent_rect().height() - 2, bg);
     } else {
@@ -48,7 +49,7 @@ void Button::paint_callback() {
     }
 
     display->setColor(fg);
-    display->setBgColor(bg);
+    display->setBgColor(text_bg_color);
     display->setFont(font);
 
     uint16_t text_height = font->height;
@@ -137,12 +138,12 @@ uint16_t Button::get_fg() const { return fg_color; }
 void Button::set_fg(uint16_t fg) { set_color(fg, fg_color_value, fg_color_unit); }
 
 void Button::set_value(const char *t) {
-    strncpy(value, t, MAX_SIZE);
+    strncpy(value, t, MAX_CHARS_VALUE);
     set_dirty();
 }
 
 void Button::set_unit(const char *t) {
-    strncpy(unit, t, MAX_SIZE);
+    strncpy(unit, t, MAX_CHARS);
     set_dirty();
 }
 
@@ -153,6 +154,8 @@ void Button::set_color(uint16_t l, uint16_t v, uint16_t u) {
 }
 
 uint16_t Button::get_bg() const { return bg_color; }
+
+void Button::set_text_bg(uint16_t c) { text_bg_color = c; }
 
 void Button::set_bg(uint16_t bg) { Button::bg_color = bg; }
 

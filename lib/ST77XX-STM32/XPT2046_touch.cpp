@@ -156,8 +156,8 @@ xpt2046_touch_pressed_t xpt2046_touch_coordinate(xpt2046_t *lcd, uint16_t *x_pos
 
     while ((itpPressed == xpt2046_touch_pressed(lcd)) && (sample--)) {
 
-        volatile uint16_t x;
-        volatile uint16_t y;
+        uint16_t x;
+        uint16_t y;
 
         if (lcd->spi_hal) {
             x = xpt2046_read_spi(x_cmd);

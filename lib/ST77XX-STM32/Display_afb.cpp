@@ -9,7 +9,7 @@
 #define max2(a, b) ((a) > (b) ? (a) : (b))
 
 /* RGB565 buffer for transferring pixels to the display using DMA */
-static const uint16_t b565_buffer_size = DISPLAY_X_PIXELS * 20;
+static const uint16_t b565_buffer_size = DISPLAY_X_PIXELS * 16;
 
 uint16_t b565_buffer[b565_buffer_size];
 
@@ -30,7 +30,6 @@ void Display::clear(uint16_t color) {
         // We are drawing in the whole area so we can just memset
         memset(this->curr_buffer, color, this->chunk_height * this->curr_area->width * 2);
     } else {
-
         // The memory of the rectangle is not contiguous in the area
         fillBuffer(color);
     }
@@ -92,8 +91,9 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
         // chunk_height should not be greater than the area height.
         // An area can be small enough (less than half the buffer size) that it can be drawn in a single DMA transfer
-        if (this->chunk_height > area->height)
+        if (this->chunk_height > area->height) {
             this->chunk_height = area->height;
+        }
 
         uint16_t max_buffer_size = this->chunk_height * w;
 
@@ -166,8 +166,9 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                         *((__IO uint8_t *)this->curr_buffer + i); // Write data to be transmitted to the SPI data register
                     // while (!(spi_port->Instance->SR & (SPI_SR_TXE)));     // Wait until transmit complete
                     // while (!(spi_port->Instance->SR & (SPI_SR_RXNE)));    // Wait until receive complete
-                    while (spi_port->Instance->SR & (SPI_SR_BSY))
-                        ;                                                     // Wait until SPI is not busy anymore
+                    while (spi_port->Instance->SR & (SPI_SR_BSY)) {
+                        ; // Wait until SPI is not busy anymore
+                    }
                     uint8_t rxDat = *(__IO uint8_t *)&spi_port->Instance->DR; // Return received data from SPI data register
                     UNUSED(rxDat);
                     DISP_CE_PORT->BSRR |= DISP_CE_PIN;
@@ -184,8 +185,9 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
                 if (this->use_dma) {
                     // GPIOD->BSRR |= GPIO_PIN_5;
-                    while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY)
+                    while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {
                         ;
+                    }
                     // GPIOD->BSRR |= GPIO_PIN_5<<16;
                     this->DMAHalfTransferCompleted = false;
                     HAL_SPI_Transmit_DMA(spi_port, ((uint8_t *)b565_buffer), dma_transfer_length);
@@ -198,8 +200,9 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                 this->curr_buffer = b565_buffer;
 
                 if (this->use_dma) {
-                    while (!this->DMAHalfTransferCompleted)
+                    while (!this->DMAHalfTransferCompleted) {
                         ;
+                    }
                 }
 
                 // The last chunk may need fewer bytes to transfer
@@ -211,8 +214,9 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         }
 
         if (this->use_dma) {
-            while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY)
+            while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {
                 ;
+            }
             EndDisplayDataTransfer();
         } else {
             DISP_DC_PORT->BSRR |= DISP_DC_PIN << 16; // DC PIN UNSET
@@ -456,8 +460,8 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
 
         /* Fastest line drawing algorithm (supporting all slopes) I've encountered so far (http://www.edepot.com/linee.html) */
         bool yLonger = false;
-        volatile int shortLen = y2 - y1;
-        volatile int longLen = x2 - x1;
+        int shortLen = y2 - y1;
+        int longLen = x2 - x1;
         if (abs(shortLen) > abs(longLen)) {
             int swap = shortLen;
             shortLen = longLen;
@@ -465,10 +469,11 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
             yLonger = true;
         }
         int decInc;
-        if (longLen == 0)
+        if (longLen == 0) {
             decInc = 0;
-        else
+        } else {
             decInc = (shortLen << 16) / longLen;
+        }
 
         uint16_t ipx = x1;
         uint16_t ipy = y1;
@@ -680,10 +685,10 @@ void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, ui
 
                 b = font->size == 2 ? ((uint16_t *)data)[i] : ((uint8_t *)data)[i << incr];
 
-                // Commas and periods don't look good with monospaced fonts. So we remove
-                // one blank column from each side
+                // Commas and periods are too width in monospaced fonts. So we remove
+                // columns from each side
                 uint8_t j1, jn;
-                if (ch == ',' || ch == '.' || ch == ':') {
+                if (trim_enabled && (ch == ',' || ch == '.' || ch == ':' || ch == ' ')) {
                     j1 = font->trim_punct_start;
                     jn = font->width - font->trim_punct_end;
                 } else {
@@ -712,7 +717,7 @@ void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, ui
             // Commas and periods don't look good with monospaced fonts. So we remove
             // one blank column from each side
             uint8_t j1, jn;
-            if (ch == ',' || ch == '.' || ch == ':') {
+            if (trim_enabled && (ch == ',' || ch == '.' || ch == ':' || ch == ' ')) {
                 j1 = font->trim_punct_start;
                 jn = font->width - font->trim_punct_end;
             } else {
@@ -767,14 +772,15 @@ void Display::writeString(uint16_t x, uint16_t y, const char *str, const FontDef
                 str++;
             }
 
-            if (!*str)
+            if (!*str) {
                 break;
+            }
         }
 
         writeChar(x, y, *str, font, color, bgcolor);
 
         uint8_t delta_x;
-        if (*str == ',' || *str == '.' || *str == ':') {
+        if (trim_enabled && (*str == ',' || *str == '.' || *str == ':' || *str == ' ')) {
             delta_x = delta_punct;
         } else {
             delta_x = font->width;
@@ -787,6 +793,8 @@ void Display::writeString(uint16_t x, uint16_t y, const char *str, const FontDef
     py = y;
     // Unselect();
 }
+
+void Display::set_trim_enabled(bool b) { trim_enabled = b; }
 
 uint16_t *Display::getBuffer() { return this->curr_buffer; }
 
@@ -881,10 +889,11 @@ size_t Display::print(long n, int base) {
 }
 
 size_t Display::print(unsigned long n, int base) {
-    if (base == 0)
+    if (base == 0) {
         return write(n);
-    else
+    } else {
         return printNumber(n, base);
+    }
 }
 
 size_t Display::print(double n, int digits) { return printFloat(n, digits); }
@@ -896,8 +905,9 @@ size_t Display::printNumber(unsigned long n, uint8_t base) {
     *str = '\0';
 
     // prevent crash if called with base == 1
-    if (base < 2)
+    if (base < 2) {
         base = 10;
+    }
 
     do {
         unsigned long m = n;
@@ -912,14 +922,18 @@ size_t Display::printNumber(unsigned long n, uint8_t base) {
 size_t Display::printFloat(double number, uint8_t digits) {
     size_t n = 0;
 
-    if (isnan(number))
+    if (isnan(number)) {
         return print("nan");
-    if (isinf(number))
+    }
+    if (isinf(number)) {
         return print("inf");
-    if (number > 4294967040.0)
+    }
+    if (number > 4294967040.0) {
         return print("ovf"); // constant determined empirically
-    if (number < -4294967040.0)
+    }
+    if (number < -4294967040.0) {
         return print("ovf"); // constant determined empirically
+    }
 
     // Handle negative numbers
     if (number < 0.0) {
@@ -929,8 +943,9 @@ size_t Display::printFloat(double number, uint8_t digits) {
 
     // Round correctly so that print(1.999, 2) prints as "2.00"
     double rounding = 0.5;
-    for (uint8_t i = 0; i < digits; ++i)
+    for (uint8_t i = 0; i < digits; ++i) {
         rounding /= 10.0;
+    }
 
     number += rounding;
 

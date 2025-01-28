@@ -54,6 +54,14 @@ void View::paint_callback() {
     // }
 }
 
+void View::set_parent_rect(Rect r) {
+    Widget::set_parent_rect(r);
+    // Update children areas
+    for (const auto child : this->children()) {
+        child->set_parent_rect(child->parent_rect());
+    }
+}
+
 void View::paint() {
 
     if (this->flags.visible) {

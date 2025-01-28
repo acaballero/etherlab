@@ -9,7 +9,7 @@
 #define PIXELS_BYTE 2
 
 /* 4-bit per pixel, 16-color buffer */
-__attribute__((section(".fccmram"))) uint8_t waterfallBuffer[DISPLAY_X_PIXELS * FFT_WATERFALL_HEIGHT * PIXELS_BYTE];
+__attribute__((section(".fccmram"))) uint8_t waterfallBuffer[DISPLAY_X_PIXELS * FFT_WATERFALL_HEIGHT / PIXELS_BYTE];
 
 WaterfallWidget::WaterfallWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
 
@@ -25,7 +25,7 @@ void WaterfallWidget::centerSpectrum() {
     if (waterfallFreq == 0) {
         waterfallFreq = radio::get_frequency(); // initialize it
     } else {
-        volatile int32_t f_offset = (int32_t)waterfallFreq - (int32_t)radio::get_frequency();
+        int32_t f_offset = (int32_t)waterfallFreq - (int32_t)radio::get_frequency();
 
         // Calculate the equivalent width in buffer bytes
         int16_t offset_pixels = round((float)f_offset / fft_params.display_rbw / PIXELS_BYTE);
@@ -42,6 +42,8 @@ void WaterfallWidget::centerSpectrum() {
         }
     }
 }
+
+void WaterfallWidget::set_step(uint8_t value) { step = value; }
 
 /*
  * Displaces the waterfall by frequency offset
@@ -83,8 +85,8 @@ void WaterfallWidget::paint_callback() {
 
     uint16_t *buffer = display->getBuffer();
 
-    pbyte = waterfallBuffer +
-            (this->display->current_line * (width >> 1)); // position in the buffer (we know x1 and x2 are always 0 and DISPLAY_X_PIXELS in this buffer)
+    pbyte =
+        waterfallBuffer + (this->display->current_line * (width >> 1)); // position in the buffer (we know x1 and x2 are 0 and DISPLAY_X_PIXELS  in this buffer)
     uint8_t *pend = waterfallBuffer + ((this->display->current_last_line + 1) * (width >> 1));
     uint8_t byte;
 
@@ -92,25 +94,25 @@ void WaterfallWidget::paint_callback() {
 
         byte = *pbyte;
 
-        for (uint8_t j = 0; j < PIXELS_BYTE; j++) { // 2 pixels per byte
+        for (uint8_t j = 0; j < PIXELS_BYTE; j++) {
 
             colorIndex = byte & 0x000FU;
 
             byte >>= 4;
 
-#if DEBUG_LCD
-            /* Black and white are forzed to be 0x0000 and 0xFFFF even if they're not in the palette, to be able to see the debug messages */
+            if (show_fps) {
+                /* Black and white are forzed to be 0x0000 and 0xFFFF even if they're not in the palette, to be able to see the debug messages */
 
-            if (colorIndex == 1) {
-                b565_color = 0xFFFF;
-            } else if (colorIndex == 0) {
-                b565_color = 0x0000;
+                if (colorIndex == 1) {
+                    b565_color = 0xFFFF;
+                } else if (colorIndex == 0) {
+                    b565_color = 0x0000;
+                } else {
+                    b565_color = waterfall_palette_rgb565[colorIndex];
+                }
             } else {
                 b565_color = waterfall_palette_rgb565[colorIndex];
             }
-#else
-            b565_color = waterfall_palette_rgb565[colorIndex];
-#endif
 
             // display->setPixel(x, y, b565_color); // too slow
             *(buffer++) = b565_color;
@@ -126,9 +128,9 @@ void WaterfallWidget::before_paint() {
 
         uint16_t width = this->size().width();
 
-        // Scroll buffer down by a pixel. Remember there's 4-bit by pixel, so we divide the displacement by two
+        // Scroll buffer down by a pixel. Remember there's 4-bit by pixel, so we divide the displacement by log2(bits per pixels) = PIXELS_BYTE
 
-        uint16_t delta = width / PIXELS_BYTE;
+        uint16_t delta = step * width / PIXELS_BYTE;
         memmove(waterfallBuffer + delta, waterfallBuffer, (width * (FFT_WATERFALL_HEIGHT / PIXELS_BYTE)) - delta);
 
         // Set the first row of pixels
@@ -149,10 +151,9 @@ void WaterfallWidget::before_paint() {
             //         ((float) (FFT_HEIGHT - py) / (float) (FFT_HEIGHT)) *
             //         (float) (FFT_WATERFALL_NCOLORS - 1));
 
-#if DEBUG_LCD
-            if (color < 2)
+            if (show_fps && color < 2) {
                 color = 2; // 0 and 1 are reserved in debug mode to black and white to allow writing debug messages in the pixel buffer
-#endif
+            }
             // Set the 4 bits of the pixel in the buffer
             uint8_t shift;
             uint8_t mask;
@@ -164,6 +165,9 @@ void WaterfallWidget::before_paint() {
             mask = waterfallBuffer[ix] & (uint8_t) ~(0x000FU << shift);
 
             waterfallBuffer[ix] = mask | ((color % 16) << shift);
+            for (int n = 1; n < step; n++) { // repeat as many lines as the step size
+                waterfallBuffer[ix + (n * (width >> 1))] = waterfallBuffer[ix];
+            }
         }
     }
 }

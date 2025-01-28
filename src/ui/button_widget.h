@@ -13,7 +13,8 @@ enum ButtonStyle { BUTTON_STYLE_3D = 0, BUTTON_STYLE_FLAT, LABEL_STYLE_HOLLOW };
 
 class Button : public Widget {
   public:
-    static const size_t MAX_SIZE = 8;
+    static const size_t MAX_CHARS = 12;
+    static const size_t MAX_CHARS_VALUE = 8;
 
     std::function<void(Button &)> on_select{};
 
@@ -50,6 +51,8 @@ class Button : public Widget {
 
     void set_bg(uint16_t bg);
 
+    void set_text_bg(uint16_t bg);
+
     uint16_t get_shadow() const;
 
     void set_shadow(uint16_t shadow);
@@ -67,21 +70,23 @@ class Button : public Widget {
     std::function<void(void)> fn_writer; // Handler to delegate the writing
 
   protected:
-    char text[MAX_SIZE];
-    char value[MAX_SIZE];
-    char unit[MAX_SIZE];
+    char text[MAX_CHARS];
+    char value[MAX_CHARS_VALUE];
+    char unit[4];
     bool two_lines = false;
 
     int fd = 1;
 
     uint16_t fg_color = C565_DARKEST;
+    uint16_t text_bg_color = C565_TRANSPARENT;
     uint16_t fg_disabled_color = C565_GREY_LIGHT;
     uint16_t fg_color_value = C565_BLUE;
     uint16_t fg_color_unit = C565_GREY_LIGHT;
     uint16_t fg_color_focused = C565_BLACK;
     uint16_t bg_color = C565_GREY_LIGHT;
     uint16_t bg_color_focused = C565_WHITE;
-    uint16_t bg_disabled_color = C565_GREY_DARKER;
+    uint16_t bg_disabled_color = C565_GREY_DARK;
+    uint16_t shadow_light = C565_WHITE;
     uint16_t shadow = C565_GREY_DARKER;
 
     ButtonStyle style = BUTTON_STYLE_FLAT;

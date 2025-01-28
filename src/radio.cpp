@@ -99,11 +99,11 @@ const st_filter if_filters[] = {
     {10698000, 15, GPIOEXP_IF_FILTER_15KHZ},   // 15Kh
     {10700000, 150, GPIOEXP_IF_FILTER_150KHZ}, // 150Khz
 };
-const char *bandNames[] = {"70cm", "1m",  "2m",  "AIRB", "WFM", "6m",  "10m",  "11m",  "12m", "15m",
-                           "17m",  "20m", "30m", "40m",  "60m", "80m", "160m", "Auto", "None"};
+const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "10 m",  "11 m", "12 m", "15 m",
+                           "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "None"};
 const char *modulationNames[] = {"LSB", "USB", "FM", "WFM", "AM", "CW"};
-const char *IFFilterNames[] = {"3k", "15k", "150k", "Auto"};
-const char *IFFilter2Names[] = {"Auto", "Passthru"};
+const char *IFFilterNames[] = {"3 k", "15 k", "150 k", "Auto"};
+const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
 BAND filter = BAND_NONE;
 IF_FILTER if_filter = IF_FILTER_NONE;

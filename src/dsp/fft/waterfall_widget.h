@@ -8,8 +8,9 @@
 #include "../../ui/widget.h"
 #include "../../types.h"
 #include "fft_types.h"
+#include <sys/_stdint.h>
 
-#define FFT_WATERFALL_HEIGHT 70
+#define FFT_WATERFALL_HEIGHT 90
 #define FFT_WATERFALL_DEFAULT_COLOR_INDEX 1
 
 class WaterfallWidget : public Widget {
@@ -22,10 +23,13 @@ class WaterfallWidget : public Widget {
 
     void moveSpectrum(int16_t);
 
+    // Set the scrolled pixels per frame
+    void set_step(uint8_t);
+
   protected:
     void before_paint() override;
 
-    const uint32_t waterfall_palette_rgb256[FFT_WATERFALL_NCOLORS] = {0x0000,   0x000085, 0x0000c8, 0x4B00e3, 0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
+    const uint32_t waterfall_palette_rgb256[FFT_WATERFALL_NCOLORS] = {0x111122, 0x000085, 0x0000c8, 0x4B00e3, 0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
                                                                       0xdc6a55, 0xed852a, 0xffa000, 0xffbf55, 0xffcf7f, 0xffdfaa, 0xffefd4, 0xffffff};
 
     // Buffer to convert the waterfall palette from RGB888 to RGB565
@@ -36,6 +40,8 @@ class WaterfallWidget : public Widget {
      * multiples of 2 frequency bins (for optimization) and if the frequency change is less than that, it won't move. Therefore,
      * we need to store the frequency of the waterfall to know when it's difference with the center frequency it's enough to scroll it */
     unsigned long waterfallFreq;
+
+    uint8_t step;
 };
 
 #endif // TRX_FRONTEND_WATERFALL_WIDGET_H

@@ -5,6 +5,7 @@
 #define VIEW_MANAGER_H
 
 #include "ui/keyboard_view.h"
+#include "ui/option_buttons_view.h"
 #include "view.h"
 #include "main_view.h"
 #include "keypad_view.h"
@@ -12,6 +13,7 @@
 namespace view_manager {
 extern KeypadView keypadView;
 extern KeyboardView keyboardView;
+extern OptionButtonsView optionButtonsView;
 extern MainView mainView;
 extern View *currentView;
 void push(View *);

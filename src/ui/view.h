@@ -12,6 +12,8 @@ class View : public Widget {
 
     View(Rect parent_rect) : Widget(parent_rect, &lcd) {}
 
+    void set_parent_rect(Rect) override;
+
     void add_child(Widget *const widget);
 
     void add_children(const std::initializer_list<Widget *> children);

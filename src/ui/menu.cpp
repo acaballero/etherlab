@@ -8,6 +8,7 @@
 #include "../../lib/Menu/src/menuIO/stringIn.h"
 #include "../../lib/Menu/src/plugin/userMenu.h"
 #include "menuBase.h"
+#include "mixer.h"
 #include "types.h"
 #include "ui/menuILI9431Out.h"
 #include "dsp/dsp_ui.h"
@@ -37,114 +38,142 @@ MenuStatus menuStatus = IDLE;
 //     return proceed;
 // }
 
-result changeModulation(eventMask e) {
-    main_board::setModulationMode(config.modulation, true);
-    return proceed;
-}
+/***************************/
+//   START NEW MENU DEFINITIONS (progressive replacement from ArduinoMenu library)
+/***************************/
 
-prompt *modulationValues[] = {new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[AM], AM),
-                              new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[FM], FM),
-                              new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[WFM], WFM),
-                              new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[CW], CW),
-                              new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[SSB_LSB], SSB_LSB),
-                              new Menu::menuValue<MODULATION_MODE>(radio::modulationNames[SSB_USB], SSB_USB)};
+menu_option_st<MODULATION_MODE> modulation_options[] = {{radio::modulationNames[AM], AM},           {radio::modulationNames[FM], FM},
+                                                        {radio::modulationNames[WFM], WFM},         {radio::modulationNames[CW], CW},
+                                                        {radio::modulationNames[SSB_LSB], SSB_LSB}, {radio::modulationNames[SSB_USB], SSB_USB}};
 
-Menu::select<MODULATION_MODE> &modulationMenu = *new Menu::select<MODULATION_MODE>("Modulation", config.modulation, sizeof(modulationValues) / sizeof(prompt *),
-                                                                                   modulationValues, changeModulation, exitEvent);
+menu_option_st<radio::BAND> band_options[] = {{radio::bandNames[radio::BAND_AUTO], radio::BAND_AUTO}, {radio::bandNames[radio::BAND_70cm], radio::BAND_70cm},
+                                              {radio::bandNames[radio::BAND_1m], radio::BAND_1m},     {radio::bandNames[radio::BAND_2m], radio::BAND_2m},
+                                              {radio::bandNames[radio::AIRBAND], radio::AIRBAND},     {radio::bandNames[radio::BAND_6m], radio::BAND_6m},
+                                              {radio::bandNames[radio::BAND_10m], radio::BAND_10m},   {radio::bandNames[radio::BAND_11m], radio::BAND_11m},
+                                              {radio::bandNames[radio::BAND_12m], radio::BAND_12m},   {radio::bandNames[radio::BAND_15m], radio::BAND_15m},
+                                              {radio::bandNames[radio::BAND_17m], radio::BAND_17m},   {radio::bandNames[radio::BAND_20m], radio::BAND_20m},
+                                              {radio::bandNames[radio::BAND_30m], radio::BAND_30m},   {radio::bandNames[radio::BAND_40m], radio::BAND_40m},
+                                              {radio::bandNames[radio::BAND_60m], radio::BAND_60m},   {radio::bandNames[radio::BAND_80m], radio::BAND_80m},
+                                              {radio::bandNames[radio::BAND_160m], radio::BAND_160m}, {radio::bandNames[radio::BAND_ALL], radio::BAND_ALL}};
 
-result changeBand(eventMask e) {
-    radio::set_band();
-    return proceed;
-}
-
-prompt *bandValues[] = {new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_AUTO], radio::BAND_AUTO),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_70cm], radio::BAND_70cm),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_1m], radio::BAND_1m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_2m], radio::BAND_2m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::AIRBAND], radio::AIRBAND),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_6m], radio::BAND_6m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_10m], radio::BAND_10m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_11m], radio::BAND_11m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_12m], radio::BAND_12m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_15m], radio::BAND_15m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_17m], radio::BAND_17m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_20m], radio::BAND_20m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_30m], radio::BAND_30m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_40m], radio::BAND_40m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_60m], radio::BAND_60m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_80m], radio::BAND_80m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_160m], radio::BAND_160m),
-                        new Menu::menuValue<radio::BAND>(radio::bandNames[radio::BAND_ALL], radio::BAND_ALL)};
-
-prompt *IFFilterValues[] = {
-    new Menu::menuValue<radio::IF_FILTER>(radio::IFFilterNames[radio::IF_FILTER_AUTO], radio::IF_FILTER_AUTO),
-    new Menu::menuValue<radio::IF_FILTER>(radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::IF_FILTER_3KHZ),
-    new Menu::menuValue<radio::IF_FILTER>(radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::IF_FILTER_15KHZ),
-    new Menu::menuValue<radio::IF_FILTER>(radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::IF_FILTER_150KHZ),
+menu_option_st<radio::IF_FILTER> if_filter_options[] = {
+    {radio::IFFilterNames[radio::IF_FILTER_AUTO], radio::IF_FILTER_AUTO},
+    {radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::IF_FILTER_3KHZ},
+    {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::IF_FILTER_15KHZ},
+    {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::IF_FILTER_150KHZ},
 };
 
 const char *colorNames[] = {"Black",        "Grey darker", "Grey dark", "Grey ligh", "White",  "Navy",     "Green dark", "Cyan dark",
                             "Maroon",       "Olive",       "Blue",      "Green",     "Red",    "Magenta",  "Yellow",     "Orange",
                             "Green-yellow", "Pink",        "Brown",     "Gold",      "Silver", "Sky blue", "Violet"};
 
-prompt *colorValues[23] = {
-    new Menu::menuValue<uint16_t>(colorNames[0], C565_BLACK),        new Menu::menuValue<uint16_t>(colorNames[1], C565_GREY_DARKER),
-    new Menu::menuValue<uint16_t>(colorNames[2], C565_GREY_DARK),    new Menu::menuValue<uint16_t>(colorNames[3], C565_GREY_LIGHT),
-    new Menu::menuValue<uint16_t>(colorNames[4], C565_WHITE),        new Menu::menuValue<uint16_t>(colorNames[5], C565_NAVY),
-    new Menu::menuValue<uint16_t>(colorNames[6], C565_GREEN_DARK),   new Menu::menuValue<uint16_t>(colorNames[7], C565_CYAN_DARK),
-    new Menu::menuValue<uint16_t>(colorNames[8], C565_MAROON),       new Menu::menuValue<uint16_t>(colorNames[9], C565_OLIVE),
-    new Menu::menuValue<uint16_t>(colorNames[10], C565_BLUE),        new Menu::menuValue<uint16_t>(colorNames[11], C565_GREEN),
-    new Menu::menuValue<uint16_t>(colorNames[12], C565_RED),         new Menu::menuValue<uint16_t>(colorNames[13], C565_MAGENTA),
-    new Menu::menuValue<uint16_t>(colorNames[14], C565_YELLOW),      new Menu::menuValue<uint16_t>(colorNames[15], C565_ORANGE),
-    new Menu::menuValue<uint16_t>(colorNames[16], C565_GREENYELLOW), new Menu::menuValue<uint16_t>(colorNames[17], C565_PINK),
-    new Menu::menuValue<uint16_t>(colorNames[18], C565_BROWN),       new Menu::menuValue<uint16_t>(colorNames[19], C565_GOLD),
-    new Menu::menuValue<uint16_t>(colorNames[20], C565_SILVER),      new Menu::menuValue<uint16_t>(colorNames[21], C565_SKYBLUE),
-    new Menu::menuValue<uint16_t>(colorNames[22], C565_VIOLET),
+namespace Menu {
+template class optionsPrompt<uint16_t>;
+
+menu_option_st<uint16_t> color_options[] = {
+    {"   ", C565_BLACK, C565_BLACK, C565_BLACK},
+    {"   ", C565_GREY_DARKER, C565_GREY_DARKER, C565_GREY_DARKER},
+    {"   ", C565_GREY_DARK, C565_GREY_DARK, C565_GREY_DARK},
+    {"   ", C565_GREY_LIGHT, C565_GREY_LIGHT, C565_GREY_LIGHT},
+    {"   ", C565_WHITE, C565_WHITE, C565_WHITE},
+    {"   ", C565_NAVY, C565_NAVY, C565_NAVY},
+    {"   ", C565_GREEN_DARK, C565_GREEN_DARK, C565_GREEN_DARK},
+    {"   ", C565_CYAN_DARK, C565_CYAN_DARK, C565_CYAN_DARK},
+    {"   ", C565_MAROON, C565_MAROON, C565_MAROON},
+    {"   ", C565_OLIVE, C565_OLIVE, C565_OLIVE},
+    {"   ", C565_BLUE, C565_BLUE, C565_BLUE},
+    {"   ", C565_GREEN, C565_GREEN, C565_GREEN},
+    {"   ", C565_RED, C565_RED, C565_RED},
+    {"   ", C565_MAGENTA, C565_MAGENTA, C565_MAGENTA},
+    {"   ", C565_YELLOW, C565_YELLOW, C565_YELLOW},
+    {"   ", C565_ORANGE, C565_ORANGE, C565_ORANGE},
+    {"   ", C565_GREENYELLOW, C565_GREENYELLOW, C565_GREENYELLOW},
+    {"   ", C565_PINK, C565_PINK, C565_PINK},
+    {"   ", C565_BROWN, C565_BROWN, C565_BROWN},
+    {"   ", C565_GOLD, C565_GOLD, C565_GOLD},
+    {"   ", C565_SILVER, C565_SILVER, C565_SILVER},
+    {"   ", C565_SKYBLUE, C565_SKYBLUE, C565_SKYBLUE},
+    {"   ", C565_VIOLET, C565_VIOLET, C565_VIOLET},
 };
 
-prompt *repeaterValues[] = {
-    new Menu::menuValue<radio::RPT_MODE>(radio::repeaterNames[radio::RPT_MODE_OFF], radio::RPT_MODE_OFF),
-    new Menu::menuValue<radio::RPT_MODE>(radio::repeaterNames[radio::RPT_MODE_POSITIVE], radio::RPT_MODE_POSITIVE),
-    new Menu::menuValue<radio::RPT_MODE>(radio::repeaterNames[radio::RPT_MODE_NEGATIVE], radio::RPT_MODE_NEGATIVE),
-};
+} // namespace Menu
 
-result changeRepeater(eventMask e) { // Update repeater mode
-    radio::update_freq();
-    return proceed;
-}
+menu_option_st<radio::RPT_MODE> rpt_mode_options[] = {{radio::repeaterNames[radio::RPT_MODE_OFF], radio::RPT_MODE_OFF},
+                                                      {radio::repeaterNames[radio::RPT_MODE_POSITIVE], radio::RPT_MODE_POSITIVE},
+                                                      {radio::repeaterNames[radio::RPT_MODE_NEGATIVE], radio::RPT_MODE_NEGATIVE}};
 
-Menu::select<radio::BAND> &bandMenu =
-    *new Menu::select<radio::BAND>("Band", config.band, sizeof(bandValues) / sizeof(prompt *), bandValues, changeBand, exitEvent);
+template <typename T> void open_option_buttons(menu_options_t<T> options, const char *title, T &value, uint16_t size, std::function<void(T)> on_select) {
 
-result changeFilter(eventMask e) { // synchronize current filter and config.filter, which is changed in the menu
+    view_manager::optionButtonsView.clear();
 
-    radio::filter = radio::BAND_NONE; // reset current applied filter
-    main_board::set_filter();
+    const auto fn = [&value, options, on_select](uint16_t index) {
+        view_manager::optionButtonsView.set_visible(false);
 
-    return proceed;
-}
+        value = options[index].value;
+        if (on_select) {
+            on_select(value);
+        }
+    };
 
-Menu::select<uint8_t> &filterMenu =
-    *new Menu::select<uint8_t>("Frontend filter", config.filter, sizeof(bandValues) / sizeof(prompt *), bandValues, changeFilter, exitEvent);
+    for (int i = 0; i < size; i++) {
+        menu_option_st<T> option = options[i];
 
-result changeIFFilter(eventMask e) { // syncronize current filter and config.filter, which is changed in the menu
-
-    if (!ISTX) {
-        // While transmitting, the filter is automatically set
-        main_board::set_if_filter(config.if_filter);
-        radio::update_freq();
+        view_manager::optionButtonsView.add_item(option.name, nullptr, value == option.value, option.fg_color, option.bg_color);
+        view_manager::optionButtonsView.on_select = fn;
     }
+    view_manager::optionButtonsView.set_title(title);
+    view_manager::push(&view_manager::optionButtonsView);
+}
+
+template <typename T>
+optionsPrompt<T>::optionsPrompt(const char *text, menu_options_t<T> options, T &value, size_t size, std::function<void(T)> on_select, eventMask e, styles s,
+                                systemStyles ss)
+    : prompt(text, static_cast<action>([](Menu::eventMask, Menu::navNode &, Menu::prompt &item) {
+                 optionsPrompt<T> prompt = static_cast<optionsPrompt<T> &>(item);
+                 open_option_buttons<T>(prompt.options, item.getText(), prompt.value, prompt.size, [prompt](T m) { prompt.on_select(m); });
+                 return proceed;
+             }),
+             e, s, ss),
+      value(value), options(options), size(size), on_select(on_select) {}
+
+/************************** */
+//   END NEW MENU DEFINITIOS
+/***************************/
+
+optionsPrompt<MODULATION_MODE> modulationMenu((const char *)"Modulation", modulation_options, config.modulation,
+                                              sizeof(modulation_options) / sizeof(modulation_options[0]),
+                                              [](MODULATION_MODE v) { main_board::setModulationMode(v, true); });
+
+optionsPrompt<radio::BAND> bandMenu((const char *)"Band", band_options, config.band, sizeof(band_options) / sizeof(band_options[0]),
+                                    [](radio::BAND) { radio::set_band(); });
+
+result changeRepeater(eventMask) { // Update repeater mode
 
     return proceed;
 }
 
-result set_squelch(eventMask e) {
+optionsPrompt<radio::BAND> filterMenu((const char *)"Frontend filter", band_options, config.filter, sizeof(band_options) / sizeof(band_options[0]),
+                                      [](radio::BAND) {
+                                          radio::filter = radio::BAND_NONE; // reset current applied filter
+                                          main_board::set_filter();
+                                      });
+
+optionsPrompt<radio::IF_FILTER> IFFilterMenu((const char *)"IF filter", if_filter_options, config.if_filter,
+                                             sizeof(if_filter_options) / sizeof(if_filter_options[0]), [](radio::IF_FILTER) {
+                                                 if (!ISTX) {
+                                                     // While transmitting, the filter is automatically set
+                                                     main_board::set_if_filter(config.if_filter);
+                                                     radio::update_freq();
+                                                 }
+                                             });
+
+optionsPrompt<radio::RPT_MODE> repeaterMenu((const char *)"Repeater mode", rpt_mode_options, config.repeater_mode,
+                                            sizeof(rpt_mode_options) / sizeof(rpt_mode_options[0]), [](radio::RPT_MODE) { radio::update_freq(); });
+
+result set_squelch(eventMask) {
     sstrength::set_squelch(config.squelch_level);
     return proceed;
 }
-
-Menu::select<radio::IF_FILTER> &IFFilterMenu =
-    *new Menu::select<radio::IF_FILTER>("IF Filter", config.if_filter, sizeof(IFFilterValues) / sizeof(prompt *), IFFilterValues, changeIFFilter, exitEvent);
 
 TOGGLE(config.squelch_auto, autoSquelch, "Squelch Auto: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
@@ -154,21 +183,17 @@ TOGGLE(config.agc_enabled, enableAGCToggleMenu, "AGC: ", doNothing, noEvent, noS
        ,
        VALUE("Enabled", true, changeAGCEnabled, noEvent), VALUE("Disabled", false, changeAGCEnabled, noEvent))
 
-Menu::select<radio::RPT_MODE> &repeaterMenu = *new Menu::select<radio::RPT_MODE>(
-    "Repeater mode", config.repeater_mode, sizeof(repeaterValues) / sizeof(prompt *), repeaterValues, changeRepeater, exitEvent);
-
-MENU(menuTune, "Tune", doNothing, anyEvent, noStyle, SUBMENU(modulationMenu), SUBMENU(bandMenu), SUBMENU(filterMenu), SUBMENU(IFFilterMenu),
-     SUBMENU(enableAGCToggleMenu), SUBMENU(autoSquelch), FIELD(config.squelch_level, "Squelch", "S", -0, 10, 1, 0.1, set_squelch, exitEvent, noStyle),
-     SUBMENU(repeaterMenu),
+MENU(menuTune, "Tune", doNothing, anyEvent, noStyle, OBJ(modulationMenu), OBJ(bandMenu), OBJ(filterMenu), OBJ(IFFilterMenu), SUBMENU(enableAGCToggleMenu),
+     SUBMENU(autoSquelch), FIELD(config.squelch_level, "Squelch", "S", -0, 10, 1, 0.1, set_squelch, exitEvent, noStyle), OBJ(repeaterMenu),
      altFIELD(engPlaces<3>::menuField, config.repeater_offset, "Repeater offset: ", "kHz.", 0, 100000, 10000, 10000, changeRepeater, exitEvent, noStyle),
      EXIT("<Back"));
 
-result changeHPAEnabled(eventMask e) {
+result changeHPAEnabled(eventMask) {
     main_board::update();
     return proceed;
 }
 
-result changeAutoSquelch(eventMask e) {
+result changeAutoSquelch(eventMask) {
 
     // Enable or disable squelch level setting
     if (config.squelch_auto) {
@@ -180,23 +205,34 @@ result changeAutoSquelch(eventMask e) {
     return proceed;
 }
 
-result changeAGCEnabled(eventMask e) {
+result changeAGCEnabled(eventMask) {
     main_board::update();
     return proceed;
 }
 
-prompt *driveStrengthValues[] = {new Menu::menuValue<LO_POWER>("Low (-4 dBm)", LO_POWER_LOW), new Menu::menuValue<LO_POWER>("Medium (0 dBm)", LO_POWER_MEDIUM),
-                                 new Menu::menuValue<LO_POWER>("High (4 dBm)", LO_POWER_HIGH)
+menu_option_st<LO_POWER> lo_power_options[] = {{"Low (-4 dBm)", LO_POWER_LOW}, {"Medium (0 dBm)", LO_POWER_MEDIUM}, {"High (4 dBm)", LO_POWER_HIGH}
 
 };
 
-prompt *frontendPathValues[] = {new Menu::menuValue<radio::FRONTEND_PATH>("Attenuator (-10 dB)", radio::FRONTEND_PATH_ATT),
-                                new Menu::menuValue<radio::FRONTEND_PATH>("Pass-thru (0 dB)", radio::FRONTEND_PATH_THRU),
-                                new Menu::menuValue<radio::FRONTEND_PATH>("LNA (20 dB)", radio::FRONTEND_PATH_LNA)
+menu_option_st<radio::FRONTEND_PATH> frontend_path_options[] = {
+    {"Attenuator (-10 dB)", radio::FRONTEND_PATH_ATT}, {"Pass-thru (0 dB)", radio::FRONTEND_PATH_THRU}, {"LNA (20 dB)", radio::FRONTEND_PATH_LNA}
 
 };
 
-prompt *loInjectionValues[] = {new Menu::menuValue<LO_INJECTION>("LO", LOW_SIDE), new Menu::menuValue<LO_INJECTION>("HIGH", HIGH_SIDE)};
+optionsPrompt<LO_POWER> driveStrength1stLOMenu((const char *)"1st LO drive", lo_power_options, config.lo_drive_strength_0,
+                                               sizeof(lo_power_options) / sizeof(lo_power_options[0]), [](LO_POWER) { change_drive_strength = true; });
+
+optionsPrompt<LO_POWER> driveStrength2ndLOMenu((const char *)"2nd LO drive", lo_power_options, config.lo_drive_strength_1,
+                                               sizeof(lo_power_options) / sizeof(lo_power_options[0]), [](LO_POWER) { change_drive_strength = true; });
+
+radio::FRONTEND_PATH frontend_path = config.frontend_path;
+optionsPrompt<radio::FRONTEND_PATH> frontendPathMenu((const char *)"Frontend", frontend_path_options, frontend_path,
+                                                     sizeof(frontend_path_options) / sizeof(frontend_path_options[0]), [](radio::FRONTEND_PATH) {
+                                                         config.frontend_path = frontend_path;
+                                                         main_board::update();
+                                                     });
+
+menu_option_st<LO_INJECTION> lo_injection_options[] = {{"LO", LOW_SIDE}, {"HIGH", HIGH_SIDE}};
 
 TOGGLE(config.hpa_enabled, enableHPAToggleMenu, "HPA: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
@@ -206,39 +242,20 @@ TOGGLE(config.debug, debugToggleMenu, "Debug: ", doNothing, noEvent, noStyle //,
        ,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent))
 
-Menu::select<LO_INJECTION> &loSideInjectionMenu =
-    *new Menu::select<LO_INJECTION>("Preferred LO inj. side", config.lo_injection, sizeof(loInjectionValues) / sizeof(prompt *), loInjectionValues);
+optionsPrompt<LO_INJECTION> loSideInjectionMenu((const char *)"Preferred LO inj. side", lo_injection_options, config.lo_injection,
+                                                sizeof(lo_injection_options) / sizeof(lo_injection_options[0]),
+                                                [](LO_INJECTION) { change_drive_strength = true; });
 
-result changeDriveStrength(eventMask e) {
-    change_drive_strength = true;
-    return proceed;
-}
-
-result changeCalibration(eventMask e) {
+result changeCalibration(eventMask) {
     change_calibration = true;
     return proceed;
 }
 
-result changeCouplerOffset(eventMask e) {
+result changeCouplerOffset(eventMask) {
     rf_coupler::set_offset(config.coupler_0db_mv);
     return proceed;
 }
 
-radio::FRONTEND_PATH frontend_path = config.frontend_path;
-result updateRadio(eventMask e) {
-    config.frontend_path = frontend_path;
-    main_board::update();
-    return proceed;
-}
-
-Menu::select<LO_POWER> &driveStrength1stLOMenu = *new Menu::select<LO_POWER>(
-    "1st LO drive", config.lo_drive_strength_0, sizeof(driveStrengthValues) / sizeof(prompt *), driveStrengthValues, changeDriveStrength, exitEvent);
-
-Menu::select<LO_POWER> &driveStrength2ndLOMenu = *new Menu::select<LO_POWER>(
-    "2nd LO drive", config.lo_drive_strength_1, sizeof(driveStrengthValues) / sizeof(prompt *), driveStrengthValues, changeDriveStrength, exitEvent);
-
-Menu::select<radio::FRONTEND_PATH> &frontendPathMenu = *new Menu::select<radio::FRONTEND_PATH>(
-    "Frontend", frontend_path, sizeof(frontendPathValues) / sizeof(prompt *), frontendPathValues, updateRadio, exitEvent);
 #if ENABLE_RTC
 
 RTC_TimeTypeDef time;
@@ -257,9 +274,9 @@ PADMENU(timeMenu, "Time", setTime, updateEvent, noStyle, FIELD(time.Hours, "", "
 #endif
 
 MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), SUBMENU(enableHPAToggleMenu),
-     FIELD(config.max_power_dbm, "HPA power limit", "dBm.", 0, 50, 1, 0, doNothing, exitEvent, wrapStyle), SUBMENU(frontendPathMenu),
-     FIELD(config.coupler_0db_mv, "Coupler 0 dB offset", "mV.", 0, 5000, 5, 0, changeCouplerOffset, exitEvent, wrapStyle), SUBMENU(driveStrength1stLOMenu),
-     SUBMENU(driveStrength2ndLOMenu), SUBMENU(loSideInjectionMenu),
+     FIELD(config.max_power_dbm, "HPA power limit", "dBm.", 0, 50, 1, 0, doNothing, exitEvent, wrapStyle), OBJ(frontendPathMenu),
+     FIELD(config.coupler_0db_mv, "Coupler 0 dB offset", "mV.", 0, 5000, 5, 0, changeCouplerOffset, exitEvent, wrapStyle), OBJ(driveStrength1stLOMenu),
+     OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu),
      altFIELD(engPlaces<3>::menuField, config.f_1st_if, "1st. IF Frequency", "kHz.", 0, 100000000, 1000, 10000, changeCalibration, exitEvent, noStyle),
      altFIELD(engPlaces<3>::menuField, config.f_if_fm_tx, "FM IF TX Frequency", "kHz.", 0, 100000000, 1000, 10000, changeCalibration, exitEvent, noStyle),
      FIELD(config.f_correction, "LO Ref. Correction", "Hz.", -1000000, 1000000, 10, 1, changeCalibration, exitEvent, wrapStyle),
@@ -295,7 +312,7 @@ const char *constMEM digit MEMMODE = "0123456789";
 const char *constMEM digitMask[] MEMMODE = {digit, digit, digit, ","};
 
 // A function to save the edited data record
-result saveTarget(eventMask e, navNode &nav) {
+result saveTarget(eventMask, navNode &nav) {
     trace(MENU_DEBUG_OUT << "saveTarget" << endl);
     navNode &nn = nav.root->path[nav.root->level - 1];
     idx_t n = nn.sel; // get selection of previous level
@@ -351,7 +368,7 @@ template <typename T> result numberPrompt<T>::eventHandler(eventMask e, navNode 
     return proceed;
 }
 
-result edit_freq_name(eventMask e, navNode &nav) {
+result edit_freq_name(eventMask, navNode &) {
 
     view_manager::keyboardView.set_text(tempFreqMem.name);
     view_manager::keyboardView.set_label("Name");
@@ -361,7 +378,7 @@ result edit_freq_name(eventMask e, navNode &nav) {
     return proceed;
 }
 
-result edit_freq(eventMask e, navNode &nav) {
+result edit_freq(eventMask, navNode &) {
     view_manager::keypadView.set_value(tempFreqMem.freq, 0, "Hz", "Frequency");
     view_manager::keypadView.on_changed = [](double v) {
         tempFreqMem.freq = v;
@@ -373,15 +390,16 @@ result edit_freq(eventMask e, navNode &nav) {
     return proceed;
 }
 
-Menu::select<MODULATION_MODE> &freqMemModulationMenu =
-    *new Menu::select<MODULATION_MODE>("Modulation", tempFreqMem.mode, sizeof(modulationValues) / sizeof(prompt *), modulationValues, updateRadio, exitEvent);
+// Menu::select<MODULATION_MODE> &freqMemModulationMenu =
+//     *new Menu::select<MODULATION_MODE>("Modulation", tempFreqMem.mode, sizeof(modulationValues) / sizeof(prompt *), modulationValues, updateRadio,
+//     exitEvent);
 
 labelPrompt freqNameMenu((const char *)"Name", tempFreqMem.name, edit_freq_name, enterEvent, noStyle);
 labelPrompt freqEditMenu((const char *)"Frequency", tempFreqBuf, edit_freq, enterEvent, noStyle);
 
 // If you want to print the data record name as the title,
 // then you MUST create a customized print menu to replace this default one
-MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqNameMenu), SUBMENU(freqMemModulationMenu), OBJ(freqEditMenu),
+MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqNameMenu), OBJ(modulationMenu), OBJ(freqEditMenu),
      OP("Save", saveTarget, enterEvent), EXIT("<Back"));
 
 // Custom frequency memory menu

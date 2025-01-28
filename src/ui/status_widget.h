@@ -23,8 +23,8 @@ class StatusWidget : public View {
 
     Button btnModulation{{0, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
     Button btnFrontend{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
-    Button btnLeft{{0, 0, BTN_WIDTH - 1, area.height}, display, "<-", C565_BLACK};
-    Button btnRight{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.height}, display, "->", C565_BLACK};
+    Button btnLeft{{0, 0, BTN_WIDTH - 1, area.height}, display, "<", C565_BLACK};
+    Button btnRight{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.height}, display, ">", C565_BLACK};
     Button btnAgc{{BTN_WIDTH * 2, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
     Button btnBand{{BTN_WIDTH * 3, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
     Button btnFilter1{{BTN_WIDTH * 4, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};

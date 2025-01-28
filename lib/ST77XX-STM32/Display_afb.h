@@ -65,6 +65,14 @@
 #define C565_VIOLET 0x6828
 #define C565_TRANSPARENT 0xFFFE
 
+#define C565_TEXT_FG C565_BLACK
+#define C565_TEXT_FG_DISABLED C565_GREY_LIGHT
+#define C565_TEXT_FG_FOCUS C565_BLACK
+#define C565_TEXT_BG C565_TRANSPARENT
+#define C565_BG C565_GREY_LIGHT
+#define C565_BG_DISABLED C565_GREY_DARK
+#define C565_BG_FOCUS C565_WHITE
+
 #define RGB888_TO_RGB565(rgb) ((((rgb >> 19) & 0x1f) << 11) | (((rgb >> 10) & 0x3f) << 5) | (((rgb >> 3) & 0x1f)))
 
 #define SWAP_BYTES(w) (uint16_t)(w >> 8 | w << 8)
@@ -232,12 +240,14 @@ class Display {
 
     void setWrapText(bool wrap_text);
 
+    void set_trim_enabled(bool b);
+
     uint16_t current_line = 0;
     uint16_t chunk_height = 0;
     uint16_t current_last_line = 0;
     volatile bool DMAHalfTransferCompleted = false;
-    volatile bool busy = false;
-    volatile bool drawing = false;
+    bool busy = false;
+    bool drawing = false;
     bool use_dma = true;
 
   protected:
@@ -248,6 +258,7 @@ class Display {
   private:
     bool enabled = true;
     bool wrap_text = true;
+    bool trim_enabled = true;
     uint16_t ox = 0; // offset x
     uint16_t oy = 0; // offset y
     uint16_t ow = 0; // offset width
