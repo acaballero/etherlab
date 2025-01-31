@@ -39,6 +39,8 @@ class Button : public Widget {
 
     void on_focus() override;
 
+    void on_blur() override;
+
     bool on_input(const st_inputEvent event) override;
 
     uint16_t get_fg() const;
@@ -57,7 +59,10 @@ class Button : public Widget {
 
     void set_shadow(uint16_t shadow);
 
+    // START Painter overrides
     void paint_callback() override;
+
+    // END Painter overrides
 
     ButtonStyle get_style() const;
 

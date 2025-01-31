@@ -24,7 +24,7 @@ TitleBarWidget::TitleBarWidget(const Rect &parentRect, Display *display) : Widge
 void TitleBarWidget::paint_callback() {
 
     FontDef *font = (FontDef *)&Font_Tiny8x8;
-    uint8_t margin = (area.height - font->height) / 2;
+    uint8_t margin = (area.box.height - font->height) / 2;
     uint16_t color = C565_BLACK;
     char buff[20];
 

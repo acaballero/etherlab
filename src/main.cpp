@@ -192,6 +192,8 @@ int main() {
 
     while (1) {
 
+        printf_("hello\n");
+
         if (standby::power_mode == standby::POWER_MODE_ON) {
 
             if (change_drive_strength) {
@@ -260,7 +262,6 @@ void TIM3_IRQHandler(void) {
 }
 
 #if SWO_ENABLED
-
 /*
  * Enables sending printf / puts strings through the SWO pin when a debugger is
  * attached If a debugger is present, it should enable ITM on the target,

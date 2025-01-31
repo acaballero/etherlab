@@ -21,11 +21,11 @@ class RadioStatusWidget : public View {
 
     uint16_t fg_color, bg_color, dimm_color;
 
-    Label lblMode{{0, 0, area.width / 2 - 1, btn_height - 1}};
-    
-    Button btnVFO{{area.width / 2 + 1, 0, area.width / 2 - 1, btn_height - 1}, &lcd, "", C565_BLACK};
-    Button btnSquelch{{area.width / 2 + 1, btn_height, area.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
-    Button btnGain{{0, btn_height, area.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
+    Label lblMode{{0, 0, area.box.width / 2 - 1, btn_height - 1}};
+
+    Button btnVFO{{area.box.width / 2 + 1, 0, area.box.width / 2 - 1, btn_height - 1}, &lcd, "", C565_BLACK};
+    Button btnSquelch{{area.box.width / 2 + 1, btn_height, area.box.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
+    Button btnGain{{0, btn_height, area.box.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
 
     char buf[20];
 

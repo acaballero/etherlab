@@ -31,8 +31,9 @@ void FFTWidget::draw_bandwidth() {
     bm_e = bm_e > (FFT_ZONE_WIDTH - 1) ? (FFT_ZONE_WIDTH - 1) : bm_e;
 
     for (uint16_t i = bm_s; i <= bm_e; i++) {
-        if (i != bm_m)
+        if (i != bm_m) {
             display->writeVertLine(i, 0, FFT_HEIGHT - 1, SWAP_BYTES(RGB888_TO_RGB565(0x333333)));
+        }
     }
 
     display->writeVertLine(bm_m, 0, FFT_HEIGHT - 1, C565_GREY_DARK);

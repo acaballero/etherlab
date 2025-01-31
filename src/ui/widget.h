@@ -8,6 +8,7 @@
 #include "../../lib/printf/printf.h"
 #include "lcd.h"
 #include <vector>
+#include <printf.h>
 
 enum Align { ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER };
 
@@ -49,6 +50,8 @@ class Widget : public Painter {
 
     void hidden(bool hide);
 
+    // Before paint hook for pre-paint preparation
+    virtual void before_paint() = 0;
     virtual void paint();
 
     virtual void on_show(){};
@@ -56,6 +59,8 @@ class Widget : public Painter {
     virtual void on_hide(){};
 
     virtual void on_focus(){};
+
+    virtual void on_blur(){};
 
     virtual bool on_input(const st_inputEvent event);
 
@@ -138,8 +143,6 @@ class Widget : public Painter {
     void set_area();
 
     void update_overlaps();
-
-    virtual void before_paint() = 0;
 };
 
 #endif /*__WIDGET_H__*/

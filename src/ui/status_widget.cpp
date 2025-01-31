@@ -173,21 +173,3 @@ void StatusWidget::before_paint() {
         }
     }
 }
-
-void StatusWidget::paint_callback() {
-
-    display->clear();
-
-    for (const auto child : this->children()) {
-        if (child->visible()) {
-            uint16_t top = child->parent_rect().top();
-            uint16_t left = child->parent_rect().left();
-            uint16_t height = child->parent_rect().height();
-            uint16_t width = child->parent_rect().width();
-
-            display->setOffset(left, top, width, height);
-            child->paint_callback();
-            display->clearOffset();
-        }
-    }
-}

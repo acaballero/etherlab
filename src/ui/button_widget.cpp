@@ -25,7 +25,6 @@ void Button::before_paint() {
 void Button::paint_callback() {
 
     uint16_t fg = fg_color, bg = bg_color;
-    display->clear();
 
     if (!enabled()) {
         fg = fg_disabled_color, bg = bg_disabled_color;
@@ -44,6 +43,7 @@ void Button::paint_callback() {
         display->writeRect(0, parent_rect().height() - 2, parent_rect().width() - 1, parent_rect().height() - 1, shadow);
         display->fill(1, 1, parent_rect().width() - 1, parent_rect().height() - 2, bg);
     } else {
+        display->clear();
         display->setColor(bg);
         display->drawRoundedRectangle(0, 0, parent_rect().width(), parent_rect().height(), 3, true);
     }
@@ -65,14 +65,16 @@ void Button::paint_callback() {
         if (two_lines) {
 
             uint16_t w = (vw + uw) * font->width;
-            uint16_t xlabel = (parent_rect().width() - lw * font->width) / 2;
-            uint16_t xval = (parent_rect().width() - w) / 2;
-            uint16_t ylabel = (parent_rect().height() - (font->height + 1) * 2) / 2;
+            uint16_t xlabel = (parent_rect().width() - lw * font->width) >> 1;
+            uint16_t xval = (parent_rect().width() - w) >> 1;
+            uint16_t ylabel = (parent_rect().height() - ((font->height + 1) << 1)) >> 1;
             uint16_t yval = ylabel + font->height + 3;
             display->gotoXY(xlabel, ylabel);
             display->print(text);
-            display->gotoXY(xval, yval);
-            display->print("", value, unit, fg, fg_color_value, fg_color_unit);
+            if (vw) {
+                display->gotoXY(xval, yval);
+                display->print("", value, unit, fg, fg_color_value, fg_color_unit);
+            }
 
         } else {
 
@@ -85,23 +87,36 @@ void Button::paint_callback() {
             int16_t x;
 
             if (align == ALIGN_CENTER) {
-                x = (parent_rect().width() - width) / 2;
+                x = (parent_rect().width() - width) >> 1;
             } else if (align == ALIGN_RIGHT) {
                 x = parent_rect().width() - width - display->get_padding_x();
             } else {
                 x = display->get_padding_x();
             }
 
-            display->gotoXY(x, (parent_rect().height() - font->height + 2) / 2);
-            display->print(text, value, unit, fg, fg_color_value, fg_color_unit);
+            display->gotoXY(x, (parent_rect().height() - font->height + 2) >> 1);
+            if (vw) {
+                display->print(text, value, unit, fg, fg_color_value, fg_color_unit);
+            } else {
+                display->print(text);
+            }
         }
     }
+}
+
+void Button::on_blur() {
+    // Paint immediatelly
+    paint();
+    set_clean();
 }
 
 void Button::on_focus() {
     if (on_highlight) {
         on_highlight(*this);
     }
+    // Paint immediatelly
+    paint();
+    set_clean();
 }
 
 bool Button::on_input(const st_inputEvent event) {

@@ -16,6 +16,10 @@
 #include <stdint.h>
 
 void View::paint_callback() {
+
+    bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
+    Box offset = display->getOffset();
+
     display->clear();
 
     // To prevent flickr we have to paint all the children in the callback loop.
@@ -26,32 +30,32 @@ void View::paint_callback() {
     // we can spare from calling children's callback if we draw the background just once (don't set dirty every before_paint)
     // There will be one flickr, but that's all
 
-    // For the time being, we won't take care here of the case in which we need to paint the childrens and let
-    // the particular View realization which requires it to do it.
+    for (const auto child : this->children()) {
+        if (child->visible()) {
+            uint16_t top = child->parent_rect().top();
+            uint16_t left = child->parent_rect().left();
+            uint16_t height = child->parent_rect().height();
+            uint16_t width = child->parent_rect().width();
 
-    // One aditional problem is that there's not enouth time to draw here all the widgets in a half-DMA phase
-    //  for (const auto child : this->children()) {
-    //     if (child->visible()) {
-    //         uint16_t top = child->screen_rect().top();
-    //         uint16_t left = child->screen_rect().left();
-    //         uint16_t height = child->screen_rect().height();
-    //         uint16_t width = child->screen_rect().width();
+            // top = top ? top - 1 : 0;
 
-    //         top = top ? top - 1 : 0;
+            if (!apply_pad) {
+                top += DISPLAY_PADDING;
+                left += DISPLAY_PADDING;
+            }
 
-    //         bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
-    //         if (!apply_pad) {
-    //              top += DISPLAY_PADDING;
-    //              left += DISPLAY_PADDING;
-    //         }
+            // Add current offset
+            left += offset.x;
+            top += offset.y;
 
-    //         if (top <= display->current_line && top + height > display->current_line) {
-    //             display->setOffset(left, top, width, height);
-    //             child->paint_callback();
-    //             display->clearOffset();
-    //         }
-    //     }
-    // }
+            if (display->current_line <= top + height - 1 && display->current_last_line >= top) {
+                display->setOffset({left, top, width, height});
+                child->paint_callback();
+            }
+        }
+    }
+
+    display->setOffset(offset);
 }
 
 void View::set_parent_rect(Rect r) {
@@ -64,16 +68,23 @@ void View::set_parent_rect(Rect r) {
 
 void View::paint() {
 
-    if (this->flags.visible) {
-        Widget::paint();
+    if (this->visible()) {
+        before_paint();
 
         if (this->dirty()) {
 
-            // Force-paint all children.
             for (const auto child : this->children()) {
                 if (child->visible()) {
                     child->set_dirty();
-                    child->paint();
+                    child->before_paint();
+                }
+            }
+
+            bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
+            display->drawArea(&this->area, this, apply_pad);
+
+            for (const auto child : this->children()) {
+                if (child->visible()) {
                     child->set_clean();
                 }
             }

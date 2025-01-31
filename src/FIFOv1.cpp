@@ -17,10 +17,11 @@ void FIFOv1::reset() { this->read_ix = this->write_ix = 0; }
 
 uint16_t FIFOv1::available() {
 
-    if (this->read_ix <= this->write_ix)
+    if (this->read_ix <= this->write_ix) {
         return this->write_ix - this->read_ix;
-    else
+    } else {
         return this->size - (this->read_ix - this->write_ix);
+    }
 };
 
 uint16_t FIFOv1::available(char **dest) {

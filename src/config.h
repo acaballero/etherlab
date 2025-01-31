@@ -20,7 +20,7 @@
 #define TXMODE(mode) (mode == ANALOG_TX || mode == DIGITAL_TX)
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ISANALOG (config.mode == ANALOG_TX || config.mode == ANALOG_RX)
-#define CONFIG_VERSION "313"
+#define CONFIG_VERSION "314"
 
 struct st_vfo_config {
     unsigned long freq = 106700000UL;

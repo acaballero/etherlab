@@ -74,8 +74,9 @@ FIFO_ERROR FIFO::writeBlock(char *origin, uint32_t n) {
 inline void FIFO::feed_unsafe(uint32_t n) {
     this->write_ix += n;
     this->count += n;
-    if (this->write_ix >= this->size)
+    if (this->write_ix >= this->size) {
         this->write_ix = this->write_ix - this->size;
+    }
 }
 
 FIFO_ERROR FIFO::feed(uint32_t n) {
@@ -95,9 +96,9 @@ FIFO_ERROR FIFO::feed(uint32_t n) {
 FIFO_ERROR FIFO::consume(uint32_t n, char **dest) {
 
     uint32_t av = AVAILABLE();
-    if (av < n)
+    if (av < n) {
         return FIFO_ERROR_UNDERRUN;
-    else {
+    } else {
         *dest = this->data + this->read_ix;
         this->read_ix += n;
         if (this->read_ix >= this->size) {

@@ -48,8 +48,6 @@ class OptionButtonsView : public View {
 
     void set_show_arrows(bool b);
 
-    void paint_callback() override;
-
   private:
     int focused_button = 0;
     static constexpr int max_cols = 4;
@@ -77,7 +75,7 @@ class OptionButtonsView : public View {
     const char *display_buttons_labels[6] = {"<", ">", "", "", "", "Cancel"};
     DisplayPanelButtonsWidget display_panel_buttons = {{0, HEIGHT - STATUS_HEIGHT, WIDTH, STATUS_HEIGHT}};
 
-    bool update_focus();
+    bool update_focus(int button_index);
     void update_buttons(bool forze);
 };
 

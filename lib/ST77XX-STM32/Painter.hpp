@@ -9,9 +9,7 @@
 
 class Painter {
 
-public:
-
+  public:
     virtual void paint_callback() = 0;
-
 };
-#endif //TRX_FRONTEND_PAINTER_HPP
+#endif // TRX_FRONTEND_PAINTER_HPP

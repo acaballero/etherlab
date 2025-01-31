@@ -2,7 +2,7 @@
 // Created by Angel Dust on 17/04/2021.
 //
 
-#ifndef TRX_FRONTEND_REPLAY_WIDGET_H
+#ifndef TRX_FRONTEND_CAPTURE_WIDGET_H
 #define TRX_FRONTEND_CAPTURE_WIDGET_H
 
 #include "../../ui/widget.h"

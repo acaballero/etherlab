@@ -12,8 +12,11 @@
 #include "utils.hpp"
 #include <sys/_stdint.h>
 
-bool OptionButtonsView::update_focus() {
+bool OptionButtonsView::update_focus(int button_index) {
 
+    int current_index = focused_button;
+
+    focused_button = button_index;
     if (focused_button < 0) {
         focused_button = index - 1;
     } else if (focused_button >= index) {
@@ -38,6 +41,7 @@ bool OptionButtonsView::update_focus() {
     update_buttons(update);
 
     buttons[focused_button].set_focus(true);
+
     return true;
 }
 
@@ -51,8 +55,8 @@ bool OptionButtonsView::on_input(const st_inputEvent event) {
 
     switch (event.type) {
         case INPUT_EVENT_TYPE_ENCODER:
-            focused_button += event.value;
-            consumed = update_focus();
+
+            consumed = update_focus(focused_button + event.value);
             break;
         case INPUT_EVENT_TYPE_TOUCH_START:
 
@@ -68,12 +72,12 @@ bool OptionButtonsView::on_input(const st_inputEvent event) {
                     this->set_visible(false);
                     break;
                 case FPANEL_DISPLAY_BUTTON_1:
-                    focused_button += event.value;
-                    consumed = update_focus();
+
+                    consumed = update_focus(focused_button + event.value);
                     break;
                 case FPANEL_DISPLAY_BUTTON_2:
-                    focused_button += event.value;
-                    consumed = update_focus();
+
+                    consumed = update_focus(focused_button + event.value);
                     break;
                 case FPANEL_DISPLAY_BUTTON_3:
 
@@ -125,7 +129,7 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &)>
         index++;
 
         if (selected) {
-            update_focus();
+            update_focus(focused_button);
         } else {
             update_buttons(true);
         }
@@ -161,7 +165,7 @@ void OptionButtonsView::update_buttons(bool update_layout = false) {
 
     uint16_t height = (button_h * rows) + STATUS_HEIGHT + TITLE_HEIGHT;
     if (update_layout) {
-        set_parent_rect({0, (DISPLAY_Y_PIXELS - height) / 2, WIDTH, height});
+        set_parent_rect({0, (DISPLAY_Y_PIXELS - height - 8), WIDTH, height});
     }
 
     int page_size = cols * (rows - 1);
@@ -213,26 +217,8 @@ void OptionButtonsView::init() {
 void OptionButtonsView::on_focus() { button_close.set_focus(true); }
 
 void OptionButtonsView::before_paint() {
-    // Prevent redrawing the background but the first time
-    if (dirty()) {
-        //   set_clean();
-    }
-}
-
-void OptionButtonsView::paint_callback() {
-
-    display->clear();
-
-    for (const auto child : this->children()) {
-        if (child->visible()) {
-            uint16_t top = child->parent_rect().top();
-            uint16_t left = child->parent_rect().left();
-            uint16_t height = child->parent_rect().height();
-            uint16_t width = child->parent_rect().width();
-
-            display->setOffset(left, top, width, height);
-            child->paint_callback();
-            display->clearOffset();
-        }
+    int a = 1;
+    if (a - 2 == 0) {
+        exit(1);
     }
 }

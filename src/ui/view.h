@@ -28,7 +28,7 @@ class View : public Widget {
 
     void (*on_hide_fn)(void){};
 
-    void paint() override;
+    void paint() final;
 
   protected:
     std::vector<Widget *> children_{};
@@ -37,7 +37,7 @@ class View : public Widget {
 
     // Those methods are no longer public
 
-    void paint_callback() override;
+    void paint_callback() final;
 };
 
 #endif

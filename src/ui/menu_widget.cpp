@@ -58,7 +58,7 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                 case FPANEL_PAD_BUTTON_4: // SQuelch
                     nav.doNav(navCmd(enterCmd));
                     nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 5));
+                    nav.doNav(navCmd(idxCmd, 6));
                     break;
                 // case KEY_BACK:
                 case FPANEL_PAD_BUTTON_5:

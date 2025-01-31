@@ -15,8 +15,8 @@ PowerMeterWidget::PowerMeterWidget(Rect parent_rect, Display *display) : Widget(
 
     while (f_swr_block_size != round(f_swr_block_size) || f_dbm_block_size != round(f_dbm_block_size)) {
         // Adjust the margin so the block size is an integer number of pixels for both bars
-        f_swr_block_size = ((float)(this->area.width - margin_right - margin) / ((float)max_swr - 1.0));
-        f_dbm_block_size = ((float)(this->area.width - margin_right - margin) / (float)dbm_nblocks);
+        f_swr_block_size = ((float)(this->area.box.width - margin_right - margin) / ((float)max_swr - 1.0));
+        f_dbm_block_size = ((float)(this->area.box.width - margin_right - margin) / (float)dbm_nblocks);
         margin_right++;
     }
 

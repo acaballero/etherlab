@@ -8,8 +8,9 @@
 
 #ifndef DISPLAY_X_PIXELS
 #if USING_HORIZONAL == 0 || USING_HORIZONAL == 1
-#define DISPLAY_PADDING 10
-#define DISPLAY_X_PIXELS (480 - (DISPLAY_PADDING << 1))
+#define DISPLAY_PADDING 8
+#define DISPLAY_TOTAL_WIDTH 480
+#define DISPLAY_X_PIXELS (DISPLAY_TOTAL_WIDTH - (DISPLAY_PADDING << 1))
 #define DISPLAY_Y_PIXELS (320 - (DISPLAY_PADDING << 1))
 #else
 #define DISPLAY_X_PIXELS 240
@@ -77,10 +78,15 @@
 
 #define SWAP_BYTES(w) (uint16_t)(w >> 8 | w << 8)
 
-struct Area {
+struct Box {
 
     uint16_t x, y;
     uint16_t width, height;
+};
+
+struct Area {
+
+    Box box;
     uint16_t size = 0;
     bool show_fps;
     float fps;
@@ -145,7 +151,7 @@ class Display {
 
     uint16_t getColor();
 
-    void clear(uint16_t color = 0);
+    void clear(uint16_t color = 0x0000);
 
     void gotoXY(uint16_t x, uint16_t y);
 
@@ -171,8 +177,9 @@ class Display {
     size_t write(const uint8_t *buffer, size_t size);
 
     size_t write(const char *str) {
-        if (str == NULL)
+        if (str == NULL) {
             return 0;
+        }
         return write((const uint8_t *)str, strlen(str));
     }
 
@@ -230,7 +237,11 @@ class Display {
     bool getEnabled();
 
     // Sets the offset box, inside the current area, to which constraint the drawing
-    void setOffset(uint16_t, uint16_t, uint16_t, uint16_t);
+    void setOffset(Box r);
+
+    bool hasOffset();
+
+    Box getOffset();
 
     void clearOffset();
 
@@ -249,6 +260,8 @@ class Display {
     bool busy = false;
     bool drawing = false;
     bool use_dma = true;
+    // Display buffer area
+    Area *curr_area = 0;
 
   protected:
     static void fillCallback(Display *, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
@@ -271,7 +284,9 @@ class Display {
     uint16_t bgColor = C565_BLACK;
     uint8_t verticalSpacing = 2;
     uint16_t *curr_buffer = 0;
-    Area *curr_area = 0;
+
+    // Clipping rectangle
+    Box clip_box;
 
     virtual void writeCommand(uint8_t data) = 0;
 

@@ -17,8 +17,8 @@ void MessageWidget::paint_callback() {
     display->setVerticalLineSpacing(6);
     display->setPadding(4, 4);
 
-    display->writeRect(0, 0, area.width - 1, area.height - 1, border_color);
-    display->fill(1, 1, area.width - 1, title_font->height + 3, border_color);
+    display->writeRect(0, 0, area.box.width - 1, area.box.height - 1, border_color);
+    display->fill(1, 1, area.box.width - 1, title_font->height + 3, border_color);
 
     uint8_t pad_x = display->get_padding_x();
     uint8_t pad_y = display->get_padding_y();
@@ -36,7 +36,7 @@ void MessageWidget::paint_callback() {
     display->print(msg);
 }
 
-bool MessageWidget::on_input(const st_inputEvent event) {
+bool MessageWidget::on_input(const st_inputEvent) {
     if (visible()) {
         set_visible(false);
         display->drawArea(&this->area, this);

@@ -25,9 +25,6 @@ class DisplayPanelButtonsWidget : public View {
 
   public:
     DisplayPanelButtonsWidget(Rect parent_rect) : View(parent_rect) { init(); }
-
-    void paint_callback() override;
-
     void set_labels(const char **labels);
     Button *get_buttons();
 };

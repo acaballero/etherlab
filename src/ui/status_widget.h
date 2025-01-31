@@ -14,21 +14,19 @@ class StatusWidget : public View {
   public:
     StatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
 
-    void paint_callback() override;
-
   protected:
     st_status _status;
 
     uint16_t fg_color, fg_color_auto, bg_color, dimm_color, disabled_color, disabled_bg;
 
-    Button btnModulation{{0, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
-    Button btnFrontend{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
-    Button btnLeft{{0, 0, BTN_WIDTH - 1, area.height}, display, "<", C565_BLACK};
-    Button btnRight{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.height}, display, ">", C565_BLACK};
-    Button btnAgc{{BTN_WIDTH * 2, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
-    Button btnBand{{BTN_WIDTH * 3, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
-    Button btnFilter1{{BTN_WIDTH * 4, 0, BTN_WIDTH - 1, area.height}, display, "", C565_BLACK};
-    Button btnFilter2{{BTN_WIDTH * 5, 0, BTN_WIDTH, area.height}, display, "", C565_BLACK};
+    Button btnModulation{{0, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
+    Button btnFrontend{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
+    Button btnLeft{{0, 0, BTN_WIDTH - 1, area.box.height}, display, "<", C565_BLACK};
+    Button btnRight{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.box.height}, display, ">", C565_BLACK};
+    Button btnAgc{{BTN_WIDTH * 2, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
+    Button btnBand{{BTN_WIDTH * 3, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
+    Button btnFilter1{{BTN_WIDTH * 4, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
+    Button btnFilter2{{BTN_WIDTH * 5, 0, BTN_WIDTH, area.box.height}, display, "", C565_BLACK};
 
     char buf[20];
 

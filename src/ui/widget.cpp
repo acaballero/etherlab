@@ -113,6 +113,7 @@ void Widget::set_focus(bool v) {
         if (parent_) {
             if (v) {
                 parent_->focus(this);
+                this->set_dirty();
                 this->on_focus();
             } else {
                 // Remove focus from other children
@@ -121,7 +122,11 @@ void Widget::set_focus(bool v) {
                 }
             }
         }
-        this->set_dirty();
+
+        if (!v) {
+            this->set_dirty();
+            this->on_blur();
+        }
     }
 }
 
@@ -137,10 +142,17 @@ Widget *Widget::focused_widget() const {
 bool Widget::visible() { return this->flags.visible; }
 
 void Widget::set_visible(bool v) {
+
     if (v != flags.visible) {
 
         flags.visible = v;
         flags.dirty = v;
+
+        if (id == 100) {
+            for (int i = 0; i < 100; i++) {
+                printf_("visible:%i\n", v);
+            }
+        }
 
         set_focus(false);
 
@@ -181,12 +193,11 @@ void Widget::paint() {
 
     before_paint(); // pure virtual
 
-#if DEBUG_LCD
     if (this->dirty()) {
 
         bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
         display->drawArea(&this->area, this, apply_pad);
-
+#if DEBUG_LCD
         uint64_t t = HAL_GetTick();
         // TODO: This whole "area" thing (needed to adapt the display driver double buffering interface) is redundant (we already have the parent rect) and
         // unelegant
@@ -200,8 +211,8 @@ void Widget::paint() {
             }
         }
         this->last_refresh_ms = t;
-    }
 #endif
+    }
 }
 
 void Widget::set_font(FontDef *font) { Widget::font = font; }
@@ -217,7 +228,7 @@ void Widget::set_area() {
 
     Rect r = screen_rect();
 
-    area = {(uint16_t)r.left(), (uint16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height(), (uint16_t)(r.width() * r.height()), this->show_fps, this->fps};
+    area = {{(uint16_t)r.left(), (uint16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), this->show_fps, this->fps};
 }
 
 uint8_t Widget::get_z_index() const { return z_index; }

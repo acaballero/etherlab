@@ -5,6 +5,7 @@
 #include "waterfall_widget.h"
 #include "config.h"
 #include "fft.h"
+#include <sys/_stdint.h>
 
 #define PIXELS_BYTE 2
 
@@ -83,42 +84,56 @@ void WaterfallWidget::paint_callback() {
 
     display->clear();
 
+    // WARNING: This widget uses RAW BUFFER WRITES and makes a lot of bad things for the sake of performace
     uint16_t *buffer = display->getBuffer();
+    uint16_t buffer_width = display->curr_area->box.width;
+    uint16_t ox = display->getOffset().x;
+    uint16_t oy = display->getOffset().y;
 
-    pbyte =
-        waterfallBuffer + (this->display->current_line * (width >> 1)); // position in the buffer (we know x1 and x2 are 0 and DISPLAY_X_PIXELS  in this buffer)
-    uint8_t *pend = waterfallBuffer + ((this->display->current_last_line + 1) * (width >> 1));
+    // Last line of the waterfall display buffer to display in this paint iteration
+    uint16_t buffer_height = min2(this->size().height() + oy - 1, this->display->current_last_line) - this->display->current_line + 1;
+
+    uint16_t delta = buffer_width - width;
+
+    pbyte = waterfallBuffer + ((this->display->current_line - oy) * (width >> 1));
+
     uint8_t byte;
 
-    while (pbyte != pend) {
+    buffer += ox;
 
-        byte = *pbyte;
+    for (int y = 0; y < buffer_height; y++) {
 
-        for (uint8_t j = 0; j < PIXELS_BYTE; j++) {
+        for (int x = 0; x < (width >> 1); x++) {
 
-            colorIndex = byte & 0x000FU;
+            byte = *pbyte;
 
-            byte >>= 4;
+            for (uint8_t j = 0; j < PIXELS_BYTE; j++) {
 
-            if (show_fps) {
-                /* Black and white are forzed to be 0x0000 and 0xFFFF even if they're not in the palette, to be able to see the debug messages */
+                colorIndex = byte & 0x000FU;
 
-                if (colorIndex == 1) {
-                    b565_color = 0xFFFF;
-                } else if (colorIndex == 0) {
-                    b565_color = 0x0000;
+                byte >>= 4;
+
+                if (show_fps) {
+                    /* Black and white are forzed to be 0x0000 and 0xFFFF even if they're not in the palette, to be able to see the debug messages */
+
+                    if (colorIndex == 1) {
+                        b565_color = 0xFFFF;
+                    } else if (colorIndex == 0) {
+                        b565_color = 0x0000;
+                    } else {
+                        b565_color = waterfall_palette_rgb565[colorIndex];
+                    }
                 } else {
                     b565_color = waterfall_palette_rgb565[colorIndex];
                 }
-            } else {
-                b565_color = waterfall_palette_rgb565[colorIndex];
+
+                *(buffer++) = b565_color;
             }
 
-            // display->setPixel(x, y, b565_color); // too slow
-            *(buffer++) = b565_color;
+            pbyte++;
         }
 
-        pbyte++;
+        buffer += delta;
     }
 }
 
