@@ -3,8 +3,10 @@
 //
 
 #include "fft_ui.h"
+#include "dsp/dsp_common.h"
 #include "fft_types.h"
 #include "../../settings.h"
+#include "menuBase.h"
 #include "ui/main_view.h"
 #include "ui/menu_widget.h"
 #include "ui/menu.h"
@@ -39,15 +41,13 @@ uint16_t get_waterfall_period() { return waterfall_period; }
 
 uint8_t get_waterfall_step_size() { return waterfall_step_size; }
 
-result refresh_waterfall_params(eventMask e) { init_waterfall(); }
-
-result set_sampling_params(eventMask e) {
-    fft_config(config.fft.span);
+result refresh_waterfall_params(eventMask) {
+    init_waterfall();
     return proceed;
 }
 
-result change_spectrum_style(eventMask e) {
-    set_spectrum_style(config.fft.spectrum_style);
+result set_sampling_params(eventMask) {
+    fft_config(config.fft.span);
     return proceed;
 }
 
@@ -60,21 +60,20 @@ void set_spectrum_colors(uint16_t line, uint16_t fill) { ((FFTWidget *)view_mana
 prompt *windowValues[] = {new Menu::menuValue<FFT_WINDOW_TYPES>(fftWindowNames[FFT_WINDOW_NONE], FFT_WINDOW_NONE, doNothing, noEvent),
                           new Menu::menuValue<FFT_WINDOW_TYPES>(fftWindowNames[FFT_WINDOW_HAMMING], FFT_WINDOW_HAMMING, doNothing, noEvent)};
 
-prompt *spectrumStyleValues[] = {
-    new Menu::menuValue<FFT_SPECTRUM_STYLE>(spectrumStyleNanes[FFT_SPECTRUM_STYLE_FILL], FFT_SPECTRUM_STYLE_FILL, change_spectrum_style, Menu::updateEvent),
-    new Menu::menuValue<FFT_SPECTRUM_STYLE>(spectrumStyleNanes[FFT_SPECTRUM_STYLE_LINE], FFT_SPECTRUM_STYLE_LINE, change_spectrum_style, Menu::updateEvent),
-    new Menu::menuValue<FFT_SPECTRUM_STYLE>(spectrumStyleNanes[FFT_SPECTRUM_STYLE_LINE_FILL], FFT_SPECTRUM_STYLE_LINE_FILL, change_spectrum_style,
-                                            Menu::updateEvent)};
+Menu::menu_option_st<FFT_SPECTRUM_STYLE> spectrum_style_options[] = {{spectrumStyleNanes[FFT_SPECTRUM_STYLE_FILL], FFT_SPECTRUM_STYLE_FILL},
+                                                                     {spectrumStyleNanes[FFT_SPECTRUM_STYLE_LINE], FFT_SPECTRUM_STYLE_LINE},
+                                                                     {spectrumStyleNanes[FFT_SPECTRUM_STYLE_LINE_FILL], FFT_SPECTRUM_STYLE_LINE_FILL}};
 
 Menu::select<uint8_t> &fftWindowMenu = *new Menu::select<uint8_t>("Window", config.fft.window, sizeof(windowValues) / sizeof(prompt *), windowValues);
-
-Menu::select<FFT_SPECTRUM_STYLE> &fftStyleMenu = *new Menu::select<FFT_SPECTRUM_STYLE>(
-    "Style", config.fft.spectrum_style, sizeof(spectrumStyleValues) / sizeof(prompt *), spectrumStyleValues, change_spectrum_style, Menu::exitEvent);
 
 prompt *fftViewValues[] = {new Menu::menuValue<FFT_VIEW_MODE>("Spectrum", FFT_VIEW_SPECTRUM, doNothing, noEvent),
                            new Menu::menuValue<FFT_VIEW_MODE>("Time domain", FFT_VIEW_TIME_DOMAIN, doNothing, noEvent)};
 
 Menu::select<uint8_t> &fftViewMenu = *new Menu::select<uint8_t>("View", config.fft.view_mode, sizeof(fftViewValues) / sizeof(prompt *), fftViewValues);
+
+Menu::optionsPrompt<FFT_SPECTRUM_STYLE> fftStyleMenu((const char *)"Style", spectrum_style_options, config.fft.spectrum_style,
+                                                     sizeof(spectrum_style_options) / sizeof(spectrum_style_options[0]),
+                                                     [](FFT_SPECTRUM_STYLE s) { set_spectrum_style(s); });
 
 Menu::optionsPrompt<uint16_t> fillColorMenu((const char *)"Fill color", Menu::color_options, config.fft.spectrum_fill_color,
                                             sizeof(Menu::color_options) / sizeof(Menu::color_options[0]), [](uint16_t) { change_spectrum_colors(); });
@@ -129,13 +128,15 @@ prompt *decimationValues[] = {new Menu::menuValue<uint8_t>("1", 1), new Menu::me
 Menu::select<uint8_t> &decimationMenu =
     *new Menu::select<uint8_t>("Decimation", config.fft.max_decimation_factor, sizeof(decimationValues) / sizeof(prompt *), decimationValues);
 
-MENU(fftSamplingMenu, "Sampling", doNothing, anyEvent, noStyle,
-     FIELD(config.fft.max_sample_rate, "Max sample rate", "Hz.", FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 0, doNothing, noEvent, noStyle),
-     FIELD(config.fft.dsp_max_sample_rate, "DSP Max sample rate", "Hz.", FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 0, set_sampling_params, anyEvent,
-           noStyle),
-     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), EXIT("<Back"))
+Menu::numberPrompt<uint32_t> maxSampleRateMenu((const char *)"Max sample rate", &config.fft.max_sample_rate, 0, ' ', '.', "Hz", doNothing, FFT_MIN_SAMPLE_RATE,
+                                               ADC_MAX_SAMPLE_RATE, 10000, 25000);
+Menu::numberPrompt<uint32_t> maxDSPSampleRateMenu((const char *)"DSP min sample rate", &config.fft.dsp_max_sample_rate, 0, ' ', '.', "Hz", set_sampling_params,
+                                                  FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 25000);
+Menu::numberPrompt<uint32_t> spanMenu((const char *)"Span", &config.fft.span, 0, ' ', '.', "Hz", set_sampling_params, FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 25000);
 
-MENU(fftUIMenu, "Style", doNothing, anyEvent, noStyle, SUBMENU(fftStyleMenu), OBJ(lineColorMenu), OBJ(fillColorMenu),
+MENU(fftSamplingMenu, "Sampling", doNothing, anyEvent, noStyle, OBJ(maxSampleRateMenu), OBJ(maxDSPSampleRateMenu), OBJ(spanMenu))
+
+MENU(fftUIMenu, "Style", doNothing, anyEvent, noStyle, OBJ(fftStyleMenu), OBJ(lineColorMenu), OBJ(fillColorMenu),
      FIELD(config.fft.waterfall_pixels_per_second, "Waterfall speed", "pps", 2,
            (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 0, refresh_waterfall_params, anyEvent, noStyle),
      EXIT("<Back"));

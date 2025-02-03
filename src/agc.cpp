@@ -6,6 +6,7 @@
 #include "radio.h"
 #include "periodic_task.h"
 #include "config.h"
+#include "status.h"
 #include <hw/stm32.h>
 
 /** NOT REAL AGC. Just automatic overload gain backoff **/
@@ -48,6 +49,8 @@ int frontend_gain() {
             return 0;
         case radio::FRONTEND_PATH_LNA:
             return 20;
+        default:
+            return -100;
     }
 }
 

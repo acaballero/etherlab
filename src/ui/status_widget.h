@@ -10,6 +10,8 @@
 #include "../types.h"
 
 #define BTN_WIDTH (DISPLAY_X_PIXELS / 6)
+#define STATUS_MARGIN_TOP 2
+
 class StatusWidget : public View {
   public:
     StatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
@@ -19,14 +21,14 @@ class StatusWidget : public View {
 
     uint16_t fg_color, fg_color_auto, bg_color, dimm_color, disabled_color, disabled_bg;
 
-    Button btnModulation{{0, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
-    Button btnFrontend{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
-    Button btnLeft{{0, 0, BTN_WIDTH - 1, area.box.height}, display, "<", C565_BLACK};
-    Button btnRight{{BTN_WIDTH, 0, BTN_WIDTH - 1, area.box.height}, display, ">", C565_BLACK};
-    Button btnAgc{{BTN_WIDTH * 2, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
-    Button btnBand{{BTN_WIDTH * 3, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
-    Button btnFilter1{{BTN_WIDTH * 4, 0, BTN_WIDTH - 1, area.box.height}, display, "", C565_BLACK};
-    Button btnFilter2{{BTN_WIDTH * 5, 0, BTN_WIDTH, area.box.height}, display, "", C565_BLACK};
+    Button btnModulation{{0, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
+    Button btnFrontend{{BTN_WIDTH, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
+    Button btnLeft{{0, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "<", C565_BLACK};
+    Button btnRight{{BTN_WIDTH, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, ">", C565_BLACK};
+    Button btnAgc{{BTN_WIDTH * 2, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
+    Button btnBand{{BTN_WIDTH * 3, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
+    Button btnFilter1{{BTN_WIDTH * 4, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
+    Button btnFilter2{{BTN_WIDTH * 5, STATUS_MARGIN_TOP, BTN_WIDTH, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
 
     char buf[20];
 

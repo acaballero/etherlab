@@ -30,10 +30,6 @@ unsigned long millis();
 
 unsigned long micros();
 
-uint8_t digitalRead(uint8_t pinNumber);
-
-uint16_t analogRead(uint8_t pinNumber);
-
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -63,7 +59,7 @@ void disableTimers();
 
 void format_long(int64_t x, char *buf);
 
-void format_long(int64_t x, char *buf, uint8_t length, char thou_separator = '.');
+void format_long(int64_t x, char *buf, uint8_t length, char thou_separator = '.', int max_length = 20);
 
 int strcicmp(char const *a, char const *b);
 
@@ -73,7 +69,7 @@ void removeChars(char *str, const char *chars);
 
 float format_eng(char *dest, float value, const char *units, char *new_units);
 
-float format_eng(char *dest, float value, const char *units, char *new_units, uint8_t dec_places);
+float format_eng(char *dest, float value, const char *units, char *new_units, uint8_t dec_places, bool trailing_zero);
 
 float fasterlog2(float);
 
@@ -157,9 +153,8 @@ void printMemory();
 
 float mapFloat(float, float, float, float, float);
 
-void printDouble(double val, int precision);
-
-void printDouble(double val, int precision, bool newline);
+char *format_double(double v, char *dest, char decimal_separator = '.', char thousand_separator = ' ', uint8_t frac_digits = 8, bool trailing_zero = true,
+                    uint8_t max_length = 20);
 
 int readVcc();
 

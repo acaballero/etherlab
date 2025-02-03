@@ -5,6 +5,7 @@
 #include "keypad_view.h"
 #include "Display_afb.h"
 #include "ips_font.h"
+#include "itemsTemplates.hpp"
 #include "ui/button_widget.h"
 #include "ui/widget.h"
 #include "utils.hpp"
@@ -42,13 +43,21 @@ bool KeypadView::on_input(const st_inputEvent event) {
                     button_close.set_focus(true);
                     break;
                 case FPANEL_DISPLAY_BUTTON_1:
-                    this->on_button(button_M);
+                    if (show_multipliers) {
+                        this->on_button(button_M);
+                    } else {
+                        this->on_button(button_1);
+                    }
                     break;
                 case FPANEL_DISPLAY_BUTTON_2:
-                    this->on_button(button_K);
+                    if (show_multipliers) {
+                        this->on_button(button_K);
+                    }
                     break;
                 case FPANEL_DISPLAY_BUTTON_3:
-                    this->on_button(button_1);
+                    if (show_multipliers) {
+                        this->on_button(button_1);
+                    }
                     break;
                 case FPANEL_DISPLAY_BUTTON_5:
                     del_char();
@@ -112,7 +121,7 @@ void KeypadView::init() {
 
     button_close.on_select = [this](Button &) { this->set_visible(false); };
 
-    display_panel_buttons.set_labels(display_buttons_labels);
+    display_panel_buttons.set_labels(show_multipliers ? display_buttons_labels : display_buttons_labels_no_mult);
 }
 
 void KeypadView::on_focus() { button_close.set_focus(true); }
@@ -120,12 +129,18 @@ void KeypadView::on_focus() { button_close.set_focus(true); }
 double KeypadView::value() const {
     char b[MAX_DIGITS];
     strncpy(b, buff, MAX_DIGITS);
-    removeChars(b, " .");
-    return atof(b);
+    char *endptr;
+    removeChars(b, " ");
+    double val = strtod(b, &endptr);
+    return val;
 }
 
-void KeypadView::set_value(double new_value, uint8_t digits, const char *units, const char *label) {
+void KeypadView::set_value(double new_value, uint8_t digits, const char *units, const char *label, double min, double max) {
+
     frac_digits = digits;
+    if (!units) {
+        units = "";
+    }
 
     char b[5];
 
@@ -133,11 +148,13 @@ void KeypadView::set_value(double new_value, uint8_t digits, const char *units, 
     button_M.set_text(b);
     sprintf(b, "k%s", units);
     button_K.set_text(b);
-    sprintf(b, "%s", units);
+    sprintf(b, "%s", units[0] ? units : "x1");
     button_1.set_text(b);
 
-    ftoa(buff, MAX_DIGITS, new_value, frac_digits);
+    this->min = min;
+    this->max = max;
 
+    ftoa(buff, MAX_DIGITS, new_value, frac_digits);
     label_widget.set_label(label);
 
     update_text();
@@ -174,7 +191,7 @@ void KeypadView::on_button(Button &button) {
             multiplier = 1000;
         }
 
-        float v = value();
+        double v = value();
 
         if (on_changed) {
             on_changed(v * multiplier);
@@ -182,26 +199,27 @@ void KeypadView::on_button(Button &button) {
 
         this->set_visible(false);
 
-    } else if (*s == '.') {
+    } else if (*s == decimal_separator) {
 
         int j;
-        for (j = 0; j < index && buff[j] != '.'; j++)
+        for (j = 0; j < index && buff[j] != decimal_separator; j++) {
             ;
+        }
         // append period if there are no period
         if (index == j && index < MAX_DIGITS) {
-            buff[index++] = '.';
+            buff[index++] = decimal_separator;
         }
 
     } else if (*s == '<') {
         del_char();
 
     } else {
-        if (index < MAX_DIGITS) {
+        if (index < MAX_DIGITS && (index <= frac_digits || buff[index - frac_digits - 1] != decimal_separator)) {
             buff[index++] = *s;
         }
     }
 
-    buff[index] = 0;
+    buff[index] = '\0';
     update_text();
 }
 
@@ -209,14 +227,35 @@ void KeypadView::update_text() {
 
     double v = value();
 
-    printf("updating %f", v);
+    if (min != max) {
+        double v2 = constrain(v, min, max);
+        if (v2 != v) {
+            ftoa(buff, MAX_DIGITS, v2, frac_digits);
+            v = v2;
+            index = strlen(buff);
+        }
+    }
+
     double i;
     double fracPart = modf(v, &i);
-    char fracStr[10];
-    itoa(fracPart, fracStr, 10);
 
-    format_long(i, buff, 0, ' ');
-    sprintf(buff + strlen(buff), "%s", fracStr + 1);
+    bool last_period = buff[strlen(buff) - 1] == decimal_separator;
+    format_long(i, buff, 0, thousand_separator);
+
+    if (fracPart > 0 || last_period) {
+
+        sprintf(buff + strlen(buff), "%c", decimal_separator);
+        if (fracPart > 0) {
+            char fracStr[10];
+            ftoa(fracStr, 10, fracPart, frac_digits);
+            int l = strlen(fracStr);
+            while (--l >= 0 && fracStr[l] == '0') {
+                fracStr[l] = '\0';
+            }
+            sprintf(buff + strlen(buff), "%s", fracStr + 2);
+        }
+    }
+
     text_widget.set_label(buff);
 }
 
@@ -227,4 +266,6 @@ void KeypadView::with_multipliers(bool v) {
 
     button_K.set_visible(show_multipliers);
     button_M.set_visible(show_multipliers);
+
+    display_panel_buttons.set_labels(show_multipliers ? display_buttons_labels : display_buttons_labels_no_mult);
 }

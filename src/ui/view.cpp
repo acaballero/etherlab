@@ -125,6 +125,16 @@ void View::remove_child(Widget *const widget) {
     }
 }
 
+void View::set_area() {
+
+    Widget::set_area();
+
+    // Recalculate children display area
+    for (const auto child : this->children()) {
+        child->set_parent_rect(child->parent_rect());
+    }
+}
+
 const std::vector<Widget *> &View::children() const { return children_; }
 
 bool View::on_input(const st_inputEvent event) { return Widget::on_input(event); }

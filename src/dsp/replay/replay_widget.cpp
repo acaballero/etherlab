@@ -70,12 +70,12 @@ void ReplayWidget::paint_callback() {
             char units[5];
 
             if (this->wi.sample_rate) {
-                format_eng(buff, this->wi.sample_rate, "Hz\n", units, 3);
+                format_eng(buff, this->wi.sample_rate, "Hz\n", units, 3, true);
                 this->display->print("Rate: ", buff, units);
             }
 
             if (this->wi.carrier_freq) {
-                format_eng(buff, this->wi.carrier_freq, "Hz\n", units, 3);
+                format_eng(buff, this->wi.carrier_freq, "Hz\n", units, 3, true);
                 this->display->print("Freq: ", buff, units);
             }
 

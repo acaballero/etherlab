@@ -18,7 +18,7 @@ void DbScaleWidget::paint_callback() {
     char buf[5];
     int nTicks = 0;
     uint16_t h = this->size().height();
-
+    display->setFont((FontDef *)&Font_Micro4x6);
     // Find the minimum step to get maxNticks
 
     step = 0;
@@ -30,7 +30,6 @@ void DbScaleWidget::paint_callback() {
 
     } while (nTicks > maxNticks);
 
-    // min2 += (min2 % 10) ?  (10 - min2 % 10) : 0;  // Next multiple of 10 starting from the minimum
     min =
         min + (((9 - (min % step)) + 1) % step); // Next multiple of 10 starting from the minimum. Slower than the commented one, but works for negative numbers
     max = (max / step) * step;                   // Previous multiple of 10 of the maximum of the scale
@@ -43,8 +42,9 @@ void DbScaleWidget::paint_callback() {
 
         py = h - (uint8_t)(((float)(db - config.fft.min_db) / (float)db_amp) * (float)h);
 
-        display->gotoXY(0, py - 3); // -3 to center vertically center the text
-        sprintf(buf, "%4d", db);
+        sprintf(buf, "%d", db);
+        int px = area.box.width - (strlen(buf) * display->getFont()->width) - 1;
+        display->gotoXY(px, py - 3); // -3 to center vertically center the text
         display->write(buf);
     }
 }
@@ -56,7 +56,7 @@ void DbScaleWidget::before_paint() {
     if (this->dirty() || !(this->current_scale == scale)) { // draw only if needed
 
         this->current_scale = scale;
-        display->setFont((FontDef *)&Font_Micro4x6);
+
         display->setColor(C565_GREY_LIGHT);
         display->setBgColor(C565_TRANSPARENT);
 

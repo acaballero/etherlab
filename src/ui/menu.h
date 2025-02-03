@@ -16,17 +16,22 @@ enum MenuStatus { ACTIVE, IDLE, UNKNOWN };
 Menu::result doAlert(Menu::eventMask e, Menu::prompt &item);
 void menu_setup();
 void menu_exit();
+
 Menu::result updateRadio(Menu::eventMask);
 void menu_size(int w, int h);
 Menu::result changeAutoSquelch(Menu::eventMask e);
 Menu::result changeAGCEnabled(Menu::eventMask e);
 extern Menu::navRoot nav;
 extern Menu::menuNode fileSubmenu;
-extern enum MenuStatus menuStatus;
+
 extern const char *constMEM alphaNum MEMMODE;
 extern const char *constMEM alphaNumMask[1] MEMMODE;
 
 namespace Menu {
+extern enum MenuStatus menuStatus;
+
+template <typename T = double>
+void open_keypad(T value, const char *units, const char *name, uint8_t frac_digits, bool with_multipliers, std::function<void(T)> on_changed, T min, T max);
 
 template <typename T> struct menu_option_st {
     const char *name;
@@ -81,7 +86,7 @@ template <typename T> class optionsPrompt : public Menu::prompt {
 
   protected:
     menu_option_st<T> *find_option(T &value) {
-        int i;
+        size_t i;
         for (i = 0; i < size && options[i].value != value; i++) {
             ;
         }
@@ -92,20 +97,21 @@ template <typename T> class optionsPrompt : public Menu::prompt {
 template <typename T> class numberPrompt : public Menu::prompt {
   public:
     T *value;
-    double min;
-    double max;
     uint8_t decimals;
     char thow_separator;
     char dec_separator;
-    const char *unit = "Hz";
+    const char *unit = nullptr;
+    T min;
+    T max;
+    T step;
+    T step_big;
+    std::function<void(T)> on_select;
 
-    numberPrompt(const char *text, T *value, uint8_t decimals = 0, char thow_separator = ' ', char dec_separator = '.', action a = doNothing,
-                 eventMask e = enterEvent, styles s = noStyle, systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)))
-        : prompt(text, a, e, s, ss), value(value), decimals(decimals), thow_separator(thow_separator), dec_separator(dec_separator) {}
+    numberPrompt(const char *text, T *value, uint8_t decimals = 0, char thow_separator = ' ', char dec_separator = '.', const char *unit = nullptr,
+                 std::function<void(T)> on_select = nullptr, T min = T{}, T max = T{}, T step = T{}, T step_big = T{}, eventMask e = enterEvent,
+                 styles s = noStyle, systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)));
 
     idx_t printTo(navRoot &, bool sel, menuOut &out, idx_t, idx_t len, idx_t) override;
-
-    result eventHandler(eventMask e, navNode &, idx_t) override;
 };
 
 } // namespace Menu

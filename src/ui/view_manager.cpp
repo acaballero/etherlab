@@ -6,6 +6,8 @@
 #include "status.h"
 #include "stm32f4xx_hal.h"
 #include "ui/keyboard_view.h"
+#include "ui/keypad_view.h"
+#include "ui/number_edit_view.h"
 #include "ui/option_buttons_view.h"
 #include "ui/splash_view.h"
 
@@ -17,7 +19,8 @@ MainView mainView;
 SplashView splashView;
 KeypadView keypadView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, KeypadView::HEIGHT}};
 KeyboardView keyboardView{{0, HEADER_HEIGHT, KeyboardView::WIDTH, KeyboardView::HEIGHT}};
-OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, KeypadView::HEIGHT}};
+NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
+OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
 View *breadcrumb[MAX_VIEWS];
 View *currentView;
 int view_index = -1;
@@ -68,5 +71,6 @@ void init() {
     keypadView.on_hide_fn = pop;
     keyboardView.on_hide_fn = pop;
     optionButtonsView.on_hide_fn = pop;
+    numberEditView.on_hide_fn = pop;
 }
 } // namespace view_manager

@@ -163,7 +163,7 @@ void processEvent(st_inputEvent *e) {
 
             case INPUT_EVENT_TYPE_ENCODER:
 
-                if (menuStatus != ACTIVE) {
+                if (Menu::menuStatus != ACTIVE) {
                     if (RotBtnInputPin.getState() == GPIO_PIN_RESET) { // with push button low, change the step size instead of frequency
                         RotBtnInputPin.reset();
                         radio::change_step(-e->value);

@@ -15,6 +15,7 @@ class Button : public Widget {
   public:
     static const size_t MAX_CHARS = 12;
     static const size_t MAX_CHARS_VALUE = 8;
+    static const size_t MAX_CHARS_UNIT = 4;
 
     std::function<void(Button &)> on_select{};
 
@@ -23,10 +24,11 @@ class Button : public Widget {
     Button() : Widget(){};
 
     Button(Rect parent_rect, Display *display, const char *t, uint16_t fg_color, uint16_t bg_color = C565_GREY_LIGHT, ButtonStyle style = BUTTON_STYLE_FLAT,
-           Align aling = ALIGN_LEFT)
+           Align aling = ALIGN_LEFT, uint32_t id = 0)
         : Widget(parent_rect, display), fg_color{fg_color}, bg_color{bg_color}, style(style) {
         set_aling(aling);
         set_text(t);
+        this->id = id;
     };
 
     void set_text(char const *value);
@@ -77,7 +79,7 @@ class Button : public Widget {
   protected:
     char text[MAX_CHARS];
     char value[MAX_CHARS_VALUE];
-    char unit[4];
+    char unit[MAX_CHARS_UNIT];
     bool two_lines = false;
 
     int fd = 1;

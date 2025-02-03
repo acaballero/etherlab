@@ -12,7 +12,9 @@
 
 class Label : public Widget {
   public:
-    static const uint8_t MAX_SIZE = 30;
+    static const size_t MAX_CHARS = 30;
+    static const size_t MAX_CHARS_VALUE = 8;
+    static const size_t MAX_CHARS_UNIT = 4;
 
     Label() { set_label(""); }
 
@@ -50,9 +52,9 @@ class Label : public Widget {
     uint16_t get_padding();
 
   protected:
-    char label[MAX_SIZE];
-    char value[MAX_SIZE];
-    char unit[MAX_SIZE];
+    char label[MAX_CHARS];
+    char value[MAX_CHARS_VALUE];
+    char unit[MAX_CHARS_UNIT];
     uint16_t fg_color = C565_WHITE;
     uint16_t fg_color_value = C565_BLUE;
     uint16_t fg_color_unit = C565_GREY_LIGHT;

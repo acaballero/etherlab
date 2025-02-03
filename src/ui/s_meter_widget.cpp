@@ -123,10 +123,8 @@ bool SMeterWidget::on_input(const st_inputEvent event) {
     switch (event.type) {
 
         case INPUT_EVENT_TYPE_TOUCH_END:
-            view_manager::keypadView.set_value(sstrength::get_squelch(), 2, "x1", "Squelch");
-            view_manager::keypadView.with_multipliers(false);
-            view_manager::keypadView.on_changed = [](double v) { sstrength::set_squelch((float)v); };
-            view_manager::push(&view_manager::keypadView);
+            Menu::open_keypad<float>(
+                sstrength::get_squelch(), "x2", "Squelch", 2, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
             return true;
         default:
             return false;

@@ -14,8 +14,7 @@
 
 bool OptionButtonsView::update_focus(int button_index) {
 
-    int current_index = focused_button;
-
+    bool first_focus = focused_button == -1;
     focused_button = button_index;
     if (focused_button < 0) {
         focused_button = index - 1;
@@ -30,13 +29,12 @@ bool OptionButtonsView::update_focus(int button_index) {
         // Page down
         new_offset = focused_button - page_size + cols;
         new_offset -= (new_offset % cols);
-
     } else if (focused_button < offset) {
         // Page up
         new_offset = (focused_button / cols) * cols;
     }
 
-    bool update = new_offset != offset;
+    bool update = new_offset != offset || first_focus;
     offset = new_offset;
     update_buttons(update);
 
@@ -109,24 +107,37 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &)>
         Button *button = &buttons[index];
 
         add_child(button);
-
         button->id = index;
-        button->on_highlight = [this](Button &button) { focused_button = button.id; };
+        index++;
+
+        button->on_highlight = [this](Button &button) { update_focus(button.id); };
 
         if (on_select_handler) {
             button->on_select = on_select_handler;
         } else if (on_select) {
             button->on_select = [this](Button &button) { on_select(button.id); };
         }
+
         button->set_style(BUTTON_STYLE_3D);
         button->set_aling(ALIGN_CENTER);
         button->set_fg(fg_color);
         button->set_text_bg(text_bg_color);
         button->set_text(text);
         button->set_visible(true);
-        button->set_focus(selected);
 
-        index++;
+        if (index <= 4) {
+            cols = 2;
+        } else if (index <= 9) {
+            cols = 3;
+        }
+
+        rows = ((index - 1) / cols) + 1 + 1; // Add one for back and arrow buttons
+
+        if (rows > max_rows) {
+            rows = max_rows;
+        }
+
+        button->set_focus(selected);
 
         if (selected) {
             update_focus(focused_button);
@@ -146,6 +157,7 @@ void OptionButtonsView::clear() {
     }
     index = 0;
     offset = 0;
+    focused_button = -1;
 }
 
 void OptionButtonsView::update_buttons(bool update_layout = false) {
@@ -154,18 +166,14 @@ void OptionButtonsView::update_buttons(bool update_layout = false) {
         return;
     }
 
-    rows = ((index - 1) / cols) + 1 + 1; // Add one for back and arrow buttons
-
-    if (rows > max_rows) {
-        rows = max_rows;
-    }
+    int sep = 2;
 
     // Calculate optimum sizes
     button_w = WIDTH / cols;
 
-    uint16_t height = (button_h * rows) + STATUS_HEIGHT + TITLE_HEIGHT;
+    uint16_t height = (button_h * rows) + STATUS_HEIGHT + TITLE_HEIGHT + sep;
     if (update_layout) {
-        set_parent_rect({0, (DISPLAY_Y_PIXELS - height - 8), WIDTH, height});
+        set_parent_rect({0, DISPLAY_Y_PIXELS - height, WIDTH, height});
     }
 
     int page_size = cols * (rows - 1);
@@ -174,7 +182,7 @@ void OptionButtonsView::update_buttons(bool update_layout = false) {
         buttons[i].set_visible(i >= offset && i - offset < page_size);
 
         if (update_layout) {
-            buttons[i].set_parent_rect({((i - offset) % (cols)) * button_w, (((i - offset) / (cols)) * button_h) + TITLE_HEIGHT + 2, button_w, button_h});
+            buttons[i].set_parent_rect({((i - offset) % (cols)) * button_w, (((i - offset) / (cols)) * button_h) + TITLE_HEIGHT + sep, button_w, button_h});
         }
     }
 
@@ -190,10 +198,10 @@ void OptionButtonsView::update_buttons(bool update_layout = false) {
     }
 
     if (update_layout) {
-        button_prev.set_parent_rect({0, ((rows - 1) * button_h) + TITLE_HEIGHT + 2, button_w, button_h});
-        button_next.set_parent_rect({button_w, ((rows - 1) * button_h) + TITLE_HEIGHT + 2, button_w, button_h});
+        button_prev.set_parent_rect({0, ((rows - 1) * button_h) + TITLE_HEIGHT + sep, button_w, button_h});
+        button_next.set_parent_rect({button_w, ((rows - 1) * button_h) + TITLE_HEIGHT + sep, button_w, button_h});
 
-        button_close.set_parent_rect({(cols - 1) * button_w, ((rows - 1) * button_h) + TITLE_HEIGHT + 2, button_w, button_h});
+        button_close.set_parent_rect({(cols - 1) * button_w, ((rows - 1) * button_h) + TITLE_HEIGHT + sep, button_w, button_h});
         display_panel_buttons.set_parent_rect({0, height - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT});
     }
 }
@@ -216,9 +224,4 @@ void OptionButtonsView::init() {
 
 void OptionButtonsView::on_focus() { button_close.set_focus(true); }
 
-void OptionButtonsView::before_paint() {
-    int a = 1;
-    if (a - 2 == 0) {
-        exit(1);
-    }
-}
+void OptionButtonsView::before_paint() {}

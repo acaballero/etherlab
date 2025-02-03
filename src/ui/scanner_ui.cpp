@@ -6,6 +6,7 @@
 
 #include <io/file_factory.h>
 #include <sys/_stdint.h>
+#include "menuBase.h"
 #include "ui/menu.h"
 #include "status.h"
 #include "scanner.h"
@@ -17,8 +18,9 @@ scanner::st_scanner_info scanner_config;
 
 Menu::result configue_scanner(Menu::eventMask e); // Forward declaration
 
-Menu::numberPrompt<uint64_t> freqEditMin((const char *)"Freq. from", &scanner_config.freq_min);
-Menu::numberPrompt<uint64_t> freqEditMax((const char *)"Freq. to", &scanner_config.freq_max);
+Menu::numberPrompt<uint64_t> freqEditMin((const char *)"Freq. from", &scanner_config.freq_min, 0, ' ', '.', nullptr, Menu::doNothing, config.f_min,
+                                         config.f_max);
+Menu::numberPrompt<uint64_t> freqEditMax((const char *)"Freq. to", &scanner_config.freq_max, 0, ' ', '.', nullptr, Menu::doNothing, config.f_min, config.f_max);
 
 // menu_frequency::FreqEditField freqEdit_min("Start freq", (Menu::callback) configue_scanner);
 // menu_frequency::FreqEditField freqEdit_max("Stop freq", (Menu::callback) configue_scanner);

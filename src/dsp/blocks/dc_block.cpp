@@ -19,14 +19,13 @@ inline float32_t DCBlock::filter(float32_t input) {
 }
 
 void DCBlock::filter(buffer_t<int16_t> &src, uint8_t n_channels, uint8_t channel_n) {
-    for (int i = channel_n; i < src.count; i += n_channels) {
+    for (size_t i = channel_n; i < src.count; i += n_channels) {
         src.p[i] = filter(src.p[i]);
     }
 }
 
 void DCBlock::filter(buffer_t<float32_t> &src, uint8_t n_channels, uint8_t channel_n) {
-    for (int i = channel_n; i < src.count; i += n_channels) {
+    for (size_t i = channel_n; i < src.count; i += n_channels) {
         src.p[i] = filter(src.p[i]);
     }
 }
-

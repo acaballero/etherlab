@@ -158,7 +158,7 @@ void Button::set_value(const char *t) {
 }
 
 void Button::set_unit(const char *t) {
-    strncpy(unit, t, MAX_CHARS);
+    strncpy(unit, t, 4);
     set_dirty();
 }
 

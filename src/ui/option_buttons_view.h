@@ -49,7 +49,7 @@ class OptionButtonsView : public View {
     void set_show_arrows(bool b);
 
   private:
-    int focused_button = 0;
+    int focused_button = -1;
     static constexpr int max_cols = 4;
     static constexpr int max_rows = 4;
 
@@ -58,7 +58,7 @@ class OptionButtonsView : public View {
 
     Button buttons[MAX_BUTTONS];
     uint8_t index = 0;
-    uint16_t offset = 0;
+    uint16_t offset = -1;
     uint16_t cols = max_cols;
     uint16_t rows = max_rows;
     bool show_arrows = true;

@@ -20,7 +20,7 @@ class Widget : public Painter {
 
     Widget(const Widget &) = delete;
 
-    Widget(Widget &&) = delete;
+    Widget(Widget &&) = default;
 
     Widget &operator=(const Widget &) = delete;
 
@@ -44,7 +44,7 @@ class Widget : public Painter {
 
     Widget *focused_widget() const;
 
-    void set_parent(Widget *const widget);
+    virtual void set_parent(Widget *const widget);
 
     bool hidden() const { return flags.hidden; }
 
@@ -140,7 +140,7 @@ class Widget : public Painter {
 
     void focus(Widget *widget);
 
-    void set_area();
+    virtual void set_area();
 
     void update_overlaps();
 };

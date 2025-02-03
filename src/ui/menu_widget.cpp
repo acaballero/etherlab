@@ -51,11 +51,13 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                     radio::toggle_vfo();
                     break;
                 case FPANEL_PAD_BUTTON_3: // GAIN
+                    menu_exit();
                     nav.doNav(navCmd(enterCmd));
                     nav.doNav(navCmd(idxCmd, 0));
                     nav.doNav(navCmd(idxCmd, 4));
                     break;
                 case FPANEL_PAD_BUTTON_4: // SQuelch
+                    menu_exit();
                     nav.doNav(navCmd(enterCmd));
                     nav.doNav(navCmd(idxCmd, 0));
                     nav.doNav(navCmd(idxCmd, 6));
@@ -133,10 +135,11 @@ bool MenuWidget::on_input(const st_inputEvent e) {
 
         case INPUT_EVENT_TYPE_ENCODER:
 
-            if (menuStatus == ACTIVE) {
+            if (Menu::menuStatus == ACTIVE) {
                 strIn.write(e.value > 0 ? '+' : '-');
-                if (!e.value)
+                if (!e.value) {
                     strIn.write(' ');
+                }
                 nav.doInput(strIn);
             } else {
                 consumed = false;

@@ -108,7 +108,7 @@ void StatusWidget::before_paint() {
 
     st_status status = {config.modulation, ISTX, band, radio::filter, radio::if_filter, config.frontend_path, config.agc_enabled,
                         _status.f_carrier, // we won't show the frequency in the status bar, so use current_status value
-                        menuStatus
+                        Menu::menuStatus
 
     };
 
@@ -132,7 +132,7 @@ void StatusWidget::before_paint() {
             fg_color_auto = C565_MAGENTA;
         }
 
-        if (menuStatus == IDLE) {
+        if (Menu::menuStatus == IDLE) {
             btnModulation.set_visible(true);
             btnFrontend.set_visible(true);
             btnAgc.set_visible(true);

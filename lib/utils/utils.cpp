@@ -15,6 +15,7 @@
 #include "MemoryFree.h"
 #include <c++/7.2.1/cstring>
 #include <ctype.h>
+#include <math.h>
 
 #define MEMORYFREE_ENABLED false
 #define RAW_LOG false
@@ -114,8 +115,9 @@ void logEvent(uint8_t type, float value, uint8_t end = 0) {
 
         //   disableTimers();
         uint8_t index = logEventIndex++;
-        if (logEventIndex == LOG_MAX_ITEMS)
+        if (logEventIndex == LOG_MAX_ITEMS) {
             logEventIndex = 0;
+        }
         //  enableTimers();
 
         uint32_t m = micros();
@@ -255,21 +257,16 @@ void printLog(logevent_st_t *logEventsClone) {
 #endif
 
 int endsWith(const char *str, const char *suffix) {
-    if (!str || !suffix)
+    if (!str || !suffix) {
         return 0;
+    }
     size_t lenstr = strlen(str);
     size_t lensuffix = strlen(suffix);
-    if (lensuffix > lenstr)
+    if (lensuffix > lenstr) {
         return 0;
+    }
     return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
 }
-
-uint8_t digitalRead(uint8_t pinNumber) {
-
-    return 0; // GPIOA->IDR & pinNumber;
-}
-
-uint16_t analogRead(uint8_t channel) { return 0; }
 
 void print_vector_f32(float32_t *v, uint16_t len) {
 
@@ -278,13 +275,15 @@ void print_vector_f32(float32_t *v, uint16_t len) {
             printf("\r\n");
         }
         printf("%14.10f;  ", v[i]);
-        for (uint32_t xx = 0; xx < 1000; xx++)
+        for (uint32_t xx = 0; xx < 1000; xx++) {
             ;
+        }
     }
     printf("\r\n");
     printf("\r\n");
-    for (uint32_t xx = 0; xx < 1000000; xx++)
+    for (uint32_t xx = 0; xx < 1000000; xx++) {
         ;
+    }
 }
 
 void print_vector_complex_f32(float32_t *v, uint16_t len) {
@@ -295,8 +294,9 @@ void print_vector_complex_f32(float32_t *v, uint16_t len) {
             printf("\r\n");
         }
         printf("%9.5f; ", v[i]);
-        for (uint32_t xx = 0; xx < 1000; xx++)
+        for (uint32_t xx = 0; xx < 1000; xx++) {
             ;
+        }
     }
     printf("]\r\n,\r\n[");
     for (int i = 1; i < len * 2; i += 2) {
@@ -304,14 +304,16 @@ void print_vector_complex_f32(float32_t *v, uint16_t len) {
             printf("\r\n");
         }
         printf("%9.5f; ", v[i]);
-        for (uint32_t xx = 0; xx < 1000; xx++)
+        for (uint32_t xx = 0; xx < 1000; xx++) {
             ;
+        }
     }
     printf("]));");
     printf("\r\n");
     printf("\r\n");
-    for (uint64_t xx = 0; xx < 1000000; xx++)
+    for (uint64_t xx = 0; xx < 1000000; xx++) {
         ;
+    }
 }
 
 unsigned long millis() { return uwTick; }
@@ -345,24 +347,26 @@ void min_max_f32(float *v, uint16_t size, float *min, float *max, float discard)
 
     for (int i = 0; i < size; i++) {
         if (v[i] != discard) {
-            if (v[i] > *max)
+            if (v[i] > *max) {
                 *max = v[i];
-            if (v[i] < *min)
+            }
+            if (v[i] < *min) {
                 *min = v[i];
+            }
         }
     }
 }
 
 char prefixes[] = "num kMGT";
 
-float format_eng(char *dest, float value, const char *units, char *new_units) { return format_eng(dest, value, units, new_units, 1); }
+float format_eng(char *dest, float value, const char *units, char *new_units) { return format_eng(dest, value, units, new_units, 1, false); }
 
-float format_eng(char *dest, float value, const char *units, char *new_units, uint8_t dec_places) {
+float format_eng(char *dest, float value, const char *units, char *new_units, uint8_t dec_places, bool trailing_zero) {
 
     double tval = value;
     uint8_t order = 3;
     if (tval) {
-        while (tval > 1000.0 && order < strlen(prefixes)) {
+        while (tval >= 1000.0 && order < strlen(prefixes)) {
             tval /= 1000.0;
             order++;
         }
@@ -374,21 +378,33 @@ float format_eng(char *dest, float value, const char *units, char *new_units, ui
 
     sprintf(new_units, "%c%s", prefixes[order], units);
     sprintf(dest, "%.*f ", dec_places, tval);
+
+    if (dec_places && !trailing_zero) {
+        int l = strlen(dest) - 1;
+        bool end = false;
+        while (--l >= 0 && !end && (dest[l] == '0' || dest[l] == '.')) {
+            end = dest[l] == '.';
+            dest[l] = ' ';
+            dest[l + 1] = '\0';
+        }
+    }
     return tval;
 }
 
 void format_long(int64_t n, char *out) { format_long(n, out, 0); }
 
-void format_long(int64_t n, char *out, uint8_t length, char thow_separator) {
+void format_long(int64_t n, char *out, uint8_t length, char thow_separator, int max_length) {
 
     int c;
-    char buf[20];
+    char buf[max_length + 3];
     char *p;
 
+    length = min2(length, max_length);
+
     if (length) {
-        sprintf(buf, "%0*lld", length, n);
+        snprintf(buf, max_length + 3, "%0*lld", length, n);
     } else {
-        sprintf(buf, "%lld", n);
+        snprintf(buf, max_length + 3, "%lld", n);
     }
 
     c = 2 - strlen(buf) % 3;
@@ -405,9 +421,11 @@ void format_long(int64_t n, char *out, uint8_t length, char thow_separator) {
 int strcicmp(char const *a, char const *b) {
     const unsigned char *us1 = (const unsigned char *)a, *us2 = (const unsigned char *)b;
 
-    while (tolower(*us1) == tolower(*us2++))
-        if (*us1++ == '\0')
+    while (tolower(*us1) == tolower(*us2++)) {
+        if (*us1++ == '\0') {
             return (0);
+        }
+    }
     return (tolower(*us1) - tolower(*--us2));
 }
 
@@ -631,17 +649,30 @@ void printMemory() {
 }
 #endif
 
-void printDouble(double val, int precision) { printDouble(val, precision, false); }
+char *format_double(double v, char *dest, char decimal_separator, char thousand_separator, uint8_t frac_digits, bool trailing_zero, uint8_t max_length) {
 
-void printDouble(double val, int precision, bool newline) {
+    double i;
+    double fracPart = modf(v, &i);
 
-    // char buf[30];
-    // char format[8];
+    format_long(i, dest, 0, thousand_separator, max_length);
 
-    printf("%.2f", val);
+    if (fracPart > 0) {
 
-    if (newline)
-        printf("\n");
+        snprintf(dest + strlen(dest), max_length - strlen(dest), "%c", decimal_separator);
+        if (fracPart > 0) {
+            char fracStr[10];
+            ftoa(fracStr, 10, fracPart, frac_digits);
+            int l = strlen(fracStr);
+            if (!trailing_zero) {
+                while (--l >= 0 && fracStr[l] == '0') {
+                    fracStr[l] = '\0';
+                }
+            }
+            snprintf(dest + strlen(dest), max_length - strlen(dest), "%s", fracStr + 2);
+        }
+    }
+
+    return dest;
 }
 
 /*
@@ -677,8 +708,9 @@ char *ftoa(char *dest, size_t size, double val, int dec) {
     long long mul = 1;
     long long num;
     int i;
-    if (size == 0)
+    if (size == 0) {
         return NULL;
+    }
     *--q = '\0';
     if (size == 1) {
         return 0;

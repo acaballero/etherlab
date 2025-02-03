@@ -31,6 +31,7 @@ void Display::clear(uint16_t color) {
 
     if (ow == 0) {
         // We are drawing in the whole area so we can just memset
+
         memset(this->curr_buffer, color, this->chunk_height * this->curr_area->box.width * 2);
     } else {
         // The memory of the rectangle is not contiguous in the area

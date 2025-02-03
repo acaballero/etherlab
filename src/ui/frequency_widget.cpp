@@ -57,9 +57,10 @@ bool FrequencyWidget::on_input(const st_inputEvent event) {
     switch (event.type) {
 
         case INPUT_EVENT_TYPE_TOUCH_END:
-            view_manager::keypadView.set_value(radio::get_frequency(), 0, "Hz", "Frequency");
-            view_manager::keypadView.on_changed = [](double v) { radio::set_frequency((uint64_t)v); };
-            view_manager::push(&view_manager::keypadView);
+
+            Menu::open_keypad<uint64_t>(
+                radio::get_frequency(), "Hz", "Frequency", 0, false, [](uint64_t v) { radio::set_frequency((uint64_t)v); }, 0, 0);
+
             return true;
         default:
             return false;

@@ -14,6 +14,7 @@ class DisplayPanelButtonsWidget : public View {
 
   protected:
     static constexpr uint8_t n_buttons = 6;
+    static constexpr uint8_t separation = 1;
 
     uint16_t fg_color, fg_color_auto, bg_color, dimm_color, disabled_color, disabled_bg;
 

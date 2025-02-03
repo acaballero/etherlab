@@ -17,9 +17,8 @@ CompileFlags:
 
 Index:
   Background: true
-  External: true
-  Threads: 4
-  Memory: 512M
+
+
      
  
 

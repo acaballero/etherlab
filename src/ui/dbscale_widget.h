@@ -8,21 +8,18 @@
 #include "widget.h"
 #include "types.h"
 
-#define DBSCALE_WIDTH 18
+#define DBSCALE_WIDTH 26
 
-class DbScaleWidget: public Widget {
-public:
-
+class DbScaleWidget : public Widget {
+  public:
     using Widget::Widget;
 
     void paint_callback() override;
 
-protected:
-
+  protected:
     st_scale current_scale;
 
     void before_paint() override;
 };
 
-
-#endif //TRX_FRONTEND_DBSCALE_WIDGET_H
+#endif // TRX_FRONTEND_DBSCALE_WIDGET_H

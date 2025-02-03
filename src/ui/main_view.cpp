@@ -42,7 +42,7 @@ void MainView::before_paint() {
         radio_w.set_visible(false);
         menu_w.set_visible(false);
     } else {
-        if (menuStatus == IDLE) {
+        if (Menu::menuStatus == IDLE) {
             if (config.debug) {
                 smeter_w.set_visible(false);
                 radio_w.set_visible(true);

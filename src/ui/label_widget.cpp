@@ -54,7 +54,14 @@ void Label::paint_callback() {
         x = 0;
     }
 
-    display->gotoXY(x, (parent_rect().height() - font->height + 2) / 2);
+    int16_t y;
+    if (strchr(label, '\n')) { // two lines
+        y = (parent_rect().height() - font->height * 2 - display->getVerticalLineSpacing()) / 2;
+    } else {
+        y = (parent_rect().height() - font->height + 2) / 2;
+    }
+
+    display->gotoXY(x, y);
     display->print(label, value, unit, fg_color, fg_color_value, fg_color_unit);
 }
 
@@ -65,19 +72,19 @@ void Label::set_style(ButtonStyle style) { Label::style = style; }
 void Label::before_paint() {}
 
 void Label::set_label(const char *t) {
-    strncpy(label, t, MAX_SIZE);
+    strncpy(label, t, MAX_CHARS);
     set_dirty();
 }
 
 char *Label::get_label() { return label; }
 
 void Label::set_value(const char *t) {
-    strncpy(value, t, MAX_SIZE);
+    strncpy(value, t, MAX_CHARS_VALUE);
     set_dirty();
 }
 
 void Label::set_unit(const char *t) {
-    strncpy(unit, t, MAX_SIZE);
+    strncpy(unit, t, MAX_CHARS_UNIT);
     set_dirty();
 }
 

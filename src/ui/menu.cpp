@@ -2,6 +2,7 @@
 #include "menu.h"
 #include "Display_afb.h"
 #include "config.h"
+#include "dsp/fft/fft_types.h"
 #include "lcd.h"
 #include "main_view.h"
 #include "../../lib/Menu/src/menuIO/chainStream.h"
@@ -27,8 +28,7 @@
 #include "status.h"
 #include "settings.h"
 
-using namespace Menu;
-
+namespace Menu {
 MenuStatus menuStatus = IDLE;
 
 // result resetIQBalance(eventMask e, navNode &nav, prompt &item) {
@@ -67,8 +67,8 @@ const char *colorNames[] = {"Black",        "Grey darker", "Grey dark", "Grey li
                             "Maroon",       "Olive",       "Blue",      "Green",     "Red",    "Magenta",  "Yellow",     "Orange",
                             "Green-yellow", "Pink",        "Brown",     "Gold",      "Silver", "Sky blue", "Violet"};
 
-namespace Menu {
 template class optionsPrompt<uint16_t>;
+template class optionsPrompt<FFT_SPECTRUM_STYLE>;
 
 menu_option_st<uint16_t> color_options[] = {
     {"   ", C565_BLACK, C565_BLACK, C565_BLACK},
@@ -96,11 +96,25 @@ menu_option_st<uint16_t> color_options[] = {
     {"   ", C565_VIOLET, C565_VIOLET, C565_VIOLET},
 };
 
-} // namespace Menu
-
 menu_option_st<radio::RPT_MODE> rpt_mode_options[] = {{radio::repeaterNames[radio::RPT_MODE_OFF], radio::RPT_MODE_OFF},
                                                       {radio::repeaterNames[radio::RPT_MODE_POSITIVE], radio::RPT_MODE_POSITIVE},
                                                       {radio::repeaterNames[radio::RPT_MODE_NEGATIVE], radio::RPT_MODE_NEGATIVE}};
+template <typename T>
+void open_keypad(T value, const char *units, const char *name, uint8_t frac_digits, bool with_multipliers, std::function<void(T)> on_changed, T min, T max) {
+
+    view_manager::keypadView.set_value(value, frac_digits, units, name, min, max);
+    view_manager::keypadView.with_multipliers(with_multipliers);
+    view_manager::keypadView.on_changed = on_changed;
+    view_manager::push(&view_manager::keypadView);
+}
+
+template <typename T>
+void open_number_edit(T value, const char *units, const char *name, uint8_t frac_digits, std::function<void(T)> on_changed, T min, T max, T step, T step_big) {
+
+    view_manager::numberEditView.set_value(value, frac_digits, units, name, min, max, step, step_big);
+    view_manager::numberEditView.on_changed = on_changed;
+    view_manager::push(&view_manager::numberEditView);
+}
 
 template <typename T> void open_option_buttons(menu_options_t<T> options, const char *title, T &value, uint16_t size, std::function<void(T)> on_select) {
 
@@ -124,7 +138,6 @@ template <typename T> void open_option_buttons(menu_options_t<T> options, const 
     view_manager::optionButtonsView.set_title(title);
     view_manager::push(&view_manager::optionButtonsView);
 }
-
 template <typename T>
 optionsPrompt<T>::optionsPrompt(const char *text, menu_options_t<T> options, T &value, size_t size, std::function<void(T)> on_select, eventMask e, styles s,
                                 systemStyles ss)
@@ -135,6 +148,38 @@ optionsPrompt<T>::optionsPrompt(const char *text, menu_options_t<T> options, T &
              }),
              e, s, ss),
       value(value), options(options), size(size), on_select(on_select) {}
+
+template <typename T>
+numberPrompt<T>::numberPrompt(const char *text, T *value, uint8_t decimals, char thow_separator, char dec_separator, const char *unit,
+                              std::function<void(T)> on_select, T min, T max, T step, T step_big, eventMask e, styles s, systemStyles ss)
+    : prompt(text, static_cast<action>([](Menu::eventMask e, Menu::navNode &, Menu::prompt &item) {
+                 numberPrompt<T> prompt = static_cast<numberPrompt<T> &>(item);
+
+                 if (e == Menu::enterEvent) {
+                     if (prompt.step > 0) {
+                         Menu::open_number_edit<T>(
+                             *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals,
+                             [prompt](T v) {
+                                 *prompt.value = v;
+                                 prompt.on_select(v);
+                             },
+                             prompt.min, prompt.max, prompt.step, prompt.step_big);
+                     } else {
+                         Menu::open_keypad<T>(
+                             *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals, false,
+                             [prompt](T v) {
+                                 *prompt.value = v;
+                                 prompt.on_select(v);
+                             },
+                             prompt.min, prompt.max);
+                     }
+                 }
+
+                 return proceed;
+             }),
+             e, s, ss),
+      value(value), decimals(decimals), thow_separator(thow_separator), dec_separator(dec_separator), unit(unit), min(min), max(max), step(step),
+      step_big(step_big), on_select(on_select) {}
 
 /************************** */
 //   END NEW MENU DEFINITIOS
@@ -148,7 +193,6 @@ optionsPrompt<radio::BAND> bandMenu((const char *)"Band", band_options, config.b
                                     [](radio::BAND) { radio::set_band(); });
 
 result changeRepeater(eventMask) { // Update repeater mode
-
     return proceed;
 }
 
@@ -170,10 +214,9 @@ optionsPrompt<radio::IF_FILTER> IFFilterMenu((const char *)"IF filter", if_filte
 optionsPrompt<radio::RPT_MODE> repeaterMenu((const char *)"Repeater mode", rpt_mode_options, config.repeater_mode,
                                             sizeof(rpt_mode_options) / sizeof(rpt_mode_options[0]), [](radio::RPT_MODE) { radio::update_freq(); });
 
-result set_squelch(eventMask) {
-    sstrength::set_squelch(config.squelch_level);
-    return proceed;
-}
+} // namespace Menu
+
+using namespace Menu;
 
 TOGGLE(config.squelch_auto, autoSquelch, "Squelch Auto: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
@@ -183,10 +226,12 @@ TOGGLE(config.agc_enabled, enableAGCToggleMenu, "AGC: ", doNothing, noEvent, noS
        ,
        VALUE("Enabled", true, changeAGCEnabled, noEvent), VALUE("Disabled", false, changeAGCEnabled, noEvent))
 
+Menu::numberPrompt<float> squelchEditMenu((const char *)"Squelch", &config.squelch_level, 2, ' ', '.', nullptr,
+                                          [](float) { sstrength::set_squelch(config.squelch_level); }, 0, 9);
+
 MENU(menuTune, "Tune", doNothing, anyEvent, noStyle, OBJ(modulationMenu), OBJ(bandMenu), OBJ(filterMenu), OBJ(IFFilterMenu), SUBMENU(enableAGCToggleMenu),
-     SUBMENU(autoSquelch), FIELD(config.squelch_level, "Squelch", "S", -0, 10, 1, 0.1, set_squelch, exitEvent, noStyle), OBJ(repeaterMenu),
-     altFIELD(engPlaces<3>::menuField, config.repeater_offset, "Repeater offset: ", "kHz.", 0, 100000, 10000, 10000, changeRepeater, exitEvent, noStyle),
-     EXIT("<Back"));
+     SUBMENU(autoSquelch), OBJ(squelchEditMenu), OBJ(repeaterMenu),
+     altFIELD(engPlaces<3>::menuField, config.repeater_offset, "Repeater offset: ", "kHz.", 0, 100000, 10000, 10000, changeRepeater, exitEvent, noStyle));
 
 result changeHPAEnabled(eventMask) {
     main_board::update();
@@ -273,8 +318,9 @@ PADMENU(timeMenu, "Time", setTime, updateEvent, noStyle, FIELD(time.Hours, "", "
 
 #endif
 
-MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), SUBMENU(enableHPAToggleMenu),
-     FIELD(config.max_power_dbm, "HPA power limit", "dBm.", 0, 50, 1, 0, doNothing, exitEvent, wrapStyle), OBJ(frontendPathMenu),
+Menu::numberPrompt<uint8_t> hpaPowerMenu((const char *)"Max HPA pow", &config.max_power_dbm, 0, ' ', '.', "dBm", nullptr, 0, 50, 1, 5);
+
+MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu), OBJ(frontendPathMenu),
      FIELD(config.coupler_0db_mv, "Coupler 0 dB offset", "mV.", 0, 5000, 5, 0, changeCouplerOffset, exitEvent, wrapStyle), OBJ(driveStrength1stLOMenu),
      OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu),
      altFIELD(engPlaces<3>::menuField, config.f_1st_if, "1st. IF Frequency", "kHz.", 0, 100000000, 1000, 10000, changeCalibration, exitEvent, noStyle),
@@ -282,9 +328,9 @@ MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggle
      FIELD(config.f_correction, "LO Ref. Correction", "Hz.", -1000000, 1000000, 10, 1, changeCalibration, exitEvent, wrapStyle),
      FIELD(config.if_correction, "IF Correction", "Hz.", -1000000, 1000000, 10, 0, changeCalibration, exitEvent, wrapStyle),
 #if ENABLE_RTC
-     SUBMENU(dateMenu), SUBMENU(timeMenu),
+     SUBMENU(dateMenu), SUBMENU(timeMenu)
 #endif
-     EXIT("<Back"));
+);
 
 /*
  ****************** DSP MENU *****************
@@ -293,7 +339,7 @@ MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggle
 #if DSP_ENABLED
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), EXIT("<Back"));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu));
 
 #endif
 
@@ -332,6 +378,9 @@ result saveTarget(eventMask, navNode &nav) {
 
 // Explicit template instantiations for specific types
 template Used numberPrompt<double>::printTo(navRoot &, bool, menuOut &, idx_t, idx_t, idx_t);
+template Used numberPrompt<float>::printTo(navRoot &, bool, menuOut &, idx_t, idx_t, idx_t);
+template Used numberPrompt<int>::printTo(navRoot &, bool, menuOut &, idx_t, idx_t, idx_t);
+template Used numberPrompt<uint32_t>::printTo(navRoot &, bool, menuOut &, idx_t, idx_t, idx_t);
 template Used numberPrompt<uint64_t>::printTo(navRoot &, bool, menuOut &, idx_t, idx_t, idx_t);
 
 template <typename T> idx_t numberPrompt<T>::printTo(navRoot &, bool sel, menuOut &out, idx_t, idx_t len, idx_t) {
@@ -340,8 +389,8 @@ template <typename T> idx_t numberPrompt<T>::printTo(navRoot &, bool sel, menuOu
     out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
     char buf[20];
 
-    if (std::is_same<T, double>::value) {
-        sprintf(buf, "%f", (double)*value);
+    if (std::is_same<T, double>::value || std::is_same<T, float>::value) {
+        ftoa(buf, 20, *value, decimals);
     } else {
         format_long((int64_t)*value, buf, 0, thow_separator);
     }
@@ -352,20 +401,6 @@ template <typename T> idx_t numberPrompt<T>::printTo(navRoot &, bool sel, menuOu
     len -= out.printRaw(" ", len);
     len -= out.printRaw(unit, len);
     return len;
-}
-
-template result numberPrompt<double>::eventHandler(eventMask, navNode &, idx_t);
-template result numberPrompt<uint64_t>::eventHandler(eventMask, navNode &, idx_t);
-
-template <typename T> result numberPrompt<T>::eventHandler(eventMask e, navNode &, idx_t) {
-
-    if (e == Menu::enterEvent) {
-        view_manager::keypadView.set_value(*value, 0, unit, shadow->text);
-        view_manager::keypadView.on_changed = [this](double v) { *value = v; };
-        view_manager::push(&view_manager::keypadView);
-    }
-
-    return proceed;
 }
 
 result edit_freq_name(eventMask, navNode &) {
@@ -379,14 +414,16 @@ result edit_freq_name(eventMask, navNode &) {
 }
 
 result edit_freq(eventMask, navNode &) {
-    view_manager::keypadView.set_value(tempFreqMem.freq, 0, "Hz", "Frequency");
-    view_manager::keypadView.on_changed = [](double v) {
-        tempFreqMem.freq = v;
-        char buf[16];
-        format_long(tempFreqMem.freq, buf);
-        sprintf(tempFreqBuf, "%s", buf);
-    };
-    view_manager::push(&view_manager::keypadView);
+    Menu::open_keypad<uint64_t>(
+        tempFreqMem.freq, "Hz", "Frequency", 0, false,
+        [](uint64_t v) {
+            tempFreqMem.freq = v;
+            char buf[16];
+            format_long(tempFreqMem.freq, buf);
+            sprintf(tempFreqBuf, "%s", buf);
+        },
+        config.f_min, config.f_max);
+
     return proceed;
 }
 
@@ -400,7 +437,7 @@ labelPrompt freqEditMenu((const char *)"Frequency", tempFreqBuf, edit_freq, ente
 // If you want to print the data record name as the title,
 // then you MUST create a customized print menu to replace this default one
 MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqNameMenu), OBJ(modulationMenu), OBJ(freqEditMenu),
-     OP("Save", saveTarget, enterEvent), EXIT("<Back"));
+     OP("Save", saveTarget, enterEvent));
 
 // Custom frequency memory menu
 struct FreqMemoryMenu : UserMenu {
@@ -485,7 +522,7 @@ MENU(mainMenu, "Main menu", doNothing, noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED
      SUBMENU(menuDSP),
 #endif
-     SUBMENU(scanner_ui::menuScan), SUBMENU(fftUI::fftMenu), SUBMENU(menuSettings), SUBMENU(boardUI::boardMenu), OBJ(freqMemMenu), EXIT("<Back"));
+     SUBMENU(scanner_ui::menuScan), SUBMENU(fftUI::fftMenu), SUBMENU(menuSettings), SUBMENU(boardUI::boardMenu), OBJ(freqMemMenu));
 
 const colorDef<uint16_t> menuColors[8] MEMMODE = {
     {{C565_TRANSPARENT, C565_TRANSPARENT}, {C565_BLACK, C565_TRANSPARENT, C565_TRANSPARENT}}, // bgColor
@@ -523,7 +560,7 @@ result idle(menuOut &o, idleEvent e) {
 
     switch (e) {
         case idleStart:
-            menuStatus = IDLE;
+            Menu::menuStatus = IDLE;
             view_manager::mainView.set_dirty();
             // o.println("suspending menu!");
             break;
@@ -533,7 +570,7 @@ result idle(menuOut &o, idleEvent e) {
             break;
         case idleEnd:
             // o.println("resuming menu.");
-            menuStatus = ACTIVE;
+            Menu::menuStatus = ACTIVE;
 
             break;
     }
@@ -578,7 +615,7 @@ void menu_setup() {
 
 void menu_exit() {
     stringIn<1> strIn;
-    while (menuStatus == ACTIVE) {
+    while (Menu::menuStatus == ACTIVE) {
         strIn.write('/'); // press esc multiple times to exit from whatever depth we're in
         nav.doInput(strIn);
     }

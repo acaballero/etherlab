@@ -40,7 +40,7 @@ char *RadioStatusWidget::mode() {
 }
 
 char *RadioStatusWidget::vfo() {
-    format_long(radio::get_vfo_frequency(radio::get_vfo() ? 0 : 1), buf);
+    format_long(radio::get_vfo_frequency(radio::get_vfo() ? 0 : 1) / 1000, buf);
     return buf;
 }
 
