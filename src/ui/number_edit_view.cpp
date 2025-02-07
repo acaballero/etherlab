@@ -4,6 +4,7 @@
 
 #include "number_edit_view.h"
 #include "Display_afb.h"
+#include "input/inputEvent.h"
 #include "ips_font.h"
 #include "itemsTemplates.hpp"
 #include "ui/button_widget.h"
@@ -46,6 +47,7 @@ bool NumberEditView::on_input(const st_inputEvent event) {
                     this->on_button(buttons[INCR_BIG]);
                     break;
                 case FPANEL_DISPLAY_BUTTON_5:
+                case BTN_ENCODER:
                     this->on_button(buttons[OK]);
                     break;
                 case KEY_BACK:

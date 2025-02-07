@@ -43,12 +43,14 @@ bool debug = false;
 void enable() {
     enabled = true;
     check_temp();
+    task.set_enabled(true);
 }
 
 void disable() {
     enabled = false;
     temp = params.MIN_TEMP - 1;
     set_status(OFF);
+    task.set_enabled(false);
 }
 
 void test() { temp = 35 + ((HAL_GetTick() / 1000) % 100); }
@@ -57,8 +59,9 @@ void calculate_temp() {
     uint16_t vadc = GetADCValue(&hadc3, POWER_AMP_TEMP_ADC_CHANNEL, 3);
     float v = ((float)vadc / (float)MAX_ADC_VALUE) * (float)V_REF;
 
-    if (debug)
+    if (debug) {
         return test();
+    }
 
     if (v > 1) {
         // filter for smoothness
@@ -97,15 +100,11 @@ void check_temp() {
     temp_signal.emit(&temp);
 
     int max = params.MAX_TEMP;
-    if (status == HIGH_TEMP)
+    if (status == HIGH_TEMP) {
         max *= hysteresis;
+    }
 
     set_status(enabled ? temp < max ? OK : HIGH_TEMP : OFF);
 }
 
-void loop() {
-    if (debug || enabled) {
-        task.loop();
-    }
-}
 } // namespace power_amp

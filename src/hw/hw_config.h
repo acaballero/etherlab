@@ -111,8 +111,9 @@
 
 #define GPIOEXP_ENABLE_POW_CTRL_SHIFT_REG 5
 #define GPIOEXP_POW_AMP_BIAS 6
-#define GPIOEXP_RSSI_LEVEL_ADAPTER 7 // Log amplifiers (FM & AM analog demodulators) signal strength voltage
-                                     // shifter
+#define GPIOEXP_RSSI_LEVEL_ADAPTER                                                                                                                             \
+    7 // Log amplifiers (FM & AM analog demodulators) signal strength voltage
+      // shifter
 
 // PORT_B (normal logic)
 

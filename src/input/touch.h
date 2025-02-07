@@ -5,8 +5,10 @@
 #ifndef TRX_FRONTEND_TOUCH_H
 #define TRX_FRONTEND_TOUCH_H
 
+#include "periodic_task.h"
+
 namespace touch {
-    void loop();
+extern periodic_task task;
 }
 
-#endif //TRX_FRONTEND_TOUCH_H
+#endif // TRX_FRONTEND_TOUCH_H

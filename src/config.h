@@ -22,6 +22,10 @@
 #define ISANALOG (config.mode == ANALOG_TX || config.mode == ANALOG_RX)
 #define CONFIG_VERSION "314"
 
+namespace configuration {
+extern periodic_task task;
+}
+
 struct st_vfo_config {
     unsigned long freq = 106700000UL;
     unsigned long step = 1000;
@@ -51,8 +55,8 @@ typedef struct st_config //__attribute__ ((packed))
     // Preferred Local oscillator injection side
     LO_INJECTION lo_injection = HIGH_SIDE;
 
-    unsigned long f_1st_if = 73000000L;
-    unsigned long f_if_fm_tx = 73320000L; // FM modulator IF frequency
+    uint32_t f_1st_if = 73000000L;
+    uint32_t f_if_fm_tx = 73320000L; // FM modulator IF frequency
 
     // VFO config
     uint8_t vfo_ix = 0;

@@ -4,12 +4,14 @@
 
 #include "fft_ui.h"
 #include "dsp/dsp_common.h"
+#include "dsp/fft/fft.h"
 #include "fft_types.h"
 #include "../../settings.h"
 #include "menuBase.h"
 #include "ui/main_view.h"
 #include "ui/menu_widget.h"
 #include "ui/menu.h"
+#include "ui/menu_prompts.h"
 #include "ui/view_manager.h"
 #include <sys/_stdint.h>
 
@@ -41,16 +43,6 @@ uint16_t get_waterfall_period() { return waterfall_period; }
 
 uint8_t get_waterfall_step_size() { return waterfall_step_size; }
 
-result refresh_waterfall_params(eventMask) {
-    init_waterfall();
-    return proceed;
-}
-
-result set_sampling_params(eventMask) {
-    fft_config(config.fft.span);
-    return proceed;
-}
-
 void change_spectrum_colors() { set_spectrum_colors(config.fft.spectrum_line_color, config.fft.spectrum_fill_color); }
 
 void set_spectrum_style(FFT_SPECTRUM_STYLE style) { ((FFTWidget *)view_manager::mainView.FFT())->set_style(style); }
@@ -81,6 +73,9 @@ Menu::optionsPrompt<uint16_t> fillColorMenu((const char *)"Fill color", Menu::co
 Menu::optionsPrompt<uint16_t> lineColorMenu((const char *)"Line color", Menu::color_options, config.fft.spectrum_line_color,
                                             sizeof(Menu::color_options) / sizeof(Menu::color_options[0]), [](uint16_t) { change_spectrum_colors(); });
 
+Menu::numberPrompt<uint8_t> iqBalancePeriodMenu((const char *)"IQ bal. estimate period", &config.fft.iq_balance_estimate_period_ms, 0, ' ', '.', "ms", nullptr,
+                                                0, 255, 5, 10);
+
 TOGGLE(config.fft.enable_iq_balance, setIQBalance, "Enable: ", doNothing, noEvent,
        noStyle //,doExit,enterEvent,noStyle
        ,
@@ -90,8 +85,7 @@ TOGGLE(config.fft.view_IQBalance, showIQBalance, "Show: ", doNothing, noEvent, n
        ,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
-MENU(menuIQBalance, "IQ Balance", doNothing, anyEvent, noStyle, SUBMENU(setIQBalance), SUBMENU(showIQBalance),
-     FIELD(config.fft.iq_balance_estimate_period_ms, "IQ bal. estimate period", "ms.", 0, 255, 10, 0, doNothing, noEvent, wrapStyle),
+MENU(menuIQBalance, "IQ Balance", doNothing, anyEvent, noStyle, SUBMENU(setIQBalance), SUBMENU(showIQBalance), OBJ(iqBalancePeriodMenu),
      OP("Reset", resetIQBalancer, enterEvent), EXIT("<Back"));
 
 TOGGLE(config.fft.enabled, setEnableFFT, "Enabled: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
@@ -102,54 +96,46 @@ TOGGLE(config.fft.removeDC, fftRemoveDC, "Remove DC: ", doNothing, noEvent, noSt
        ,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
-result changeAutoDbScale(eventMask e) {
-    if (config.fft.min_db > config.fft.max_db) {
-        config.fft.min_db = config.fft.max_db;
-    }
-    return proceed;
-}
-
-result changeMinDB(eventMask e) { // constraint min2 and max2 db values
-    if (config.fft.min_db > config.fft.max_db) {
-        config.fft.min_db = config.fft.max_db;
-    }
-    return proceed;
-}
-
 TOGGLE(fft_min_db_auto, autoMinDbToggle, "Auto dB scale ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
-prompt *decimationValues[] = {new Menu::menuValue<uint8_t>("1", 1), new Menu::menuValue<uint8_t>("2", 2), new Menu::menuValue<uint8_t>("4", 4),
-                              new Menu::menuValue<uint8_t>("8", 8)
+menu_option_st<uint8_t> decimation_options[] = {{"1", 1}, {"2", 2}, {"4", 4}, {"8", 8}};
 
-};
+optionsPrompt<uint8_t> decimationMenu((const char *)"Max decimation", decimation_options, config.fft.max_decimation_factor,
+                                      sizeof(decimation_options) / sizeof(decimation_options[0]));
 
-Menu::select<uint8_t> &decimationMenu =
-    *new Menu::select<uint8_t>("Decimation", config.fft.max_decimation_factor, sizeof(decimationValues) / sizeof(prompt *), decimationValues);
-
-Menu::numberPrompt<uint32_t> maxSampleRateMenu((const char *)"Max sample rate", &config.fft.max_sample_rate, 0, ' ', '.', "Hz", doNothing, FFT_MIN_SAMPLE_RATE,
+Menu::numberPrompt<uint32_t> maxSampleRateMenu((const char *)"Max sample rate", &config.fft.max_sample_rate, 0, ' ', '.', "Hz", nullptr, FFT_MIN_SAMPLE_RATE,
                                                ADC_MAX_SAMPLE_RATE, 10000, 25000);
-Menu::numberPrompt<uint32_t> maxDSPSampleRateMenu((const char *)"DSP min sample rate", &config.fft.dsp_max_sample_rate, 0, ' ', '.', "Hz", set_sampling_params,
-                                                  FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 25000);
-Menu::numberPrompt<uint32_t> spanMenu((const char *)"Span", &config.fft.span, 0, ' ', '.', "Hz", set_sampling_params, FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 25000);
+Menu::numberPrompt<uint32_t> maxDSPSampleRateMenu((const char *)"DSP min sample rate", &config.fft.dsp_max_sample_rate, 0, ' ', '.', "Hz",
+                                                  [](uint32_t v) { fft_config(v); }, FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 25000);
+Menu::numberPrompt<uint32_t> spanMenu((const char *)"Span", &config.fft.span, 0, ' ', '.', "Hz", [](uint32_t v) { fft_config(v); }, FFT_MIN_SPAN, FFT_MAX_SPAN,
+                                      10000, 25000);
+Menu::numberPrompt<float> smoothMenu((const char *)"Smooth", &config.fft.smooth_factor, 1, ' ', '.', "", [](float) { fftInit(); }, 0, 1, 0.1, 1);
+
+Menu::numberPrompt<uint16_t> waterfallSpeedMenu((const char *)"Waterfall speed", &config.fft.waterfall_pixels_per_second, 0, ' ', '.', "pps",
+                                                [](uint16_t) { fftInit(); }, 2,
+                                                (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 5);
+
+Menu::numberPrompt<int16_t> minDbMenu((const char *)"DB Min", &config.fft.min_db, 0, ' ', '.', "dB", nullptr, FFT_MIN_DB, FFT_MAX_DB, 1, 5);
+
+Menu::numberPrompt<int16_t> maxDbMenu((const char *)"DB Max", &config.fft.max_db, 0, ' ', '.', "dB", nullptr, FFT_MIN_DB, FFT_MAX_DB, 1, 5);
+
+Menu::numberPrompt<uint16_t> fftCalcNoisePeriodMenu((const char *)"Noise floor calc period", &fft_calc_noise_floor_period_ms, 0, ' ', '.', "ms", nullptr, 0,
+                                                    1000, 10, 100);
+
+Menu::numberPrompt<int> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "", nullptr, 0x00FF, 0xFFFF, 10, 100);
+
+Menu::numberPrompt<int32_t> fCorrectionMenu((const char *)"Freq. correction", &config.f_correction, 0, ' ', '.', "kHz", nullptr, 0, 100000, 10, 100);
 
 MENU(fftSamplingMenu, "Sampling", doNothing, anyEvent, noStyle, OBJ(maxSampleRateMenu), OBJ(maxDSPSampleRateMenu), OBJ(spanMenu))
 
-MENU(fftUIMenu, "Style", doNothing, anyEvent, noStyle, OBJ(fftStyleMenu), OBJ(lineColorMenu), OBJ(fillColorMenu),
-     FIELD(config.fft.waterfall_pixels_per_second, "Waterfall speed", "pps", 2,
-           (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 0, refresh_waterfall_params, anyEvent, noStyle),
-     EXIT("<Back"));
+MENU(fftUIMenu, "Style", doNothing, anyEvent, noStyle, OBJ(fftStyleMenu), OBJ(lineColorMenu), OBJ(fillColorMenu), OBJ(waterfallSpeedMenu));
 
 MENU(fftMenu, "Spectrum", doNothing, anyEvent, noStyle, SUBMENU(setEnableFFT),
-     FIELD(config.fft.max_slices, "Slices", "", 1, FFT_MAX_SLICES, 1, 0, doNothing, noEvent, noStyle), SUBMENU(decimationMenu), SUBMENU(fftSamplingMenu),
-     altFIELD(decPlaces<1>::menuField, config.fft.smooth_factor, "Smooth", " ", 0, 1, 0.1, 0, fftInit, exitEvent, noStyle), SUBMENU(fftWindowMenu),
-     SUBMENU(fftUIMenu), SUBMENU(fftViewMenu), SUBMENU(fftRemoveDC), SUBMENU(menuIQBalance), SUBMENU(autoMinDbToggle),
-     FIELD(config.fft.max_db, "DB Max", "dB", FFT_MIN_DB, FFT_MAX_DB, 1, 0, changeMinDB, exitEvent, noStyle),
-     FIELD(config.fft.min_db, "DB Min", "dB", FFT_MIN_DB, FFT_MAX_DB, 1, 0, changeMinDB, exitEvent, noStyle),
-     FIELD(fft_calc_noise_floor_period_ms, "Noise floor calc period", "ms", 0, 1000, 10, 0, doNothing, exitEvent, noStyle),
-     FIELD(config.fft.maxAmpl, "Amplitude", "", 0x00FF, 0xFFFF, 10, 0, calcFFTRange, exitEvent, noStyle),
-     FIELD(config.f_correction, "Freq. Correction", "kHz.", 0, 100000, 10, 1, doNothing, noEvent, noStyle), EXIT("<Back"));
+     FIELD(config.fft.max_slices, "Slices", "", 1, FFT_MAX_SLICES, 1, 0, doNothing, noEvent, noStyle), OBJ(decimationMenu), SUBMENU(fftSamplingMenu),
+     OBJ(smoothMenu), SUBMENU(fftWindowMenu), SUBMENU(fftUIMenu), SUBMENU(fftViewMenu), SUBMENU(fftRemoveDC), SUBMENU(menuIQBalance), SUBMENU(autoMinDbToggle),
+     OBJ(minDbMenu), OBJ(maxDbMenu), OBJ(fftCalcNoisePeriodMenu), OBJ(amplitudeMenu), OBJ(fCorrectionMenu));
 
 // TOGGLE(fft_show_noise_floor, showNoiseFloorToggle, "Enable", doNothing, noEvent, noStyle//,doExit,enterEvent,noStyle
 //, VALUE("Yes", true, doNothing, noEvent), VALUE("No", false, doNothing, noEvent)

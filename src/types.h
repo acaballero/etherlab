@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include "radio.h"
 #include "dsp/dsp_common.h"
-#include "ui/menu.h"
 
 enum RF_DIRECTION { RF_DIRECTION_RX, RF_DIRECTION_TX };
 
@@ -66,24 +65,6 @@ struct st_radio_status {
     int gain;
 
     bool operator==(const st_radio_status &st) const { return squelch_level == st.squelch_level && tx == st.tx && vfo_ix == st.vfo_ix && gain == st.gain; }
-};
-
-// Status bar info
-struct st_status {
-    MODULATION_MODE modulation;
-    bool tx;
-    radio::BAND band;
-    radio::BAND filter;
-    radio::IF_FILTER if_filter;
-    radio::FRONTEND_PATH frontend_path;
-    bool agc;
-    unsigned long f_carrier;
-    MenuStatus menuStatus = UNKNOWN;
-
-    bool operator==(const st_status &st) const {
-        return modulation == st.modulation && tx == st.tx && frontend_path == st.frontend_path && band == st.band && agc == st.agc &&
-               if_filter == st.if_filter && f_carrier == st.f_carrier && filter == st.filter && menuStatus == st.menuStatus; // or another approach as above
-    }
 };
 
 // Top bar info

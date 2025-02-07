@@ -8,6 +8,7 @@
 #include "view.h"
 #include "button_widget.h"
 #include "../types.h"
+#include "status.h"
 
 #define BTN_WIDTH (DISPLAY_X_PIXELS / 6)
 #define STATUS_MARGIN_TOP 2
@@ -17,7 +18,7 @@ class StatusWidget : public View {
     StatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
 
   protected:
-    st_status _status;
+    status::st_status _status;
 
     uint16_t fg_color, fg_color_auto, bg_color, dimm_color, disabled_color, disabled_bg;
 

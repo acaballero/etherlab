@@ -13,6 +13,8 @@
 #include "scanner.h"
 #include "setup.h"
 #include "standby.h"
+#include "stm32f4xx_hal.h"
+#include "task_manager.h"
 #include "types.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
@@ -55,16 +57,42 @@ unsigned long t1, t2;
 
 void view_loop();
 
-periodic_task view_task(250, view_loop);
-bool printADC = false;
+TaskManager task_manager;
 
-#define pinIndex(P) ((uint8_t)(P > 13 ? P - 14 : P & 7))
-#define pinmask(P) ((uint8_t)(1 << pinIndex(P)))
+periodic_task view_task(250, view_loop);
 
 GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
 MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB, &hmcp03, GPIO_MODE_OUTPUT_PP);
 
-unsigned long last_autosave_ms = 0;
+periodic_task *tasks[] = {
+    &board::task,
+    &radio::task,
+    &agc::task,
+#if LCD_ENABLED
+#if ENABLE_FFT && DSP_ENABLED
+    &fft::fft_task,
+    &fft::iqbalance_task,
+    &fft::waterfall_task,
+#endif
+#if ENABLE_SD_CARD
+    &sdcard::task,
+#endif
+    &view_task,
+#endif
+
+    &scanner::task,
+    &sstrength::task,
+    &battery::task,
+    &power_amp::task,
+    &dsp::task,
+    &rf_coupler::task,
+//  &touch::task) // Not required. Done by interrupts
+#if USB_ENABLED
+    &cat_protocol::task,
+#endif
+    &input_controller::task
+    //  &configuration::task
+};
 
 /***
  *
@@ -81,21 +109,6 @@ unsigned long last_autosave_ms = 0;
  * RSSI level of the log amp, for AM/FM
  */
 
-#define RX_TX_PIN 4
-
-bool change_drive_strength = false;
-bool change_calibration = false;
-
-void checkAutoSaveConfig() {
-
-    unsigned long m = 0; // HAL_GetTick();
-
-    if ((m - last_autosave_ms) > (CONFIG_AUTOSAVE_SECS * 1000)) {
-        last_autosave_ms = m;
-        //  saveConfig();
-    }
-}
-
 /*
  * Bliks the led with a period of period_ms microseconds
  */
@@ -111,10 +124,17 @@ void stop_blink() {
 }
 
 void standby_signal_callback(void *thisptr, void *args) {
-    if (standby::power_mode == standby::POWER_MODE_SLEEP) {
+
+    bool sleep = standby::power_mode == standby::POWER_MODE_SLEEP;
+    if (sleep) {
         blink(100000000);
+
     } else {
         stop_blink();
+    }
+
+    for (auto task : tasks) {
+        task->set_enabled(!sleep);
     }
 }
 
@@ -163,25 +183,6 @@ void view_loop() {
     view_manager::currentView->paint();
 }
 
-//
-// void test_dac() {
-//    uint32_t DAC_OUT[4] = {0, 1241, 2482, 3723};
-//    uint8_t i = 0;
-//    HAL_StatusTypeDef ret=HAL_OK;
-//    ret = HAL_DAC_Start(&hdac1, 0x00000000U); // channel1
-//    ret = HAL_OPAMP_Start(&hopamp4);
-//    while (ret!=HAL_ERROR)
-//    {
-//        //DAC1->DHR12R1 = DAC_OUT[i++];
-//        ret = HAL_DAC_SetValue(&hdac1, 0x00000000U,0,DAC_OUT[i++]);
-//        if(i == 4)
-//        {
-//            i = 0;
-//        }
-//        HAL_Delay(50);
-//    }
-//}
-
 int main() {
 
     setup();
@@ -190,54 +191,13 @@ int main() {
 
     view_manager::init();
 
+    for (auto task : tasks) {
+        task_manager.add(task);
+    }
+
     while (1) {
 
-        printf_("hello\n");
-
-        if (standby::power_mode == standby::POWER_MODE_ON) {
-
-            if (change_drive_strength) {
-                lo_strength(0, config.lo_drive_strength_0);
-                lo_strength(1, config.lo_drive_strength_1);
-                lo_strength(2, config.lo_drive_strength_1);
-                change_drive_strength = false;
-            }
-
-            if (change_calibration) {
-                calibrate_freq();
-                radio::update_freq();
-                change_calibration = false;
-            }
-
-            checkAutoSaveConfig();
-            radio::loop();
-            agc::loop();
-
-#if LCD_ENABLED
-
-#if ENABLE_FFT && DSP_ENABLED
-            fft_task.loop();
-#endif
-
-#if ENABLE_SD_CARD
-            sdcard_loop();
-#endif
-            view_task.loop();
-#endif
-
-            scanner::loop();
-            sstrength::loop();
-            battery::loop();
-            power_amp::loop();
-            dsp_loop();
-            rf_coupler::loop();
-            // touch::loop(); // Not required. Dome by interrupts
-        }
-
-#if USB_ENABLED
-        cat_protocol::loop(); // CAT protocol
-#endif
-        dispatchEvents();
+        task_manager.run();
 
         if (!dsptested) {
 #if DEBUG_SD_CARD

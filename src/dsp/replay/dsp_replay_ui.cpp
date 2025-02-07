@@ -57,8 +57,8 @@ Menu::result change_dsp_status(Menu::eventMask e) {
 
     if (e == Menu::activateEvent) {
         DSP_COMMAND nextCommand = command == DSP_COMMAND_START ? DSP_COMMAND_STOP : DSP_COMMAND_START;
-        ((ReplayTask *)tasks[DSP_TASK_REPLAY])->setLoop(loop);
-        dsp_command({(DSP_COMMAND)nextCommand, DSP_TASK_REPLAY}, on_event);
+        ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->setLoop(loop);
+        dsp_command({(DSP_COMMAND)nextCommand, dsp::DSP_TASK_REPLAY}, on_event);
     }
 
     return Menu::proceed;
@@ -66,7 +66,7 @@ Menu::result change_dsp_status(Menu::eventMask e) {
 
 Menu::result on_menu_event(Menu::eventMask e) {
 
-    ReplayTask *task = ((ReplayTask *)tasks[DSP_TASK_REPLAY]);
+    ReplayTask *task = ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY]);
 
     FRESULT fres;
 
@@ -91,7 +91,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             strcat(start_path, filePicker.selectedFile);
             if (!start_path[0]) {
 
-                strncpy(start_path, ((CaptureTask *)tasks[DSP_TASK_CAPTURE])->getFile()->get_path(), PATH_SIZE);
+                strncpy(start_path, ((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->getFile()->get_path(), PATH_SIZE);
 
                 if (!start_path[0]) {
                     start_path[0] = '/';
@@ -113,7 +113,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
                 view_manager::mainView.add_child(&replay_w);
                 replay_w.set_visible(true);
                 replay_w.setProcessorStatus(&((DspReplayProcessor *)processors[DSP_PROCESSOR_REPLAY])->status);
-                replay_w.setTaskStatus(&((ReplayTask *)tasks[DSP_TASK_REPLAY])->status);
+                replay_w.setTaskStatus(&((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->status);
             }
 
             dsp_set_real_time(true);
@@ -223,7 +223,7 @@ Menu::result on_filepicker(eventMask e) {
             filePicker.enable_deletion();
         }
         if (e == updateEvent) {
-            ((ReplayTask *)tasks[DSP_TASK_REPLAY])->setFile(move(file));
+            ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->setFile(move(file));
             replayToggle.enable();
             freqEdit.enable();
 

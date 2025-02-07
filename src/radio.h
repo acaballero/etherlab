@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_RADIO_H
 #define TRX_FRONTEND_RADIO_H
 
+#include "periodic_task.h"
 #include "stdio.h"
 #include "Signal.h"
 #include "mixer.h"
@@ -113,7 +114,7 @@ void set_vfo(uint8_t);
 uint8_t toggle_vfo();
 uint8_t get_vfo();
 BAND get_band();
-void loop();
+extern periodic_task task;
 bool is_freq_inverted();
 
 #ifdef __cplusplus

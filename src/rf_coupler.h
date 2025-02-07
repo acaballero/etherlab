@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_RF_COUPLER_H
 
 #include "Signal.h"
+#include "periodic_task.h"
 
 // Coefficients for the curve fitting the measured voltage(mV) / power (dBm) at the detector
 // It follows a square law for low power levels (linear with power) and a linear relation with voltage for power greater than 30dB
@@ -19,7 +20,7 @@
 // Log amplifier parameters
 #define CPL_LOGAMP_SLOPE_MV 25
 #define CPL_LOGAMP_OFFSET_MV 1370 // Output at 0 dBm (can be overridden by saved settings)
-#define CPL_LOGAMP_MIN_MV 400 // Noise floor output voltage of the logamp
+#define CPL_LOGAMP_MIN_MV 400     // Noise floor output voltage of the logamp
 
 // TODO: Use curve fitting to linearize from 450Mhz to 500Mhz where the AD8307 loses 3dB (if using directional coupler v1.1)
 
@@ -31,38 +32,32 @@
 
 namespace rf_coupler {
 
-    extern const int HIGH_SWR;
-    extern const int MAX_SWR;
+extern const int HIGH_SWR;
+extern const int MAX_SWR;
 
-    struct rf_coupler_info {
-        float v_for;
-        float v_ref;
-        float p_for_dbm;
-        float p_ref_dbm;
-        float swr;
+struct rf_coupler_info {
+    float v_for;
+    float v_ref;
+    float p_for_dbm;
+    float p_ref_dbm;
+    float swr;
 
-        bool operator==(const rf_coupler_info &st) const {
-            return v_for == st.v_for
-                   && v_ref == st.v_ref
-                   && p_for_dbm == st.p_for_dbm
-                   && p_ref_dbm == st.p_ref_dbm
-                   && swr == st.swr;
-        }
+    bool operator==(const rf_coupler_info &st) const {
+        return v_for == st.v_for && v_ref == st.v_ref && p_for_dbm == st.p_for_dbm && p_ref_dbm == st.p_ref_dbm && swr == st.swr;
+    }
 
-        bool operator!=(const rf_coupler_info &st) const {
-            return !(*this == st);
-        }
-    };
+    bool operator!=(const rf_coupler_info &st) const { return !(*this == st); }
+};
 
-    extern Signal rf_coupler_signal;
-    extern struct rf_coupler_info info;
-    void enable();
-    void disable();
-    void loop();
-    void set_offset(uint16_t offset_mv);
-    uint16_t get_offset();
-    float toWatts(float dbm);
+extern Signal rf_coupler_signal;
+extern struct rf_coupler_info info;
+extern periodic_task task;
+void set_offset(uint16_t offset_mv);
+uint16_t get_offset();
+float toWatts(float dbm);
+void enable();
+void disable();
 
-}
+} // namespace rf_coupler
 
-#endif //TRX_FRONTEND_RF_COUPLER_H
+#endif // TRX_FRONTEND_RF_COUPLER_H

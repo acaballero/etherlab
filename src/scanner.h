@@ -40,10 +40,8 @@ struct st_scanner_info {
 
 extern st_scanner_info scanner_config;
 extern Signal signal;
-
+extern periodic_task task;
 void stop();
-
-void loop();
 
 void configure(st_scanner_info &);
 } // namespace scanner

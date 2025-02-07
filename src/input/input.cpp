@@ -9,20 +9,16 @@
 #include "input_controller.h"
 #include "../lib/ST77XX-STM32/XPT2046_touch.h"
 #include "mcp23017.h"
-
+#include "stm32f4xx_hal_gpio.h"
 
 int8_t last_pressed_button_id = -1;
-GPIOInputPin FrontPanelInterruptPin(FRONT_PANEL_INTERRUPT_PIN_A, FRONT_PANEL_INTERRUPT_PIN_A_PORT, PINMODE_IT,
-                                    GPIO_NOPULL, 0,
-                                    frontPanelInterruptCallback);
+GPIOInputPin FrontPanelInterruptPin(FRONT_PANEL_INTERRUPT_PIN_A, FRONT_PANEL_INTERRUPT_PIN_A_PORT, PINMODE_IT, GPIO_NOPULL, 0, frontPanelInterruptCallback);
 
-GPIOInputPin TouchPanelInterruptPin(TOUCH_IRQ_PIN, TOUCH_IRQ_PORT, PINMODE_IT, GPIO_NOPULL, 2,
-                                    touchPanelInterruptCallback);
+GPIOInputPin TouchPanelInterruptPin(TOUCH_IRQ_PIN, TOUCH_IRQ_PORT, PINMODE_IT, GPIO_NOPULL, 2, touchPanelInterruptCallback);
 
-GPIOInputPin BackBtnInputPin(BACK_BTN_PIN, BACK_BTN_GPIO_PORT, PINMODE_IT, GPIO_NOPULL, 0,
-                             backBtnInterruptCallback);
+GPIOInputPin BackBtnInputPin(BACK_BTN_PIN, BACK_BTN_GPIO_PORT, PINMODE_IT, GPIO_NOPULL, 0, backBtnInterruptCallback);
 
-//uint16_t analogKeyboardOpenVoltage = 1 << 12; // FULL ADC range by default
+// uint16_t analogKeyboardOpenVoltage = 1 << 12; // FULL ADC range by default
 
 void backBtnInterruptCallback() {
     GPIO_PinState state = BackBtnInputPin.getState();
@@ -38,16 +34,22 @@ void backBtnInterruptCallback() {
     }
 }
 
-void touchPanelInterruptCallback() {
-    xpt2046_touch_check(&xpt2046_touch);
-}
+void touchPanelInterruptCallback() { xpt2046_touch_check(&xpt2046_touch); }
 
 uint8_t get_front_panel_int_pin() {
     uint8_t reg = 0;
     mcp23017_read(&hmcp03, REGISTER_INTFA, &reg);
-    for (int i = 0; i < 8; i++) if ((reg & (1 << i)) == (1 << i)) return i;
+    for (int i = 0; i < 8; i++) {
+        if ((reg & (1 << i)) == (1 << i)) {
+            return i;
+        }
+    }
     mcp23017_read(&hmcp03, REGISTER_INTFB, &reg);
-    for (int i = 0; i < 8; i++) if ((reg & (1 << i)) == (1 << i)) return i + 8;
+    for (int i = 0; i < 8; i++) {
+        if ((reg & (1 << i)) == (1 << i)) {
+            return i + 8;
+        }
+    }
     return 16;
 }
 
@@ -56,7 +58,6 @@ void frontPanelInterruptCallback() {
     // and we're using an MCP23017 (one pulse per button change). The second time pin will be set to 16 so it has no
     // effect
     uint8_t pin = get_front_panel_int_pin();
-
 
     if (pin < 16) {
         if (last_pressed_button_id >= 0 && pin == last_pressed_button_id) {
@@ -124,4 +125,3 @@ void frontPanelInterruptCallback() {
         }
     }
 }*/
-

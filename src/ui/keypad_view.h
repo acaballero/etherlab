@@ -59,9 +59,9 @@ class KeypadView : public View {
     double min;
     double max;
 
-    Button button_M{{button_w * (cols - 1), button_h * 1, button_w, button_h}, display, "M", C565_YELLOW, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
-    Button button_K{{button_w * (cols - 1), button_h * 2, button_w, button_h}, display, "k", C565_YELLOW, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
-    Button button_1{{button_w * (cols - 1), button_h * 3, button_w, button_h}, display, "x1", C565_YELLOW, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
+    Button button_M{{button_w * (cols - 1), button_h * 1, button_w, button_h}, display, "M", C565_BLACK, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
+    Button button_K{{button_w * (cols - 1), button_h * 2, button_w, button_h}, display, "k", C565_BLACK, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
+    Button button_1{{button_w * (cols - 1), button_h * 3, button_w, button_h}, display, "x1", C565_BLACK, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
 
     Button button_close{
         {button_w * (cols - 1), button_h * 4, button_w, button_h}, display, "Cancel", C565_WHITE, C565_GREY_DARKER, BUTTON_STYLE_3D, ALIGN_CENTER};
@@ -72,7 +72,7 @@ class KeypadView : public View {
     const char *display_buttons_labels[6] = {"M", "k", "x1", "", "<", "Cancel"};
     const char *display_buttons_labels_no_mult[6] = {"x1", "", "", "", "<", "Cancel"};
 
-    DisplayPanelButtonsWidget display_panel_buttons = {{0, DISPLAY_Y_PIXELS - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
+    DisplayPanelButtonsWidget display_panel_buttons = {{0, HEIGHT - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
 
     void on_button(Button &button);
 

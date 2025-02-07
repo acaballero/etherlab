@@ -9,6 +9,7 @@
 #include "hw/hw_config.h"
 #include "config.h"
 #include "Signal.h"
+#include "ui/menu_options.h"
 
 #if DEBUG_MSGS
 #if SWO_ENABLED
@@ -30,6 +31,24 @@ typedef struct {
     StatusCode code = ST_OK;
     char msg[30];
 } Status;
+
+// Status bar info
+struct st_status {
+    MODULATION_MODE modulation;
+    bool tx;
+    radio::BAND band;
+    radio::BAND filter;
+    radio::IF_FILTER if_filter;
+    radio::FRONTEND_PATH frontend_path;
+    bool agc;
+    unsigned long f_carrier;
+    Menu::MenuStatus menuStatus = Menu::UNKNOWN;
+
+    bool operator==(const st_status &st) const {
+        return modulation == st.modulation && tx == st.tx && frontend_path == st.frontend_path && band == st.band && agc == st.agc &&
+               if_filter == st.if_filter && f_carrier == st.f_carrier && filter == st.filter && menuStatus == st.menuStatus; // or another approach as above
+    }
+};
 
 extern Status systemStatus;
 inline void debug_print(const char *str, ...);

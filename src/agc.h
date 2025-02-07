@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_AGC_H
 
 #include "Signal.h"
+#include "periodic_task.h"
 
 namespace agc {
 extern Signal signal;
@@ -14,7 +15,7 @@ extern float agc_voltage;
 float get_agc();
 int get_gain();
 bool is_overload();
-void loop();
+extern periodic_task task;
 } // namespace agc
 
 #endif // TRX_FRONTEND_AGC_H

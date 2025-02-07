@@ -5,7 +5,10 @@ CompileFlags:
     ["-isystem","/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/7.2.1",
      "-isystem","/home/ahcr/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include/c++/7.2.1/arm-none-eabi",
      "-isystem","/home/ahcr/.platformio/packages/framework-stm32cube/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
-     "-W","sign-compare" 
+     "-W","sign-compare",
+     "-W","no-unused-parameter",
+     "-W","unused-include-directive"
+
     ]
     
   Remove:
@@ -19,7 +22,7 @@ Index:
   Background: true
 
 
-     
+      
  
 
    

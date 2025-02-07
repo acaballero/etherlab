@@ -9,15 +9,10 @@
 
 namespace touch {
 
-    void check_touch();
+void check_touch();
 
-    periodic_task task(100, check_touch);
+periodic_task task(100, check_touch);
 
-    void check_touch() {
-        TouchPanelInterruptPin.checkState();
-    }
+void check_touch() { TouchPanelInterruptPin.checkState(); }
 
-    void loop() {
-        task.loop();
-    }
-}
+} // namespace touch

@@ -12,6 +12,9 @@
 
 namespace cat_protocol {
 
+void process_command_queue();
+periodic_task task(100, process_command_queue);
+
 void cmd_read_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size);
 
 void cmd_read_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size);
@@ -281,5 +284,4 @@ void process_command_queue() {
     }
 }
 
-void loop() { process_command_queue(); }
 } // namespace cat_protocol

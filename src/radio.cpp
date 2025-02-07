@@ -346,8 +346,6 @@ bool tx_enabled() {
     return bands[band].tx_enabled;
 }
 
-void loop() { task.loop(); }
-
 void task_loop() {
 
     if (config.vfo[config.vfo_ix].freq != radio::f_last) {

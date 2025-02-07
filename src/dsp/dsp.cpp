@@ -19,13 +19,17 @@
 #include "buffer.hpp"
 #include "dsp_buffers.h"
 
+void dsp_loop();
+namespace dsp {
+periodic_task task(50, dsp_loop);
+}
 Task *current_task;
 DspProcessor *current_processor;
 buffer_t<complex_t> *current_buffer;
 st_dspCommand pending_command{DSP_COMMAND_NONE};
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
-volatile bool execute_task=false;
+volatile bool execute_task = false;
 #endif
 
 void (*on_event)(st_dspStatus *);
@@ -61,11 +65,11 @@ void dsp_stop_tasks() {
     }
 }
 
-uint8_t dsp_command(st_dspCommand command, void(*cb)(st_dspStatus *)) {
+uint8_t dsp_command(st_dspCommand command, void (*cb)(st_dspStatus *)) {
 
     on_event = cb;
     pending_command = command;
-    current_task = tasks[pending_command.id];
+    current_task = dsp::tasks[pending_command.id];
     current_task->status.status = DSP_STATUS_PENDING;
     current_task->status.id = pending_command.id;
     dsp_status = &current_task->status;
@@ -89,7 +93,9 @@ void dsp_start_task() {
         current_processor->start();
         current_buffer->sample_rate = current_task->status.sample_rate;
 
-        if (on_event) on_event(dsp_status);
+        if (on_event) {
+            on_event(dsp_status);
+        }
     }
 }
 
@@ -115,7 +121,7 @@ void dsp_loop() {
 #if !EXECUTE_TASKS_ON_INTERRUPT
     if (execute_task) {
         current_task->work();
-        execute_task=false;
+        execute_task = false;
     }
 #endif
 }
@@ -124,10 +130,10 @@ void dsp_loop() {
 inline void dsp_work() {
     // GPIOD->BSRR |= GPIO_PIN_5;
 
-    if (!dsp_status || dsp_status->direction==DSP_DIRECTION_IN) {
+    if (!dsp_status || dsp_status->direction == DSP_DIRECTION_IN) {
         // Fill the FFT FIFO. Here we don't care if we overrun as the FFT doesn't need to be processed in real-time
         // TODO: write to the FFT FIFO in a separate DspProcessor
-        FIFO_ERROR err = fft_fifo.writeBlock((char *) current_buffer->p, current_buffer->size_bytes);
+        FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
         UNUSED(err);
     }
 
@@ -135,8 +141,8 @@ inline void dsp_work() {
         current_processor->work(current_buffer);
     }
 
-    if (dsp_status && dsp_status->direction==DSP_DIRECTION_OUT) {
-        FIFO_ERROR err = fft_fifo.writeBlock((char *) current_buffer->p, current_buffer->size_bytes);
+    if (dsp_status && dsp_status->direction == DSP_DIRECTION_OUT) {
+        FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
         UNUSED(err);
     }
 
@@ -174,7 +180,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc) {
 }
 
 void TIM8_TRG_COM_TIM14_IRQHandler(void) {
-//void TIM1_BRK_TIM15_IRQHandler(void) {
+    // void TIM1_BRK_TIM15_IRQHandler(void) {
 
     // Prevent interrupting the LCD drawing phase or the DMA will overrun the buffer
     // TODO: Consider a different approach, as (also) lowering the refresh ratio while doing any critical DSP task, or
@@ -185,7 +191,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
 #if EXECUTE_TASKS_ON_INTERRUPT
             current_task->work();
 #else
-            execute_task=true;
+            execute_task = true;
 #endif
         }
     }
@@ -199,8 +205,8 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
 
 void dsp_test_cb(st_dspStatus *status) {
 
-    if (dsp_status->error == DSP_ERR_NONE && dsp_status->id != DSP_TASK_REPLAY) {
-        dsp_command({DSP_COMMAND_START, DSP_TASK_REPLAY}, dsp_test_cb);
+    if (dsp_status->error == DSP_ERR_NONE && dsp_status->id != dsp::DSP_TASK_REPLAY) {
+        dsp_command({DSP_COMMAND_START, dsp::DSP_TASK_REPLAY}, dsp_test_cb);
     }
 }
 
@@ -217,11 +223,11 @@ void dspStop() {
     }
 
     if (current_processor && current_task) {
-//        if (current_processor->status.direction == DSP_DIRECTION_IN) {
-//            current_task->status.fifo_overruns = current_processor->status.fifo_overruns;
-//        } else {
-//            current_task->status.fifo_underruns = current_processor->status.fifo_underruns;
-//        }
+        //        if (current_processor->status.direction == DSP_DIRECTION_IN) {
+        //            current_task->status.fifo_overruns = current_processor->status.fifo_overruns;
+        //        } else {
+        //            current_task->status.fifo_underruns = current_processor->status.fifo_underruns;
+        //        }
     }
 
     current_task = NULL;
@@ -231,12 +237,12 @@ void dspStop() {
     execute_task = false;
 #endif
 
-    if (on_event) on_event(dsp_status);
+    if (on_event) {
+        on_event(dsp_status);
+    }
 }
 
-void dspSuccess() {
-    dspStop();
-}
+void dspSuccess() { dspStop(); }
 
 void dspError(DSP_ERROR err) {
 

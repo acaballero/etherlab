@@ -30,14 +30,6 @@ extern MCP23017_HandleTypeDef hmcp03;
 #define DISP_LED_PORT GPIOD
 #define UNUSEDDEFINE 2
 
-#ifdef PEPE
-#define TESTTTTTT 2
-#else
-
-#define TESTTT 1
-
-#endif
-
 // Touch panel
 #define TOUCH_CE_PIN GPIO_PIN_6
 #define TOUCH_CE_PORT GPIOD

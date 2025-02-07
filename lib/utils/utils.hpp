@@ -57,7 +57,7 @@ void enableTimers();
 
 void disableTimers();
 
-void format_long(int64_t x, char *buf);
+char *format_long(int64_t x, char *buf);
 
 void format_long(int64_t x, char *buf, uint8_t length, char thou_separator = '.', int max_length = 20);
 

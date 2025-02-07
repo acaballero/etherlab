@@ -115,7 +115,10 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &)>
         if (on_select_handler) {
             button->on_select = on_select_handler;
         } else if (on_select) {
-            button->on_select = [this](Button &button) { on_select(button.id); };
+            button->on_select = [this](Button &button) {
+                ;
+                on_select(button.id);
+            };
         }
 
         button->set_style(BUTTON_STYLE_3D);

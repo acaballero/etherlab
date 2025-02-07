@@ -148,12 +148,6 @@ void Widget::set_visible(bool v) {
         flags.visible = v;
         flags.dirty = v;
 
-        if (id == 100) {
-            for (int i = 0; i < 100; i++) {
-                printf_("visible:%i\n", v);
-            }
-        }
-
         set_focus(false);
 
         /* TODO: This on_show/on_hide implementation seems inelegant.

@@ -8,6 +8,7 @@
 #include <arm_math.h>
 #include "dsp/blocks/dc_block.h"
 #include "arm_common_tables.h"
+#include "dsp/fft/fft_types.h"
 #include "hw/stm32f4xx/adc.h"
 #include "hw/stm32f4xx/timers.h"
 #include "ui/view.h"
@@ -112,9 +113,20 @@ bool initialized = false;
 
 void fft_loop();
 
+namespace fft {
 periodic_task fft_task(config.fft.refresh_period_ms, fft_loop);
-uint64_t last_waterfall_ms = 0;
-uint64_t last_iqbalance_ms = 0;
+periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
+    view_manager::mainView.IQBalance()->set_visible(true);
+    view_manager::mainView.Waterfall()->set_visible(false);
+    view_manager::mainView.IQBalance()->set_dirty();
+});
+periodic_task waterfall_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
+    view_manager::mainView.IQBalance()->set_visible(false);
+    view_manager::mainView.Waterfall()->set_visible(true);
+    view_manager::mainView.Waterfall()->set_dirty();
+});
+} // namespace fft
+
 uint64_t last_iqbalance_estimate_ms = 0;
 
 // Calculates FFT parameters from desired span, decimation factor and n_slices
@@ -256,7 +268,7 @@ uint32_t fft_max_span() { return config.fft.max_slices * FFT_BANDWIDTH * 2; }
  * - Sample rate
  * - FFT number of usable bins
  * - Number of slides needed
- 
+
  * - FFT size
  * - RBW
  * - screen pixel/bin ratio
@@ -873,16 +885,13 @@ void fft_work() {
 
         uint8_t peak_ix = getPeak(fft_params.start_bin, fft_params.start_bin + fft_params.nbins, fft_peak_v);
 
-        if (fft_output) {
+        // Only consider a peak value if it's above a threshold from the current noise floor
+        if (fft_peak_v > FFT_SIGNAL_THRESHOLD_DB + fft_noise_floor_db && fft_peak < fft_peak_v) {
 
-            // Only consider a peak value if it's above a threshold from the current noise floor
-            if (fft_peak_v > FFT_SIGNAL_THRESHOLD_DB + fft_noise_floor_db && fft_peak < fft_peak_v) {
+            fft_peak = fft_peak_v;
+            fft_peak_bin = fft_slice_n * fft_params.nbins + peak_ix - fft_params.start_bin;
 
-                fft_peak = fft_peak_v;
-                fft_peak_bin = fft_slice_n * fft_params.nbins + peak_ix - fft_params.start_bin;
-
-                fft_peak_f = fft_params.span_if_start + fft_params.rbw * fft_peak_bin; // config.vfo[config.vfo_ix].freq + (rbw*(peak_ix-(FFT_N>>1)))*1000;
-            }
+            fft_peak_f = fft_params.span_if_start + fft_params.rbw * fft_peak_bin; // config.vfo[config.vfo_ix].freq + (rbw*(peak_ix-(FFT_N>>1)))*1000;
         }
     }
 }
@@ -919,23 +928,6 @@ void updateFFT() {
             fft_estimateIQBalance = true;
         } else {
             fft_estimateIQBalance = false;
-        }
-    }
-
-    if (config.fft.view_IQBalance) {
-        if (m - last_iqbalance_ms > FFT_IQBALANCE_REFRESH_PERIOD_MS) {
-            last_iqbalance_ms = m;
-
-            view_manager::mainView.IQBalance()->set_visible(true);
-            view_manager::mainView.Waterfall()->set_visible(false);
-            view_manager::mainView.IQBalance()->set_dirty();
-        }
-    } else {
-        if (m - last_waterfall_ms > fftUI::get_waterfall_period()) {
-            last_waterfall_ms = m;
-            view_manager::mainView.IQBalance()->set_visible(false);
-            view_manager::mainView.Waterfall()->set_visible(true);
-            view_manager::mainView.Waterfall()->set_dirty();
         }
     }
 

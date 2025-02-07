@@ -12,6 +12,28 @@
 #include "../../../lib/ADF4351/adf4351.h"
 #include "../../../lib/Si5351/si5351_I2C.h"
 
+namespace board {
+
+bool change_drive_strength = false;
+bool change_calibration = false;
+
+void loop() {
+    if (change_drive_strength) {
+        lo_strength(0, config.lo_drive_strength_0);
+        lo_strength(1, config.lo_drive_strength_1);
+        lo_strength(2, config.lo_drive_strength_1);
+        change_drive_strength = false;
+    }
+
+    if (change_calibration) {
+        calibrate_freq();
+        radio::update_freq();
+        change_calibration = false;
+    }
+}
+periodic_task task(100, loop);
+} // namespace board
+
 Si5351 si5351;
 
 adf4350_init_param adf4350Params = {

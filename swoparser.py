@@ -134,8 +134,8 @@ class StreamManager:
             if stream_id in self.streams:
 
                 # try:
-                # print("size:"+str(payload_size))
-                # //print(bstring[1:payload_size+1])
+                # print("size:" + str(payload_size))
+                # print(bstring[1 : payload_size + 1])
                 s = bstring[1 : payload_size + 1].decode("ascii")
                 self.streams[stream_id].add_chars(s)
             # except:
@@ -189,6 +189,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
                 time.sleep(0.1)
 
         tcl_buf = tcl_buf + data
+        # print("got data " + str(data))
 
         # Tcl messages are terminated with a 0x1A byte
         temp = tcl_buf.split(b"\x1a", 1)

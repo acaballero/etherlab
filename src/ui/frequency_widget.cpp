@@ -9,7 +9,8 @@
 #include "scanner.h"
 #include "ui/button_widget.h"
 #include "view_manager.h"
-#include <stdint.h>
+#include "stdio.h"
+#include "menu_prompts.h"
 
 void FrequencyWidget::init() {
 
@@ -72,6 +73,7 @@ bool FrequencyWidget::on_input(const st_inputEvent event) {
 void FrequencyWidgetInner::paint_callback() {
 
     char buf[20];
+
     uint16_t fg_color;
 
     display->clear();

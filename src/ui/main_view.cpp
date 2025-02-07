@@ -8,10 +8,12 @@
 #include "menu.h"
 #include "status.h"
 #include "view_manager.h"
+#include "menu_options.h"
 
 MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPLAY_Y_PIXELS + DISPLAY_PADDING * 2}) {
 
     this->fft_w.set_show_fps(true);
+    this->waterfall_w.set_show_fps(true);
     this->tune_w.set_visible(config.debug);
     this->radio_w.set_visible(!config.debug);
     this->radio_w.id = 100;
@@ -42,7 +44,7 @@ void MainView::before_paint() {
         radio_w.set_visible(false);
         menu_w.set_visible(false);
     } else {
-        if (Menu::menuStatus == IDLE) {
+        if (Menu::menuStatus == Menu::IDLE) {
             if (config.debug) {
                 smeter_w.set_visible(false);
                 radio_w.set_visible(true);

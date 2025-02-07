@@ -10,66 +10,60 @@
 
 namespace battery {
 
-    void check_battery();
+void check_battery();
 
-    battery_st_info battery_info;
-    periodic_task task(2000,check_battery);
-    Signal battery_signal;
+battery_st_info battery_info;
+periodic_task task(2000, check_battery);
+Signal battery_signal;
 
-    void update_battery_info() {
+void update_battery_info() {
 
-        uint16_t adcv = GetADCValue(&BATTERY_VOLTAGE_ADC_HANDLER, INPUT_VOLTAGE_ADC_CHANNEL, 2);
-        float v = ((float) adcv / (float) MAX_ADC_VALUE) * V_REF * VOLTAGE_DIVISION_RATIO;
+    uint16_t adcv = GetADCValue(&BATTERY_VOLTAGE_ADC_HANDLER, INPUT_VOLTAGE_ADC_CHANNEL, 2);
+    float v = ((float)adcv / (float)MAX_ADC_VALUE) * V_REF * VOLTAGE_DIVISION_RATIO;
 
-        // Round to 2 decimal places
-        v = roundf(v * 100) / 100;
+    // Round to 2 decimal places
+    v = roundf(v * 100) / 100;
 
-        float delta = battery_info.voltage - v;
+    float delta = battery_info.voltage - v;
 
-        if (abs(delta) / fmin(battery_info.voltage, v) < 25) {
-            // exponential filter
-            float filter_factor = 0.4;
-            battery_info.voltage = (battery_info.voltage - (filter_factor * delta));
-        } else {
-            // If delta>25% (which may occur at startup or when the charger is plugged-in) we won't smooth it
-            battery_info.voltage = v;
-        }
-
-        // Truncate
-        battery_info.voltage = (float)((int)(battery_info.voltage*100) / (float)100);
-
-        // Without measuring the outgoing current is difficult to calculate the exact remaining charge, so we are just checking whether it's above 80%
-        // or below 20% and setting the capacity as 100%, 50% or 10%
-        battery_info.capacity = battery_info.voltage > BATTERY_VOLTAGE_80 ? 100 : (battery_info.voltage > BATTERY_VOLTAGE_20 ? 50 : 10);
-
-        // Calculate threshold levels taking hysteresis into account
-        float battery_voltage_80 =
-                BATTERY_VOLTAGE_80 - (battery_info.status == BATTERY_STATUS_HIGH ? BATTERY_VOLTAGE_80 * BATTERY_STATUS_HYSTERESIS : 0);
-        float battery_voltage_20 =
-                BATTERY_VOLTAGE_20 - (battery_info.status != BATTERY_STATUS_LOW ? BATTERY_VOLTAGE_20 * BATTERY_STATUS_HYSTERESIS : 0);
-
-        if (battery_info.voltage > INPUT_VOLTAGE_MAX) {
-            battery_info.status = BATTERY_STATUS_CHARGING;
-        } else if (battery_info.voltage > battery_voltage_80) {
-            battery_info.status = BATTERY_STATUS_HIGH;
-        } else if (battery_info.voltage < battery_voltage_20) {
-            battery_info.status = BATTERY_STATUS_LOW;
-        } else {
-            battery_info.status = BATTERY_STATUS_MEDIUM;
-        }
+    if (abs(delta) / fmin(battery_info.voltage, v) < 25) {
+        // exponential filter
+        float filter_factor = 0.4;
+        battery_info.voltage = (battery_info.voltage - (filter_factor * delta));
+    } else {
+        // If delta>25% (which may occur at startup or when the charger is plugged-in) we won't smooth it
+        battery_info.voltage = v;
     }
 
-    void check_battery() {
-        battery_st_info last_battery_info = battery_info;
-        update_battery_info();
+    // Truncate
+    battery_info.voltage = (float)((int)(battery_info.voltage * 100) / (float)100);
 
-        if (!(last_battery_info == battery_info)) {
-            battery_signal.emit(&battery_info);
-        }
-    }
+    // Without measuring the outgoing current is difficult to calculate the exact remaining charge, so we are just checking whether it's above 80%
+    // or below 20% and setting the capacity as 100%, 50% or 10%
+    battery_info.capacity = battery_info.voltage > BATTERY_VOLTAGE_80 ? 100 : (battery_info.voltage > BATTERY_VOLTAGE_20 ? 50 : 10);
 
-    void loop() {
-        task.loop();
+    // Calculate threshold levels taking hysteresis into account
+    float battery_voltage_80 = BATTERY_VOLTAGE_80 - (battery_info.status == BATTERY_STATUS_HIGH ? BATTERY_VOLTAGE_80 * BATTERY_STATUS_HYSTERESIS : 0);
+    float battery_voltage_20 = BATTERY_VOLTAGE_20 - (battery_info.status != BATTERY_STATUS_LOW ? BATTERY_VOLTAGE_20 * BATTERY_STATUS_HYSTERESIS : 0);
+
+    if (battery_info.voltage > INPUT_VOLTAGE_MAX) {
+        battery_info.status = BATTERY_STATUS_CHARGING;
+    } else if (battery_info.voltage > battery_voltage_80) {
+        battery_info.status = BATTERY_STATUS_HIGH;
+    } else if (battery_info.voltage < battery_voltage_20) {
+        battery_info.status = BATTERY_STATUS_LOW;
+    } else {
+        battery_info.status = BATTERY_STATUS_MEDIUM;
     }
 }
 
+void check_battery() {
+    battery_st_info last_battery_info = battery_info;
+    update_battery_info();
+
+    if (!(last_battery_info == battery_info)) {
+        battery_signal.emit(&battery_info);
+    }
+}
+
+} // namespace battery

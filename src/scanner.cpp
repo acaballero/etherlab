@@ -159,5 +159,4 @@ void sweep() {
     }
 }
 
-void loop() { task.loop(); }
 } // namespace scanner

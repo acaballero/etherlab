@@ -12,8 +12,6 @@ CaptureTask captureTask(dspSuccess, dspError);
 ReplayTask replayTask(dspSuccess, dspError);
 SignalGeneratorTask signalGeneratorTask(dspSuccess, dspError);
 
-Task *tasks[]{
-        &captureTask,
-        &replayTask,
-        &signalGeneratorTask
-};
+namespace dsp {
+Task *tasks[]{&captureTask, &replayTask, &signalGeneratorTask};
+}

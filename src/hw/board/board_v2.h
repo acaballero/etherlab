@@ -24,22 +24,15 @@
 // CMX973 allowed min gain value per amplifier
 // VGA: -18dB
 // VGB: -30dB
-enum IF_GAIN {
-   IF_GAIN_0,
-   IF_GAIN_MINUS6,
-   IF_GAIN_MINUS12,
-   IF_GAIN_MINUS18,
-   IF_GAIN_MINUS24,
-   IF_GAIN_MINUS30
-};
+enum IF_GAIN { IF_GAIN_0, IF_GAIN_MINUS6, IF_GAIN_MINUS12, IF_GAIN_MINUS18, IF_GAIN_MINUS24, IF_GAIN_MINUS30 };
 
 #define MIN_VGA_GAIN IF_GAIN_MINUS18
 #define MIN_VGB_GAIN IF_GAIN_MINUS24
 
 struct st_radio_config {
-   RF_DIRECTION direction;
-   uint64_t sample_freq;
-   uint64_t freq = 0;
+    RF_DIRECTION direction;
+    uint64_t sample_freq;
+    uint64_t freq = 0;
 };
 
 extern adf4350_init_param adf4350Params;
@@ -67,5 +60,11 @@ int get_max_input_dbm();
  * Configures the digital radio
  */
 bool radio_config(st_radio_config);
+
+namespace board {
+extern bool change_drive_strength;
+extern bool change_calibration;
+extern periodic_task task;
+} // namespace board
 
 #endif // TRX_FRONTEND_BOARD_V2_H

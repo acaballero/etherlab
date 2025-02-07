@@ -11,6 +11,7 @@
 #include "status.h"
 #include "scanner.h"
 #include "menu_frequency.h"
+#include "menu_prompts.h"
 
 namespace scanner_ui {
 
@@ -18,12 +19,10 @@ scanner::st_scanner_info scanner_config;
 
 Menu::result configue_scanner(Menu::eventMask e); // Forward declaration
 
-Menu::numberPrompt<uint64_t> freqEditMin((const char *)"Freq. from", &scanner_config.freq_min, 0, ' ', '.', nullptr, Menu::doNothing, config.f_min,
-                                         config.f_max);
-Menu::numberPrompt<uint64_t> freqEditMax((const char *)"Freq. to", &scanner_config.freq_max, 0, ' ', '.', nullptr, Menu::doNothing, config.f_min, config.f_max);
-
-// menu_frequency::FreqEditField freqEdit_min("Start freq", (Menu::callback) configue_scanner);
-// menu_frequency::FreqEditField freqEdit_max("Stop freq", (Menu::callback) configue_scanner);
+Menu::numberPrompt<uint64_t> freqEditMin((const char *)"Freq. from", &scanner_config.freq_min, 0, ' ', '.', "Hz", nullptr, (uint64_t)config.f_min,
+                                         (uint64_t)config.f_max);
+Menu::numberPrompt<uint64_t> freqEditMax((const char *)"Freq. to", &scanner_config.freq_max, 0, ' ', '.', "Hz", nullptr, (uint64_t)config.f_min,
+                                         (uint64_t)config.f_max);
 
 void configure() {
 
@@ -113,5 +112,5 @@ MENU(menuScan, "Scan", on_menu_event, (Menu::eventMask)(enterEvent | exitEvent),
      FIELD(scanner_config.freq_step, "Step:", " Hz", 1000, 1000000, 1000, 0, configue_scanner, enterEvent, noStyle),
      FIELD(scanner_config.period_s, "Period:", " s", 1, 60000, 1, 0, configue_scanner, enterEvent, noStyle),
      FIELD(scanner_config.pause_ms, "Scan pause:", " ms", 0, 10000, 1000, 0, configue_scanner, enterEvent, noStyle), SUBMENU(modeMenu), OBJ(freqEditMin),
-     OBJ(freqEditMax), EXIT("<Back"));
+     OBJ(freqEditMax));
 } // namespace scanner_ui

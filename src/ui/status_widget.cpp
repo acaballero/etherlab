@@ -106,9 +106,9 @@ void StatusWidget::before_paint() {
 
     radio::BAND band = config.band == radio::BAND_AUTO ? radio::find_band(radio::get_frequency()) : config.band;
 
-    st_status status = {config.modulation, ISTX, band, radio::filter, radio::if_filter, config.frontend_path, config.agc_enabled,
-                        _status.f_carrier, // we won't show the frequency in the status bar, so use current_status value
-                        Menu::menuStatus
+    status::st_status status = {config.modulation, ISTX, band, radio::filter, radio::if_filter, config.frontend_path, config.agc_enabled,
+                                _status.f_carrier, // we won't show the frequency in the status bar, so use current_status value
+                                Menu::menuStatus
 
     };
 
@@ -132,7 +132,7 @@ void StatusWidget::before_paint() {
             fg_color_auto = C565_MAGENTA;
         }
 
-        if (Menu::menuStatus == IDLE) {
+        if (Menu::menuStatus == Menu::IDLE) {
             btnModulation.set_visible(true);
             btnFrontend.set_visible(true);
             btnAgc.set_visible(true);

@@ -4,26 +4,15 @@
 
 #include "GPIOInputPin.h"
 
-GPIO_PinState GPIOInputPin::read() {
+GPIO_PinState GPIOInputPin::read() { return HAL_GPIO_ReadPin(this->port, this->pin); }
 
-    return HAL_GPIO_ReadPin(this->port, this->pin);
-}
+uint32_t GPIOInputPin::getPin() const { return pin; }
 
-uint32_t GPIOInputPin::getPin() const {
-    return pin;
-}
+void GPIOInputPin::setPin(uint32_t pin) { this->pin = pin; }
 
-void GPIOInputPin::setPin(uint32_t pin) {
-    this->pin = pin;
-}
+GPIO_TypeDef *GPIOInputPin::getPort() const { return port; }
 
-GPIO_TypeDef *GPIOInputPin::getPort() const {
-    return port;
-}
-
-void GPIOInputPin::setPort(GPIO_TypeDef *port) {
-    this->port = port;
-}
+void GPIOInputPin::setPort(GPIO_TypeDef *port) { this->port = port; }
 
 /*
  * Initialises the GPIO pin
@@ -44,6 +33,5 @@ void GPIOInputPin::init() {
     GPIO_InitStruct.Pull = pull;
     HAL_GPIO_Init(this->port, &GPIO_InitStruct);
 
-    this->state = pull==GPIO_PULLUP ? GPIO_PIN_SET : read();
+    this->state = pull == GPIO_PULLUP ? GPIO_PIN_SET : read();
 }
-

@@ -18,6 +18,10 @@
 #include "ui/view_manager.h"
 #include "../../lib/ST77XX-STM32/XPT2046_touch.h"
 
+namespace input_controller {
+periodic_task task(20, dispatchEvents);
+}
+
 InputPinController PinController(INPUT_PIN_CONTROLLER_TIMER);
 
 #define SIZEOFINPUTENVENT (sizeof(st_inputEvent))
@@ -163,7 +167,7 @@ void processEvent(st_inputEvent *e) {
 
             case INPUT_EVENT_TYPE_ENCODER:
 
-                if (Menu::menuStatus != ACTIVE) {
+                if (Menu::menuStatus != Menu::ACTIVE) {
                     if (RotBtnInputPin.getState() == GPIO_PIN_RESET) { // with push button low, change the step size instead of frequency
                         RotBtnInputPin.reset();
                         radio::change_step(-e->value);

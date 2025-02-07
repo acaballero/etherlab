@@ -124,5 +124,4 @@ int get_gain() {
 
 bool is_overload() { return overload; }
 
-void loop() { task.loop(); }
 } // namespace agc

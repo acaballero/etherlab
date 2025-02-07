@@ -7,6 +7,7 @@
 
 #include "task.h"
 
+namespace dsp {
 enum DSP_TASK_ID {
 
     DSP_TASK_CAPTURE,
@@ -16,5 +17,5 @@ enum DSP_TASK_ID {
 };
 
 extern Task *tasks[];
-
-#endif //TRX_FRONTEND_DSP_TASKS_H
+} // namespace dsp
+#endif // TRX_FRONTEND_DSP_TASKS_H

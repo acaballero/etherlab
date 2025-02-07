@@ -14,8 +14,12 @@ env.Append(
         "-mfloat-abi=hard",
         "-mfpu=fpv4-sp-d16",
         "-ffast-math",
-        "-fno-math-errno"
-
-
+        "-fno-math-errno",
     ]
 )
+
+# Ensure -Wall is at the beginning of flags
+env.ProcessUnFlags(["-Wall"])  # Remove existing -Wall (if any)
+env.Prepend(
+    CCFLAGS=["-Wall"]
+)  # Add -Wall at the beginning so we can disable what it sets with following -Wno-...

@@ -37,7 +37,4 @@ void TIM3_IRQHandler(void);
 }
 #endif
 
-extern bool change_drive_strength;
-extern bool change_calibration;
-
 #endif

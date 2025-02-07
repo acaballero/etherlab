@@ -8,6 +8,7 @@
 #include "s_strength.h"
 #include "frequency_widget.h"
 #include "view_manager.h"
+#include "menu_prompts.h"
 
 void SMeterWidget::paint_callback() {
 
@@ -124,7 +125,7 @@ bool SMeterWidget::on_input(const st_inputEvent event) {
 
         case INPUT_EVENT_TYPE_TOUCH_END:
             Menu::open_keypad<float>(
-                sstrength::get_squelch(), "x2", "Squelch", 2, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
+                sstrength::get_squelch(), "x1", "Squelch", 1, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
             return true;
         default:
             return false;

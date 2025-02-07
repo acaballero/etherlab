@@ -366,11 +366,11 @@ float format_eng(char *dest, float value, const char *units, char *new_units, ui
     double tval = value;
     uint8_t order = 3;
     if (tval) {
-        while (tval >= 1000.0 && order < strlen(prefixes)) {
+        while (abs(tval) >= 1000.0 && order < strlen(prefixes)) {
             tval /= 1000.0;
             order++;
         }
-        while (tval < 1.0 && order > 0) {
+        while (abs(tval) < 1.0 && order > 0) {
             tval *= 1000.0;
             order--;
         }
@@ -391,7 +391,10 @@ float format_eng(char *dest, float value, const char *units, char *new_units, ui
     return tval;
 }
 
-void format_long(int64_t n, char *out) { format_long(n, out, 0); }
+char *format_long(int64_t n, char *out) {
+    format_long(n, out, 0);
+    return out;
+}
 
 void format_long(int64_t n, char *out, uint8_t length, char thow_separator, int max_length) {
 
