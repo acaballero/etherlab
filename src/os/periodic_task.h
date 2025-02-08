@@ -1,0 +1,63 @@
+//
+// Created by Angel Dust on 29/06/2022.
+//
+
+#ifndef TRX_FRONTEND_PERIODIC_TASK_H
+#define TRX_FRONTEND_PERIODIC_TASK_H
+
+#include "stdio.h"
+#include "stdint.h"
+#include "stm32f4xx_hal.h"
+
+namespace os {
+
+typedef void (*callback_t)(void);
+
+class periodic_task {
+  public:
+    periodic_task(uint64_t period_ms, callback_t f, uint64_t duration_ms = 0, uint32_t delay_ms = 0)
+        : _period_ms(period_ms), _duration_ms(duration_ms), _callback(f) {
+        if (_duration_ms) {
+            _end_ms = HAL_GetTick() + _duration_ms;
+        }
+
+        if (delay_ms) {
+            _next_ms = HAL_GetTick() + _period_ms;
+        }
+    };
+    void set_period(uint64_t period) { _period_ms = period; }
+    void set_enabled(bool b);
+
+    // Set next execution time
+    void set_next(uint64_t ms);
+
+    uint64_t get_duration();
+
+    bool finished();
+
+    void run();
+
+  private:
+    // Period
+    uint64_t _period_ms{0};
+    // First execution time
+    uint64_t _start_ms{0};
+    // End time
+    uint64_t _end_ms{0};
+    // Last execution time
+    uint64_t _last_ms{0};
+    // Next execution time
+    uint64_t _next_ms{0};
+    // Duration of the task in milliseconds
+    uint64_t _duration_ms{0};
+
+    // Current rate of execution
+    float _rate{0};
+
+    bool enabled{true};
+
+    // Callback function implementing the task work
+    callback_t _callback;
+};
+} // namespace os
+#endif // TRX_FRONTEND_PERIODIC_TASK_H
