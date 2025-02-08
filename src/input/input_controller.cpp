@@ -19,7 +19,7 @@
 #include "../../lib/ST77XX-STM32/XPT2046_touch.h"
 
 namespace input_controller {
-periodic_task task(20, dispatchEvents);
+os::periodic_task task(20, dispatchEvents);
 }
 
 InputPinController PinController(INPUT_PIN_CONTROLLER_TIMER);

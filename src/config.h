@@ -6,13 +6,14 @@
 #define TRX_FRONTEND_CONFIG_H
 
 #include <stdio.h>
-#include <stdint.h>
+#include <cstdint>
 #include "hw/stm32_hal.h"
 #include "hw/hw_config.h"
 #include "dsp/fft/fft_types.h"
 #include "radio.h"
 #include "types.h"
 #include "rf_coupler.h"
+#include "os/periodic_task.h"
 
 #define DEBUG 0
 #define DEBUG_MSGS 1
@@ -23,7 +24,7 @@
 #define CONFIG_VERSION "314"
 
 namespace configuration {
-extern periodic_task task;
+extern os::periodic_task task;
 }
 
 struct st_vfo_config {

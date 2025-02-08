@@ -9,15 +9,13 @@
 
 namespace standby {
 
-    enum POWER_MODE {
-        POWER_MODE_ON, POWER_MODE_SLEEP
-    };
+enum POWER_MODE { POWER_MODE_ON, POWER_MODE_SLEEP };
 
-    extern POWER_MODE power_mode;
-    extern Signal signal;
+extern POWER_MODE power_mode;
+extern Signal signal;
 
-    int sleep();
-    int wakeup();
-}
+int sleep();
+int wakeup();
+} // namespace standby
 
-#endif //TRX_FRONTEND_STANDBY_H
+#endif // TRX_FRONTEND_STANDBY_H

@@ -5,7 +5,7 @@
 #include "input/input_controller.h"
 #include "main_board.h"
 #include "menuBase.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "power_amp.h"
 #include "radio.h"
 #include "rf_coupler.h"
@@ -14,7 +14,7 @@
 #include "setup.h"
 #include "standby.h"
 #include "stm32f4xx_hal.h"
-#include "task_manager.h"
+#include "os/task_manager.h"
 #include "types.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
@@ -57,14 +57,14 @@ unsigned long t1, t2;
 
 void view_loop();
 
-TaskManager task_manager;
+os::TaskManager task_manager;
 
-periodic_task view_task(250, view_loop);
+os::periodic_task view_task(250, view_loop);
 
 GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
 MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB, &hmcp03, GPIO_MODE_OUTPUT_PP);
 
-periodic_task *tasks[] = {
+os::periodic_task *tasks[] = {
     &board::task,
     &radio::task,
     &agc::task,

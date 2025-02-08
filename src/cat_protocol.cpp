@@ -13,7 +13,7 @@
 namespace cat_protocol {
 
 void process_command_queue();
-periodic_task task(100, process_command_queue);
+os::periodic_task task(100, process_command_queue);
 
 void cmd_read_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size);
 
@@ -78,7 +78,7 @@ static usb_request_handler_fn request_handlers[] = {NULL,
                                                     cmd_set_vfo_freq_handler,
                                                     cmd_set_vfo_mode_handler};
 
-// periodic_task task(100, process_command_queue);
+// os::periodic_task task(100, process_command_queue);
 
 //    void print_hex(char *buf, int size) {
 //        char *byte = buf;

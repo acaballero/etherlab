@@ -21,7 +21,7 @@
 
 void dsp_loop();
 namespace dsp {
-periodic_task task(50, dsp_loop);
+os::periodic_task task(50, dsp_loop);
 }
 Task *current_task;
 DspProcessor *current_processor;
@@ -149,17 +149,17 @@ inline void dsp_work() {
     // GPIOD->BSRR |= GPIO_PIN_5 << 16;
 }
 
-void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac) {
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *) {
     current_buffer = &dac_buffer_2;
     dsp_work(); // Process the 2nd half of the buffer
 }
 
-void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac) {
+void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *) {
     current_buffer = &dac_buffer_1;
     dsp_work(); // Process the 1st half of the buffer
 }
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *) {
     /* This is called after half the conversion is completed */
 
     // TODO: Check ADC buffer overruns
@@ -167,7 +167,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
     dsp_work(); // Process the 2nd half of the buffer
 }
 
-void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc) {
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *) {
 
     current_buffer = &adc_buffer_1;
     dsp_work(); // Process the 1st half of the buffer

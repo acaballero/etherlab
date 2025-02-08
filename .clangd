@@ -7,7 +7,8 @@ CompileFlags:
      "-isystem","/home/ahcr/.platformio/packages/framework-stm32cube/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
      "-W","sign-compare",
      "-W","no-unused-parameter",
-     "-W","unused-include-directive"
+     "-W","unused-include-directive",
+     "-W","no-deprecated"
 
     ]
     

@@ -4,7 +4,7 @@
 
 #include <math.h>
 #include "s_strength.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "config.h"
 #include "signal.h"
 #include <hw/stm32.h>
@@ -41,7 +41,7 @@ bool last_squelch_test;
 float s_strength;
 float s_level;
 uint64_t last_activation_trigger_ms = 0;
-periodic_task task(50, check_signal_strength);
+os::periodic_task task(50, check_signal_strength);
 
 // Converts dBs to S-units
 float db_to_s_strength(float db) {

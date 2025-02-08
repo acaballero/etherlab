@@ -18,7 +18,7 @@
 #include "dsp/decimation/dsp_fir_decimator_float.h"
 #include "radio.h"
 #include "agc.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "ui/main_view.h"
 #include "ui/view_manager.h"
 
@@ -114,13 +114,13 @@ bool initialized = false;
 void fft_loop();
 
 namespace fft {
-periodic_task fft_task(config.fft.refresh_period_ms, fft_loop);
-periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
+os::periodic_task fft_task(config.fft.refresh_period_ms, fft_loop);
+os::periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
     view_manager::mainView.IQBalance()->set_visible(true);
     view_manager::mainView.Waterfall()->set_visible(false);
     view_manager::mainView.IQBalance()->set_dirty();
 });
-periodic_task waterfall_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
+os::periodic_task waterfall_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
     view_manager::mainView.IQBalance()->set_visible(false);
     view_manager::mainView.Waterfall()->set_visible(true);
     view_manager::mainView.Waterfall()->set_dirty();

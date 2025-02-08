@@ -24,7 +24,7 @@
 #include "dsp/dsp_buffers.h"
 #include "FFTIQBalancer.h"
 #include "FIFOv1.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 
 typedef float32_t fft_type;
 
@@ -86,9 +86,9 @@ typedef struct st_fft_params {
 } st_fft_params;
 
 namespace fft {
-extern periodic_task fft_task;
-extern periodic_task iqbalance_task;
-extern periodic_task waterfall_task;
+extern os::periodic_task fft_task;
+extern os::periodic_task iqbalance_task;
+extern os::periodic_task waterfall_task;
 } // namespace fft
 
 complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b);

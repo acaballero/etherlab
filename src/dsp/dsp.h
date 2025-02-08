@@ -8,10 +8,10 @@
 #include "hw/stm32.h"
 #include "hw/hw_config.h"
 #include "dsp_common.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 
 namespace dsp {
-extern periodic_task task;
+extern os::periodic_task task;
 }
 
 #ifdef __cplusplus

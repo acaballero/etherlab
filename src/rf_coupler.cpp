@@ -4,10 +4,10 @@
 
 #include "rf_coupler.h"
 #include "hw/stm32.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "config.h"
 #include <printf.h>
-#include <float.h>
+#include <cfloat>
 
 namespace rf_coupler {
 
@@ -19,7 +19,7 @@ uint16_t cpl_offset = CPL_LOGAMP_OFFSET_MV;
 void calculate_power();
 
 bool enabled = false;
-periodic_task task(50, calculate_power);
+os::periodic_task task(50, calculate_power);
 Signal rf_coupler_signal;
 struct rf_coupler_info info;
 
@@ -64,9 +64,10 @@ void calculate_power() {
     // if (v_ref<5) v_ref=0; // Below 5mV at the detector, SWR measurements are too inaccurate to be accounted for
 
     // Calculate forward power into 50Ohm based in the coupling of the SWR bridge
-    if (info.v_ref > info.v_for)
+    if (info.v_ref > info.v_for) {
         info.v_ref = info.v_for; // vref should be less or equal vfor (if not, it may be that the directivity of the coupler is really bad or an issue with the
-                                 // ADC's readings)
+    }
+    // ADC's readings)
 
     // CURVE FITTING (diode detector version)
     // Note that the coefficients are calculated with mV (so the *1000 appearance

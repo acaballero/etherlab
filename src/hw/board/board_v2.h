@@ -64,7 +64,7 @@ bool radio_config(st_radio_config);
 namespace board {
 extern bool change_drive_strength;
 extern bool change_calibration;
-extern periodic_task task;
+extern os::periodic_task task;
 } // namespace board
 
 #endif // TRX_FRONTEND_BOARD_V2_H

@@ -5,7 +5,7 @@
 #include "battery.h"
 #include "hw/stm32.h"
 #include "config.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "Signal.h"
 
 namespace battery {
@@ -13,7 +13,7 @@ namespace battery {
 void check_battery();
 
 battery_st_info battery_info;
-periodic_task task(2000, check_battery);
+os::periodic_task task(2000, check_battery);
 Signal battery_signal;
 
 void update_battery_info() {

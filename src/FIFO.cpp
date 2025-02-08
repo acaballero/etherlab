@@ -3,7 +3,7 @@
 //
 
 #include "FIFO.h"
-#include <string.h> // memcpy
+#include <cstring> // memcpy
 
 #define FIFO_INCR_IX(ix, n)                                                                                                                                    \
     {                                                                                                                                                          \

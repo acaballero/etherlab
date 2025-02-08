@@ -31,7 +31,7 @@ void loop() {
         change_calibration = false;
     }
 }
-periodic_task task(100, loop);
+os::periodic_task task(100, loop);
 } // namespace board
 
 Si5351 si5351;

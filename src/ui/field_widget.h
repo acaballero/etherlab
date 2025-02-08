@@ -9,7 +9,7 @@
 #include "ui/lcd.h"
 #include "widget.h"
 #include <functional>
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 class Field : public Widget {
   public:

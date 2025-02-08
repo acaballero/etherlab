@@ -5,7 +5,7 @@
 #include "scanner.h"
 #include "config.h"
 #include <hw/stm32.h>
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "radio.h"
 #include "s_strength.h"
 
@@ -30,7 +30,7 @@ radio::BAND current_band;
 // Current state. Default is EXITING to start discarding a currently tuned signal, if any.
 STATE state = EXITING;
 
-periodic_task task(50, sweep);
+os::periodic_task task(50, sweep);
 
 void start() {
 

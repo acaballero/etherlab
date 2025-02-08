@@ -6,8 +6,8 @@
 #define TRX_FRONTEND_TYPES_H
 
 #include <stdio.h>
-#include <string.h>
-#include <stdint.h>
+#include <cstring>
+#include <cstdint>
 #include "radio.h"
 #include "dsp/dsp_common.h"
 

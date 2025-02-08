@@ -8,7 +8,7 @@
 #include "../../ui/widget.h"
 #include "../../types.h"
 #include "fft_types.h"
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 #define FFT_WATERFALL_HEIGHT 90
 #define FFT_WATERFALL_DEFAULT_COLOR_INDEX 1

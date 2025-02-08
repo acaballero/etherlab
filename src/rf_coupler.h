@@ -6,7 +6,7 @@
 #define TRX_FRONTEND_RF_COUPLER_H
 
 #include "Signal.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 
 // Coefficients for the curve fitting the measured voltage(mV) / power (dBm) at the detector
 // It follows a square law for low power levels (linear with power) and a linear relation with voltage for power greater than 30dB
@@ -51,7 +51,7 @@ struct rf_coupler_info {
 
 extern Signal rf_coupler_signal;
 extern struct rf_coupler_info info;
-extern periodic_task task;
+extern os::periodic_task task;
 void set_offset(uint16_t offset_mv);
 uint16_t get_offset();
 float toWatts(float dbm);

@@ -6,7 +6,7 @@
 #define TRX_FRONTEND_INPUT_CONTROLLER_H
 
 #include "inputEvent.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "../../lib/InputPin/InputPinController.h"
 
 /*
@@ -16,7 +16,7 @@
 #define MAX_EVENTS_IN_QUEUE 10
 
 namespace input_controller {
-extern periodic_task task;
+extern os::periodic_task task;
 }
 extern InputPinController PinController;
 

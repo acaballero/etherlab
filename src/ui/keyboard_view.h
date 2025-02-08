@@ -12,7 +12,7 @@
 #include "ui/display_panel_buttons_widget.h"
 #include "view.h"
 #include "button_widget.h"
-#include "math.h"
+#include <cmath>
 #include "label_widget.h"
 #include "main_view.h"
 

@@ -2,7 +2,7 @@
 #define TRX_FRONTEND_POWER_AMP_H
 
 #include "Signal.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 
 namespace power_amp {
 
@@ -21,7 +21,7 @@ extern st_power_amp_params params;
 extern int temp;
 extern Signal temp_signal;
 extern Signal status_signal;
-extern periodic_task task;
+extern os::periodic_task task;
 void enable();
 void disable();
 

@@ -40,7 +40,7 @@ struct st_scanner_info {
 
 extern st_scanner_info scanner_config;
 extern Signal signal;
-extern periodic_task task;
+extern os::periodic_task task;
 void stop();
 
 void configure(st_scanner_info &);

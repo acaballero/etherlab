@@ -1,2 +1,2 @@
-Checks: '-*,modernize-use-override,clang-diagnostic-missing-declarations,readability-braces-around-statements,misc-include-cleaner,modernize-deprecated-headers'
+Checks: '-*,modernize-use-override,clang-diagnostic-missing-declarations,readability-braces-around-statements,misc-include-cleaner'
 WarningsAsErrors: ''

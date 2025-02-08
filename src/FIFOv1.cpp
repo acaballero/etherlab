@@ -3,7 +3,7 @@
 //
 
 #include "FIFOv1.h"
-#include <string.h> // memcpy
+#include <cstring> // memcpy
 #include "hw/stm32.h"
 
 #define FIFO_INCR_IX(ix, n)                                                                                                                                    \
@@ -79,8 +79,9 @@ FIFO_ERROR FIFOv1::feed(uint16_t n) {
     if (free >= n) {
 
         this->write_ix += n;
-        if (this->write_ix >= this->size)
+        if (this->write_ix >= this->size) {
             this->write_ix = this->write_ix - this->size;
+        }
 
         return FIFO_ERROR_NONE;
     } else {
@@ -96,9 +97,9 @@ FIFO_ERROR FIFOv1::consume(uint16_t n, char **dest) {
 
     uint16_t av = this->available();
 
-    if (av < n)
+    if (av < n) {
         return FIFO_ERROR_UNDERRUN;
-    else {
+    } else {
         *dest = this->data + this->read_ix;
 
         this->read_ix += n;

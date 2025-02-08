@@ -7,7 +7,7 @@
 #include "config.h"
 #include "signal.h"
 #include "scanner.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include <stdint.h>
 
 /*
@@ -111,7 +111,7 @@ IF_FILTER_2 if_filter_2 = IF_FILTER_2_AUTO;
 
 void task_loop();
 
-periodic_task task(50, task_loop);
+os::periodic_task task(50, task_loop);
 
 void calculate_freqs() {
 

@@ -1,6 +1,6 @@
 #include "power_amp.h"
 #include "hw/stm32.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "config.h"
 
 // Coefficients for the curve fitting the measured temperature (C) vs voltage(mV) at the detector
@@ -31,7 +31,7 @@ void set_status(enum status);
 bool enabled = false;
 st_power_amp_params params;
 float hysteresis = 0.94;
-periodic_task task(500, check_temp);
+os::periodic_task task(500, check_temp);
 Signal temp_signal, status_signal;
 enum status last_status = OFF, status = OFF;
 float voltage;

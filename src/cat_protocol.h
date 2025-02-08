@@ -5,7 +5,7 @@
 #ifndef TRX_FRONTEND_CAT_PROTOCOL_H
 #define TRX_FRONTEND_CAT_PROTOCOL_H
 
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "stdio.h"
 #include "cat_if.h"
 
@@ -60,7 +60,7 @@
 
 namespace cat_protocol {
 typedef void (*usb_request_handler_fn)(st_usb_cdc_command *command, uint8_t *response, uint8_t *size);
-extern periodic_task task;
+extern os::periodic_task task;
 } // namespace cat_protocol
 
 #endif // TRX_FRONTEND_CAT_PROTOCOL_H

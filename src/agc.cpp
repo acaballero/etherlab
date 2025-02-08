@@ -4,7 +4,7 @@
 
 #include "agc.h"
 #include "radio.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include "config.h"
 #include "status.h"
 #include <hw/stm32.h>
@@ -18,7 +18,7 @@ void check_agc();
 Signal signal;
 
 float agc_voltage;
-periodic_task task(250, check_agc);
+os::periodic_task task(250, check_agc);
 
 bool overload = false;
 uint64_t last_overload_ms = 0;

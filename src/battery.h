@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #include "Signal.h"
-#include "periodic_task.h"
+#include "os/periodic_task.h"
 #include <hw/stm32.h>
 
 // A voltage divider is used to bring the input voltage to an appropriate level
@@ -34,7 +34,7 @@ struct battery_st_info {
 
 extern battery_st_info battery_info;
 extern Signal battery_signal;
-extern periodic_task task;
+extern os::periodic_task task;
 
 } // namespace battery
 

@@ -8,7 +8,7 @@
 #include "view.h"
 #include "button_widget.h"
 #include "../types.h"
-#include <sys/_stdint.h>
+#include <stdint.h>
 
 class DisplayPanelButtonsWidget : public View {
 

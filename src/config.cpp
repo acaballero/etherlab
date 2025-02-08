@@ -9,6 +9,6 @@ namespace configuration {
 
 void saveConfig() {}
 
-periodic_task task(CONFIG_AUTOSAVE_SECS * 1000, saveConfig);
+os::periodic_task task(CONFIG_AUTOSAVE_SECS * 1000, saveConfig);
 
 } // namespace configuration
