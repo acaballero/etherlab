@@ -31,11 +31,11 @@ st_inputEvent lastEvent;
 FIFO inputFIFO{(char *)eventQueue, (MAX_EVENTS_IN_QUEUE * SIZEOFINPUTENVENT)};
 #endif
 
-void touch_begin(xpt2046_t *panel, uint16_t x, uint16_t y) {
+void touch_begin(xpt2046_t *, uint16_t x, uint16_t y) {
     onInputEvent({.type = INPUT_EVENT_TYPE_TOUCH_START, .value = 0, .ms = 0, .time_us = 0, .point = Point(x, y)});
 }
 
-void touch_end(xpt2046_t *panel, uint16_t x, uint16_t y) {
+void touch_end(xpt2046_t *, uint16_t x, uint16_t y) {
     onInputEvent({.type = INPUT_EVENT_TYPE_TOUCH_END, .value = 0, .ms = 0, .time_us = 0, .point = Point(x, y)});
 }
 

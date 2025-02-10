@@ -254,6 +254,7 @@ void fftInit() {
     fftUI::set_spectrum_style(config.fft.spectrum_style);
     fftUI::set_spectrum_colors(config.fft.spectrum_line_color, config.fft.spectrum_fill_color);
     fftUI::init_waterfall();
+    fftUI::initIQorWaterfall();
 }
 
 void resetIQBalancer() { fftIQBalancer.reset(); }

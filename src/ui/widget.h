@@ -52,6 +52,7 @@ class Widget : public Painter {
 
     // Before paint hook for pre-paint preparation
     virtual void before_paint() = 0;
+
     virtual void paint();
 
     virtual void on_show(){};
@@ -71,7 +72,7 @@ class Widget : public Painter {
 
     bool dirty() const;
 
-    void set_focus(bool value);
+    bool set_focus(bool value);
 
     bool is_focused() const;
 
@@ -80,6 +81,8 @@ class Widget : public Painter {
     Display *get_display() const;
 
     void set_display(Display *display);
+
+    bool can_be_seen();
 
     bool visible();
 
@@ -99,12 +102,16 @@ class Widget : public Painter {
 
     void set_font(FontDef *);
 
-    uint32_t id = 0;
+    uint32_t id{0};
 
     void set_aling(Align);
 
+    void set_name(const char *);
+
+    char *get_name();
+
   protected:
-    void dirty_overlapping_children_in_rect(const Rect &child_rect);
+    char name[6]{"-"};
 
     Rect _parent_rect;
 
@@ -142,7 +149,7 @@ class Widget : public Painter {
 
     virtual void set_area();
 
-    void update_overlaps();
+    virtual void on_child_update(Widget *){};
 };
 
 #endif /*__WIDGET_H__*/

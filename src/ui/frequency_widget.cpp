@@ -15,6 +15,7 @@
 void FrequencyWidget::init() {
 
     add_children({&lblRpt, &lblVFO, &freqWidget});
+    set_name("freq_w");
 
     for (Widget *lbl : View::children()) {
         lbl->set_font((FontDef *)&Font_7x10);

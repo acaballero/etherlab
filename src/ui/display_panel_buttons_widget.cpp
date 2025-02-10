@@ -22,6 +22,10 @@ void DisplayPanelButtonsWidget::init() {
         buttons[i].set_fg(C565_BLACK);
         buttons[i].set_bg(C565_WHITE);
 
+        char name[6];
+        sprintf(name, "dpbt%d", i);
+        buttons[i].set_name(name);
+
         add_child(&buttons[i]);
     }
 }

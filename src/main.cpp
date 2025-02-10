@@ -56,13 +56,14 @@ USBPrint usb;
 unsigned long t1, t2;
 
 void view_loop();
-
-os::TaskManager task_manager;
-
-os::periodic_task view_task(250, view_loop);
-
 GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
 MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB, &hmcp03, GPIO_MODE_OUTPUT_PP);
+os::TaskManager task_manager;
+os::periodic_task view_task(250, view_loop);
+os::periodic_task blink_task(100, []() {
+    ledPin.toggle();
+    powPin.toggle();
+});
 
 os::periodic_task *tasks[] = {
     &board::task,
@@ -113,17 +114,17 @@ os::periodic_task *tasks[] = {
  * Bliks the led with a period of period_ms microseconds
  */
 void blink(uint32_t period_ms) {
-    HAL_TIM_Base_Start_IT(&LED_TIMER_HANDLE);
-    update_timer(LED_TIMER_TYPEDEF, period_ms, LED_TIMER_TYPEDEF_CLOCK_HZ);
+    blink_task.set_period(period_ms);
+    task_manager.add(&blink_task);
 }
 
 void stop_blink() {
     ledPin.set(GPIO_PIN_RESET);
     powPin.set(GPIO_PIN_SET);
-    HAL_TIM_Base_Stop_IT(&LED_TIMER_HANDLE);
+    task_manager.remove(&blink_task);
 }
 
-void standby_signal_callback(void *thisptr, void *args) {
+void standby_signal_callback(void *, void *) {
 
     bool sleep = standby::power_mode == standby::POWER_MODE_SLEEP;
     if (sleep) {
@@ -138,7 +139,7 @@ void standby_signal_callback(void *thisptr, void *args) {
     }
 }
 
-void frequency_signal_callback(void *thisptr, void *args) {
+void frequency_signal_callback(void *, void *args) {
 
     radio::st_freq_event event = *((radio::st_freq_event *)args);
 
@@ -164,7 +165,7 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 4));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
+    nav.doNav(Menu::navCmd(Menu::idxCmd, 5));
     //  nav.doNav(Menu::navCmd(Menu::enterCmd));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
     //  nav.doNav(Menu::navCmd(Menu::enterCmd));
@@ -189,6 +190,8 @@ int main() {
     radio::freq_signal.add(NULL, frequency_signal_callback);
     standby::signal.add(NULL, standby_signal_callback);
 
+    task_manager.set_timeout(10000, []() { view_manager::mainView.OptionButtons()->set_visible(false); });
+
     view_manager::init();
 
     for (auto task : tasks) {
@@ -211,8 +214,6 @@ int main() {
 }
 
 void TIM3_IRQHandler(void) {
-    ledPin.toggle();
-    powPin.toggle();
 
     /* USER CODE END TIM1_UP_TIM10_IRQHandler 0 */
     HAL_TIM_IRQHandler(&LED_TIMER_HANDLE);
@@ -227,7 +228,7 @@ void TIM3_IRQHandler(void) {
  * attached If a debugger is present, it should enable ITM on the target,
  * otherwise ITM_Sendchar will return without doing anything
  */
-int _write(int file, char *ptr, int len) {
+int _write(int, char *ptr, int len) {
 
     int DataIdx;
 

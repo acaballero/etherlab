@@ -113,6 +113,9 @@ void dsp_loop() {
 
                 dsp_stop_tasks();
                 break;
+            default:
+                assert(pending_command.command != DSP_COMMAND_NONE);
+                break;
         }
 
         pending_command.command = DSP_COMMAND_NONE;
@@ -203,7 +206,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
     /* USER CODE END TIM1_BRK_TIM15_IRQn 1 */
 }
 
-void dsp_test_cb(st_dspStatus *status) {
+void dsp_test_cb(st_dspStatus *) {
 
     if (dsp_status->error == DSP_ERR_NONE && dsp_status->id != dsp::DSP_TASK_REPLAY) {
         dsp_command({DSP_COMMAND_START, dsp::DSP_TASK_REPLAY}, dsp_test_cb);
@@ -286,6 +289,9 @@ void dspError(DSP_ERROR err) {
         case DSP_ERR_FIFO_UNDERRUN:
 
             handleError(status::ST_ERROR, "FIFO underrun");
+            break;
+
+        default:
             break;
     }
 

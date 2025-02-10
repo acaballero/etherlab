@@ -28,10 +28,10 @@ void open_number_edit(T value, const char *units, const char *name, uint8_t frac
 
 template <typename T> void open_option_buttons(menu_options_t<T> options, const char *title, T &value, uint16_t size, std::function<void(T)> on_select) {
 
-    view_manager::optionButtonsView.clear();
+    view_manager::mainView.OptionButtons()->clear();
 
     const auto fn = [&value, options, on_select](uint16_t index) {
-        view_manager::optionButtonsView.set_visible(false);
+        view_manager::mainView.OptionButtons()->set_visible(false);
 
         value = options[index].value;
         if (on_select) {
@@ -42,11 +42,12 @@ template <typename T> void open_option_buttons(menu_options_t<T> options, const 
     for (int i = 0; i < size; i++) {
         menu_option_st<T> option = options[i];
 
-        view_manager::optionButtonsView.on_select = fn;
-        view_manager::optionButtonsView.add_item(option.name, nullptr, value == option.value, option.fg_color, option.bg_color);
+        view_manager::mainView.OptionButtons()->on_select = fn;
+        view_manager::mainView.OptionButtons()->add_item(option.name, nullptr, value == option.value, option.fg_color, option.bg_color);
     }
-    view_manager::optionButtonsView.set_title(title);
-    view_manager::push(&view_manager::optionButtonsView);
+
+    view_manager::mainView.OptionButtons()->set_title(title);
+    view_manager::mainView.OptionButtons()->set_visible(true);
 }
 
 template <typename T>
@@ -65,7 +66,7 @@ class labelPrompt : public Menu::prompt {
     labelPrompt(const char *text, char *value, action a = doNothing, eventMask e = noEvent, styles s = noStyle,
                 systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)))
         : prompt(text, a, e, s, ss), value(value) {}
-    Used printTo(navRoot &root, bool sel, menuOut &out, idx_t idx, idx_t len, idx_t) override {
+    Used printTo(navRoot &, bool sel, menuOut &out, idx_t, idx_t len, idx_t) override {
         len -= out.printRaw(shadow->text, len);
         len -= out.printRaw(": ", len);
         out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);

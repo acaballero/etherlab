@@ -27,7 +27,7 @@ extern Signal status_signal;
 
 enum StatusCode { ST_ERROR, ST_WARN, ST_INFO, ST_OK };
 
-typedef struct {
+typedef struct status_t {
     StatusCode code = ST_OK;
     char msg[30];
 } Status;

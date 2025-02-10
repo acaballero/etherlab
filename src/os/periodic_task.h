@@ -22,7 +22,7 @@ class periodic_task {
         }
 
         if (delay_ms) {
-            _next_ms = HAL_GetTick() + _period_ms;
+            _next_ms = HAL_GetTick() + delay_ms;
         }
     };
     void set_period(uint64_t period) { _period_ms = period; }
@@ -32,6 +32,10 @@ class periodic_task {
     void set_next(uint64_t ms);
 
     uint64_t get_duration();
+    uint64_t get_last_time();
+    uint64_t get_end_time();
+    uint64_t get_start_time();
+    char *get_log(char *buf);
 
     bool finished();
 

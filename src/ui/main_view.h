@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "hw/hw_config.h"
+#include "option_buttons_view.h"
 #include "view.h"
 #include "menu_widget.h"
 #include "status_widget.h"
@@ -53,6 +54,8 @@ class MainView : public View {
 
     Widget *Menu();
 
+    OptionButtonsView *OptionButtons();
+
     bool on_input(const st_inputEvent event) override;
 
   protected:
@@ -60,7 +63,7 @@ class MainView : public View {
     StatusWidget status_w{{0, DISPLAY_Y_PIXELS - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
     DbScaleWidget dbscale_w{{DISPLAY_X_PIXELS - DBSCALE_WIDTH, HEADER_HEIGHT, DBSCALE_WIDTH, FFT_HEIGHT}, &lcd};
     TuneWidget tune_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5, METER_WIDTH, TUNE_INFO_HEIGHT}, &lcd};
-    RadioStatusWidget radio_w{{METER_WIDTH, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 8, DISPLAY_X_PIXELS - METER_WIDTH, INFO_HEIGHT}};
+    RadioStatusWidget radio_w{{METER_WIDTH, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5, DISPLAY_X_PIXELS - METER_WIDTH, INFO_HEIGHT}};
     SMeterWidget smeter_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 18, METER_WIDTH, METERS_HEIGHT}, &lcd};
     PowerMeterWidget powmeter_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 18, METER_WIDTH, METERS_HEIGHT}, &lcd};
     InfoWidget info_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5 + TUNE_INFO_HEIGHT, METER_WIDTH, FFT_INFO_HEIGHT}, &lcd};
@@ -69,6 +72,7 @@ class MainView : public View {
     WaterfallWidget waterfall_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
     IQBalanceWidget iqbal_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
     MenuWidget menu_w{{0, MENU_START_Y, DISPLAY_X_PIXELS, INFO_HEIGHT}, &lcd};
+    OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
 
     MessageWidget msg_w{
         {6, MENU_START_Y, DISPLAY_X_PIXELS - 12, INFO_HEIGHT - 6}, &lcd, (FontDef *)&Font_11x18, (FontDef *)&Font_7x10, C565_GREY_DARK, C565_RED, C565_WHITE};

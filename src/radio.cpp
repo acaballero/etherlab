@@ -183,6 +183,8 @@ void calculate_freqs() {
             mixers[0].setIf(ISTX ? config.f_if_fm_tx : config.f_1st_if);
             mixers[1].setRf(ISTX && (config.modulation == FM || config.modulation == WFM) ? config.f_if_fm_tx : config.f_1st_if);
             break;
+        default:
+            break;
     }
 
     mixers[0].calcLo();

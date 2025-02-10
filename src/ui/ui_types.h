@@ -98,6 +98,8 @@ struct Rect {
 
     bool contains(const Point p) const;
 
+    bool contains(const Rect &p) const;
+
     Rect intersect(const Rect &o) const;
 
     Rect operator+(const Point &p) const { return {_pos + p, _size}; }

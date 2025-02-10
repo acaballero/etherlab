@@ -4,6 +4,7 @@
 #include "Display_afb.h"
 #include "widget.h"
 #include "ui_types.h"
+#include "status.h"
 
 const std::vector<Widget *> Widget::no_children{};
 
@@ -17,45 +18,76 @@ Rect Widget::parent_rect() const { return _parent_rect; }
 
 void Widget::set_parent_rect(const Rect new_parent_rect) {
 
-    _parent_rect = new_parent_rect;
+    if (_parent_rect != new_parent_rect) {
+        _parent_rect = new_parent_rect;
+        printf_("Setting parent rect of %s\n", name);
+        if (parent_) {
+            parent_->on_child_update(this);
+        }
+    }
+
     this->set_area();
     set_dirty();
 }
 
 Widget *Widget::parent() const { return parent_; }
 
-void Widget::set_parent(Widget *const widget) {
-    if (widget == parent_) {
+void Widget::set_parent(Widget *const new_parent) {
+    if (new_parent == parent_) {
         return;
     }
 
-    if (parent_ && !widget) {
+    if (parent_ && !new_parent) {
         // We have a parent, but are losing it. Update visible status.
-        dirty_overlapping_children_in_rect(screen_rect());
+        //  dirty_overlapping_children_in_rect(screen_rect());
         set_visible(false);
+
+        parent_->on_child_update(this);
     }
 
-    parent_ = widget;
+    parent_ = new_parent;
 
-    // Adjust drawing area coordinates relative to the parent
+    if (parent_) {
+        parent_->on_child_update(this);
+    }
+
+    printf_("Setting parent of %s = %s\n", name, new_parent->name);
+
+    // Adjust drawing area coordina tes relative to the parent
     set_area();
 
     set_dirty();
 }
 
-void Widget::set_dirty() { flags.dirty = true; }
+char *Widget::get_name() { return name; }
+
+void Widget::set_dirty() {
+    if (!flags.dirty) {
+        flags.dirty = true;
+        //  printf_("widget %s is dirty\n", name);
+    }
+}
 
 bool Widget::dirty() const { return flags.dirty; }
 
-void Widget::set_clean() { flags.dirty = false; }
+void Widget::set_clean() {
+
+    if (flags.dirty) {
+        flags.dirty = false;
+        //  printf_("widget %s is NOT dirty\n", name);
+    }
+}
 
 void Widget::hidden(bool hide) {
     if (hide != flags.hidden) {
+
+        printf_("widget %s hidden: %b\n", name, hide);
+
         flags.hidden = hide;
 
         // If parent is hidden, either of these is a no-op.
         if (hide) {
-            parent()->dirty_overlapping_children_in_rect(parent_rect());
+            //  parent()->dirty_overlapping_children_in_rect(parent_rect());
             /* TODO: Notify self and all non-hidden children that they're
              * now effectively hidden?
              */
@@ -106,9 +138,16 @@ void Widget::focus(Widget *widget) {
     }
 }
 
-void Widget::set_focus(bool v) {
+bool Widget::set_focus(bool v) {
+
+    if (v && !visible()) {
+        return false;
+    }
 
     if (v != this->flags.focus && this->flags.enabled) {
+
+        printf_("%s focus = %b\n", name, v);
+
         this->flags.focus = v;
         if (parent_) {
             if (v) {
@@ -128,6 +167,8 @@ void Widget::set_focus(bool v) {
             this->on_blur();
         }
     }
+
+    return true;
 }
 
 Widget *Widget::focused_widget() const {
@@ -141,14 +182,16 @@ Widget *Widget::focused_widget() const {
 
 bool Widget::visible() { return this->flags.visible; }
 
+bool Widget::can_be_seen() { return this->flags.visible && !this->flags.hidden; }
+
 void Widget::set_visible(bool v) {
 
     if (v != flags.visible) {
 
+        printf_("%s visible = %b\n", name, v);
+
         flags.visible = v;
         flags.dirty = v;
-
-        set_focus(false);
 
         /* TODO: This on_show/on_hide implementation seems inelegant.
          * But I need *some* way to take/configure resources when
@@ -156,23 +199,16 @@ void Widget::set_visible(bool v) {
          * widget becomes invisible, whether the widget (or parent) is
          * hidden, or the widget (or parent) is removed from the tree.
          */
+
         if (v) {
             on_show();
         } else {
+            set_focus(false);
             on_hide();
-
-            // Set all children invisible too.
-            // for (const auto child: children()) {
-            //    child->set_visible(false);
-            //}
         }
-    }
-}
 
-void Widget::dirty_overlapping_children_in_rect(const Rect &child_rect) {
-    for (auto child : children()) {
-        if (!child_rect.intersect(child->parent_rect()).is_empty()) {
-            child->set_dirty();
+        if (parent_) {
+            parent_->on_child_update(this);
         }
     }
 }
@@ -190,6 +226,7 @@ void Widget::paint() {
     if (this->dirty()) {
 
         bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
+
         display->drawArea(&this->area, this, apply_pad);
 #if DEBUG_LCD
         uint64_t t = HAL_GetTick();
@@ -225,29 +262,16 @@ void Widget::set_area() {
     area = {{(uint16_t)r.left(), (uint16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), this->show_fps, this->fps};
 }
 
-uint8_t Widget::get_z_index() const { return z_index; }
+uint8_t Widget::get_z_index() const { return z_index + (parent() ? parent()->get_z_index() : 0); }
 
-void Widget::set_z_index(uint8_t index) { Widget::z_index = index; }
-
-void Widget::update_overlaps() {
-
-    if (!this->parent()) {
-        return;
-    }
-
-    // std::vector<Rect &> overlaps;
-    std::vector<Widget *> children = this->parent()->children();
-    for (uint16_t i = 0; i < children.size(); i++) {
-        Widget *child = children[i];
-        if (child->get_z_index() > z_index && child->visible()) {
-            const Rect r = this->screen_rect().intersect(child->screen_rect());
-            if (!r.is_empty()) {
-                // overlaps.push_back(move(r));
-                child->set_dirty();
-            }
-        }
+void Widget::set_z_index(uint8_t index) {
+    Widget::z_index = index;
+    if (parent()) {
+        parent()->on_child_update(this);
     }
 }
+
+void Widget::set_name(const char *str) { snprintf(name, sizeof(name), str); }
 
 bool Widget::active() { return flags.active; }
 

@@ -32,7 +32,7 @@
   )
 
 (defun my-dap-kill-openocd-and-upload ()
-  "Stop existing OpenOCD instance and run platformio upload"
+  "Stop existing OpenOCD instance and run platformio upload."
   (interactive)
   ;; Stop any running OpenOCD processes
   (let ((openocd-process (get-process "openocd")))
@@ -48,20 +48,37 @@
   (call-interactively 'platformio-upload)
   )
 
+(defvar my-current-dir
+  (file-name-directory (or load-file-name buffer-file-name))
+  "The directory of the currently loaded or evaluated .el file.")
 
 ;; Start OpenOCD
 (defun start-openocd-after-compilation (buffer desc)
- "Start OpenOCD."
- (message "Starting OpenOCD...")
- (start-process "openocd" "*openocd*"
+  "Start OpenOCD."
+  (message "Starting OpenOCD...")
+  (start-process "openocd" "*openocd*"
 		"/home/ahcr/.platformio/packages/tool-openocd/bin/openocd" "-d0" "-f" "/home/ahcr/.platformio/packages/tool-openocd/openocd/scripts/board/stm32f4discovery.cfg")
- (start-process "swoparser" "*swoparser*"  "python" "swoparser.py")
- (remove-hook 'compilation-finish-functions 'start-openocd-after-compilation)
+
+
+  ;; Start SWOParser
+ 
+  ;; Kill the existing swoparser process if it exists
+  (let ((swoparser-process (get-process "swoparser")))
+    (when swoparser-process
+      (message "Killing existing swoparser process...")
+      (delete-process swoparser-process)))
+  
+  (start-process "swoparser" "*swoparser*"  "python" (concat my-current-dir "swoparser.py"))
+  (display-buffer "*swoparser*")
+   
+  (remove-hook 'compilation-finish-functions 'start-openocd-after-compilation)
 )
 
 
 (defun my-dap-reset-openocd-and-upload ()
-  "Stop existing OpenOCD instance, run platformio upload, and start OpenOCD and the SWO parser for debug echo."
+  "Stop existing OpenOCD instance, run platformio\n \
+upload and start OpenOCD and the SWO parser\n \
+for debug echo."
   (interactive)
   ;; Stop any running OpenOCD processes
   (let ((openocd-process (get-process "openocd")))
@@ -77,9 +94,8 @@
   (message "Uploading firmware...")
   
   (add-hook 'compilation-finish-functions 'start-openocd-after-compilation)  
-  (call-interactively 'platformio-upload) 
-
-  )
+  (call-interactively 'platformio-upload)
+)
 
 
 (global-set-key (kbd "C-c d") 'my-dap-restart-openocd-and-debug)

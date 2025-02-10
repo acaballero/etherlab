@@ -106,6 +106,10 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &)>
     if (index < MAX_BUTTONS) {
         Button *button = &buttons[index];
 
+        char name[6];
+        sprintf(name, "opt-%d", index);
+        button->set_name(name);
+        button->set_visible(false);
         add_child(button);
         button->id = index;
         index++;
@@ -126,7 +130,6 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &)>
         button->set_fg(fg_color);
         button->set_text_bg(text_bg_color);
         button->set_text(text);
-        button->set_visible(true);
 
         if (index <= 4) {
             cols = 2;
@@ -215,6 +218,12 @@ void OptionButtonsView::init() {
 
     label_widget.set_font((FontDef *)&Font_7x10);
     label_widget.set_aling(ALIGN_CENTER);
+
+    label_widget.set_name("op-lb");
+    button_close.set_name("op-bc");
+    button_next.set_name("op-nx");
+    button_prev.set_name("op-pr");
+    display_panel_buttons.set_name("op-BT");
 
     add_child(&label_widget);
 

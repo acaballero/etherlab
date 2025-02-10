@@ -6,6 +6,8 @@
 
 #include "task_manager.h"
 #include "algorithm"
+#include "utils.hpp"
+#include "printf.h"
 
 namespace os {
 void TaskManager::add(periodic_task *t) { tasks.push_back(t); }
@@ -28,7 +30,11 @@ void TaskManager::run() {
         task->run();
 
         if (task->finished()) {
+
+            char tmp[50];
+            printf_("Finished task: %s\n", task->get_log(tmp));
             remove(task);
+
         } else {
             it++;
         }

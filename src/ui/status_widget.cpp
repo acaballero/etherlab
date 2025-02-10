@@ -5,6 +5,7 @@
 #include "status_widget.h"
 #include "../config.h"
 #include "../main_board.h"
+#include "printf.h"
 #include "radio.h"
 #include "ui/menu.h"
 #include <functional>
@@ -17,8 +18,13 @@ void StatusWidget::init() {
 
     add_children({&btnModulation, &btnFrontend, &btnAgc, &btnBand, &btnFilter1, &btnFilter2, &btnLeft, &btnRight});
 
+    int i = 0;
     for (Widget *btn : View::children()) {
         ((Button *)btn)->set_font((FontDef *)&Font_Tiny8x8);
+
+        char name[6];
+        sprintf(name, "stb-%d", i++);
+        btn->set_name(name);
     }
 }
 

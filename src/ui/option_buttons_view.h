@@ -13,15 +13,14 @@
 #include "button_widget.h"
 #include "math.h"
 #include "label_widget.h"
-#include "main_view.h"
 #include <stdint.h>
 
 class OptionButtonsView : public View {
   public:
-    static constexpr uint16_t HEIGHT = DISPLAY_Y_PIXELS - HEADER_HEIGHT;
+    static constexpr uint16_t TITLE_HEIGHT = 22;
+    static constexpr uint16_t HEIGHT = DISPLAY_Y_PIXELS - TITLE_HEIGHT;
     static constexpr uint16_t WIDTH = DISPLAY_X_PIXELS;
     static constexpr uint8_t MAX_BUTTONS = 32;
-    static constexpr uint16_t TITLE_HEIGHT = HEADER_HEIGHT;
 
     OptionButtonsView() : View() { init(); }
 
@@ -54,7 +53,7 @@ class OptionButtonsView : public View {
     static constexpr int max_rows = 4;
 
     int button_w = WIDTH / max_cols;
-    int button_h = (HEIGHT - STATUS_HEIGHT) / max_rows;
+    int button_h = (HEIGHT - TITLE_HEIGHT) / max_rows;
 
     Button buttons[MAX_BUTTONS];
     uint8_t index = 0;
@@ -73,7 +72,7 @@ class OptionButtonsView : public View {
     Label label_widget{{0, 0, WIDTH, TITLE_HEIGHT}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
 
     const char *display_buttons_labels[6] = {"<", ">", "", "", "", "Cancel"};
-    DisplayPanelButtonsWidget display_panel_buttons = {{0, HEIGHT - STATUS_HEIGHT, WIDTH, STATUS_HEIGHT}};
+    DisplayPanelButtonsWidget display_panel_buttons = {{0, HEIGHT - TITLE_HEIGHT, WIDTH, TITLE_HEIGHT}};
 
     bool update_focus(int button_index);
     void update_buttons(bool forze);

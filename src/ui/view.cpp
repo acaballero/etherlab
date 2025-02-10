@@ -14,6 +14,7 @@
 #include "dsp/dsp_tasks.h"
 #include <algorithm>
 #include <stdint.h>
+#include <vector>
 
 void View::paint_callback() {
 
@@ -31,7 +32,7 @@ void View::paint_callback() {
     // There will be one flickr, but that's all
 
     for (const auto child : this->children()) {
-        if (child->visible()) {
+        if (child->can_be_seen()) {
             uint16_t top = child->parent_rect().top();
             uint16_t left = child->parent_rect().left();
             uint16_t height = child->parent_rect().height();
@@ -68,13 +69,13 @@ void View::set_parent_rect(Rect r) {
 
 void View::paint() {
 
-    if (this->visible()) {
+    if (this->can_be_seen()) {
         before_paint();
 
         if (this->dirty()) {
 
             for (const auto child : this->children()) {
-                if (child->visible()) {
+                if (child->can_be_seen()) {
                     child->set_dirty();
                     child->before_paint();
                 }
@@ -84,16 +85,17 @@ void View::paint() {
             display->drawArea(&this->area, this, apply_pad);
 
             for (const auto child : this->children()) {
-                if (child->visible()) {
+                if (child->can_be_seen()) {
                     child->set_clean();
                 }
             }
 
             this->set_clean();
+
         } else {
             // Selectively paint all children.
             for (const auto child : this->children()) {
-                if (child->visible()) {
+                if (child->can_be_seen()) {
                     child->paint();
                     child->set_clean();
                 }
@@ -105,16 +107,71 @@ void View::paint() {
 void View::add_child(Widget *const widget) {
     if (widget) {
         if (widget->parent() == nullptr) {
-            widget->set_parent(this);
+            printf_("Adding child %s to %s\n", widget->get_name(), name);
             children_.push_back(widget);
+            widget->set_parent(this);
+        }
+    }
+}
+
+void View::on_child_update(Widget *w) {
+    // Sort by z-index (ascending order)
+    std::sort(children_.begin(), children_.end(), [](const Widget *a, const Widget *b) {
+        return a->get_z_index() < b->get_z_index(); // Ascending order
+    });
+
+    for (uint16_t i = 0; i < children_.size(); i++) {
+        Widget *widget = children_[i];
+
+        overlap_map[widget].clear(); // reset overlaps
+
+        // TODO: This maximum overlapping rectangle does not work as soon as the partial overlaps are not contiguous or leave gaps
+        // For example:
+        //
+        // ---------
+        // | 1 | 2 |
+        // ---------
+        // | 3 |   .
+        // -----....
+        //
+        // A rectangle under those three (dots) will be detected as covered
+        // To overcome this, a "sweeping algorightm" can be used (see commented method at the end of the file)
+        Rect max_overlapping_rect{};
+
+        for (uint16_t j = i + 1; j < children_.size(); j++) {
+            Widget *sibling = children_[j];
+            if (sibling->visible() && sibling->get_z_index() >= get_z_index()) {
+                const Rect r = widget->screen_rect().intersect(sibling->screen_rect());
+                if (!r.is_empty()) {
+                    max_overlapping_rect += r;
+                    if (r.contains(widget->screen_rect())) {
+                        //        printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
+                    } else {
+                        //          printf_("Widget %s overlapped by %s\n", widget->get_name(), sibling->get_name());
+                        // Process the overlap in the widget's childs to see if some can be hidden
+                    }
+                    std::vector<Widget *> overlaps = overlap_map[widget];
+                    overlaps.push_back(sibling);
+                }
+            }
+        }
+
+        if (max_overlapping_rect.contains(widget->screen_rect())) {
+            // Note a widget may be partially hidden by several widgets, but completelly by all of them
+            if (!widget->hidden()) {
+                widget->hidden(true);
+            }
+        } else {
+            if (widget->hidden()) {
+                widget->hidden(false);
+            }
         }
     }
 }
 
 void View::add_children(const std::initializer_list<Widget *> children) {
-    children_.insert(std::end(children_), children);
     for (auto child : children) {
-        child->set_parent(this);
+        add_child(child);
     }
 }
 
@@ -144,3 +201,68 @@ void View::on_hide() {
         on_hide_fn();
     }
 }
+
+// // Structure to store vertical events for plane sweep
+// struct Event {
+//     int x, y_start, y_end, type; // type: 1 for start, -1 for end
+//     bool operator<(const Event& e) const {
+//         if (x == e.x) return type > e.type; // Start events before end events at the same x
+//         return x < e.x;
+//     }
+// };
+
+// // Plane sweep algorithm to check full coverage
+// bool is_fully_covered(const Rect& target, const std::vector<Rect>& rects) {
+//     std::vector<Event> events;
+
+//     // Collect all intersections
+//     for (const Rect& r : rects) {
+//         Rect inter = target.intersect(r);
+//         if (inter.area() > 0) {
+//             events.push_back({inter.x, inter.y, inter.y + inter.height, 1});
+//             events.push_back({inter.x + inter.width, inter.y, inter.y + inter.height, -1});
+//         }
+//     }
+
+//     // Sort events by x coordinate
+//     std::sort(events.begin(), events.end());
+
+//     // Sweep line algorithm
+//     std::multiset<std::pair<int, int>> active_intervals;
+//     int prev_x = target.x;
+//     int covered_y_length = 0;
+
+//     for (const auto& e : events) {
+//         int dx = e.x - prev_x;
+
+//         // Check if the entire height of the target is covered
+//         if (covered_y_length == target.height && dx > 0) {
+//             prev_x = e.x;
+//         } else if (dx > 0) {
+//             return false;  // Found an uncovered vertical strip
+//         }
+
+//         if (e.type == 1) {
+//             active_intervals.insert({e.y_start, e.y_end});
+//         } else {
+//             active_intervals.erase(active_intervals.find({e.y_start, e.y_end}));
+//         }
+
+//         // Compute total covered height
+//         int last_y = -1;
+//         covered_y_length = 0;
+//         for (const auto& [y_start, y_end] : active_intervals) {
+//             if (y_start > last_y) {
+//                 covered_y_length += y_end - y_start;
+//                 last_y = y_end;
+//             } else if (y_end > last_y) {
+//                 covered_y_length += y_end - last_y;
+//                 last_y = y_end;
+//             }
+//         }
+
+//         prev_x = e.x;
+//     }
+
+//     return covered_y_length == target.height;
+// }

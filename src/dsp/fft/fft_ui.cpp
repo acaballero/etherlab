@@ -81,9 +81,24 @@ TOGGLE(config.fft.enable_iq_balance, setIQBalance, "Enable: ", doNothing, noEven
        ,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
+result toggleIQorWaterfall() {
+    initIQorWaterfall();
+    return proceed;
+}
+
+void initIQorWaterfall() {
+    if (config.fft.view_IQBalance) {
+        fft::iqbalance_task.set_enabled(true);
+        fft::waterfall_task.set_enabled(false);
+    } else {
+        fft::iqbalance_task.set_enabled(false);
+        fft::waterfall_task.set_enabled(true);
+    }
+}
+
 TOGGLE(config.fft.view_IQBalance, showIQBalance, "Show: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
-       VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
+       VALUE("On", true, toggleIQorWaterfall, noEvent), VALUE("Off", false, toggleIQorWaterfall, noEvent));
 
 MENU(menuIQBalance, "IQ Balance", doNothing, anyEvent, noStyle, SUBMENU(setIQBalance), SUBMENU(showIQBalance), OBJ(iqBalancePeriodMenu),
      OP("Reset", resetIQBalancer, enterEvent), EXIT("<Back"));
@@ -136,11 +151,5 @@ MENU(fftMenu, "Spectrum", doNothing, anyEvent, noStyle, SUBMENU(setEnableFFT),
      FIELD(config.fft.max_slices, "Slices", "", 1, FFT_MAX_SLICES, 1, 0, doNothing, noEvent, noStyle), OBJ(decimationMenu), SUBMENU(fftSamplingMenu),
      OBJ(smoothMenu), SUBMENU(fftWindowMenu), SUBMENU(fftUIMenu), SUBMENU(fftViewMenu), SUBMENU(fftRemoveDC), SUBMENU(menuIQBalance), SUBMENU(autoMinDbToggle),
      OBJ(minDbMenu), OBJ(maxDbMenu), OBJ(fftCalcNoisePeriodMenu), OBJ(amplitudeMenu), OBJ(fCorrectionMenu));
-
-// TOGGLE(fft_show_noise_floor, showNoiseFloorToggle, "Enable", doNothing, noEvent, noStyle//,doExit,enterEvent,noStyle
-//, VALUE("Yes", true, doNothing, noEvent), VALUE("No", false, doNothing, noEvent)
-//);
-
-// menuField<int16_t> &minDbField = *new menuField<int16_t>(config.fft.min_db,"DB Min","dB",FFT_MIN_DB,FFT_MAX_DB,1,0,doNothing,noEvent);
 
 } // namespace fftUI

@@ -20,7 +20,7 @@ SplashView splashView;
 KeypadView keypadView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, KeypadView::HEIGHT}};
 KeyboardView keyboardView{{0, HEADER_HEIGHT, KeyboardView::WIDTH, KeyboardView::HEIGHT}};
 NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
-OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
+// OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
 View *breadcrumb[MAX_VIEWS];
 View *currentView;
 int view_index = -1;
@@ -70,7 +70,7 @@ void init() {
     push(&mainView);
     keypadView.on_hide_fn = pop;
     keyboardView.on_hide_fn = pop;
-    optionButtonsView.on_hide_fn = pop;
+    // optionButtonsView.on_hide_fn = pop;
     numberEditView.on_hide_fn = pop;
 }
 } // namespace view_manager

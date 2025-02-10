@@ -4,6 +4,8 @@
 #include "ui_types.h"
 #include "widget.h"
 #include "lcd.h"
+#include <vector>
+#include <map>
 
 class View : public Widget {
 
@@ -33,7 +35,10 @@ class View : public Widget {
   protected:
     std::vector<Widget *> children_{};
 
-    // void invalidate_child(Widget *const widget);
+    // Vector of overlapping widgets (maintained for performace at the cost of memory)
+    std::map<Widget *, std::vector<Widget *>> overlap_map;
+
+    void on_child_update(Widget *) override;
 
     // Those methods are no longer public
 

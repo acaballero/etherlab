@@ -194,7 +194,7 @@ void process_command(st_usb_cdc_command *command) {
     CDC_Transmit_HS(response, size);
 }
 
-void cmd_read_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
+void cmd_read_freq_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *size) {
     uint64_t bcdfreq = 0;
 
     // response[*size++] = buf[5];
@@ -203,33 +203,33 @@ void cmd_read_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8
     *size += 5;
 }
 
-void cmd_read_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
+void cmd_read_mode_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *size) {
     response[(*size)++] = from_modulation_mode(main_board::getModulationMode());
 }
 
-void cmd_set_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
+void cmd_set_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *) {
     radio::set_frequency(parse_freq(command->data + 5));
     memcpy(response, ok_response_data, 5);
 }
 
-void cmd_set_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
+void cmd_set_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *) {
 
     main_board::setModulationMode(to_modulation_mode(command->data[5]), false);
     memcpy(response, ok_response_data, 5);
 }
 
-void cmd_set_vfo_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
+void cmd_set_vfo_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *) {
 
     // TODO: Not implemented
     // response[*size++] = buf[5];
     memcpy(response, ok_response_data, 5);
 }
 
-void cmd_read_split_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
+void cmd_read_split_mode_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *size) {
     response[(*size)++] = 0; // OFF
 }
 
-void cmd_on_off_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
+void cmd_on_off_handler(st_usb_cdc_command *command, uint8_t *, uint8_t *) {
     uint8_t *buf = command->data;
 
     if (buf[5] == SUBCMD_OFF) {
@@ -269,7 +269,7 @@ void cmd_set_vfo_freq_handler(st_usb_cdc_command *command, uint8_t *response, ui
     // response[size++] = 0xFB;
 }
 
-void cmd_set_vfo_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
+void cmd_set_vfo_mode_handler(st_usb_cdc_command *command, uint8_t *, uint8_t *) {
     // TODO: Not implemented
     // uin8_t vfo = buf[5]; // VFO
     main_board::setModulationMode(to_modulation_mode(command->data[6]), false);
