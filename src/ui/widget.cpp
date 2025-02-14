@@ -20,7 +20,7 @@ void Widget::set_parent_rect(const Rect new_parent_rect) {
 
     if (_parent_rect != new_parent_rect) {
         _parent_rect = new_parent_rect;
-        printf_("Setting parent rect of %s\n", name);
+        // printf_("Setting parent rect of %s\n", name);
         if (parent_) {
             parent_->on_child_update(this);
         }
@@ -51,9 +51,9 @@ void Widget::set_parent(Widget *const new_parent) {
         parent_->on_child_update(this);
     }
 
-    printf_("Setting parent of %s = %s\n", name, new_parent->name);
+    // printf_("Setting parent of %s = %s\n", name, new_parent->name);
 
-    // Adjust drawing area coordina tes relative to the parent
+    // Adjust drawing area coordinates relative to the parent
     set_area();
 
     set_dirty();
@@ -81,7 +81,7 @@ void Widget::set_clean() {
 void Widget::hidden(bool hide) {
     if (hide != flags.hidden) {
 
-        printf_("widget %s hidden: %b\n", name, hide);
+        // printf_("widget %s hidden: %b\n", name, hide);
 
         flags.hidden = hide;
 
@@ -146,7 +146,7 @@ bool Widget::set_focus(bool v) {
 
     if (v != this->flags.focus && this->flags.enabled) {
 
-        printf_("%s focus = %b\n", name, v);
+        // printf_("%s focus = %b\n", name, v);
 
         this->flags.focus = v;
         if (parent_) {
@@ -188,7 +188,7 @@ void Widget::set_visible(bool v) {
 
     if (v != flags.visible) {
 
-        printf_("%s visible = %b\n", name, v);
+        // printf_("%s visible = %b\n", name, v);
 
         flags.visible = v;
         flags.dirty = v;
@@ -217,7 +217,7 @@ Display *Widget::get_display() const { return display; }
 
 void Widget::set_display(Display *display) { Widget::display = display; }
 
-void Widget::paint() {
+void Widget::paint(Area *area) {
 
     // update_overlaps();
 
@@ -227,7 +227,11 @@ void Widget::paint() {
 
         bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
 
-        display->drawArea(&this->area, this, apply_pad);
+        if (!area) {
+            area = &this->area;
+        }
+
+        display->drawArea(area, this, apply_pad);
 #if DEBUG_LCD
         uint64_t t = HAL_GetTick();
         // TODO: This whole "area" thing (needed to adapt the display driver double buffering interface) is redundant (we already have the parent rect) and

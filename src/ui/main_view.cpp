@@ -7,12 +7,14 @@
 #include "lcd.h"
 #include "menu.h"
 #include "status.h"
+#include "ui/number_edit_view.h"
 #include "ui/option_buttons_view.h"
 #include "view_manager.h"
 #include "menu_options.h"
 
 MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPLAY_Y_PIXELS + DISPLAY_PADDING * 2}) {
 
+    this->set_name("main");
     this->tune_w.set_name("tune");
     this->fft_w.set_name("fft");
     this->waterfall_w.set_name("waterfall");
@@ -22,6 +24,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->smeter_w.set_name("smeter");
     this->powmeter_w.set_name("powmeter");
     this->optionButtonsView.set_name("options");
+    this->numberEditView.set_name("numedt");
     this->msg_w.set_name("msg");
     this->iqbal_w.set_name("iqbal");
     this->status_w.set_name("status");
@@ -38,6 +41,8 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->powmeter_w.set_visible(false);
     this->optionButtonsView.set_visible(false);
     this->optionButtonsView.set_z_index(5);
+    this->numberEditView.set_visible(false);
+    this->numberEditView.set_z_index(5);
     this->msg_w.set_z_index(10);
     this->msg_w.set_visible(false);
     this->msg_w.get_display()->setPadding(8, 8);
@@ -47,7 +52,8 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->children_.reserve(40);
 
     add_children({&this->menu_w, &this->header_w, &this->tune_w, &this->smeter_w, &this->radio_w, &this->powmeter_w, &this->info_w, &this->status_w,
-                  &this->dbscale_w, &this->frequency_w, &this->iqbal_w, &this->waterfall_w, &this->fft_w, &this->msg_w, &this->optionButtonsView});
+                  &this->dbscale_w, &this->frequency_w, &this->iqbal_w, &this->waterfall_w, &this->fft_w, &this->msg_w, &this->optionButtonsView,
+                  &this->numberEditView});
 }
 
 void MainView::before_paint() {
@@ -103,6 +109,8 @@ Widget *MainView::Menu() { return &this->menu_w; }
 Widget *MainView::Message() { return &this->msg_w; }
 
 OptionButtonsView *MainView::OptionButtons() { return &this->optionButtonsView; }
+
+NumberEditView *MainView::NumberEdit() { return &this->numberEditView; }
 
 bool MainView::on_input(const st_inputEvent event) {
 

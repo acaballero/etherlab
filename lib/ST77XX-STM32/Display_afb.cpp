@@ -90,8 +90,7 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         // We set the buffer size to be a whole number of lines of the area so we can easily determine whether we can write
         // or not, depending on the relative position of the buffer in the area
 
-        // integer floor of buffer_size/2/width
-
+        // integer floor of buffer_size/2/width (half buffer lines)
         uint16_t w = area->box.width;
 
         uint16_t a = b565_buffer_size / 2;

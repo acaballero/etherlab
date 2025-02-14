@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "hw/hw_config.h"
+#include "number_edit_view.h"
 #include "option_buttons_view.h"
 #include "view.h"
 #include "menu_widget.h"
@@ -24,15 +25,6 @@
 #include "s_meter_widget.h"
 #include "pow_meter_widget.h"
 #include "radio_status_widget.h"
-
-#define HEADER_HEIGHT 22
-#define STATUS_HEIGHT 22
-#define INFO_HEIGHT (DISPLAY_Y_PIXELS - HEADER_HEIGHT * 2 - FFT_WIDGET_HEIGHT - 5 - FFT_WATERFALL_HEIGHT)
-#define TUNE_INFO_HEIGHT (INFO_HEIGHT / 3)
-#define METERS_HEIGHT INFO_HEIGHT / 2
-#define FFT_INFO_HEIGHT (2 * INFO_HEIGHT / 3)
-#define METER_WIDTH (int)((float)DISPLAY_X_PIXELS / 1.5f)
-#define MENU_START_Y (HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5)
 
 class MainView : public View {
   public:
@@ -56,6 +48,8 @@ class MainView : public View {
 
     OptionButtonsView *OptionButtons();
 
+    NumberEditView *NumberEdit();
+
     bool on_input(const st_inputEvent event) override;
 
   protected:
@@ -73,6 +67,7 @@ class MainView : public View {
     IQBalanceWidget iqbal_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
     MenuWidget menu_w{{0, MENU_START_Y, DISPLAY_X_PIXELS, INFO_HEIGHT}, &lcd};
     OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
+    NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
 
     MessageWidget msg_w{
         {6, MENU_START_Y, DISPLAY_X_PIXELS - 12, INFO_HEIGHT - 6}, &lcd, (FontDef *)&Font_11x18, (FontDef *)&Font_7x10, C565_GREY_DARK, C565_RED, C565_WHITE};

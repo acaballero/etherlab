@@ -6,13 +6,18 @@
 
 #include "task_manager.h"
 #include "algorithm"
+#include "os/periodic_task.h"
 #include "utils.hpp"
 #include "printf.h"
+#include <memory>
 
 namespace os {
 void TaskManager::add(periodic_task *t) { tasks.push_back(t); }
 
-void TaskManager::remove(periodic_task *t) { tasks.erase(std::remove(tasks.begin(), tasks.end(), t), tasks.end()); }
+void TaskManager::remove(periodic_task *t) {
+    tasks.erase(std::remove(tasks.begin(), tasks.end(), t), tasks.end());
+    delete t;
+}
 
 periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
 
@@ -26,13 +31,13 @@ void TaskManager::run() {
 
     for (auto it = tasks.begin(); it != tasks.end();) {
 
-        periodic_task *task = *it;
+        auto task = *it;
         task->run();
 
         if (task->finished()) {
 
-            char tmp[50];
-            printf_("Finished task: %s\n", task->get_log(tmp));
+            // char tmp[50];
+            // printf_("Finished task: %s\n", task->get_log(tmp));
             remove(task);
 
         } else {

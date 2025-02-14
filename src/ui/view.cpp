@@ -8,6 +8,8 @@
 #include "status.h"
 #include "../../lib/printf/printf.h"
 #include "../../lib/ST77XX-STM32/ILI9341_fb.h"
+#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_def.h"
 #include "view.h"
 #include "setup.h"
 #include "config.h"
@@ -67,7 +69,7 @@ void View::set_parent_rect(Rect r) {
     }
 }
 
-void View::paint() {
+void View::paint(Area *) {
 
     if (this->can_be_seen()) {
         before_paint();
@@ -93,11 +95,60 @@ void View::paint() {
             this->set_clean();
 
         } else {
+
             // Selectively paint all children.
             for (const auto child : this->children()) {
                 if (child->can_be_seen()) {
-                    child->paint();
-                    child->set_clean();
+
+                    std::vector<Widget *> overlaps = this->overlap_map[child];
+
+                    if (overlaps.empty()) {
+                        // if (strcicmp(child->get_name(), "fft") == 0) {
+                        //     printf_("%s has no overlaps\n", child->get_name());
+                        // }
+                        child->paint();
+                        child->set_clean();
+                    } else {
+                        // if (strcicmp(child->get_name(), "fft") == 0) {
+                        //     printf_("%s has %d overlaps\n", child->get_name(), overlaps.size());
+                        //}
+                        // If there's a partially covered (and dirty) widget, we need (if we would paint it entirelly) to also paint the overlapping area of the
+                        // widgets on top of it.
+
+                        // Unfortunatelly, we can't just paint the affected widgets, or the background in-between wouldn't be drawn, so we need to repaint the
+                        // hole view, only that we will paint just the minimum required vertical area.
+
+                        // There are some easy optimizations we can do:
+                        // If the seen portion of the widget is a rectangle, we could just paint that box. Knowing if that's the case would require using
+                        // "sweeping" methods to account for all cases, but one frequent case is when a widget is partially covered by just another one,
+                        // horizontally (or vertically <-- Well, not really. The way the "shared-buffered-multiple-pass" paint method currently works is not
+                        // possible
+                        // to paint buffers with x dimension smaller that its original width).
+
+                        if (overlaps.size() == 1) {
+                            Widget *w = overlaps.at(0);
+                            Rect pr = child->parent_rect();
+                            Rect sr = child->screen_rect();
+                            if (w->parent_rect().left() <= pr.left() && w->parent_rect().right() >= pr.right()) {
+
+                                // Partially covered horizontally by only one widget
+                                std::vector<Rect> rects = sr - w->screen_rect();
+                                for (auto rect : rects) {
+                                    Area a = to_area(rect);
+
+                                    if (sr.top() < rect.top()) {
+                                        // TODO:: The rectangle to paint has an offset
+                                        status::handleError(status::ST_ERROR, "Negative offset not implemented");
+                                    }
+
+                                    printf_("Painting area (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, child->get_name());
+                                    child->paint(&a);
+                                }
+                            }
+                        }
+
+                        child->set_clean();
+                    }
                 }
             }
         }
@@ -123,7 +174,8 @@ void View::on_child_update(Widget *w) {
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];
 
-        overlap_map[widget].clear(); // reset overlaps
+        std::vector<Widget *> &overlaps = overlap_map[widget];
+        overlaps.clear();
 
         // TODO: This maximum overlapping rectangle does not work as soon as the partial overlaps are not contiguous or leave gaps
         // For example:
@@ -147,10 +199,9 @@ void View::on_child_update(Widget *w) {
                     if (r.contains(widget->screen_rect())) {
                         //        printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
                     } else {
-                        //          printf_("Widget %s overlapped by %s\n", widget->get_name(), sibling->get_name());
+                        printf_("Widget %s overlapped by %s\n", widget->get_name(), sibling->get_name());
                         // Process the overlap in the widget's childs to see if some can be hidden
                     }
-                    std::vector<Widget *> overlaps = overlap_map[widget];
                     overlaps.push_back(sibling);
                 }
             }

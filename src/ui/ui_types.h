@@ -5,11 +5,18 @@
 #ifndef UI_TYPES_H
 #define UI_TYPES_H
 
-//
-// Created by Angel Dust on 17/04/2021.
-//
-
 #include <stdint.h>
+#include <vector>
+#include "Display_afb.h"
+
+#define HEADER_HEIGHT 22
+#define STATUS_HEIGHT 22
+#define INFO_HEIGHT (DISPLAY_Y_PIXELS - HEADER_HEIGHT * 2 - FFT_WIDGET_HEIGHT - 5 - FFT_WATERFALL_HEIGHT)
+#define TUNE_INFO_HEIGHT (INFO_HEIGHT / 3)
+#define METERS_HEIGHT INFO_HEIGHT / 2
+#define FFT_INFO_HEIGHT (2 * INFO_HEIGHT / 3)
+#define METER_WIDTH (int)((float)DISPLAY_X_PIXELS / 1.5f)
+#define MENU_START_Y (HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5)
 
 using Coord = int16_t;
 using Dim = int16_t;
@@ -110,7 +117,11 @@ struct Rect {
 
     Rect &operator-=(const Point &p);
 
+    std::vector<Rect> operator-(const Rect &r);
+
     operator bool() const { return !_size.is_empty(); }
 };
+
+Area to_area(Rect &r);
 
 #endif // UI_TYPES_H

@@ -165,7 +165,7 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 4));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 5));
+    nav.doNav(Menu::navCmd(Menu::idxCmd, 4));
     //  nav.doNav(Menu::navCmd(Menu::enterCmd));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
     //  nav.doNav(Menu::navCmd(Menu::enterCmd));
@@ -174,7 +174,7 @@ void test() {
 bool dsptested = false;
 
 void view_loop() {
-    // TODO: Delegate dirty state management to the widget itself based on
+    // TODO: Delegate dirty state manaegnment to the widget itself based on
     // information change messages and refresh rate
 
     view_manager::mainView.TuneInfo()->set_dirty();
@@ -187,10 +187,12 @@ void view_loop() {
 int main() {
 
     setup();
+    HAL_Delay(5000);
+    printf_("It works");
     radio::freq_signal.add(NULL, frequency_signal_callback);
     standby::signal.add(NULL, standby_signal_callback);
 
-    task_manager.set_timeout(10000, []() { view_manager::mainView.OptionButtons()->set_visible(false); });
+    task_manager.set_timeout(10000, []() { view_manager::mainView.NumberEdit()->set_visible(false); });
 
     view_manager::init();
 

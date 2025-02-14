@@ -53,7 +53,7 @@ class Widget : public Painter {
     // Before paint hook for pre-paint preparation
     virtual void before_paint() = 0;
 
-    virtual void paint();
+    virtual void paint(Area *area = nullptr);
 
     virtual void on_show(){};
 

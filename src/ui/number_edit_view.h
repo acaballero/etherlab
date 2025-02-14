@@ -13,7 +13,6 @@
 #include "button_widget.h"
 #include "math.h"
 #include "label_widget.h"
-#include "main_view.h"
 #include <cstdint>
 
 class NumberEditView : public View {

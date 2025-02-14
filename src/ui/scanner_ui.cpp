@@ -7,6 +7,7 @@
 #include <io/file_factory.h>
 #include <sys/_stdint.h>
 #include "menuBase.h"
+#include "types.h"
 #include "ui/menu.h"
 #include "status.h"
 #include "scanner.h"
@@ -16,8 +17,6 @@
 namespace scanner_ui {
 
 scanner::st_scanner_info scanner_config;
-
-Menu::result configue_scanner(Menu::eventMask e); // Forward declaration
 
 Menu::numberPrompt<uint64_t> freqEditMin((const char *)"Freq. from", &scanner_config.freq_min, 0, ' ', '.', "Hz", nullptr, (uint64_t)config.f_min,
                                          (uint64_t)config.f_max);
@@ -86,31 +85,30 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
 using namespace Menu;
 
-result configue_scanner(eventMask e) {
-    configure();
-    return proceed;
-}
+// TODO: Add 'Band' mode to automatically select the current band frequency span
+menu_option_st<scanner::SCANNER_MODE> mode_options[] = {
+    {"Custom", scanner::SCANNER_MODE_CUSTOM}, {"Band", scanner::SCANNER_MODE_BAND}, {"List", scanner::SCANNER_MODE_LIST}};
 
-prompt *directionValues[] = {new Menu::menuValue<DIRECTION>("Backwards", BACKWARDS), new Menu::menuValue<DIRECTION>("Forward", FORWARD)};
-
-prompt *modeValues[] = {new Menu::menuValue<scanner::SCANNER_MODE>("Custom", scanner::SCANNER_MODE_CUSTOM),
-                        new Menu::menuValue<scanner::SCANNER_MODE>("Band", scanner::SCANNER_MODE_BAND),
-                        new Menu::menuValue<scanner::SCANNER_MODE>("List", scanner::SCANNER_MODE_LIST)};
+optionsPrompt<scanner::SCANNER_MODE> modeMenu((const char *)"Direction", mode_options, scanner_config.mode, sizeof(mode_options) / sizeof(mode_options[0]),
+                                              [](scanner::SCANNER_MODE) { configure(); });
 
 // TODO: Add 'Band' mode to automatically select the current band frequency span
-Menu::select<DIRECTION> &directionMenu = *new Menu::select<DIRECTION>("Direction:", scanner_config.direction, sizeof(directionValues) / sizeof(prompt *),
-                                                                      directionValues, configue_scanner, exitEvent);
+menu_option_st<DIRECTION> direction_options[] = {{"Backwards", BACKWARDS}, {"Forward", FORWARD}};
 
-Menu::select<scanner::SCANNER_MODE> &modeMenu =
-    *new Menu::select<scanner::SCANNER_MODE>("Mode:", scanner_config.mode, sizeof(modeValues) / sizeof(prompt *), modeValues, configue_scanner, exitEvent);
+optionsPrompt<DIRECTION> directionMenu((const char *)"Direction", direction_options, scanner_config.direction,
+                                       sizeof(direction_options) / sizeof(direction_options[0]), [](DIRECTION) { configure(); });
 
-TOGGLE(scanner_config.status, scanEnableToggle, "Status: ", configue_scanner, enterEvent, noStyle //,doExit,enterEvent,noStyle
-       ,
-       VALUE("On", scanner::SCANNER_STATUS_RUNNING, doNothing, noEvent), VALUE("Off", scanner::SCANNER_STATUS_STOPPED, doNothing, noEvent));
+TOGGLE(scanner_config.status, scanEnableToggle, "Status: ", configure, enterEvent, noStyle, VALUE("On", scanner::SCANNER_STATUS_RUNNING, doNothing, noEvent),
+       VALUE("Off", scanner::SCANNER_STATUS_STOPPED, doNothing, noEvent));
 
-MENU(menuScan, "Scan", on_menu_event, (Menu::eventMask)(enterEvent | exitEvent), noStyle, SUBMENU(scanEnableToggle), SUBMENU(directionMenu),
-     FIELD(scanner_config.freq_step, "Step:", " Hz", 1000, 1000000, 1000, 0, configue_scanner, enterEvent, noStyle),
-     FIELD(scanner_config.period_s, "Period:", " s", 1, 60000, 1, 0, configue_scanner, enterEvent, noStyle),
-     FIELD(scanner_config.pause_ms, "Scan pause:", " ms", 0, 10000, 1000, 0, configue_scanner, enterEvent, noStyle), SUBMENU(modeMenu), OBJ(freqEditMin),
-     OBJ(freqEditMax));
+Menu::numberPrompt<uint32_t> freqStepMenu((const char *)"Step", &scanner_config.freq_step, 0, ' ', '.', "Hz", [](uint32_t) { configure(); }, 1000, 1000000,
+                                          1000, 10000);
+
+Menu::numberPrompt<uint16_t> freqPeriodMenu((const char *)"Period", &scanner_config.period_s, 0, ' ', '.', "s", [](uint16_t) { configure(); }, 1, 60000, 1, 10);
+
+Menu::numberPrompt<uint32_t> freqPauseDelay((const char *)"Pause delay", &scanner_config.pause_ms, 0, ' ', '.', "ms", [](uint32_t) { configure(); }, 0, 10000,
+                                            100, 1000);
+
+MENU(menuScan, "Scan", on_menu_event, (Menu::eventMask)(enterEvent | exitEvent), noStyle, SUBMENU(scanEnableToggle), OBJ(directionMenu), OBJ(freqStepMenu),
+     OBJ(freqPeriodMenu), OBJ(freqPauseDelay), OBJ(modeMenu), OBJ(freqEditMin), OBJ(freqEditMax));
 } // namespace scanner_ui

@@ -21,9 +21,9 @@ void open_keypad(T value, const char *units, const char *name, uint8_t frac_digi
 template <typename T>
 void open_number_edit(T value, const char *units, const char *name, uint8_t frac_digits, std::function<void(T)> on_changed, T min, T max, T step, T step_big) {
 
-    view_manager::numberEditView.set_value(value, frac_digits, units, name, min, max, step, step_big);
-    view_manager::numberEditView.on_changed = on_changed;
-    view_manager::push(&view_manager::numberEditView);
+    view_manager::mainView.NumberEdit()->set_value(value, frac_digits, units, name, min, max, step, step_big);
+    view_manager::mainView.NumberEdit()->on_changed = on_changed;
+    view_manager::mainView.NumberEdit()->set_visible(true);
 }
 
 template <typename T> void open_option_buttons(menu_options_t<T> options, const char *title, T &value, uint16_t size, std::function<void(T)> on_select) {

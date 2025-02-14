@@ -248,7 +248,7 @@ result idle(menuOut &o, idleEvent e) {
     return proceed;
 }
 
-void menu_sdcard_callback(void *thisptr, void *args) {
+void menu_sdcard_callback(void *, void *args) {
 
     sdcard_st_info *info = (sdcard_st_info *)args;
 

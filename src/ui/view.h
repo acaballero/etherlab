@@ -30,7 +30,7 @@ class View : public Widget {
 
     void (*on_hide_fn)(void){};
 
-    void paint() final;
+    void paint(Area *area = nullptr) final;
 
   protected:
     std::vector<Widget *> children_{};

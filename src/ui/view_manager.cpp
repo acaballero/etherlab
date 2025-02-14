@@ -19,7 +19,7 @@ MainView mainView;
 SplashView splashView;
 KeypadView keypadView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, KeypadView::HEIGHT}};
 KeyboardView keyboardView{{0, HEADER_HEIGHT, KeyboardView::WIDTH, KeyboardView::HEIGHT}};
-NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
+// NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
 // OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
 View *breadcrumb[MAX_VIEWS];
 View *currentView;
@@ -50,7 +50,7 @@ void pop() {
     }
 }
 
-void main_view_warning_callback(void *thisptr, void *args) {
+void main_view_warning_callback(void *, void *args) {
 
     status::Status *st = (status::Status *)args;
 
@@ -71,6 +71,6 @@ void init() {
     keypadView.on_hide_fn = pop;
     keyboardView.on_hide_fn = pop;
     // optionButtonsView.on_hide_fn = pop;
-    numberEditView.on_hide_fn = pop;
+    // numberEditView.on_hide_fn = pop;
 }
 } // namespace view_manager

@@ -8,6 +8,7 @@
 #define TASK_MANAGER_H
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 #include "os/periodic_task.h"
 

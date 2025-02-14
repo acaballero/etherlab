@@ -48,3 +48,45 @@ Rect &Rect::operator-=(const Point &p) {
     _pos -= p;
     return *this;
 }
+
+std::vector<Rect> Rect::operator-(const Rect &r) {
+
+    std::vector<Rect> result;
+
+    //  No overlap
+    if (this->left() >= r.right() || this->right() <= r.left() || this->top() >= r.bottom() || this->bottom() <= r.top()) {
+        result.push_back(*this); // No change
+        return result;
+    }
+
+    //  Full overlap
+    if (this->left() <= r.left() && this->top() <= r.top() && this->right() >= r.right() && this->bottom() >= r.bottom()) {
+        return {};
+    }
+
+    // Partial overlap: Up to 4 rectangles may result
+
+    // Left part
+    if (r.left() > this->left()) {
+        result.push_back({this->left(), this->top(), r.left() - this->left(), this->height()});
+    }
+
+    // Right part
+    if (r.right() < this->right()) {
+        result.push_back({r.right(), this->top(), this->right() - r.right(), this->height()});
+    }
+
+    // Top part
+    if (r.top() > this->top()) {
+        result.push_back({this->left(), this->top(), this->width(), r.top() - this->top()});
+    }
+
+    // Bottom part
+    if (r.bottom() < this->bottom()) {
+        result.push_back({this->left(), r.bottom(), this->width(), this->bottom() - r.bottom()});
+    }
+
+    return result;
+}
+
+Area to_area(Rect &r) { return {{(uint16_t)r.left(), (uint16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), 0, 0}; }

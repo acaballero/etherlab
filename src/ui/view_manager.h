@@ -14,7 +14,7 @@
 namespace view_manager {
 extern KeypadView keypadView;
 extern KeyboardView keyboardView;
-extern NumberEditView numberEditView;
+// extern NumberEditView numberEditView;
 // extern OptionButtonsView optionButtonsView;
 extern MainView mainView;
 extern View *currentView;
