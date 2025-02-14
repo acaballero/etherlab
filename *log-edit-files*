@@ -1,7 +1,0 @@
-.clang-format 	.clangd 	.gitignore 	compile_commands.json
-platformio.ini 	include/stm32f3xx_hal_conf.h 	lib/DspFilters/source/Documentation.cpp 	lib/InputPin/InputPinController.cpp
-lib/ST77XX-STM32/Display_afb.cpp 	lib/utils/utils.hpp 	src/agc.cpp 	src/config.h
-src/radio.cpp 	src/radio.h 	src/dsp/fft/fft.cpp 	src/dsp/fft/fft_widget.cpp
-src/ui/button_widget.cpp 	src/ui/button_widget.h 	src/ui/frequency_widget.cpp 	src/ui/frequency_widget.h
-src/ui/label_widget.cpp 	src/ui/main_view.h 	src/ui/radio_status_widget.cpp 	src/ui/radio_status_widget.h
-src/ui/s_meter_widget.cpp 	src/ui/tune_widget.cpp
