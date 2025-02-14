@@ -1,0 +1,18 @@
+set debug remote 0
+set remotetimeout 60
+set architecture arm 
+set target-async off
+set pagination off 
+set logging enabled off
+set confirm off
+set print pretty on 
+set print array-indexes on 
+set print array on 
+set print object on 
+set print symbol on
+set non-stop off
+maint set target-async off
+file .pio/build/genericSTM32F427VGT/firmware.elf
+
+# Remember, with dape, you can't connect to a remote target here since it will attemp to do so through dap-protocol, then multiple connections are detected by
+# gdb and the latest is rejected
