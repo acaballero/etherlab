@@ -21,8 +21,8 @@
 
 Box View::getOffset(Rect &r, Box &offset, bool apply_pad) {
 
-    uint16_t top = r.top();
-    uint16_t left = r.left();
+    int16_t top = r.top();
+    int16_t left = r.left();
     uint16_t height = r.height();
     uint16_t width = r.width();
 
@@ -79,7 +79,7 @@ void View::set_parent_rect(Rect r) {
     }
 }
 
-void View::paint(Area *) {
+void View::paint(Area *a) {
 
     bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
 
@@ -95,6 +95,7 @@ void View::paint(Area *) {
                 }
             }
 
+            // TODO: Take into account if we've received another 'Area' as parameter, other than the full widget's area
             display->drawArea(&this->area, this, apply_pad);
 
             for (const auto child : this->children()) {
@@ -110,18 +111,11 @@ void View::paint(Area *) {
             // Selectively paint all children.
             for (const auto child : this->children()) {
                 if (child->can_be_seen()) {
-
                     if (child->visible_rects.empty()) {
-                        // if (strcicmp(child->get_name(), "fft") == 0) {
-                        //     printf_("%s has no overlaps\n", child->get_name());
-                        // }
                         child->paint();
-
                     } else {
-
                         paint_overlapped(child);
                     }
-
                     child->set_clean();
                 }
             }
@@ -130,23 +124,6 @@ void View::paint(Area *) {
 }
 
 void View::paint_overlapped(Widget *const child) {
-
-    // std::vector<Widget *> overlaps = this->overlap_map[child];
-    //  if (strcicmp(child->get_name(), "fft") == 0) {
-    //      printf_("%s has %d overlaps\n", child->get_name(), overlaps.size());
-    // }
-    //  If there's a partially covered (and dirty) widget, we need (if we would paint it entirelly) to also paint the overlapping area of the
-    //  widgets on top of it.
-
-    // Unfortunatelly, we can't just paint the affected widgets, or the background in-between wouldn't be drawn, so we need to repaint the
-    // hole view, only that we will paint just the minimum required vertical area.
-
-    // There are some easy optimizations we can do:
-    // If the seen portion of the widget is a rectangle, we could just paint that box. Knowing if that's the case would require using
-    // "sweeping" methods to account for all cases, but one frequent case is when a widget is partially covered by just another one,
-    // horizontally (or vertically <-- Well, not really. The way the "shared-buffered-multiple-pass" paint method currently works is not
-    // possible
-    // to paint buffers with x dimension smaller that its original width).
 
     Box current_offset = display->getOffset();
 
@@ -163,13 +140,16 @@ void View::paint_overlapped(Widget *const child) {
             Area a = to_area(rect);
 
             // From screen to relative
-            Rect r = rect - pr.location();
+            Rect r = rect - sr.location();
 
             Box offset;
 
             if (sr.top() < rect.top()) {
+                offset = getOffset(r, current_offset, false); // Don't apply pad here, it's taken care off in Widget::paint
 
-                offset = getOffset(r, current_offset, false);
+                // Negative offset
+                offset.x = -offset.x;
+                offset.y = -offset.y;
                 display->setOffset(offset);
             }
 

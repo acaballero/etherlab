@@ -80,7 +80,7 @@
 
 struct Box {
 
-    uint16_t x{0}, y{0};
+    int16_t x{0}, y{0};
     uint16_t width{0}, height{0};
 };
 
@@ -111,25 +111,25 @@ class Display {
 
     void drawArea(Area *, Painter *, bool pad_display);
 
-    uint8_t renderString(uint8_t x, uint8_t y, uint16_t length);
+    uint8_t renderString(int8_t x, int8_t y, uint16_t length);
 
     uint16_t *getBuffer();
 
-    void setPixel(uint16_t x, uint16_t y, uint16_t color);
+    void setPixel(int16_t x, int16_t y, uint16_t color);
 
-    void writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color);
+    void writeVertLine(int16_t x, int16_t y1, int16_t y2, uint16_t color);
 
-    void writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+    void writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 
-    void writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
+    void writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 
-    void writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t width);
+    void writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, uint8_t width);
 
     void writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 
     void writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 
-    void drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color);
+    void drawCircle(int16_t x0, int16_t y0, uint8_t r, uint16_t color);
 
     void invertColors(uint8_t invert);
 
@@ -153,24 +153,24 @@ class Display {
 
     void clear(uint16_t color = 0x0000);
 
-    void gotoXY(uint16_t x, uint16_t y);
+    void gotoXY(int16_t x, int16_t y);
 
-    void gotoCharXY(uint16_t x, uint16_t y);
+    void gotoCharXY(int16_t x, int16_t y);
 
-    void fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c);
+    void fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c);
 
     void fillBuffer(uint16_t color);
 
-    void writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor);
+    void writeChar(int16_t x, int16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor);
 
     void writeChar(char ch);
 
-    void writeString(uint16_t x, uint16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor);
+    void writeString(int16_t x, int16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor);
 
-    void drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled, bool top_left, bool top_right,
+    void drawRoundedRectangle(int16_t x0, int16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled, bool top_left, bool top_right,
                               bool bottom_left, bool bottom_right);
 
-    void drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled);
+    void drawRoundedRectangle(int16_t x0, int16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled);
 
     size_t write(uint8_t uint8_t);
 
@@ -276,8 +276,8 @@ class Display {
     bool enabled = true;
     bool wrap_text = true;
     bool trim_enabled = true;
-    uint16_t ox = 0; // offset x
-    uint16_t oy = 0; // offset y
+    int16_t ox = 0;  // offset x
+    int16_t oy = 0;  // offset y
     uint16_t ow = 0; // offset width
     uint16_t oh = 0; // offset height
     uint16_t px = 0;
@@ -307,7 +307,7 @@ class Display {
 
     size_t printFloat(double, uint8_t);
 
-    void drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uint8_t quadrant, bool filled);
+    void drawCorner(int16_t centerX, int16_t centerY, uint8_t radius, uint8_t quadrant, bool filled);
 };
 
 #endif

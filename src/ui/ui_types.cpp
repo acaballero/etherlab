@@ -121,4 +121,4 @@ std::vector<Rect> merge_rectangles(std::vector<Rect> &parts) {
     return merged;
 }
 
-Area to_area(Rect &r) { return {{(uint16_t)r.left(), (uint16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), 0, 0}; }
+Area to_area(Rect &r) { return {{(int16_t)r.left(), (int16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), 0, 0}; }

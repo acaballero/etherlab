@@ -244,7 +244,7 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 }
 
 // Function to draw a single corner using midpoint circle algorithm
-void Display::drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uint8_t quadrant, bool filled) {
+void Display::drawCorner(int16_t centerX, int16_t centerY, uint8_t radius, uint8_t quadrant, bool filled) {
 
     int x = 0;
     int y = radius;
@@ -301,11 +301,11 @@ void Display::drawCorner(uint16_t centerX, uint16_t centerY, uint8_t radius, uin
     }
 }
 
-void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled) {
+void Display::drawRoundedRectangle(int16_t x0, int16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled) {
     drawRoundedRectangle(x0, y0, width, height, radius, filled, true, true, true, true);
 }
 
-void Display::drawRoundedRectangle(uint16_t x0, uint16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled, bool top_left, bool top_right,
+void Display::drawRoundedRectangle(int16_t x0, int16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled, bool top_left, bool top_right,
                                    bool bottom_left, bool bottom_right) {
 
     int x1 = x0 + radius, y1 = y0 + radius;
@@ -362,7 +362,7 @@ void Display::fillBuffer(uint16_t c) {
     }
 }
 
-void Display::fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t c) {
+void Display::fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c) {
 
     x1 += ox;
     y1 += oy;
@@ -393,7 +393,7 @@ void Display::fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t 
     }
 }
 
-void Display::setPixel(uint16_t x, uint16_t y, uint16_t c) {
+void Display::setPixel(int16_t x, int16_t y, uint16_t c) {
 
     // Have in mind this function is too slow (around 17 assembler instructions) to call
     // it within a area drawing callback function (in which you have around 18 instructions to draw a pixel ( 72Mhz(core) / ( 18Mhz(spi) * 16
@@ -415,9 +415,9 @@ void Display::setPixel(uint16_t x, uint16_t y, uint16_t c) {
     }
 }
 
-void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) { writeLine(x1, y1, x2, y2, this->color); }
+void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2) { writeLine(x1, y1, x2, y2, this->color); }
 
-void Display::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color) {
+void Display::writeVertLine(int16_t x, int16_t y1, int16_t y2, uint16_t color) {
 
     x += ox;
     y1 += oy;
@@ -451,9 +451,9 @@ void Display::writeVertLine(uint16_t x, uint16_t y1, uint16_t y2, uint16_t color
     }
 }
 
-void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) { this->writeLine(x1, y1, x2, y2, color, 1); }
+void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) { this->writeLine(x1, y1, x2, y2, color, 1); }
 
-void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint8_t) {
+void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, uint8_t) {
 
     x1 += ox;
     y1 += oy;
@@ -623,7 +623,7 @@ void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
     // Unselect();
 }
 
-void Display::drawCircle(uint16_t x0, uint16_t y0, uint8_t r, uint16_t color) {
+void Display::drawCircle(int16_t x0, int16_t y0, uint8_t r, uint16_t color) {
     // select();
     int16_t f = 1 - r;
     int16_t ddF_x = 1;
@@ -671,7 +671,7 @@ void Display::writeChar(char ch) {
     this->px += font->width;
 }
 
-void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor) {
+void Display::writeChar(int16_t x, int16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor) {
 
     x += ox;
     y += oy;
@@ -766,7 +766,7 @@ void Display::writeChar(uint16_t x, uint16_t y, char ch, const FontDef *font, ui
     }
 }
 
-void Display::writeString(uint16_t x, uint16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor) {
+void Display::writeString(int16_t x, int16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor) {
     // select();
 
     uint8_t delta_punct = font->width - font->trim_punct_end - font->trim_punct_start;
@@ -819,12 +819,12 @@ void Display::set_trim_enabled(bool b) { trim_enabled = b; }
 
 uint16_t *Display::getBuffer() { return this->curr_buffer; }
 
-void Display::gotoXY(uint16_t x, uint16_t y) {
+void Display::gotoXY(int16_t x, int16_t y) {
     px = x;
     py = y;
 }
 
-void Display::gotoCharXY(uint16_t x, uint16_t y) {
+void Display::gotoCharXY(int16_t x, int16_t y) {
     px = this->padding_x + (x * font->width);
     py = this->verticalSpacing + (y * (font->height + (this->verticalSpacing * 2)));
 }

@@ -232,6 +232,7 @@ void Widget::paint(Area *area) {
         }
 
         display->drawArea(area, this, apply_pad);
+
 #if DEBUG_LCD
         uint64_t t = HAL_GetTick();
         // TODO: This whole "area" thing (needed to adapt the display driver double buffering interface) is redundant (we already have the parent rect) and
@@ -263,7 +264,7 @@ void Widget::set_area() {
 
     Rect r = screen_rect();
 
-    area = {{(uint16_t)r.left(), (uint16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), this->show_fps, this->fps};
+    area = {{(int16_t)r.left(), (int16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), this->show_fps, this->fps};
 }
 
 uint8_t Widget::get_z_index() const { return z_index + (parent() ? parent()->get_z_index() : 0); }
