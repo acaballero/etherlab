@@ -17,10 +17,7 @@
 #define ICON_SOUND_ON 45
 #define ICON_SOUND_OFF 46
 
-enum FontEncoding {
-    ROWS,
-    COLUMNS
-};
+enum FontEncoding { ROWS, COLUMNS };
 
 struct FontDef {
     uint8_t encoding;
@@ -47,8 +44,9 @@ extern const FontDef16 Font_7x10;
 extern const FontDef16 Font_11x18;
 extern const FontDef8 Font_Fixed5x7;
 extern const FontDef16 Font_Icons9x8;
-//extern const FontDef Font_Sinclair8x8;
-//extern const FontDef Font_16x26;
+extern const FontDef16 Font_Digits13x16;
+// extern const FontDef Font_Sinclair8x8;
+// extern const FontDef Font_16x26;
 
 extern uint8_t ST7789_32[];
 extern uint8_t ST7789_16[];

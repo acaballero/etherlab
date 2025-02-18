@@ -4,6 +4,7 @@
 
 #include "ui_types.h"
 #include <stdio.h>
+#include <algorithm>
 #include "../../lib/utils/utils.hpp"
 
 bool Rect::contains(const Point p) const { return (p.x() >= left()) && (p.y() >= top()) && (p.x() < right()) && (p.y() < bottom()); }
@@ -49,6 +50,12 @@ Rect &Rect::operator-=(const Point &p) {
     return *this;
 }
 
+Rect Rect::operator-(const Point &p) {
+    Rect r = *this;
+    r -= p;
+    return r;
+}
+
 std::vector<Rect> Rect::operator-(const Rect &r) {
 
     std::vector<Rect> result;
@@ -68,12 +75,12 @@ std::vector<Rect> Rect::operator-(const Rect &r) {
 
     // Left part
     if (r.left() > this->left()) {
-        result.push_back({this->left(), this->top(), r.left() - this->left(), this->height()});
+        result.push_back({this->left(), max2(this->top(), r.top()), r.left() - this->left(), min2(this->bottom(), r.bottom()) - max2(this->top(), r.top())});
     }
 
     // Right part
     if (r.right() < this->right()) {
-        result.push_back({r.right(), this->top(), this->right() - r.right(), this->height()});
+        result.push_back({r.right(), max2(this->top(), r.top()), this->right() - r.right(), min2(this->bottom(), r.bottom()) - max2(this->top(), r.top())});
     }
 
     // Top part
@@ -87,6 +94,31 @@ std::vector<Rect> Rect::operator-(const Rect &r) {
     }
 
     return result;
+}
+
+// Merge adjacent or overlapping rectangles
+std::vector<Rect> merge_rectangles(std::vector<Rect> &parts) {
+
+    std::sort(parts.begin(), parts.end(), [](const Rect &a, const Rect &b) { return (a.top() == b.top()) ? a.left() < b.left() : a.top() < b.top(); });
+
+    std::vector<Rect> merged;
+    for (auto &part : parts) {
+        if (merged.empty()) {
+            merged.push_back(part);
+        } else {
+            Rect &last = merged.back();
+
+            if (last.left() == part.left() && last.width() == part.width() && (last.bottom() == part.top() || last.top() == part.bottom())) {
+                last.set_height(last.height() + part.height());
+            } else if (last.top() == part.top() && last.height() == part.height() && (last.right() == part.left() || last.left() == part.right())) {
+                last.set_width(last.width() + part.width());
+            } else {
+                merged.push_back(part);
+            }
+        }
+    }
+
+    return merged;
 }
 
 Area to_area(Rect &r) { return {{(uint16_t)r.left(), (uint16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), 0, 0}; }

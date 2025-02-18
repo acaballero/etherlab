@@ -36,7 +36,7 @@ class View : public Widget {
     std::vector<Widget *> children_{};
 
     // Vector of overlapping widgets (maintained for performace at the cost of memory)
-    std::map<Widget *, std::vector<Widget *>> overlap_map;
+    // std::map<Widget *, std::vector<Widget *>> overlap_map;
 
     void on_child_update(Widget *) override;
 
@@ -45,6 +45,10 @@ class View : public Widget {
     void paint_callback() final;
 
     void set_area() override;
+
+    Box getOffset(Rect &, Box &offset, bool apply_pad);
+
+    void paint_overlapped(Widget *const child);
 };
 
 #endif

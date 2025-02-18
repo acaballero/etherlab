@@ -80,16 +80,16 @@
 
 struct Box {
 
-    uint16_t x, y;
-    uint16_t width, height;
+    uint16_t x{0}, y{0};
+    uint16_t width{0}, height{0};
 };
 
 struct Area {
 
     Box box;
-    uint16_t size = 0;
-    bool show_fps;
-    float fps;
+    uint16_t size{0};
+    bool show_fps{false};
+    float fps{0};
 };
 
 class Display {
@@ -253,6 +253,10 @@ class Display {
 
     void set_trim_enabled(bool b);
 
+    void set_transparency(uint8_t v);
+
+    uint8_t get_transparency();
+
     uint16_t current_line = 0;
     uint16_t chunk_height = 0;
     uint16_t current_last_line = 0;
@@ -282,6 +286,7 @@ class Display {
     const FontDef *font = (FontDef *)&Font_11x18;
     uint16_t color = C565_WHITE;
     uint16_t bgColor = C565_BLACK;
+    uint8_t transparency = 0;
     uint8_t verticalSpacing = 2;
     uint16_t *curr_buffer = 0;
 

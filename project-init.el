@@ -10,6 +10,10 @@
 
 (defun stop-openocd ()
   "Stop OpenOCD."
+  ;; Stop dape in case it was on
+  (dape-quit)
+  
+  "Stop OpenOCD."
    (let ((openocd-process (get-process "openocd"))) 
 (when openocd-process (message "Stopping existing OpenOCD process...") 
 (delete-process openocd-process)))
@@ -45,7 +49,7 @@
   (start-openocd)
 
   ;; Wait a bit for OpenOCD to initialize
-  (sleep-for 1)
+  ;;(sleep-for 1)
 
   ;; Run dap-debug
   (message "Starting dap-debug...") 
@@ -56,12 +60,11 @@
 
 
 (defun my-dap-kill-openocd-and-upload () "Stop existing OpenOCD instance and run platformio upload." (interactive)
+       
   ;; Stop any running OpenOCD processes
-  (let ((openocd-process (get-process "openocd"))) 
-  (when openocd-process (message "Stopping existing OpenOCD process...") 
-  (delete-process openocd-process)))
+  (stop-openocd)
 
-   ;; Wait a bit for OpenOCD to release ports
+  ;; Wait a bit for OpenOCD to release ports
   (sleep-for 1)
 
   ;; Run pio upload
@@ -82,7 +85,9 @@
 (when swoparser-process (message "Killing existing swoparser process...") 
 (delete-process swoparser-process)))
 (start-process "swoparser" "*swoparser*"  "python" (concat my-current-dir "swoparser.py")) 
-(display-buffer "*swoparser*")))
+(display-buffer "*swoparser*")
+(goto-char (point-max))
+))
 (remove-hook 'compilation-finish-functions 'start-openocd-after-compilation)
 )
 
@@ -90,9 +95,7 @@
 upload and start OpenOCD and the SWO parser\n \
 for debug echo." (interactive)
   ;; Stop any running OpenOCD processes
-  (let ((openocd-process (get-process "openocd"))) 
-(when openocd-process (message "Stopping existing OpenOCD process...") 
-(delete-process openocd-process)))
+  (stop-openocd)
 
    ;; Wait a bit for OpenOCD to release ports
   (sleep-for 1)
@@ -118,7 +121,7 @@ for debug echo." (interactive)
 	       modes (c++-mode c-mode)
 	       command "arm-none-eabi-gdb"
 	       command-args ["-i" "dap" "-x" "/home/ahcr/dev/trx/gdb_init.txt"]
-	      ; defer-launch-attach t
+	       defer-launch-attach nil
 	       command-cwd "/home/ahcr/dev/trx/"
 	       :request "attach"
 	      ; :gdbpath "arm-none-eabi-gdb"   
@@ -128,13 +131,14 @@ for debug echo." (interactive)
 	       :stopOnEntry t
 	      ; :externalConsole nil
               ; :targetArchitecture "arm"
-              ; :valuesFormatting "prettyPrinters"
+               :valuesFormatting "prettyPrinters"
               ; :breakpoint-set "hbreak"
-	      ; :showReturnValue t
-	       :stopAtBeginningOfMainSubprogram "true"
-	      ; :stopAtEntry t
+	       :showReturnValue t
+	       :stopAtBeginningOfMainSubprogram t
+	       :stopAtEntry t
 	       :target ":3333"	      
-	       :name "Debug GDB-OpenOCD"	       
+	       :name "Debug GDB-OpenOCD"
+	       :args  ["ex" "break main"]	    
 	       ;:port "3333"
 	       ;:host "localhost"
 	       ;:program "/home/ahcr/dev/trx/.pio/build/genericSTM32F427VGT/firmware.elf"

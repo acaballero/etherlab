@@ -110,6 +110,9 @@ class Widget : public Painter {
 
     char *get_name();
 
+    // Vector of visible rectangles. There are no overlaps if empty
+    std::vector<Rect> visible_rects;
+
   protected:
     char name[6]{"-"};
 

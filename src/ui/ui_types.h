@@ -16,7 +16,8 @@
 #define METERS_HEIGHT INFO_HEIGHT / 2
 #define FFT_INFO_HEIGHT (2 * INFO_HEIGHT / 3)
 #define METER_WIDTH (int)((float)DISPLAY_X_PIXELS / 1.5f)
-#define MENU_START_Y (HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5)
+//#define MENU_START_Y (HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5)
+#define MENU_START_Y 0
 
 using Coord = int16_t;
 using Dim = int16_t;
@@ -99,6 +100,9 @@ struct Rect {
 
     int height() const { return _size.height(); }
 
+    void set_height(int h) { _size = {_size.width(), h}; }
+    void set_width(int w) { _size = {w, _size.height()}; }
+
     Point center() const { return {_pos.x() + _size.width() / 2, _pos.y() + _size.height() / 2}; }
 
     bool is_empty() const { return _size.is_empty(); }
@@ -118,6 +122,8 @@ struct Rect {
     Rect &operator-=(const Point &p);
 
     std::vector<Rect> operator-(const Rect &r);
+
+    Rect operator-(const Point &p);
 
     operator bool() const { return !_size.is_empty(); }
 };

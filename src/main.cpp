@@ -13,6 +13,7 @@
 #include "scanner.h"
 #include "setup.h"
 #include "standby.h"
+#include "status.h"
 #include "stm32f4xx_hal.h"
 #include "os/task_manager.h"
 #include "types.h"
@@ -163,12 +164,16 @@ void frequency_signal_callback(void *, void *args) {
 
 void test() {
     // Go to a  function to avoid having to use the menu again and again
-    nav.doNav(Menu::navCmd(Menu::enterCmd));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 4));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 4));
+    // nav.doNav(Menu::navCmd(Menu::enterCmd));
+    // nav.doNav(Menu::navCmd(Menu::idxCmd, 4));
+    // nav.doNav(Menu::navCmd(Menu::idxCmd, 4));
     //  nav.doNav(Menu::navCmd(Menu::enterCmd));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
     //  nav.doNav(Menu::navCmd(Menu::enterCmd));
+
+    status::handleError(status::ST_ERROR, "test error");
+    // Put focus over number editor
+    // view_manager::mainView.NumberEdit()->set_focus(true);
 }
 
 bool dsptested = false;
@@ -187,14 +192,13 @@ void view_loop() {
 int main() {
 
     setup();
-    HAL_Delay(5000);
-    printf_("It works");
+
     radio::freq_signal.add(NULL, frequency_signal_callback);
     standby::signal.add(NULL, standby_signal_callback);
 
-    task_manager.set_timeout(10000, []() { view_manager::mainView.NumberEdit()->set_visible(false); });
-
     view_manager::init();
+
+    HAL_Delay(5000);
 
     for (auto task : tasks) {
         task_manager.add(task);

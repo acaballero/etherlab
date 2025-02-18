@@ -5,6 +5,7 @@
 #include "frequency_widget.h"
 #include "Display_afb.h"
 #include "config.h"
+#include "ips_font.h"
 #include "radio.h"
 #include "scanner.h"
 #include "ui/button_widget.h"
@@ -89,7 +90,7 @@ void FrequencyWidgetInner::paint_callback() {
         fg_color = C565_YELLOW;
     }
 
-    FontDef *font = (FontDef *)&Font_11x18;
+    FontDef *font = (FontDef *)&Font_Digits13x16;
 
     uint8_t dec_place = (uint8_t)log10((double)config.vfo[config.vfo_ix].step) + 1;
     uint8_t trim = font->trim_punct_end + font->trim_punct_start;

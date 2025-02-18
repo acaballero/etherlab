@@ -43,7 +43,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->optionButtonsView.set_z_index(5);
     this->numberEditView.set_visible(false);
     this->numberEditView.set_z_index(5);
-    this->msg_w.set_z_index(10);
+    this->msg_w.set_z_index(100);
     this->msg_w.set_visible(false);
     this->msg_w.get_display()->setPadding(8, 8);
     this->msg_w.get_display()->setVerticalLineSpacing(1);

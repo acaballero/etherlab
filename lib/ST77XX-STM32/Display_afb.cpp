@@ -11,10 +11,12 @@
 #define min2(a, b) ((a) < (b) ? (a) : (b))
 #define max2(a, b) ((a) > (b) ? (a) : (b))
 
-/* RGB565 buffer for transferring pixels to the display using DMA */
-static const uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * 8;
+#define SETPIXEL(x, y, c) (*(this->curr_buffer + x + (y >> 16)) = c)
 
-uint16_t b565_buffer[b565_buffer_size];
+/* RGB565 buffer for transferring pixels to the display using DMA */
+static const uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * 16;
+
+uint16_t b565_buffer[b565_buffer_size] __attribute__((aligned(4)));
 
 Display::Display(SPI_HandleTypeDef *spi_port) {
     this->spi_port = spi_port;
@@ -26,6 +28,10 @@ void Display::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8
         dest[i] = SWAP_BYTES(RGB888_TO_RGB565(orig[i]));
     }
 }
+
+void Display::set_transparency(uint8_t v) { transparency = v; }
+
+uint8_t Display::get_transparency() { return transparency; }
 
 void Display::clear(uint16_t color) {
 
@@ -471,6 +477,7 @@ void Display::writeLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint
     if (y2 >= zy1 && y1 <= zy2) { // There's something to draw in the current chunk
 
         /* Fastest line drawing algorithm (supporting all slopes) I've encountered so far (http://www.edepot.com/linee.html) */
+
         bool yLonger = false;
         int shortLen = y2 - y1;
         int longLen = x2 - x1;
@@ -987,3 +994,34 @@ size_t Display::printFloat(double number, uint8_t digits) {
 bool Display::getWrapText() const { return wrap_text; }
 
 void Display::setWrapText(bool wrap_text) { Display::wrap_text = wrap_text; }
+
+// Helper function to extract RGB components from RGB565 format
+static inline void extract_rgb565(uint16_t pixel, uint8_t *r, uint8_t *g, uint8_t *b) {
+    *r = (pixel >> 11) & 0x1F; // Extract 5-bit red
+    *g = (pixel >> 5) & 0x3F;  // Extract 6-bit green
+    *b = pixel & 0x1F;         // Extract 5-bit blue
+}
+
+// Helper function to combine RGB components into RGB565 format
+static inline uint16_t combine_rgb565(uint8_t r, uint8_t g, uint8_t b) { return ((r & 0x1F) << 11) | ((g & 0x3F) << 5) | (b & 0x1F); }
+
+// Function to blend two RGB565 pixels with a given alpha value (0-255)
+static inline uint16_t blend_pixel(uint16_t fg_pixel, uint16_t bg_pixel, uint8_t alpha) {
+    uint8_t fg_r, fg_g, fg_b;
+    uint8_t bg_r, bg_g, bg_b;
+
+    // Extract RGB components from foreground and background pixels
+    extract_rgb565(fg_pixel, &fg_r, &fg_g, &fg_b);
+    extract_rgb565(bg_pixel, &bg_r, &bg_g, &bg_b);
+
+    // Scale alpha to a fixed-point range [0, 256] to avoid division by 255
+    uint16_t alpha_scaled = (alpha + 1); // Approximate (alpha / 255) as (alpha + 1) / 256
+
+    // Blend using fixed-point arithmetic
+    uint8_t blended_r = ((fg_r * alpha_scaled + bg_r * (256 - alpha_scaled)) >> 8);
+    uint8_t blended_g = ((fg_g * alpha_scaled + bg_g * (256 - alpha_scaled)) >> 8);
+    uint8_t blended_b = ((fg_b * alpha_scaled + bg_b * (256 - alpha_scaled)) >> 8);
+
+    // Combine blended RGB components back into RGB565 format
+    return combine_rgb565(blended_r, blended_g, blended_b);
+}

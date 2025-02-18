@@ -10,6 +10,7 @@
 #include "../../lib/ST77XX-STM32/ILI9341_fb.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_def.h"
+#include "stm32f4xx_hal_wwdg.h"
 #include "view.h"
 #include "setup.h"
 #include "config.h"
@@ -18,10 +19,31 @@
 #include <stdint.h>
 #include <vector>
 
+Box View::getOffset(Rect &r, Box &offset, bool apply_pad) {
+
+    uint16_t top = r.top();
+    uint16_t left = r.left();
+    uint16_t height = r.height();
+    uint16_t width = r.width();
+
+    // top = top ? top - 1 : 0;
+
+    if (apply_pad) {
+        top += DISPLAY_PADDING;
+        left += DISPLAY_PADDING;
+    }
+
+    // Add current offset
+    left += offset.x;
+    top += offset.y;
+
+    return {left, top, width, height};
+}
+
 void View::paint_callback() {
 
     bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
-    Box offset = display->getOffset();
+    Box current_offset = display->getOffset();
 
     display->clear();
 
@@ -35,30 +57,18 @@ void View::paint_callback() {
 
     for (const auto child : this->children()) {
         if (child->can_be_seen()) {
-            uint16_t top = child->parent_rect().top();
-            uint16_t left = child->parent_rect().left();
-            uint16_t height = child->parent_rect().height();
-            uint16_t width = child->parent_rect().width();
 
-            // top = top ? top - 1 : 0;
+            Rect rect = child->parent_rect();
+            Box offset = getOffset(rect, current_offset, !apply_pad);
 
-            if (!apply_pad) {
-                top += DISPLAY_PADDING;
-                left += DISPLAY_PADDING;
-            }
-
-            // Add current offset
-            left += offset.x;
-            top += offset.y;
-
-            if (display->current_line <= top + height - 1 && display->current_last_line >= top) {
-                display->setOffset({left, top, width, height});
+            if (display->current_line <= offset.y + offset.height - 1 && display->current_last_line >= offset.y) {
+                display->setOffset(offset);
                 child->paint_callback();
             }
         }
     }
 
-    display->setOffset(offset);
+    display->setOffset(current_offset);
 }
 
 void View::set_parent_rect(Rect r) {
@@ -70,6 +80,8 @@ void View::set_parent_rect(Rect r) {
 }
 
 void View::paint(Area *) {
+
+    bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
 
     if (this->can_be_seen()) {
         before_paint();
@@ -83,7 +95,6 @@ void View::paint(Area *) {
                 }
             }
 
-            bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
             display->drawArea(&this->area, this, apply_pad);
 
             for (const auto child : this->children()) {
@@ -100,58 +111,80 @@ void View::paint(Area *) {
             for (const auto child : this->children()) {
                 if (child->can_be_seen()) {
 
-                    std::vector<Widget *> overlaps = this->overlap_map[child];
-
-                    if (overlaps.empty()) {
+                    if (child->visible_rects.empty()) {
                         // if (strcicmp(child->get_name(), "fft") == 0) {
                         //     printf_("%s has no overlaps\n", child->get_name());
                         // }
                         child->paint();
-                        child->set_clean();
+
                     } else {
-                        // if (strcicmp(child->get_name(), "fft") == 0) {
-                        //     printf_("%s has %d overlaps\n", child->get_name(), overlaps.size());
-                        //}
-                        // If there's a partially covered (and dirty) widget, we need (if we would paint it entirelly) to also paint the overlapping area of the
-                        // widgets on top of it.
 
-                        // Unfortunatelly, we can't just paint the affected widgets, or the background in-between wouldn't be drawn, so we need to repaint the
-                        // hole view, only that we will paint just the minimum required vertical area.
-
-                        // There are some easy optimizations we can do:
-                        // If the seen portion of the widget is a rectangle, we could just paint that box. Knowing if that's the case would require using
-                        // "sweeping" methods to account for all cases, but one frequent case is when a widget is partially covered by just another one,
-                        // horizontally (or vertically <-- Well, not really. The way the "shared-buffered-multiple-pass" paint method currently works is not
-                        // possible
-                        // to paint buffers with x dimension smaller that its original width).
-
-                        if (overlaps.size() == 1) {
-                            Widget *w = overlaps.at(0);
-                            Rect pr = child->parent_rect();
-                            Rect sr = child->screen_rect();
-                            if (w->parent_rect().left() <= pr.left() && w->parent_rect().right() >= pr.right()) {
-
-                                // Partially covered horizontally by only one widget
-                                std::vector<Rect> rects = sr - w->screen_rect();
-                                for (auto rect : rects) {
-                                    Area a = to_area(rect);
-
-                                    if (sr.top() < rect.top()) {
-                                        // TODO:: The rectangle to paint has an offset
-                                        status::handleError(status::ST_ERROR, "Negative offset not implemented");
-                                    }
-
-                                    printf_("Painting area (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, child->get_name());
-                                    child->paint(&a);
-                                }
-                            }
-                        }
-
-                        child->set_clean();
+                        paint_overlapped(child);
                     }
+
+                    child->set_clean();
                 }
             }
         }
+    }
+}
+
+void View::paint_overlapped(Widget *const child) {
+
+    // std::vector<Widget *> overlaps = this->overlap_map[child];
+    //  if (strcicmp(child->get_name(), "fft") == 0) {
+    //      printf_("%s has %d overlaps\n", child->get_name(), overlaps.size());
+    // }
+    //  If there's a partially covered (and dirty) widget, we need (if we would paint it entirelly) to also paint the overlapping area of the
+    //  widgets on top of it.
+
+    // Unfortunatelly, we can't just paint the affected widgets, or the background in-between wouldn't be drawn, so we need to repaint the
+    // hole view, only that we will paint just the minimum required vertical area.
+
+    // There are some easy optimizations we can do:
+    // If the seen portion of the widget is a rectangle, we could just paint that box. Knowing if that's the case would require using
+    // "sweeping" methods to account for all cases, but one frequent case is when a widget is partially covered by just another one,
+    // horizontally (or vertically <-- Well, not really. The way the "shared-buffered-multiple-pass" paint method currently works is not
+    // possible
+    // to paint buffers with x dimension smaller that its original width).
+
+    Box current_offset = display->getOffset();
+
+    printf_("Child %s has %d visible rect/s\n", child->get_name(), child->visible_rects.size());
+
+    for (auto &rect : child->visible_rects) {
+
+        Rect pr = child->parent_rect();
+        Rect sr = child->screen_rect();
+
+        // Currenty only full width rects are considered
+        if (rect.width() == pr.width()) {
+
+            Area a = to_area(rect);
+
+            // From screen to relative
+            Rect r = rect - pr.location();
+
+            Box offset;
+
+            if (sr.top() < rect.top()) {
+
+                offset = getOffset(r, current_offset, false);
+                display->setOffset(offset);
+            }
+
+            printf_("Painting area (%d,%d,%d,%d), offset (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, offset.x, offset.y,
+                    offset.width, offset.height, child->get_name());
+
+            child->paint(&a);
+
+        } else {
+            // status::handleError(status::ST_ERROR, "A child has a 'small' visible part");
+            // printf_("Rect: (%d,%d,%d,%d) of widget %s\n", rect.left(), rect.top(), rect.width(), rect.height(), child->get_name());
+        }
+
+        display->setOffset(current_offset);
+        child->set_clean();
     }
 }
 
@@ -174,40 +207,49 @@ void View::on_child_update(Widget *w) {
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];
 
-        std::vector<Widget *> &overlaps = overlap_map[widget];
-        overlaps.clear();
+        //  std::vector<Widget *> &overlaps = overlap_map[widget];
+        //  overlaps.clear();
 
-        // TODO: This maximum overlapping rectangle does not work as soon as the partial overlaps are not contiguous or leave gaps
-        // For example:
-        //
-        // ---------
-        // | 1 | 2 |
-        // ---------
-        // | 3 |   .
-        // -----....
-        //
-        // A rectangle under those three (dots) will be detected as covered
-        // To overcome this, a "sweeping algorightm" can be used (see commented method at the end of the file)
-        Rect max_overlapping_rect{};
+        widget->visible_rects.clear();
+
+        // To improve performance, a "sweeping algorightm" can be used (see commented method at the end of the file)
+
+        std::vector<Rect> visible_parts = {widget->screen_rect()};
+        bool overlapped = false;
 
         for (uint16_t j = i + 1; j < children_.size(); j++) {
             Widget *sibling = children_[j];
             if (sibling->visible() && sibling->get_z_index() >= get_z_index()) {
                 const Rect r = widget->screen_rect().intersect(sibling->screen_rect());
                 if (!r.is_empty()) {
-                    max_overlapping_rect += r;
+                    overlapped = true;
+
+                    std::vector<Rect> new_visible_parts;
+                    for (auto &part : visible_parts) {
+                        std::vector<Rect> subtracted = (part - sibling->screen_rect());
+                        new_visible_parts.insert(new_visible_parts.end(), subtracted.begin(), subtracted.end());
+                    }
+                    visible_parts = new_visible_parts;
+
+                    // visible_parts = merge_rectangles(visible_parts);
+
                     if (r.contains(widget->screen_rect())) {
-                        //        printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
+                        // printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
                     } else {
                         printf_("Widget %s overlapped by %s\n", widget->get_name(), sibling->get_name());
                         // Process the overlap in the widget's childs to see if some can be hidden
                     }
-                    overlaps.push_back(sibling);
+
+                    // overlaps.push_back(sibling);
                 }
             }
         }
 
-        if (max_overlapping_rect.contains(widget->screen_rect())) {
+        if (overlapped) {
+            widget->visible_rects = visible_parts;
+        }
+
+        if (visible_parts.size() == 0) {
             // Note a widget may be partially hidden by several widgets, but completelly by all of them
             if (!widget->hidden()) {
                 widget->hidden(true);

@@ -38,8 +38,9 @@ void FreqEditField::doNav(Menu::navNode &nav, Menu::navCmd cmd) {
             if (!step_edit) {
                 f += pow(10, step_at);
             } else {
-                if (step_at)
+                if (step_at) {
                     step_at--;
+}
                 edited = false;
             }
             dirty = true;
@@ -48,8 +49,9 @@ void FreqEditField::doNav(Menu::navNode &nav, Menu::navCmd cmd) {
             if (!step_edit) {
                 f -= pow(10, step_at);
             } else {
-                if (step_at < (uint8_t)log10((double)frequency))
+                if (step_at < (uint8_t)log10((double)frequency)) {
                     step_at++;
+}
                 edited = false;
             }
             dirty = true;
