@@ -37,12 +37,13 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->info_w.set_visible(config.debug);
     this->info_w.set_show_fps(config.debug);
     this->menu_w.set_show_fps(config.debug);
+    this->menu_w.set_z_index(20);
     this->smeter_w.set_visible(false);
     this->powmeter_w.set_visible(false);
     this->optionButtonsView.set_visible(false);
-    this->optionButtonsView.set_z_index(5);
+    this->optionButtonsView.set_z_index(30);
     this->numberEditView.set_visible(false);
-    this->numberEditView.set_z_index(5);
+    this->numberEditView.set_z_index(30);
     this->msg_w.set_z_index(100);
     this->msg_w.set_visible(false);
     this->msg_w.get_display()->setPadding(8, 8);
@@ -117,6 +118,7 @@ bool MainView::on_input(const st_inputEvent event) {
     bool consumed;
 
     if (!focused_widget()) {
+        menu_w.set_visible(true);
         menu_w.set_focus(true);
     }
 

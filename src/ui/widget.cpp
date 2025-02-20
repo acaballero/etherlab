@@ -102,6 +102,8 @@ void Widget::hidden(bool hide) {
 
 bool Widget::on_input(const st_inputEvent event) {
 
+    printf_("----> Widget %s on_input: %d\n", this->name, event.type);
+
     if (!visible() || !enabled()) {
         return false;
     }
@@ -109,9 +111,17 @@ bool Widget::on_input(const st_inputEvent event) {
 
     for (const auto child : children()) {
         if (child->is_focused()) {
+
+            printf_("Child %s focused\n", child->get_name());
+
             consumed = child->on_input(event);
+            if (consumed) { // Only one child should receive the input (break in case another is focused if consumed)
+                break;
+            }
         }
     }
+
+    printf_("<---- Exiting %s on_input: %b\n", this->name, consumed);
     return consumed;
 }
 
@@ -188,7 +198,7 @@ void Widget::set_visible(bool v) {
 
     if (v != flags.visible) {
 
-        // printf_("%s visible = %b\n", name, v);
+        printf_("%s visible = %b\n", name, v);
 
         flags.visible = v;
         flags.dirty = v;
@@ -219,36 +229,109 @@ void Widget::set_display(Display *display) { Widget::display = display; }
 
 void Widget::paint(Area *area) {
 
-    // update_overlaps();
-
     before_paint(); // pure virtual
 
     if (this->dirty()) {
 
-        bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
+        if (!area && !this->visible_rects.empty()) {
+            this->paint_overlapped();
+            return;
+        }
 
         if (!area) {
             area = &this->area;
         }
 
+        bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
+
         display->drawArea(area, this, apply_pad);
 
-#if DEBUG_LCD
-        uint64_t t = HAL_GetTick();
-        // TODO: This whole "area" thing (needed to adapt the display driver double buffering interface) is redundant (we already have the parent rect) and
-        // unelegant
-        this->area.fps = this->fps;
-        this->area.show_fps = this->show_fps;
-
-        if (this->show_fps) {
-            if (this->last_refresh_ms) {
-                float fps = 1000.0 / (float)(t - this->last_refresh_ms);
-                this->fps = this->fps - (0.3 * (this->fps - fps));
-            }
-        }
-        this->last_refresh_ms = t;
-#endif
+        refresh_fps();
     }
+}
+
+void Widget::paint_overlapped() {
+
+    Box current_offset = display->getOffset();
+
+    // printf_("Child %s has %d visible rect/s\n", get_name(), visible_rects.size());
+
+    for (auto &rect : visible_rects) {
+
+        Rect pr = parent_rect();
+        Rect sr = screen_rect();
+
+        // Currenty only full width rects are considered
+        if (rect.width() == pr.width()) {
+
+            Area a = to_area(rect);
+
+            // From screen to relative
+            Rect r = rect - sr.location();
+
+            Box offset;
+
+            if (sr.top() < rect.top()) {
+                offset = getOffset(r, current_offset, false); // Don't apply pad here, it's taken care off in Widget::paint
+
+                // Negative offset
+                offset.x = -offset.x;
+                offset.y = -offset.y;
+                display->setOffset(offset);
+            }
+
+            // printf_("Painting area (%d,%d,%d,%d), offset (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, offset.x, offset.y,
+            //         offset.width, offset.height, get_name());
+
+            paint(&a);
+
+        } else {
+            // status::handleError(status::ST_ERROR, "A child has a 'small' visible part");
+            // printf_("Rect: (%d,%d,%d,%d) of widget %s\n", rect.left(), rect.top(), rect.width(), rect.height(), child->get_name());
+        }
+
+        display->setOffset(current_offset);
+    }
+}
+
+Box Widget::getOffset(Rect &r, Box &offset, bool apply_pad) {
+
+    int16_t top = r.top();
+    int16_t left = r.left();
+    uint16_t height = r.height();
+    uint16_t width = r.width();
+
+    // top = top ? top - 1 : 0;
+
+    if (apply_pad) {
+        top += DISPLAY_PADDING;
+        left += DISPLAY_PADDING;
+    }
+
+    // Add current offset
+    left += offset.x;
+    top += offset.y;
+
+    return {left, top, width, height};
+}
+
+void Widget::refresh_fps() {
+
+#if DEBUG_LCD
+    uint64_t t = HAL_GetTick();
+    // TODO: This whole "area" thing (needed to adapt the display driver double buffering interface) is redundant (we already have the parent rect) and
+    // unelegant
+    this->area.fps = this->fps;
+    this->area.show_fps = this->show_fps;
+
+    if (this->show_fps) {
+        if (this->last_refresh_ms) {
+            float fps = 1000.0 / (float)(t - this->last_refresh_ms);
+            this->fps = this->fps - (0.3 * (this->fps - fps));
+        }
+    }
+    this->last_refresh_ms = t;
+#endif
 }
 
 void Widget::set_font(FontDef *font) { Widget::font = font; }

@@ -32,6 +32,7 @@ void TaskManager::run() {
     for (auto it = tasks.begin(); it != tasks.end();) {
 
         auto task = *it;
+
         task->run();
 
         if (task->finished()) {

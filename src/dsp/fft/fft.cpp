@@ -8,6 +8,7 @@
 #include <arm_math.h>
 #include "dsp/blocks/dc_block.h"
 #include "arm_common_tables.h"
+#include "dsp/fft/fft.h"
 #include "dsp/fft/fft_types.h"
 #include "hw/stm32f4xx/adc.h"
 #include "hw/stm32f4xx/timers.h"
@@ -120,7 +121,7 @@ os::periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
     view_manager::mainView.Waterfall()->set_visible(false);
     view_manager::mainView.IQBalance()->set_dirty();
 });
-os::periodic_task waterfall_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
+os::periodic_task waterfall_task(0, []() {
     view_manager::mainView.IQBalance()->set_visible(false);
     view_manager::mainView.Waterfall()->set_visible(true);
     view_manager::mainView.Waterfall()->set_dirty();
@@ -181,7 +182,6 @@ void unzipIQSamples(complex_t_f32 *complexData, fft_type *destReal, fft_type *de
         destImag[i] = complexData[i].i;
     }
 }
-
 void zipIQSamples(fft_type *srcReal, fft_type *srcImag, complex_t_f32 *dest, uint16_t size) {
 
     for (int i = 0; i < size; i++) {
@@ -255,6 +255,7 @@ void fftInit() {
     fftUI::set_spectrum_colors(config.fft.spectrum_line_color, config.fft.spectrum_fill_color);
     fftUI::init_waterfall();
     fftUI::initIQorWaterfall();
+    fft::waterfall_task.set_period(fftUI::get_waterfall_period());
 }
 
 void resetIQBalancer() { fftIQBalancer.reset(); }

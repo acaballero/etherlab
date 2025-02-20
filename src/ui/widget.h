@@ -114,7 +114,7 @@ class Widget : public Painter {
     std::vector<Rect> visible_rects;
 
   protected:
-    char name[6]{"-"};
+    char name[8]{"-"};
 
     Rect _parent_rect;
 
@@ -153,6 +153,11 @@ class Widget : public Painter {
     virtual void set_area();
 
     virtual void on_child_update(Widget *){};
+
+    void refresh_fps();
+    void paint_overlapped();
+
+    Box getOffset(Rect &r, Box &offset, bool apply_pad);
 };
 
 #endif /*__WIDGET_H__*/

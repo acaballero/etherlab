@@ -45,10 +45,6 @@ class View : public Widget {
     void paint_callback() final;
 
     void set_area() override;
-
-    Box getOffset(Rect &, Box &offset, bool apply_pad);
-
-    void paint_overlapped(Widget *const child);
 };
 
 #endif

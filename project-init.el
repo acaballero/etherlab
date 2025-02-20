@@ -43,6 +43,7 @@
   ;; Stop any running OpenOCD processes
   (stop-openocd)
 
+  
    ;; Wait a bit for OpenOCD to release ports
   (sleep-for 1)
 

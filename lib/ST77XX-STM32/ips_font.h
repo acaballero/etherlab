@@ -26,6 +26,7 @@ struct FontDef {
     uint8_t height;
     uint8_t trim_punct_start;
     uint8_t trim_punct_end;
+    uint8_t start_char{32};
 };
 
 typedef struct {

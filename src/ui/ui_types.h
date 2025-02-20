@@ -16,8 +16,8 @@
 #define METERS_HEIGHT INFO_HEIGHT / 2
 #define FFT_INFO_HEIGHT (2 * INFO_HEIGHT / 3)
 #define METER_WIDTH (int)((float)DISPLAY_X_PIXELS / 1.5f)
-//#define MENU_START_Y (HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5)
-#define MENU_START_Y 0
+#define MENU_START_Y (HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5)
+//#define MENU_START_Y 0
 
 using Coord = int16_t;
 using Dim = int16_t;
@@ -53,6 +53,8 @@ struct Point {
         _y -= p._y;
         return *this;
     }
+
+    constexpr bool operator==(const Point &other) const { return _x == other._x && _y == other._y; }
 };
 
 struct Size {
@@ -70,6 +72,8 @@ struct Size {
     int height() const { return _h; }
 
     bool is_empty() const { return (_w < 1) || (_h < 1); }
+
+    constexpr bool operator==(const Size &other) const { return _w == other._w && _w == other._w; }
 };
 
 struct Rect {
@@ -118,6 +122,10 @@ struct Rect {
     Rect &operator+=(const Rect &p);
 
     Rect &operator+=(const Point &p);
+
+    constexpr bool operator==(const Rect &other) const { return _pos == other._pos && _size == other._size; }
+
+    constexpr bool operator!=(const Rect &other) const { return !(*this == other); }
 
     Rect &operator-=(const Point &p);
 

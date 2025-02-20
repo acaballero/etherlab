@@ -90,7 +90,7 @@ std::vector<Rect> Rect::operator-(const Rect &r) {
 
     // Bottom part
     if (r.bottom() < this->bottom()) {
-        result.push_back({this->left(), r.bottom(), this->width(), this->bottom() - r.bottom()});
+        result.push_back({this->left(), r.bottom() + 1, this->width(), this->bottom() - r.bottom()});
     }
 
     return result;

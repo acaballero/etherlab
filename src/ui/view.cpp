@@ -19,27 +19,6 @@
 #include <stdint.h>
 #include <vector>
 
-Box View::getOffset(Rect &r, Box &offset, bool apply_pad) {
-
-    int16_t top = r.top();
-    int16_t left = r.left();
-    uint16_t height = r.height();
-    uint16_t width = r.width();
-
-    // top = top ? top - 1 : 0;
-
-    if (apply_pad) {
-        top += DISPLAY_PADDING;
-        left += DISPLAY_PADDING;
-    }
-
-    // Add current offset
-    left += offset.x;
-    top += offset.y;
-
-    return {left, top, width, height};
-}
-
 void View::paint_callback() {
 
     bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
@@ -111,60 +90,11 @@ void View::paint(Area *a) {
             // Selectively paint all children.
             for (const auto child : this->children()) {
                 if (child->can_be_seen()) {
-                    if (child->visible_rects.empty()) {
-                        child->paint();
-                    } else {
-                        paint_overlapped(child);
-                    }
+                    child->paint();
                     child->set_clean();
                 }
             }
         }
-    }
-}
-
-void View::paint_overlapped(Widget *const child) {
-
-    Box current_offset = display->getOffset();
-
-    printf_("Child %s has %d visible rect/s\n", child->get_name(), child->visible_rects.size());
-
-    for (auto &rect : child->visible_rects) {
-
-        Rect pr = child->parent_rect();
-        Rect sr = child->screen_rect();
-
-        // Currenty only full width rects are considered
-        if (rect.width() == pr.width()) {
-
-            Area a = to_area(rect);
-
-            // From screen to relative
-            Rect r = rect - sr.location();
-
-            Box offset;
-
-            if (sr.top() < rect.top()) {
-                offset = getOffset(r, current_offset, false); // Don't apply pad here, it's taken care off in Widget::paint
-
-                // Negative offset
-                offset.x = -offset.x;
-                offset.y = -offset.y;
-                display->setOffset(offset);
-            }
-
-            printf_("Painting area (%d,%d,%d,%d), offset (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, offset.x, offset.y,
-                    offset.width, offset.height, child->get_name());
-
-            child->paint(&a);
-
-        } else {
-            // status::handleError(status::ST_ERROR, "A child has a 'small' visible part");
-            // printf_("Rect: (%d,%d,%d,%d) of widget %s\n", rect.left(), rect.top(), rect.width(), rect.height(), child->get_name());
-        }
-
-        display->setOffset(current_offset);
-        child->set_clean();
     }
 }
 
@@ -216,8 +146,8 @@ void View::on_child_update(Widget *w) {
                     if (r.contains(widget->screen_rect())) {
                         // printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
                     } else {
-                        printf_("Widget %s overlapped by %s\n", widget->get_name(), sibling->get_name());
-                        // Process the overlap in the widget's childs to see if some can be hidden
+                        // printf_("Widget %s overlapped by %s\n", widget->get_name(), sibling->get_name());
+                        //  Process the overlap in the widget's childs to see if some can be hidden
                     }
 
                     // overlaps.push_back(sibling);

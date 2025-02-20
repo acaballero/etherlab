@@ -158,8 +158,8 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
 #if DEBUG_LCD
             if (area->show_fps) {
-                this->writeString(0, curr_area->box.height - 11, str, (FontDef *)&Font_7x10, C565_BLACK, C565_WHITE);
-                this->writeLine(0, curr_area->box.height - 12, 21, curr_area->box.height - 12, C565_WHITE);
+                this->writeString(0, curr_area->box.height - 11 - oy, str, (FontDef *)&Font_7x10, C565_BLACK, C565_WHITE);
+                this->writeLine(0, curr_area->box.height - 12 - oy, 21, curr_area->box.height - 12, C565_WHITE);
             }
 #endif
             this->busy = false;
@@ -358,7 +358,7 @@ void Display::fillBuffer(uint16_t c) {
         }
     } else {
         // Partial buffer fill
-        fill(0, 0, ow - 1, oh - 1, c);
+        fill(ox > 0 ? 0 : -ox, oy > 0 ? 0 : -oy, (ox > 0 ? 0 : -ox) + ow - 1, (oy > 0 ? 0 : -oy) + oh - 1, c);
     }
 }
 
@@ -383,7 +383,7 @@ void Display::fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c) {
 
         while (p < p2) {
 
-            if (c >> 8 == c && 0x0F) {
+            if (c >> 8 == c && 0x0F) { // repeated-byte colors can be written by memset
                 memset(p, c, row_bytes);
             } else {
                 std::fill(p, p + (row_bytes >> 1), c);
@@ -684,6 +684,7 @@ void Display::writeChar(int16_t x, int16_t y, char ch, const FontDef *font, uint
 
     y1 = this->current_line;
     y2 = this->current_line + this->chunk_height;
+    uint8_t start_char = font->start_char;
 
     if (py + font->height >= y1 && py < y2) {
 
@@ -698,7 +699,7 @@ void Display::writeChar(int16_t x, int16_t y, char ch, const FontDef *font, uint
         if (font->encoding == ROWS) {
 
             mask = font->size == 2 ? 0x8000 : 0x80;
-            data = data + (((ch - 32) * font->height) << incr);
+            data = data + (((ch - start_char) * font->height) << incr);
 
             for (i = si; i < ei; i++, dy++) {
 
@@ -731,7 +732,7 @@ void Display::writeChar(int16_t x, int16_t y, char ch, const FontDef *font, uint
             }
         } else {
 
-            data = data + (((ch - 32) * font->width) << incr);
+            data = data + (((ch - font->start_char) * font->width) << incr);
 
             // Commas and periods don't look good with monospaced fonts. So we remove
             // one blank column from each side

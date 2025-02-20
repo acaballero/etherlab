@@ -38,7 +38,9 @@ bool OptionButtonsView::update_focus(int button_index) {
     offset = new_offset;
     update_buttons(update);
 
-    buttons[focused_button].set_focus(true);
+    if (this->visible()) {
+        buttons[focused_button].set_focus(true);
+    }
 
     return true;
 }
@@ -106,7 +108,7 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &)>
     if (index < MAX_BUTTONS) {
         Button *button = &buttons[index];
 
-        char name[6];
+        char name[8];
         sprintf(name, "opt-%d", index);
         button->set_name(name);
         button->set_visible(false);

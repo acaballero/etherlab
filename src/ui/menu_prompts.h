@@ -24,6 +24,7 @@ void open_number_edit(T value, const char *units, const char *name, uint8_t frac
     view_manager::mainView.NumberEdit()->set_value(value, frac_digits, units, name, min, max, step, step_big);
     view_manager::mainView.NumberEdit()->on_changed = on_changed;
     view_manager::mainView.NumberEdit()->set_visible(true);
+    view_manager::mainView.NumberEdit()->set_focus(true);
 }
 
 template <typename T> void open_option_buttons(menu_options_t<T> options, const char *title, T &value, uint16_t size, std::function<void(T)> on_select) {
@@ -48,6 +49,7 @@ template <typename T> void open_option_buttons(menu_options_t<T> options, const 
 
     view_manager::mainView.OptionButtons()->set_title(title);
     view_manager::mainView.OptionButtons()->set_visible(true);
+    view_manager::mainView.OptionButtons()->set_focus(true);
 }
 
 template <typename T>
