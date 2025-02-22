@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_LABEL_H
 
 #include "button_widget.h"
+#include "input/inputEvent.h"
 #include "widget.h"
 #include "types.h"
 #include <stdint.h>
@@ -51,6 +52,8 @@ class Label : public Widget {
     void set_padding(uint16_t p);
     uint16_t get_padding();
 
+    std::function<void(Label &)> on_select;
+
   protected:
     char label[MAX_CHARS];
     char value[MAX_CHARS_VALUE];
@@ -66,6 +69,8 @@ class Label : public Widget {
     bool border_radius[4] = {1, 1, 1, 1};
 
     void before_paint() override;
+
+    bool on_touch(const st_inputEvent e) override;
 };
 
 #endif // TRX_FRONTEND_LABEL_H

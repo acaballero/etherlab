@@ -162,6 +162,6 @@ TOGGLE(command, captureToggle, "Command: ", change_dsp_status, Menu::anyEvent, M
        VALUE("Stop", DSP_COMMAND_STOP, change_dsp_status, Menu::anyEvent), VALUE("Start", DSP_COMMAND_START, change_dsp_status, Menu::anyEvent))
 
 MENU(captureMenu, "Capture", on_menu_event, (Menu::eventMask)(Menu::enterEvent | Menu::exitEvent), Menu::noStyle, SUBMENU(captureToggle),
-     EDIT("File:", fname, alphaNumMask, on_file_updated, Menu::updateEvent, Menu::noStyle), OBJ(freqEdit),
+     EDIT("File:", fname, Menu::alphaNumMask, on_file_updated, Menu::updateEvent, Menu::noStyle), OBJ(freqEdit),
      FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu), EXIT("<Back"))
 } // namespace dspCaptureUI

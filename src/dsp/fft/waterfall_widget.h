@@ -8,6 +8,7 @@
 #include "../../ui/widget.h"
 #include "../../types.h"
 #include "fft_types.h"
+#include "input/inputEvent.h"
 #include <stdint.h>
 
 #define FFT_WATERFALL_HEIGHT 90
@@ -40,6 +41,8 @@ class WaterfallWidget : public Widget {
      * multiples of 2 frequency bins (for optimization) and if the frequency change is less than that, it won't move. Therefore,
      * we need to store the frequency of the waterfall to know when it's difference with the center frequency it's enough to scroll it */
     unsigned long waterfallFreq;
+
+    bool on_touch(const st_inputEvent e) override;
 
     uint8_t step;
 };

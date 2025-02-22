@@ -34,7 +34,10 @@ void backBtnInterruptCallback() {
     }
 }
 
-void touchPanelInterruptCallback() { xpt2046_touch_check(&xpt2046_touch); }
+void touchPanelInterruptCallback() {
+    ;
+    xpt2046_touch_check(&xpt2046_touch);
+}
 
 uint8_t get_front_panel_int_pin() {
     uint8_t reg = 0;

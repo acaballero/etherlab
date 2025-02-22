@@ -12,7 +12,7 @@ Point Widget::screen_pos() { return screen_rect().location(); }
 
 Size Widget::size() const { return _parent_rect.size(); }
 
-Rect Widget::screen_rect() const { return parent() ? (parent_rect() + parent()->screen_pos()) : parent_rect(); }
+Rect Widget::screen_rect() const { return parent() ? (parent_rect() + parent()->screen_pos()) : (parent_rect()); }
 
 Rect Widget::parent_rect() const { return _parent_rect; }
 
@@ -81,8 +81,6 @@ void Widget::set_clean() {
 void Widget::hidden(bool hide) {
     if (hide != flags.hidden) {
 
-        // printf_("widget %s hidden: %b\n", name, hide);
-
         flags.hidden = hide;
 
         // If parent is hidden, either of these is a no-op.
@@ -102,7 +100,7 @@ void Widget::hidden(bool hide) {
 
 bool Widget::on_input(const st_inputEvent event) {
 
-    printf_("----> Widget %s on_input: %d\n", this->name, event.type);
+    // printf_("----> Widget %s on_input: %d\n", this->name, event.type);
 
     if (!visible() || !enabled()) {
         return false;
@@ -112,7 +110,7 @@ bool Widget::on_input(const st_inputEvent event) {
     for (const auto child : children()) {
         if (child->is_focused()) {
 
-            printf_("Child %s focused\n", child->get_name());
+            // printf_("Child %s focused\n", child->get_name());
 
             consumed = child->on_input(event);
             if (consumed) { // Only one child should receive the input (break in case another is focused if consumed)
@@ -121,7 +119,20 @@ bool Widget::on_input(const st_inputEvent event) {
         }
     }
 
-    printf_("<---- Exiting %s on_input: %b\n", this->name, consumed);
+    if (!consumed) {
+        switch (event.type) {
+
+            case INPUT_EVENT_TYPE_TOUCH_END:
+
+                consumed = this->on_touch(event);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    // printf_("<---- Exiting %s on_input: %b\n", this->name, consumed);
     return consumed;
 }
 

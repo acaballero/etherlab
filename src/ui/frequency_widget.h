@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_FREQUENCY_WIDGET_H
 #define TRX_FRONTEND_FREQUENCY_WIDGET_H
 
+#include "input/inputEvent.h"
 #include "label_widget.h"
 #include "view.h"
 #include "types.h"
@@ -30,7 +31,7 @@ class FrequencyWidget : public View {
     st_freqInfo status;
     void before_paint() override;
     void init();
-    bool on_input(const st_inputEvent event) override;
+    bool on_touch(const st_inputEvent) override;
 
     Label lblRpt{{0, MARGIN, area.box.width / 4, area.box.height - MARGIN * 2}};
     Label lblVFO{{(area.box.width / 4) + 2, MARGIN, LBLVFO_WIDTH, area.box.height - MARGIN * 2}};

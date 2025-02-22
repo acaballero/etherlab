@@ -4,7 +4,9 @@
 
 #include "waterfall_widget.h"
 #include "config.h"
+#include "dsp/fft/fft_ui.h"
 #include "fft.h"
+#include "input/inputEvent.h"
 #include <sys/_stdint.h>
 
 #define PIXELS_BYTE 2
@@ -42,6 +44,11 @@ void WaterfallWidget::centerSpectrum() {
             waterfallFreq -= offset_pixels * fft_params.display_rbw * PIXELS_BYTE;
         }
     }
+}
+
+bool WaterfallWidget::on_touch(const st_inputEvent) {
+    fftUI::open_waterfall_config();
+    return true;
 }
 
 void WaterfallWidget::set_step(uint8_t value) { step = value; }

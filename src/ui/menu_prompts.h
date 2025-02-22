@@ -122,6 +122,33 @@ template <typename T> class optionsPrompt : public Menu::prompt {
     }
 };
 
+template <typename T> class numberPrompt;
+
+template <typename T> void open(numberPrompt<T> &prompt) {
+
+    if (prompt.step > 0) {
+        Menu::open_number_edit<T>(
+            *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals,
+            [prompt](T v) {
+                *prompt.value = v;
+                if (prompt.on_select) {
+                    prompt.on_select(v);
+                }
+            },
+            prompt.min, prompt.max, prompt.step, prompt.step_big);
+    } else {
+        Menu::open_keypad<T>(
+            *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals, false,
+            [prompt](T v) {
+                *prompt.value = v;
+                if (prompt.on_select) {
+                    prompt.on_select(v);
+                }
+            },
+            prompt.min, prompt.max);
+    }
+}
+
 template <typename T> class numberPrompt : public Menu::prompt {
   public:
     T *value;
@@ -142,27 +169,7 @@ template <typename T> class numberPrompt : public Menu::prompt {
                      numberPrompt<T> prompt = static_cast<numberPrompt<T> &>(item);
 
                      if (e == Menu::enterEvent) {
-                         if (prompt.step > 0) {
-                             Menu::open_number_edit<T>(
-                                 *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals,
-                                 [prompt](T v) {
-                                     *prompt.value = v;
-                                     if (prompt.on_select) {
-                                         prompt.on_select(v);
-                                     }
-                                 },
-                                 prompt.min, prompt.max, prompt.step, prompt.step_big);
-                         } else {
-                             Menu::open_keypad<T>(
-                                 *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals, false,
-                                 [prompt](T v) {
-                                     *prompt.value = v;
-                                     if (prompt.on_select) {
-                                         prompt.on_select(v);
-                                     }
-                                 },
-                                 prompt.min, prompt.max);
-                         }
+                         open(prompt);
                      }
 
                      return proceed;

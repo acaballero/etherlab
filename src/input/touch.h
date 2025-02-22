@@ -8,7 +8,7 @@
 #include "os/periodic_task.h"
 
 namespace touch {
-extern os::periodic_task task;
+// extern os::periodic_task task;
 }
 
 #endif // TRX_FRONTEND_TOUCH_H

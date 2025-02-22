@@ -4,7 +4,14 @@
 
 #include "dbscale_widget.h"
 #include "config.h"
+#include "dsp/fft/fft_ui.h"
+#include "input/inputEvent.h"
 #include "view.h"
+
+bool DbScaleWidget::on_touch(const st_inputEvent) {
+    fftUI::open_dbscale_config();
+    return true;
+}
 
 void DbScaleWidget::paint_callback() {
 

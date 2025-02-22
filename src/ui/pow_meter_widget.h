@@ -19,7 +19,7 @@ class PowerMeterWidget : public Widget {
     void paint_callback() override;
 
   protected:
-    static constexpr int margin_top = 8;
+    static constexpr int margin_top = 12;
     static constexpr int margin = 20;
 
     void before_paint() override;

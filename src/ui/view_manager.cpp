@@ -10,6 +10,7 @@
 #include "ui/number_edit_view.h"
 #include "ui/option_buttons_view.h"
 #include "ui/splash_view.h"
+#include "os/task_manager.h"
 
 namespace view_manager {
 
@@ -59,6 +60,8 @@ void main_view_warning_callback(void *, void *args) {
     MessageWidget *widget = ((MessageWidget *)view_manager::mainView.Message());
     widget->set_title(st->code == status::ST_ERROR ? "WARNING" : "INFO", st->code == status::ST_ERROR ? C565_RED : C565_YELLOW);
     widget->set_msg(st->msg);
+
+    os::task_manager.set_timeout(4000, []() { view_manager::mainView.Message()->set_visible(false); });
 }
 
 void init() {

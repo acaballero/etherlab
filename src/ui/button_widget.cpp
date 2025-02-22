@@ -124,7 +124,7 @@ void Button::on_focus() {
 
 bool Button::on_input(const st_inputEvent event) {
 
-    printf_("Button %s on_input %s\n", this->text, event.type == INPUT_EVENT_TYPE_BUTTON_PRESS ? "press" : "release");
+    // printf_("Button %s on_input %s\n", this->text, event.type == INPUT_EVENT_TYPE_BUTTON_PRESS ? "press" : "release");
 
     if (event.type == INPUT_EVENT_TYPE_BUTTON_PRESS || event.type == INPUT_EVENT_TYPE_BUTTON_DBL_PRESS) {
         if (event.value && event.value == BTN_ENCODER) {

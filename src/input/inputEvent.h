@@ -44,6 +44,16 @@ struct st_inputEvent {
     uint32_t ms{0};      // Milliseconds since last transition
     uint64_t time_us{0}; // Timestamp (microseconds)
     Point point;
+
+    bool is_touch() const {
+        switch (type) {
+            case INPUT_EVENT_TYPE_TOUCH_START:
+            case INPUT_EVENT_TYPE_TOUCH_END:
+                return true;
+            default:
+                return false;
+        }
+    }
 };
 
 #endif // TRX_FRONTEND_INPUTEVENT_H

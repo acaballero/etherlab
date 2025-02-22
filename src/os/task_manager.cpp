@@ -46,4 +46,6 @@ void TaskManager::run() {
         }
     }
 }
+
+os::TaskManager task_manager;
 } // namespace os

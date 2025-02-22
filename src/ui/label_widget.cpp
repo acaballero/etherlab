@@ -3,6 +3,7 @@
 //
 
 #include "label_widget.h"
+#include "input/inputEvent.h"
 #include "ui/button_widget.h"
 #include <math.h>
 
@@ -63,6 +64,16 @@ void Label::paint_callback() {
 
     display->gotoXY(x, y);
     display->print(label, value, unit, fg_color, fg_color_value, fg_color_unit);
+}
+
+bool Label::on_touch(const st_inputEvent) {
+
+    if (on_select) {
+        on_select(*this);
+        return true;
+    }
+
+    return false;
 }
 
 ButtonStyle Label::get_style() const { return style; }

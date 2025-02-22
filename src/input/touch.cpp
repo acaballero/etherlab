@@ -11,7 +11,7 @@ namespace touch {
 
 void check_touch();
 
-os::periodic_task task(100, check_touch);
+// os::periodic_task task(100, check_touch);
 
 void check_touch() { TouchPanelInterruptPin.checkState(); }
 

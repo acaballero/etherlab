@@ -17,6 +17,9 @@ uint16_t get_waterfall_period();
 uint8_t get_waterfall_step_size();
 void init_waterfall();
 void initIQorWaterfall();
+void open_waterfall_config();
+void open_dbscale_config();
+void open_span_config();
 } // namespace fftUI
 
 #endif // TRX_FRONTEND_FFT_UI_H

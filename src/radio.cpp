@@ -238,7 +238,10 @@ void change_frequency(int amount) {
 }
 
 // This does not change the frequency immediatelly so it cal be called from an IRQhandler.
-void set_frequency(uint64_t f) { config.vfo[config.vfo_ix].freq = f; }
+void set_frequency(uint64_t f) {
+    ;
+    config.vfo[config.vfo_ix].freq = f;
+}
 
 uint64_t get_vfo_frequency(uint8_t vfo_ix) {
 

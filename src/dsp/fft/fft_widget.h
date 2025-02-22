@@ -8,6 +8,7 @@
 #include "../../ui/widget.h"
 #include "../../ui/dbscale_widget.h"
 #include "../../types.h"
+#include "input/inputEvent.h"
 
 #define FFT_HEIGHT 70
 #define FFT_X_AXIS_HEIGHT 12
@@ -30,6 +31,8 @@ class FFTWidget : public Widget {
     void draw_noise_floor();
     void draw_spectrum();
     void draw_h_labels();
+
+    bool on_touch(const st_inputEvent) override;
 
     FFT_SPECTRUM_STYLE get_style();
     void draw_spectrum_fill();

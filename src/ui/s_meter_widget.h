@@ -33,7 +33,7 @@ class SMeterWidget : public Widget {
     bool on_input(const st_inputEvent event) override;
 
   protected:
-    static constexpr int margin_top = 8;
+    static constexpr int margin_top = 12;
     void before_paint() override;
 
     float get_s_level(float current, float smooth_factor);

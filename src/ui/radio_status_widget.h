@@ -18,14 +18,15 @@ class RadioStatusWidget : public View {
   protected:
     st_radio_status _status;
     constexpr static uint8_t btn_height = 35;
+    constexpr static uint8_t padding_top = 5;
 
     uint16_t fg_color, bg_color, dimm_color;
 
-    Label lblMode{{0, 0, area.box.width / 2 - 1, btn_height - 1}};
+    Label lblMode{{0, padding_top, area.box.width / 2 - 1, btn_height - 1}};
 
-    Button btnVFO{{area.box.width / 2 + 1, 0, area.box.width / 2 - 1, btn_height - 1}, &lcd, "", C565_BLACK};
-    Button btnSquelch{{area.box.width / 2 + 1, btn_height, area.box.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
-    Button btnGain{{0, btn_height, area.box.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
+    Button btnVFO{{area.box.width / 2 + 1, padding_top, area.box.width / 2 - 1, btn_height - 1}, &lcd, "", C565_BLACK};
+    Button btnSquelch{{area.box.width / 2 + 1, btn_height + padding_top, area.box.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
+    Button btnGain{{0, btn_height + padding_top, area.box.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
 
     char buf[20];
 
@@ -40,6 +41,8 @@ class RadioStatusWidget : public View {
     char *gain();
 
     char *vfo();
+
+    void on_button(Button &button);
 };
 
 #endif // TRX_RADIO_STATUS_WIDGET_H

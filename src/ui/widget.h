@@ -63,6 +63,8 @@ class Widget : public Painter {
 
     virtual void on_blur(){};
 
+    virtual bool on_touch(const st_inputEvent) { return false; };
+
     virtual bool on_input(const st_inputEvent event);
 
     virtual const std::vector<Widget *> &children() const;

@@ -10,6 +10,7 @@
 #include "../ui/menu.h"
 #include "config.h"
 #include "main_board.h"
+#include "stm32f4xx_hal.h"
 #include "ui/main_view.h"
 #include "settings.h"
 #include "status.h"
@@ -17,6 +18,7 @@
 #include "radio.h"
 #include "ui/view_manager.h"
 #include "../../lib/ST77XX-STM32/XPT2046_touch.h"
+#include <sys/_stdint.h>
 
 namespace input_controller {
 os::periodic_task task(20, dispatchEvents);
@@ -32,17 +34,24 @@ FIFO inputFIFO{(char *)eventQueue, (MAX_EVENTS_IN_QUEUE * SIZEOFINPUTENVENT)};
 #endif
 
 void touch_begin(xpt2046_t *, uint16_t x, uint16_t y) {
-    onInputEvent({.type = INPUT_EVENT_TYPE_TOUCH_START, .value = 0, .ms = 0, .time_us = 0, .point = Point(x, y)});
+    onInputEvent({.type = INPUT_EVENT_TYPE_TOUCH_START, .value = 0, .ms = 0, .time_us = HAL_GetTick(), .point = Point(x, y)});
 }
 
 void touch_end(xpt2046_t *, uint16_t x, uint16_t y) {
-    onInputEvent({.type = INPUT_EVENT_TYPE_TOUCH_END, .value = 0, .ms = 0, .time_us = 0, .point = Point(x, y)});
+
+    st_inputEvent ev{.type = INPUT_EVENT_TYPE_TOUCH_END, .value = 0, .ms = 0, .time_us = HAL_GetTick(), .point = Point(x, y)};
+
+    if (lastEvent.type == INPUT_EVENT_TYPE_TOUCH_START) {
+        ev.ms = ev.time_us - lastEvent.time_us;
+    }
+
+    onInputEvent(ev);
 }
 
 void inputControllerInit() {
 
     // Initialize touch panel in poll mode
-    xpt2046_touch_init(NULL, isoLandscapeFlip, 3);
+    xpt2046_touch_init(NULL, isoLandscape, 3);
     xpt2046_set_touch_pressed_begin_callback(touch_begin);
     xpt2046_set_touch_pressed_end_callback(touch_end);
 
@@ -67,7 +76,7 @@ void inputControllerInit() {
 }
 
 Widget *processTouch(Widget *w, st_inputEvent *e) {
-    if (!w->hidden()) {
+    if (w->can_be_seen()) {
 
         for (const auto child : w->children()) {
             const auto touched_widget = processTouch(child, e);
@@ -76,9 +85,12 @@ Widget *processTouch(Widget *w, st_inputEvent *e) {
             }
         }
 
-        const auto r = w->screen_rect();
+        const auto r = w->screen_rect(); // + Point{DISPLAY_PADDING, DISPLAY_PADDING};
+
         if (r.contains(e->point)) {
+            printf_("Touched: %d,%d %d x %d\n", r.left(), r.top(), r.right(), r.bottom());
             if (w->on_input(*e)) {
+
                 // This widget responded. Return it up the call stack.
                 return w;
             }

@@ -30,6 +30,13 @@ extern const char *constMEM alphaNumMask[1] MEMMODE;
 
 namespace Menu {
 extern Menu::MenuStatus menuStatus;
-}
+
+// Character validators for the frequency memories
+extern const char *constMEM alphaNum MEMMODE;
+extern const char *constMEM alphaNumMask[1] MEMMODE;
+extern const char *constMEM digit MEMMODE;
+
+void open_gain();
+} // namespace Menu
 
 #endif

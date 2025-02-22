@@ -4,9 +4,11 @@
 
 #include "Display_afb.h"
 #include "config.h"
+#include "dsp/fft/fft_ui.h"
 #include "fft_widget.h"
 #include "fft.h"
 #include "agc.h"
+#include "input/inputEvent.h"
 #include "ips_font.h"
 
 FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {}
@@ -70,6 +72,11 @@ void FFTWidget::draw_freq_marks() {
         }
         n--;
     }
+}
+
+bool FFTWidget::on_touch(const st_inputEvent) {
+    fftUI::open_span_config();
+    return true;
 }
 
 void FFTWidget::draw_span_marks() {

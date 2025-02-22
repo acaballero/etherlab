@@ -27,9 +27,15 @@
 #include "settings.h"
 #include "menu_options.h"
 #include "menu_prompts.h"
-#include "frequency_memory_ui.hpp"
+#include "frequency_memory_ui.h"
 
 namespace Menu {
+
+// Character validators for the frequency memories
+const char *constMEM alphaNum MEMMODE = " 0123456789.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,\\|!\"#$%&/()=?~*^+-{}[]€";
+const char *constMEM alphaNumMask[1] MEMMODE = {alphaNum};
+const char *constMEM digit MEMMODE = "0123456789";
+const char *constMEM digitMask[] MEMMODE = {digit, digit, digit, ","};
 
 MenuStatus menuStatus = IDLE;
 
@@ -62,6 +68,12 @@ optionsPrompt<radio::IF_FILTER> IFFilterMenu((const char *)"IF filter", if_filte
 optionsPrompt<radio::RPT_MODE> repeaterMenu((const char *)"Repeater mode", rpt_mode_options, config.repeater_mode,
                                             sizeof(rpt_mode_options) / sizeof(rpt_mode_options[0]), [](radio::RPT_MODE) { radio::update_freq(); });
 
+void open_gain() {
+    menu_exit();
+    nav.doNav(navCmd(enterCmd));
+    nav.doNav(navCmd(idxCmd, 0));
+    nav.doNav(navCmd(idxCmd, 4));
+}
 } // namespace Menu
 
 using namespace Menu;
@@ -192,7 +204,7 @@ MENU(mainMenu, "Main menu", doNothing, noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED
      SUBMENU(menuDSP),
 #endif
-     SUBMENU(scanner_ui::menuScan), SUBMENU(fftUI::fftMenu), SUBMENU(menuSettings), SUBMENU(boardUI::boardMenu), OBJ(freqMemMenu));
+     SUBMENU(scanner_ui::menuScan), SUBMENU(fftUI::fftMenu), SUBMENU(menuSettings), SUBMENU(boardUI::boardMenu), OBJ(freq_memory::freqMemMenu));
 
 const colorDef<uint16_t> menuColors[8] MEMMODE = {
     {{C565_TRANSPARENT, C565_TRANSPARENT}, {C565_BLACK, C565_TRANSPARENT, C565_TRANSPARENT}}, // bgColor

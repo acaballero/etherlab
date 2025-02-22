@@ -29,6 +29,8 @@ class TaskManager {
     uint8_t index{0};
 };
 
+extern TaskManager task_manager;
+
 } // namespace os
 
 #endif // TASK_MANAGER_H

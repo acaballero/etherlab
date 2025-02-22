@@ -55,7 +55,7 @@ class KeypadView : public View {
     uint8_t frac_digits = 6;
     Button buttons[12 + 3];
     uint8_t index = 0;
-    char buff[MAX_DIGITS];
+    char buff[MAX_DIGITS + 1];
     double min;
     double max;
 

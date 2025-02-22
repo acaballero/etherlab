@@ -1,6 +1,7 @@
 //
 // Created by Angel Dust on 17/04/2021.
 //
+#include "input/inputEvent.h"
 #include "power_amp.h"
 #include "rf_coupler.h"
 #include "main_view.h"
@@ -9,6 +10,7 @@
 #include "status.h"
 #include "ui/number_edit_view.h"
 #include "ui/option_buttons_view.h"
+#include "ui/widget.h"
 #include "view_manager.h"
 #include "menu_options.h"
 
@@ -59,38 +61,38 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
 
 void MainView::before_paint() {
 
-    if (msg_w.visible()) {
-        tune_w.set_visible(false);
-        info_w.set_visible(false);
-        smeter_w.set_visible(false);
-        powmeter_w.set_visible(false);
-        radio_w.set_visible(false);
+    // if (msg_w.visible()) {
+    //     tune_w.set_visible(false);
+    //     info_w.set_visible(false);
+    //     smeter_w.set_visible(false);
+    //     powmeter_w.set_visible(false);
+    //     radio_w.set_visible(false);
+    //     menu_w.set_visible(false);
+    // } else {
+    if (Menu::menuStatus == Menu::IDLE) {
+        if (config.debug) {
+            smeter_w.set_visible(false);
+            radio_w.set_visible(true);
+            powmeter_w.set_visible(false);
+            tune_w.set_visible(true);
+            info_w.set_visible(true);
+        } else {
+            smeter_w.set_visible(!ISTX);
+            radio_w.set_visible(true);
+            powmeter_w.set_visible(ISTX);
+            tune_w.set_visible(false);
+            info_w.set_visible(false);
+        }
         menu_w.set_visible(false);
     } else {
-        if (Menu::menuStatus == Menu::IDLE) {
-            if (config.debug) {
-                smeter_w.set_visible(false);
-                radio_w.set_visible(true);
-                powmeter_w.set_visible(false);
-                tune_w.set_visible(true);
-                info_w.set_visible(true);
-            } else {
-                smeter_w.set_visible(!ISTX);
-                radio_w.set_visible(true);
-                powmeter_w.set_visible(ISTX);
-                tune_w.set_visible(false);
-                info_w.set_visible(false);
-            }
-            menu_w.set_visible(false);
-        } else {
-            tune_w.set_visible(false);
-            radio_w.set_visible(false);
-            smeter_w.set_visible(false);
-            powmeter_w.set_visible(false);
-            info_w.set_visible(false);
-            menu_w.set_visible(true);
-        }
+        tune_w.set_visible(false);
+        radio_w.set_visible(false);
+        smeter_w.set_visible(false);
+        powmeter_w.set_visible(false);
+        info_w.set_visible(false);
+        menu_w.set_visible(true);
     }
+    //}
 }
 
 WaterfallWidget *MainView::Waterfall() { return &this->waterfall_w; }
@@ -113,18 +115,36 @@ OptionButtonsView *MainView::OptionButtons() { return &this->optionButtonsView; 
 
 NumberEditView *MainView::NumberEdit() { return &this->numberEditView; }
 
+void MainView::on_child_update(Widget *w) {
+
+    View::on_child_update(w);
+
+    if (!w->visible()) {
+        // If a children disapears, repaint all to recover the background
+        // TODO: Should this be like this for all views?
+        this->set_dirty();
+    }
+}
+
 bool MainView::on_input(const st_inputEvent event) {
 
-    bool consumed;
+    bool consumed{false};
 
-    if (!focused_widget()) {
-        menu_w.set_visible(true);
-        menu_w.set_focus(true);
+    if (event.is_touch()) { // If touch, consumption by one widget is preferred before the menu is brought to front
+        consumed = View::on_input(event);
     }
 
-    consumed = View::on_input(event);
-
     if (!consumed) {
+        if (!focused_widget()) {
+
+            consumed = menu_w.on_input(event);
+            if (consumed) {
+                menu_w.set_visible(true);
+                menu_w.set_focus(true);
+            }
+        } else if (!event.is_touch()) {
+            consumed = View::on_input(event);
+        }
     }
 
     return consumed;

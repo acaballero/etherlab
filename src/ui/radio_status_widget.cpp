@@ -7,10 +7,13 @@
 #include "../main_board.h"
 #include "../agc.h"
 #include "Display_afb.h"
+#include "menu_prompts.h"
 #include "radio.h"
 #include "printf.h"
 #include "dsp/fft/fft.h"
 #include "ui/button_widget.h"
+#include "s_strength.h"
+#include "menu.h"
 
 void RadioStatusWidget::init() {
 
@@ -21,11 +24,36 @@ void RadioStatusWidget::init() {
     btnVFO.set_text("VFO");
     btnVFO.set_two_lines(true);
 
+    lblMode.on_select = [](Label &) {
+        MODE mode;
+        if (config.mode == ANALOG_RX || config.mode == ANALOG_TX) {
+            mode = config.mode == ANALOG_RX ? ANALOG_TX : ANALOG_RX;
+        } else {
+            mode = config.mode == DIGITAL_RX ? DIGITAL_TX : DIGITAL_RX;
+        }
+
+        main_board::setMode(mode);
+    };
+
     add_children({&lblMode, &btnSquelch, &btnGain, &btnVFO});
 
     for (Widget *btn : View::children()) {
         btn->set_font((FontDef *)&Font_Tiny8x8);
         btn->set_aling(ALIGN_CENTER);
+        if (btn != &lblMode) {
+            ((Button *)btn)->on_select = [this](Button &button) { this->on_button(button); };
+        }
+    }
+}
+
+void RadioStatusWidget::on_button(Button &button) {
+    if (&button == &btnSquelch) {
+        Menu::open_keypad<float>(
+            sstrength::get_squelch(), "x1", "Squelch", 1, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
+    } else if (&button == &btnGain) {
+        Menu::open_gain();
+    } else if (&button == &btnVFO) {
+        radio::toggle_vfo();
     }
 }
 
@@ -66,7 +94,7 @@ void RadioStatusWidget::before_paint() {
 
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
 
-        //  this->dirty();
+        this->set_dirty();
         _status = status;
 
         if (ISTX) {

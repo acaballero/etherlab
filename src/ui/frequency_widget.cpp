@@ -5,10 +5,13 @@
 #include "frequency_widget.h"
 #include "Display_afb.h"
 #include "config.h"
+#include "input/inputEvent.h"
 #include "ips_font.h"
 #include "radio.h"
 #include "scanner.h"
 #include "ui/button_widget.h"
+#include "ui/frequency_memory_ui.h"
+#include "ui/menu_frequency.h"
 #include "view_manager.h"
 #include "stdio.h"
 #include "menu_prompts.h"
@@ -56,20 +59,16 @@ void FrequencyWidget::before_paint() {
     }
 }
 
-bool FrequencyWidget::on_input(const st_inputEvent event) {
-    switch (event.type) {
+bool FrequencyWidget::on_touch(const st_inputEvent e) {
 
-        case INPUT_EVENT_TYPE_TOUCH_END:
+    if (e.ms > 1000) {
+        freq_memory::open_save_current();
 
-            Menu::open_keypad<uint64_t>(
-                radio::get_frequency(), "Hz", "Frequency", 0, false, [](uint64_t v) { radio::set_frequency((uint64_t)v); }, 0, 0);
-
-            return true;
-        default:
-            return false;
+    } else {
+        Menu::open_keypad<uint64_t>(
+            radio::get_frequency(), "Hz", "Frequency", 0, true, [](uint64_t v) { radio::set_frequency((uint64_t)v); }, 0, 0);
     }
-
-    return false;
+    return true;
 }
 
 void FrequencyWidgetInner::paint_callback() {

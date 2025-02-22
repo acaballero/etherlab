@@ -152,4 +152,7 @@ MENU(fftMenu, "Spectrum", doNothing, anyEvent, noStyle, SUBMENU(setEnableFFT),
      OBJ(smoothMenu), SUBMENU(fftWindowMenu), SUBMENU(fftUIMenu), SUBMENU(fftViewMenu), SUBMENU(fftRemoveDC), SUBMENU(menuIQBalance), SUBMENU(autoMinDbToggle),
      OBJ(minDbMenu), OBJ(maxDbMenu), OBJ(fftCalcNoisePeriodMenu), OBJ(amplitudeMenu), OBJ(fCorrectionMenu));
 
+void open_waterfall_config() { Menu::open(waterfallSpeedMenu); }
+void open_dbscale_config() { Menu::open(maxDbMenu); }
+void open_span_config() { Menu::open(spanMenu); }
 } // namespace fftUI

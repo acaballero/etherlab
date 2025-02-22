@@ -3,6 +3,7 @@
 
 #include "XPT2046_touch.h"
 #include "ILI9341_fb.h"
+#include "../printf/printf.h"
 
 #define SWAP(a, b) (a += b, b = a - b, a -= b)
 
@@ -37,7 +38,7 @@ xpt2046_t *xpt2046_touch_init(SPI_HandleTypeDef *spi_hal, xpt2046_screen_orienta
     lcd->averages = averages;
     lcd->touch_coordinate = (xpt2046_two_dimension_t){{0U}, {0U}};
     lcd->touch_calibration = itcScalar;
-    lcd->touch_scalar = (xpt2046_scalar_calibrator_t){{{150}, {200}}, {{1960}, {1960}}};
+    lcd->touch_scalar = (xpt2046_scalar_calibrator_t){{{180}, {120}}, {{1870}, {1900}}};
     lcd->touch_3point = (xpt2046_3point_calibrator_t){{{0U}, {0U}}, 0, 0, 0.0F, 0.0F, 0.0F, 0.0F};
 
     lcd->touch_pressed = itpNotPressed;
@@ -207,6 +208,8 @@ xpt2046_touch_pressed_t xpt2046_touch_coordinate(xpt2046_t *lcd, uint16_t *x_pos
     *x_pos = coord.x;
     *y_pos = coord.y;
 
+    printf_("touch: %d,%d %d,%d\n", x_avg, y_avg, *x_pos, *y_pos);
+
     return itpPressed;
 }
 
@@ -315,7 +318,8 @@ xpt2046_two_dimension_t xpt2046_project_touch_coordinate(xpt2046_t *lcd, uint16_
 
                 if (lcd->orientation == isoPortraitFlip || lcd->orientation == isoLandscapeFlip) {
                     x_scaled = lcd->width - x_scaled;
-                    y_scaled = lcd->height - y_scaled;
+                } else {
+                    y_scaled = lcd->height - y_scaled; // FIXME: This is just because i've swapped Y pins on the controller, but should go in the other branch
                 }
 
                 coord.x = x_scaled;

@@ -9,12 +9,12 @@
 
 namespace dspCaptureUI {
 
-    extern Menu::menu captureMenu;
+extern Menu::menu captureMenu;
 
-    Menu::result changeDspStatus(Menu::eventMask e);
-    Menu::result on_menu_event(Menu::eventMask e);
-    Menu::result on_file_updated(Menu::eventMask e);
-    Menu::result change_dsp_status(Menu::eventMask e);
-}
+Menu::result changeDspStatus(Menu::eventMask e);
+Menu::result on_menu_event(Menu::eventMask e);
+Menu::result on_file_updated(Menu::eventMask e);
+Menu::result change_dsp_status(Menu::eventMask e);
+} // namespace dspCaptureUI
 
-#endif //TRX_FRONTEND_DSP_CAPTURE_UI_H
+#endif // TRX_FRONTEND_DSP_CAPTURE_UI_H

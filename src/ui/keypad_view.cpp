@@ -127,8 +127,8 @@ void KeypadView::init() {
 void KeypadView::on_focus() { button_close.set_focus(true); }
 
 double KeypadView::value() const {
-    char b[MAX_DIGITS];
-    strncpy(b, buff, MAX_DIGITS);
+    char b[MAX_DIGITS + 1];
+    strncpy(b, buff, MAX_DIGITS + 1);
     char *endptr;
     removeChars(b, " ");
     double val = strtod(b, &endptr);
@@ -232,7 +232,6 @@ void KeypadView::update_text() {
         if (v2 != v) {
             ftoa(buff, MAX_DIGITS, v2, frac_digits);
             v = v2;
-            index = strlen(buff);
         }
     }
 
@@ -255,6 +254,8 @@ void KeypadView::update_text() {
             sprintf(buff + strlen(buff), "%s", fracStr + 2);
         }
     }
+
+    index = strlen(buff);
 
     text_widget.set_label(buff);
 }

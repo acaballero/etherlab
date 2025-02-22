@@ -1,5 +1,9 @@
-;; Project-specific emacs configuration
+;;; package -- Summary
+;;; Commentary:
+;;; Project-specific Emacs configuration
 
+
+;;; Code:
 (message "Loading project configuration")
 
 (defun start-openocd ()
@@ -14,8 +18,8 @@
   (dape-quit)
   
   "Stop OpenOCD."
-   (let ((openocd-process (get-process "openocd"))) 
-(when openocd-process (message "Stopping existing OpenOCD process...") 
+   (let ((openocd-process (get-process "openocd")))
+(when openocd-process (message "Stopping existing OpenOCD process...")
 (delete-process openocd-process)))
   )
 
@@ -24,28 +28,29 @@
   (stop-openocd)
 
    ;; Wait a bit for OpenOCD to release ports
-  (sleep-for 1)
+  (sleep-for 0.5)
 
   (start-openocd)
 
   ;; Wait a bit for OpenOCD to initialize
-  (sleep-for 1)
+  (sleep-for 0.5)
 
   ;; Run dap-debug
-  (message "Starting dap-debug...") 
-  (let ((current-prefix-arg t)) 
+  (message "Starting dap-debug...")
+  (let ((current-prefix-arg t))
   (call-interactively 'dap-debug-last))
 
   )
 
 
 (defun my-start-dape () "Stop existing OpenOCD instance, start a new one, and launch dape." (interactive)
+
+       
   ;; Stop any running OpenOCD processes
   (stop-openocd)
-
   
    ;; Wait a bit for OpenOCD to release ports
-  (sleep-for 1)
+  (sleep-for 0.5)
 
   (start-openocd)
 
@@ -53,14 +58,16 @@
   ;;(sleep-for 1)
 
   ;; Run dap-debug
-  (message "Starting dap-debug...") 
-  (let ((current-prefix-arg t)) 
+  (message "Starting dap-debug...")
+  (let ((current-prefix-arg t))
   (call-interactively 'dape))
 
   )
 
 
 (defun my-dap-kill-openocd-and-upload () "Stop existing OpenOCD instance and run platformio upload." (interactive)
+
+  (save-some-buffers t t)
        
   ;; Stop any running OpenOCD processes
   (stop-openocd)

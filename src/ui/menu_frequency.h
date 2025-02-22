@@ -44,13 +44,13 @@ class FreqEditField : public Menu::fieldBase {
     bool step_edit = false;
 
     // Hide those unused methods of the base class
-    virtual bool canTune() override { return false; }
+    bool canTune() override { return false; }
 
-    virtual void constrainField() override {}
+    void constrainField() override {}
 
-    virtual void stepit(int increment) override {}
+    void stepit(int) override {}
 
-    virtual idx_t printReflex(menuOut &o) const override { return 0; }
+    idx_t printReflex(menuOut &) const override { return 0; }
 };
 } // namespace menu_frequency
 
