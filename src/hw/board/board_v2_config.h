@@ -6,13 +6,14 @@
 #define TRX_FRONTEND_BOARD_V2_CONFIG_H
 
 #include "../stm32.h"
+#include "board_v2.h"
 
 typedef struct {
 
     // 2nd stage of gain of the quadrature demodulator
     IF_GAIN cmx973_vga = IF_GAIN_MINUS12;
     // 1st stage of gain of the quadrature demodulator
-    IF_GAIN cmx973_vgb;
+    IF_GAIN cmx973_vgb = IF_GAIN_0;
 
     uint32_t sd_write_max_kbps = SD_CARD_WRITE_MAX_KBPS;
 
@@ -27,4 +28,4 @@ typedef struct {
 
 } st_hw_config;
 
-#endif //TRX_FRONTEND_BOARD_V2_CONFIG_H
+#endif // TRX_FRONTEND_BOARD_V2_CONFIG_H

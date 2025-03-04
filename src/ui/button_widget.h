@@ -13,7 +13,7 @@ enum ButtonStyle { BUTTON_STYLE_3D = 0, BUTTON_STYLE_FLAT, LABEL_STYLE_HOLLOW };
 
 class Button : public Widget {
   public:
-    static const size_t MAX_CHARS = 12;
+    static const size_t MAX_CHARS = 16;
     static const size_t MAX_CHARS_VALUE = 8;
     static const size_t MAX_CHARS_UNIT = 4;
 

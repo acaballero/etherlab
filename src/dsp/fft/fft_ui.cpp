@@ -139,7 +139,7 @@ Menu::numberPrompt<int16_t> maxDbMenu((const char *)"DB Max", &config.fft.max_db
 Menu::numberPrompt<uint16_t> fftCalcNoisePeriodMenu((const char *)"Noise floor calc period", &fft_calc_noise_floor_period_ms, 0, ' ', '.', "ms", nullptr, 0,
                                                     1000, 10, 100);
 
-Menu::numberPrompt<int> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "", nullptr, 0x00FF, 0xFFFF, 10, 100);
+Menu::numberPrompt<int> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "", [](float) { fftInit(); }, 0x00FF, 0xFFFF, 10, 100);
 
 Menu::numberPrompt<int32_t> fCorrectionMenu((const char *)"Freq. correction", &config.f_correction, 0, ' ', '.', "kHz", nullptr, 0, 100000, 10, 100);
 

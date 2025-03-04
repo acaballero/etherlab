@@ -208,7 +208,7 @@ xpt2046_touch_pressed_t xpt2046_touch_coordinate(xpt2046_t *lcd, uint16_t *x_pos
     *x_pos = coord.x;
     *y_pos = coord.y;
 
-    printf_("touch: %d,%d %d,%d\n", x_avg, y_avg, *x_pos, *y_pos);
+    // printf_("touch: %d,%d %d,%d\n", x_avg, y_avg, *x_pos, *y_pos);
 
     return itpPressed;
 }

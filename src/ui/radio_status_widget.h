@@ -17,16 +17,22 @@ class RadioStatusWidget : public View {
 
   protected:
     st_radio_status _status;
-    constexpr static uint8_t btn_height = 35;
+    constexpr static uint8_t btn_height = 38;
     constexpr static uint8_t padding_top = 5;
+    constexpr static uint8_t cols = 3;
+    uint8_t btn_width = (area.box.width / cols) - 2;
 
     uint16_t fg_color, bg_color, dimm_color;
 
-    Label lblMode{{0, padding_top, area.box.width / 2 - 1, btn_height - 1}};
-
-    Button btnVFO{{area.box.width / 2 + 1, padding_top, area.box.width / 2 - 1, btn_height - 1}, &lcd, "", C565_BLACK};
-    Button btnSquelch{{area.box.width / 2 + 1, btn_height + padding_top, area.box.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
-    Button btnGain{{0, btn_height + padding_top, area.box.width / 2 - 1, btn_height}, &lcd, "", C565_BLACK};
+    // Col 1
+    Label lblMode{{0, padding_top, btn_width, btn_height}};
+    Button btnGain{{0, btn_height + padding_top + 2, btn_width, btn_height}, &lcd, "", C565_BLACK};
+    // Col 2
+    Button btnVFO{{btn_width + 2, padding_top, btn_width, btn_height}, &lcd, "", C565_BLACK};
+    Button btnSquelch{{btn_width + 2, btn_height + padding_top + 2, btn_width, btn_height}, &lcd, "", C565_BLACK};
+    // Col 3
+    Button btnRIT{{btn_width * 2 + 4, padding_top, btn_width, btn_height}, &lcd, "", C565_BLACK};
+    Button btnSettings{{btn_width * 2 + 4, btn_height + padding_top + 2, btn_width, btn_height}, &lcd, "", C565_BLACK};
 
     char buf[20];
 
@@ -39,6 +45,8 @@ class RadioStatusWidget : public View {
     char *squelch();
 
     char *gain();
+
+    char *rit();
 
     char *vfo();
 

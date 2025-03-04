@@ -5,6 +5,7 @@
 #include "setup.h"
 #include "hw/stm32.h"
 #include "hw/hw_config.h"
+#include "hw/stm32f4xx/eeprom.h"
 #include "ui/menu.h"
 #include "settings.h"
 #include "status.h"
@@ -88,7 +89,12 @@ void setup() {
     // DAC routed to OPAMP4 in follower mode
     // MX_OPAMP4_Init();
 
-    if (!settings_read(&config)) {
+    /* EEPROM Init */
+    if (EE_Init() != EE_OK) {
+        Error_Handler();
+    }
+
+    if (settings_read(&config) != EE_OK) {
 
         // Wrong config version, write the new one
         settings_write(&config);

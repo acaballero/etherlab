@@ -4,12 +4,15 @@
 
 #include "waterfall_widget.h"
 #include "config.h"
+#include "dsp/fft/fft_types.h"
 #include "dsp/fft/fft_ui.h"
 #include "fft.h"
 #include "input/inputEvent.h"
 #include <sys/_stdint.h>
 
 #define PIXELS_BYTE 2
+// Map db to color linearly
+#define WATERFALL_LINEAR true
 
 /* 4-bit per pixel, 16-color buffer */
 __attribute__((section(".fccmram"))) uint8_t waterfallBuffer[DISPLAY_X_PIXELS * FFT_WATERFALL_HEIGHT / PIXELS_BYTE];
@@ -144,10 +147,11 @@ void WaterfallWidget::paint_callback() {
     }
 }
 
+#if WATERFALL_LINEAR
+// Linear projection version
 void WaterfallWidget::before_paint() {
 
     if (this->dirty()) {
-
         uint16_t width = this->size().width();
 
         // Scroll buffer down by a pixel. Remember there's 4-bit by pixel, so we divide the displacement by log2(bits per pixels) = PIXELS_BYTE
@@ -155,23 +159,20 @@ void WaterfallWidget::before_paint() {
         uint16_t delta = step * width / PIXELS_BYTE;
         memmove(waterfallBuffer + delta, waterfallBuffer, (width * (FFT_WATERFALL_HEIGHT / PIXELS_BYTE)) - delta);
 
+        int min = config.fft.min_db;
+        int max = config.fft.max_db;
+
+        float range_inv = 1.0 / (max - min); // Precompute division
+
         // Set the first row of pixels
         uint16_t ix = 0;
         for (uint16_t i = 0; i < width; i++) {
 
-            // IF we have the fft_display expressed in dB
-            float db = fft_display_db[i] + 18;
+            float db = fft_display_db[i] + 8;
 
-            db = constrain(db, config.fft.min_db, FFT_MAX_DB);
+            db = constrain(db, min, max);
 
-            uint8_t color = (uint8_t)(((float)(db - config.fft.min_db) / (float)(FFT_MAX_DB - config.fft.min_db)) * (float)FFT_WATERFALL_NCOLORS - 1);
-
-            // IF fft_display is represented in display 'Y' coordinates (not in dBs)
-            // int py = fft_display[i];
-
-            // uint8_t color = (uint8_t) (
-            //         ((float) (FFT_HEIGHT - py) / (float) (FFT_HEIGHT)) *
-            //         (float) (FFT_WATERFALL_NCOLORS - 1));
+            uint8_t color = (uint8_t)(((float)(db - min) * range_inv) * (float)FFT_WATERFALL_NCOLORS - 1);
 
             if (show_fps && color < 2) {
                 color = 2; // 0 and 1 are reserved in debug mode to black and white to allow writing debug messages in the pixel buffer
@@ -193,3 +194,56 @@ void WaterfallWidget::before_paint() {
         }
     }
 }
+#else
+// Log projection version
+void WaterfallWidget::before_paint() {
+
+    if (this->dirty()) {
+
+        uint16_t width = this->size().width();
+
+        // Scroll buffer down by a pixel. Remember there's 4-bit by pixel, so we divide the displacement by log2(bits per pixels) = PIXELS_BYTE
+
+        uint16_t delta = step * width / PIXELS_BYTE;
+        memmove(waterfallBuffer + delta, waterfallBuffer, (width * (FFT_WATERFALL_HEIGHT / PIXELS_BYTE)) - delta);
+
+        int min = config.fft.min_db;
+        int max = FFT_MAX_DB;
+
+        float range_inv = 1.0 / (max - min); // Precompute division
+
+        uint8_t scale_factor = 9;
+
+        // Set the first row of pixels
+        uint16_t ix = 0;
+        for (uint16_t i = 0; i < width; i++) {
+
+            float db = constrain(fft_display_db[i], min, max);
+            float normalized = (db - min) * range_inv;
+
+            // log10 fast approximation
+            float logScaled = (normalized * (scale_factor - 1)) / (1 + (scale_factor - 1) * normalized);
+
+            int color = (int)(logScaled * (FFT_WATERFALL_NCOLORS - 1) + 0.5); // Fast rounding
+
+            if (show_fps && color < 2) {
+                color = 2; // 0 and 1 are reserved in debug mode to black and white to allow writing debug messages in the pixel buffer
+            }
+            // Set the 4 bits of the pixel in the buffer
+            uint8_t shift;
+            uint8_t mask;
+
+            ix = ((0 * width) + i) >> 1;
+
+            shift = (i % 2) << 2;
+
+            mask = waterfallBuffer[ix] & (uint8_t) ~(0x000FU << shift);
+
+            waterfallBuffer[ix] = mask | ((color % 16) << shift);
+            for (int n = 1; n < step; n++) { // repeat as many lines as the step size
+                waterfallBuffer[ix + (n * (width >> 1))] = waterfallBuffer[ix];
+            }
+        }
+    }
+}
+#endif

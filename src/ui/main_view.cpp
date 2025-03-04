@@ -33,7 +33,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->header_w.set_name("header");
 
     this->fft_w.set_show_fps(true);
-    this->waterfall_w.set_show_fps(true);
+    // this->waterfall_w.set_show_fps(true);
     this->tune_w.set_visible(config.debug);
     this->radio_w.set_visible(!config.debug);
     this->info_w.set_visible(config.debug);
@@ -139,8 +139,9 @@ bool MainView::on_input(const st_inputEvent event) {
 
             consumed = menu_w.on_input(event);
             if (consumed) {
-                menu_w.set_visible(true);
-                menu_w.set_focus(true);
+
+                //  menu_w.set_visible(true);
+                // menu_w.set_focus(true);
             }
         } else if (!event.is_touch()) {
             consumed = View::on_input(event);

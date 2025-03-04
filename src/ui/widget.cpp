@@ -98,6 +98,24 @@ void Widget::hidden(bool hide) {
     }
 }
 
+bool Widget::is_point_visible(Point &p) {
+    if (!can_be_seen()) {
+        return false;
+    }
+
+    if (!visible_rects.size()) { // not overlapped
+        return screen_rect().contains(p);
+    }
+
+    for (auto &r : visible_rects) {
+        if (r.contains(p) && r.width() > 2 && r.height() > 2) { // we don't consider thin rectangles
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool Widget::on_input(const st_inputEvent event) {
 
     // printf_("----> Widget %s on_input: %d\n", this->name, event.type);
@@ -108,7 +126,7 @@ bool Widget::on_input(const st_inputEvent event) {
     bool consumed = false;
 
     for (const auto child : children()) {
-        if (child->is_focused()) {
+        if (child->is_focused() && !event.is_touch()) {
 
             // printf_("Child %s focused\n", child->get_name());
 
@@ -209,7 +227,7 @@ void Widget::set_visible(bool v) {
 
     if (v != flags.visible) {
 
-        printf_("%s visible = %b\n", name, v);
+        //   printf_("%s visible = %b\n", name, v);
 
         flags.visible = v;
         flags.dirty = v;

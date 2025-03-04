@@ -124,8 +124,13 @@ bool SMeterWidget::on_input(const st_inputEvent event) {
     switch (event.type) {
 
         case INPUT_EVENT_TYPE_TOUCH_END:
-            Menu::open_keypad<float>(
-                sstrength::get_squelch(), "x1", "Squelch", 1, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
+
+            if (event.ms > 1000) { // Long press
+                config.debug = true;
+            } else {
+                Menu::open_keypad<float>(
+                    sstrength::get_squelch(), "x1", "Squelch", 1, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
+            }
             return true;
         default:
             return false;

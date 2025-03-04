@@ -34,6 +34,7 @@ const char *StatusWidget::modulation() { return radio::modulationNames[config.mo
 
 char *StatusWidget::frontend() {
     if (!ISTX) {
+
         switch (config.frontend_path) {
             case radio::FRONTEND_PATH_THRU:
                 sprintf(buf, "ATT:0");
@@ -53,13 +54,8 @@ char *StatusWidget::frontend() {
 
 char *StatusWidget::agc_alc() {
     if (!ISTX) {
-
-        btnAgc.set_enabled(config.agc_enabled);
-
         sprintf(buf, "AGC");
-
         btnAgc.set_fg(fg_color);
-
     } else {
         sprintf(buf, "ALC");
     }
@@ -123,11 +119,11 @@ void StatusWidget::before_paint() {
         _status = status;
         this->set_dirty();
         if (ISTX) {
-            fg_color = C565_GREY_LIGHT;
+            fg_color = C565_BLACK;
             bg_color = C565_WHITE;
             dimm_color = C565_BLACK;
             disabled_bg = C565_GREY_DARK;
-            fg_color_auto = C565_WHITE;
+            fg_color_auto = C565_MAGENTA;
 
         } else {
             fg_color = C565_BLACK;
@@ -137,6 +133,12 @@ void StatusWidget::before_paint() {
             disabled_bg = C565_GREY_LIGHT;
             fg_color_auto = C565_MAGENTA;
         }
+
+        btnBand.set_enabled(!ISTX);
+        btnFilter1.set_enabled(!ISTX);
+        btnFilter2.set_enabled(!ISTX);
+        btnAgc.set_enabled(ISTX || config.agc_enabled);
+        btnFrontend.set_enabled(!ISTX);
 
         if (Menu::menuStatus == Menu::IDLE) {
             btnModulation.set_visible(true);

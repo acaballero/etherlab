@@ -80,7 +80,7 @@ typedef struct {
     uint32_t span = 340000;
     uint32_t bw = FFT_BANDWIDTH; // Bandwidth of interest of the FFT. Usable bandwidth.
     int16_t min_db = -130;
-    int16_t max_db = -30;
+    int16_t max_db = -50;
     // bool min_db_auto = false;
     // bool show_noise_floor = true;
     // int resolution_bits = 16;

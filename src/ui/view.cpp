@@ -101,7 +101,7 @@ void View::paint(Area *a) {
 void View::add_child(Widget *const widget) {
     if (widget) {
         if (widget->parent() == nullptr) {
-            printf_("Adding child %s to %s\n", widget->get_name(), name);
+            //   printf_("Adding child %s to %s\n", widget->get_name(), name);
             children_.push_back(widget);
             widget->set_parent(this);
         }
@@ -137,6 +137,7 @@ void View::on_child_update(Widget *w) {
                     std::vector<Rect> new_visible_parts;
                     for (auto &part : visible_parts) {
                         std::vector<Rect> subtracted = (part - sibling->screen_rect());
+
                         new_visible_parts.insert(new_visible_parts.end(), subtracted.begin(), subtracted.end());
                     }
                     visible_parts = new_visible_parts;

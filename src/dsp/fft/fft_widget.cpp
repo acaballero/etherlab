@@ -15,7 +15,7 @@ FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYL
 
 void FFTWidget::draw_bandwidth() {
     int16_t bm_s, bm_e, bm_m;
-    int16_t px_if_width = (uint8_t)(radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / fft_params.display_rbw) >> 1;
+    int16_t px_if_width = (int16_t)(radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / fft_params.display_rbw) >> 1;
     bm_m = DISPLAY_X_PIXELS >> 1;
 
     if (config.modulation == SSB_USB) {
@@ -43,7 +43,7 @@ void FFTWidget::draw_bandwidth() {
 
 void FFTWidget::draw_freq_marks() {
     int arr_idx_freqs[10];
-    uint8_t n = findFreqs(arr_idx_freqs, 4);
+    uint8_t n = findFreqs(arr_idx_freqs, 10);
     st_freq_mem data;
 
     int text_width, padding = 3, padding_v = 3;

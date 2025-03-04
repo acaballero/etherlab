@@ -21,8 +21,8 @@ void open_keypad(T value, const char *units, const char *name, uint8_t frac_digi
 template <typename T>
 void open_number_edit(T value, const char *units, const char *name, uint8_t frac_digits, std::function<void(T)> on_changed, T min, T max, T step, T step_big) {
 
+    view_manager::mainView.NumberEdit()->on_changed = on_changed; // note this must be assigned before setting the value or a previous handler might be called
     view_manager::mainView.NumberEdit()->set_value(value, frac_digits, units, name, min, max, step, step_big);
-    view_manager::mainView.NumberEdit()->on_changed = on_changed;
     view_manager::mainView.NumberEdit()->set_visible(true);
     view_manager::mainView.NumberEdit()->set_focus(true);
 }
@@ -78,6 +78,16 @@ class labelPrompt : public Menu::prompt {
     }
 };
 
+template <typename T> class optionsPrompt;
+
+template <typename T> void open(optionsPrompt<T> &prompt) {
+    open_option_buttons<T>(prompt.options, prompt.getText(), prompt.value, prompt.size, [prompt](T m) {
+        if (prompt.on_select) {
+            prompt.on_select(m);
+        }
+    });
+}
+
 template <typename T> class optionsPrompt : public Menu::prompt {
   public:
     T &value;
@@ -89,11 +99,7 @@ template <typename T> class optionsPrompt : public Menu::prompt {
                   styles s = noStyle, systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)))
         : prompt(text, static_cast<action>([](Menu::eventMask, Menu::navNode &, Menu::prompt &item) {
                      optionsPrompt<T> prompt = static_cast<optionsPrompt<T> &>(item);
-                     open_option_buttons<T>(prompt.options, item.getText(), prompt.value, prompt.size, [prompt](T m) {
-                         if (prompt.on_select) {
-                             prompt.on_select(m);
-                         }
-                     });
+                     open(prompt);
                      return proceed;
                  }),
                  e, s, ss),

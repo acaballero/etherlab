@@ -9,6 +9,7 @@
 #include "config.h"
 #include "../input/input.h"
 #include "radio.h"
+#include "main_board.h"
 
 using namespace Menu;
 
@@ -51,16 +52,10 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                     radio::toggle_vfo();
                     break;
                 case FPANEL_PAD_BUTTON_3: // GAIN
-                    menu_exit();
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 4));
+                    Menu::open(Menu::frontendPathMenu);
                     break;
                 case FPANEL_PAD_BUTTON_4: // SQuelch
-                    menu_exit();
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 6));
+                    Menu::open(Menu::squelchEditMenu);
                     break;
                 // case KEY_BACK:
                 case FPANEL_PAD_BUTTON_5:
@@ -88,43 +83,23 @@ bool MenuWidget::on_input(const st_inputEvent e) {
 
                 case FPANEL_DISPLAY_BUTTON_1: // LEFT / MODULATION
 
-                    if (menuStatus == ACTIVE) {
-                        strIn.write('-');
-                        nav.doInput(strIn);
-
-                    } else {
-                        nav.doNav(navCmd(enterCmd));
-                        nav.doNav(navCmd(idxCmd, 0));
-                        nav.doNav(navCmd(idxCmd, 0));
-                    }
+                    Menu::open(Menu::modulationMenu);
                     break;
                 case FPANEL_DISPLAY_BUTTON_2: // RIGHT / FRONTEND
-                    if (menuStatus == ACTIVE) {
-                        strIn.write('+');
-                        nav.doInput(strIn);
-                    } else {
-                        nav.doNav(navCmd(enterCmd));
-                        nav.doNav(navCmd(idxCmd, 4));
-                        nav.doNav(navCmd(idxCmd, 3));
-                    }
+                    Menu::open(Menu::frontendPathMenu);
                     break;
                 case FPANEL_DISPLAY_BUTTON_3: // AGC
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 4));
+                    config.agc_enabled = !config.agc_enabled;
+                    main_board::update();
                     break;
                 case FPANEL_DISPLAY_BUTTON_5: // FILTER 1
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 2));
+                    Menu::open(Menu::filterMenu);
                     break;
                 case FPANEL_DISPLAY_BUTTON_6: // FILTER 2
-                    nav.doNav(navCmd(enterCmd));
-                    nav.doNav(navCmd(idxCmd, 0));
-                    nav.doNav(navCmd(idxCmd, 3));
+                    Menu::open(Menu::IFFilterMenu);
                     break;
                 case FPANEL_DISPLAY_BUTTON_4: // BAND
-
+                    Menu::open(Menu::bandMenu);
                 default:
 
                     consumed = false;

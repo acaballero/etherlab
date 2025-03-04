@@ -8,6 +8,7 @@
 #include "os/periodic_task.h"
 #include "radio.h"
 #include "s_strength.h"
+#include "printf.h"
 
 namespace scanner {
 
@@ -20,7 +21,10 @@ st_scanner_info scanner_config;
 Signal signal;
 
 // Time (ms) the scan has been paused
-unsigned long sweep_delay_time_ms = 0;
+unsigned long sweep_pause_time_ms = 0;
+
+// Time (ms) we are exiting a singal passband
+unsigned long sweep_exiting_time_ms = 0;
 
 // Current detected signal strength
 float sstrength = 0;
@@ -106,9 +110,9 @@ void sweep() {
     uint64_t t = HAL_GetTick();
 
     if (scanner_config.freq_min && scanner_config.status != SCANNER_STATUS_STOPPED &&
-        (sweep_delay_time_ms == 0 || (t - sweep_delay_time_ms) > scanner_config.pause_ms)) {
+        (sweep_pause_time_ms == 0 || (t - sweep_pause_time_ms) > scanner_config.pause_ms)) {
 
-        sweep_delay_time_ms = 0;
+        sweep_pause_time_ms = 0;
 
         // Here we get the strength without filtering to catch sudden rises in its value
         float s = sstrength::update_s_strength();
@@ -125,9 +129,11 @@ void sweep() {
                     direction = scanner_config.direction == FORWARD ? BACKWARDS : FORWARD;
 
                     if (scanner_config.pause_ms) {
-                        sweep_delay_time_ms = t;
+                        printf_("Pausing after PEAK: s: %.2f, last: %.2f", s, sstrength);
+                        sweep_pause_time_ms = t;
                         state = EXITING;
                     } else {
+                        printf_("Stopping after PEAK: s: %.2f, last: %.2f", s, sstrength);
                         stop();
                     }
                 }
@@ -139,14 +145,21 @@ void sweep() {
                 // squelch. However, if the squelch is below the noise, we would stay in this state forever, so
                 // we set a limit
 
-                if (s < scanner_config.squelch || ((t < sweep_delay_time_ms) && (sweep_delay_time_ms > (scanner_config.pause_ms * 10)))) {
+                if (!sweep_exiting_time_ms) {
+                    sweep_exiting_time_ms = t;
+                }
+
+                if (s < scanner_config.squelch || (t - sweep_exiting_time_ms > (task.get_period() * 10))) {
+                    printf_("EXITING: s: %.2f, last: %.2f", s, sstrength);
                     state = SEARCHING;
+                    sweep_exiting_time_ms = 0;
                 }
                 break;
 
             default:
 
                 if (s >= scanner_config.squelch) {
+                    printf_("PEAKING: s: %.2f, last: %.2f", s, sstrength);
                     sstrength = s;
                     state = PEAKING;
                 }

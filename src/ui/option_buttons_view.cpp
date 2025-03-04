@@ -148,7 +148,7 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &)>
         button->set_focus(selected);
 
         if (selected) {
-            update_focus(focused_button);
+            update_focus(button->id);
         } else {
             update_buttons(true);
         }
@@ -236,6 +236,6 @@ void OptionButtonsView::init() {
     display_panel_buttons.set_labels(display_buttons_labels);
 }
 
-void OptionButtonsView::on_focus() { button_close.set_focus(true); }
+void OptionButtonsView::on_focus() { update_focus(focused_button); }
 
 void OptionButtonsView::before_paint() {}

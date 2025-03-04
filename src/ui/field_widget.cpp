@@ -12,6 +12,7 @@
 void Field::set_text(char const *t) {
     strncpy(text, t, size + 1);
     trim(text);
+    pos = strlen(text);
     set_dirty();
 }
 

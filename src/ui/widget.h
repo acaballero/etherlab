@@ -86,6 +86,8 @@ class Widget : public Painter {
 
     bool can_be_seen();
 
+    bool is_point_visible(Point &p);
+
     bool visible();
 
     void set_visible(bool v);

@@ -6,6 +6,8 @@
 #include "config.h"
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
+#include <sys/_stdint.h>
+#include <sys/types.h>
 #include "dsp/blocks/dc_block.h"
 #include "arm_common_tables.h"
 #include "dsp/fft/fft.h"
@@ -607,6 +609,7 @@ void processFFT(float32_t *v) {
     uint16_t db_amp = config.fft.max_db - config.fft.min_db;
     int bin_ix, display_ix;
     float bin_pos, display_pos;
+    float range_inv = 1.0 / db_amp; // Precompute division
 
     if (fft_params.bin_width_px < 1) {
 
@@ -632,7 +635,7 @@ void processFFT(float32_t *v) {
             // We will store fft_display in display units ('y' coordinates from the top) for the sake of speed
             // This way, we can calculate them here once instead of (like we used to do in previous versions), store it in db units and
             // calculate display coordinates in the screen drawing callbacks (it was too slow to do the math within DMA transfers)
-            start = FFT_HEIGHT - (uint8_t)(((float)(db_constrained - config.fft.min_db) / (float)db_amp) * (float)FFT_HEIGHT);
+            start = FFT_HEIGHT - (uint16_t)(((float)(db_constrained - config.fft.min_db) * range_inv) * (float)FFT_HEIGHT);
 
             // IIR filter
             fft_display[display_ix] = fft_display[display_ix] - (gain * (fft_display[display_ix] - (float)start));

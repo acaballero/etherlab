@@ -23,6 +23,9 @@ void RadioStatusWidget::init() {
     btnGain.set_two_lines(true);
     btnVFO.set_text("VFO");
     btnVFO.set_two_lines(true);
+    btnRIT.set_text("RIT");
+    btnRIT.set_two_lines(true);
+    btnSettings.set_text("Menu");
 
     lblMode.on_select = [](Label &) {
         MODE mode;
@@ -35,7 +38,7 @@ void RadioStatusWidget::init() {
         main_board::setMode(mode);
     };
 
-    add_children({&lblMode, &btnSquelch, &btnGain, &btnVFO});
+    add_children({&lblMode, &btnSquelch, &btnGain, &btnVFO, &btnRIT, &btnSettings});
 
     for (Widget *btn : View::children()) {
         btn->set_font((FontDef *)&Font_Tiny8x8);
@@ -51,9 +54,11 @@ void RadioStatusWidget::on_button(Button &button) {
         Menu::open_keypad<float>(
             sstrength::get_squelch(), "x1", "Squelch", 1, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
     } else if (&button == &btnGain) {
-        Menu::open_gain();
+        Menu::open(Menu::frontendPathMenu);
     } else if (&button == &btnVFO) {
         radio::toggle_vfo();
+    } else if (&button == &btnRIT) {
+    } else if (&button == &btnSettings) {
     }
 }
 
@@ -64,6 +69,11 @@ char *RadioStatusWidget::gain() {
 
 char *RadioStatusWidget::mode() {
     sprintf(buf, ISTX ? "TX" : "RX");
+    return buf;
+}
+
+char *RadioStatusWidget::rit() {
+    sprintf(buf, "0");
     return buf;
 }
 
@@ -135,10 +145,6 @@ void RadioStatusWidget::before_paint() {
             btnSquelch.set_value(squelch());
             btnGain.set_value(gain());
 
-            sprintf(buf, "VFO %s", radio::get_vfo() ? "A" : "B");
-            btnVFO.set_text(buf);
-            btnVFO.set_value(vfo());
-
             btnSquelch.set_fg(fg_color);
             btnSquelch.set_bg(bg_color);
             btnGain.set_fg(fg_color);
@@ -148,5 +154,11 @@ void RadioStatusWidget::before_paint() {
             lblMode.set_bg(C565_TRANSPARENT);
             lblMode.set_style(ButtonStyle::LABEL_STYLE_HOLLOW);
         }
+
+        sprintf(buf, "VFO %s", radio::get_vfo() ? "A" : "B");
+        btnVFO.set_text(buf);
+        btnVFO.set_value(vfo());
+
+        btnRIT.set_value(rit());
     }
 }

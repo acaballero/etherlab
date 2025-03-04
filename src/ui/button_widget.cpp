@@ -112,7 +112,7 @@ void Button::on_blur() {
 
 void Button::on_focus() {
 
-    printf_("Button %s on_focus\n", this->text);
+    // printf_("Button %s on_focus\n", this->text);
 
     if (on_highlight) {
         on_highlight(*this);

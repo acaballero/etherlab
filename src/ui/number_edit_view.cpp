@@ -93,7 +93,7 @@ void NumberEditView::init() {
         add_child(&b);
     }
 
-    buttons[CANCEL].on_select = [this](Button &) { this->set_visible(false); };
+    buttons[CANCEL].on_select = button_fn;
 
     display_panel_buttons.set_labels(display_buttons_labels);
 
@@ -107,6 +107,10 @@ void NumberEditView::update_value(double v) {
 
     char buff[max_length];
     format_double(value, buff, decimal_separator, thousand_separator, frac_digits, max_length);
+
+    if (update_on_changes && on_changed) {
+        on_changed(value);
+    }
 
     text_widget.set_label(buff);
 }
@@ -124,6 +128,8 @@ void NumberEditView::set_value(double new_value, uint8_t digits, const char *uni
     this->max = max;
 
     title.set_label(label);
+
+    initial_value = new_value;
     update_value(new_value);
 
     char buf[20];
@@ -165,8 +171,14 @@ void NumberEditView::on_button(Button &button) {
         case CANCEL:
         case OK:
 
-            if (button.id == OK && on_changed) {
-                on_changed(value);
+            if (on_changed) {
+                if (button.id == OK) {
+                    on_changed(value);
+                } else {
+                    if (initial_value != value) {
+                        on_changed(initial_value);
+                    }
+                }
             }
 
             this->set_visible(false);

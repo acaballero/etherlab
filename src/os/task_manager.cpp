@@ -9,14 +9,21 @@
 #include "os/periodic_task.h"
 #include "utils.hpp"
 #include "printf.h"
+#include <cstddef>
 #include <memory>
 
 namespace os {
-void TaskManager::add(periodic_task *t) { tasks.push_back(t); }
+void TaskManager::add(periodic_task *t) { tasks.push_back(std::unique_ptr<periodic_task>(t)); }
 
 void TaskManager::remove(periodic_task *t) {
-    tasks.erase(std::remove(tasks.begin(), tasks.end(), t), tasks.end());
-    delete t;
+
+    auto it = std::remove_if(tasks.begin(), tasks.end(), [t](const std::unique_ptr<periodic_task> &item) {
+        return item.get() == t; // Compare raw pointers
+    });
+
+    if (it != tasks.end()) {
+        tasks.erase(it, tasks.end()); // Erase the matching unique_ptr
+    }
 }
 
 periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
@@ -29,20 +36,15 @@ periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
 
 void TaskManager::run() {
 
-    for (auto it = tasks.begin(); it != tasks.end();) {
+    size_t i = 0;
+    while (i < tasks.size()) {
 
-        auto task = *it;
+        tasks[i]->run();
 
-        task->run();
-
-        if (task->finished()) {
-
-            // char tmp[50];
-            // printf_("Finished task: %s\n", task->get_log(tmp));
-            remove(task);
-
+        if (tasks[i]->finished()) {
+            tasks.erase(tasks.begin() + i);
         } else {
-            it++;
+            i++;
         }
     }
 }

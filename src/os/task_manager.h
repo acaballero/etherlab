@@ -24,7 +24,7 @@ class TaskManager {
     periodic_task *set_timeout(uint32_t delay, callback_t c);
 
   private:
-    std::vector<periodic_task *> tasks{};
+    std::vector<std::unique_ptr<periodic_task>> tasks{};
     uint32_t count{0};
     uint8_t index{0};
 };

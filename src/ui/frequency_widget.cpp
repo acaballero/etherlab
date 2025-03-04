@@ -11,6 +11,7 @@
 #include "scanner.h"
 #include "ui/button_widget.h"
 #include "ui/frequency_memory_ui.h"
+#include "ui/label_widget.h"
 #include "ui/menu_frequency.h"
 #include "view_manager.h"
 #include "stdio.h"
@@ -28,6 +29,8 @@ void FrequencyWidget::init() {
         ((Label *)lbl)->set_bg(C565_VIOLET);
         ((Label *)lbl)->set_color(C565_WHITE, C565_CYAN, C565_WHITE);
     }
+
+    lblRpt.on_select = [](Label &) { Menu::open(Menu::repeaterMenu); };
 }
 
 void FrequencyWidget::before_paint() {

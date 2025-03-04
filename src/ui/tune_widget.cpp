@@ -3,6 +3,8 @@
 //
 
 #include <cfloat>
+#include <ios>
+#include "input/inputEvent.h"
 #include "tune_widget.h"
 #include "../config.h"
 #include "rf_coupler.h"
@@ -108,3 +110,12 @@ void TuneWidget::paint_callback() {
 }
 
 void TuneWidget::before_paint() { this->set_dirty(); }
+
+bool TuneWidget::on_touch(const st_inputEvent e) {
+    if (e.ms > 1000) {
+        config.debug = false;
+        return true;
+    }
+
+    return false;
+}

@@ -10,6 +10,7 @@
 #include "stdio.h"
 #include "types.h"
 #include "ui/display_panel_buttons_widget.h"
+#include "ui/ui_types.h"
 #include "view.h"
 #include "button_widget.h"
 #include <cmath>
@@ -56,7 +57,7 @@ class KeyboardView : public View {
     uint16_t focused_button = 0;
     static constexpr int cols = 6;
     static constexpr int button_w = WIDTH / cols;
-    static constexpr int button_h = (HEIGHT - DISPLAY_PADDING) / 7;
+    static constexpr int button_h = (HEIGHT - STATUS_HEIGHT) / 7;
     static constexpr int key_count = 29;
 
     const char *const keys_lower = "abcdefghijklmnopqrstuvwxyz, .";
@@ -82,7 +83,7 @@ class KeyboardView : public View {
 
     Label label_widget{{button_w * 5, 4, button_w, button_h - 5}, C565_GREY_DARK, C565_TRANSPARENT, BUTTON_STYLE_FLAT};
 
-    DisplayPanelButtonsWidget display_panel_buttons = {{0, DISPLAY_Y_PIXELS - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
+    DisplayPanelButtonsWidget display_panel_buttons = {{0, HEIGHT - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
 
     void on_button(Button &button);
     void on_ok();

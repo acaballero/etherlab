@@ -44,6 +44,8 @@ class NumberEditView : public View {
 
     void before_paint() override;
 
+    void set_update_on_changes(bool b) { update_on_changes = b; }
+
   private:
     uint16_t focused_button = 0;
 
@@ -59,6 +61,10 @@ class NumberEditView : public View {
     double step;
     double step_big;
     double value;
+    double initial_value;
+
+    // Call callback on every value change
+    bool update_on_changes{true};
 
     void update_value(double);
 

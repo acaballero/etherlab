@@ -3,6 +3,7 @@
 //
 
 #include "message_widget.h"
+#include "input/inputEvent.h"
 
 void MessageWidget::paint_callback() {
 
@@ -36,14 +37,25 @@ void MessageWidget::paint_callback() {
     display->print(msg);
 }
 
-bool MessageWidget::on_input(const st_inputEvent) {
+bool MessageWidget::on_input(const st_inputEvent e) {
+
+    bool consumed = false;
+
     if (visible()) {
-        set_visible(false);
-        display->drawArea(&this->area, this);
-        return true;
+        switch (e.type) {
+
+            case INPUT_EVENT_TYPE_TOUCH_START:
+                consumed = true; // swallow
+                break;
+            default:
+                set_visible(false);
+                display->drawArea(&this->area, this);
+                consumed = true;
+                break;
+        }
     }
 
-    return false;
+    return consumed;
 }
 
 void MessageWidget::before_paint() {

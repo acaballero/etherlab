@@ -22,7 +22,7 @@ struct st_scanner_info {
     uint64_t freq_min{0};
     uint64_t freq_max{0};
     uint32_t freq_step{1000};
-    float squelch{3};
+    float squelch{5};
     uint32_t pause_ms{1000};
     uint16_t period_s{1000};
     bool save_found{false};

@@ -106,8 +106,9 @@ void KeyboardView::init() {
     label_widget.set_font((FontDef *)&Font_7x10);
     label_widget.set_color(C565_GREY_DARKER);
     label_widget.set_aling(ALIGN_CENTER);
-    label_widget.set_has_border(false);
-    label_widget.set_canvas_bg_color(C565_GREY_LIGHT);
+    label_widget.set_bg(C565_GREY_LIGHT);
+    label_widget.set_border_radius(false, true, true, false);
+    label_widget.set_canvas_bg_color(C565_BLACK);
 
     text_widget.set_inserting(true);
 
@@ -140,8 +141,6 @@ void KeyboardView::init() {
     button_ok.set_style(BUTTON_STYLE_3D);
     button_del.set_style(BUTTON_STYLE_3D);
     button_close.set_style(BUTTON_STYLE_3D);
-
-    button_shift.on_select = button_fn;
 
     button_del.on_select = [this](Button &) { text_widget.del_char(); };
 

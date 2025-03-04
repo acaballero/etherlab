@@ -38,7 +38,7 @@ void PowerMeterWidget::paint_power() {
 
     int max_x = margin + (dbm_nblocks * dbm_block_size);
     int x = (info.p_for_dbm / (float)max_dbm) * max_x;
-    int y1 = margin_top + 4;
+    int y1 = margin_top + font->height + 1;
     int y2 = y1 + DBM_BAR_HEIGHT;
     uint16_t color;
 
@@ -59,21 +59,21 @@ void PowerMeterWidget::paint_power() {
 
         if (buf[0]) {
             display->setColor(color);
-            display->gotoXY(px, 1);
+            display->gotoXY(px, margin_top);
             display->write(buf);
         }
 
         // Tick
-        display->writeLine(px, y1 - 4, px, y1 - 4 + tick_size, C565_GREY_DARK);
+        display->writeLine(px, y1, px, y1 + tick_size, C565_GREY_DARK);
     }
 
     // Horizontal line
-    display->writeLine(margin, y1 - 4, max_x, y1 - 4, C565_GREY_DARK);
+    display->writeLine(margin, y1, max_x, y1, C565_GREY_DARK);
 
     // Bar
     for (int ix = margin; ix < x; ix++) {
         if ((ix - margin) % (dbm_block_size) != 0) {
-            display->writeVertLine(ix, y1, y2, C565_WHITE);
+            display->writeVertLine(ix, y1 + 3, y2, C565_WHITE);
         }
     }
 }
@@ -82,8 +82,8 @@ void PowerMeterWidget::paint_swr() {
     char buf[6];
 
     int max_x = margin + (max_swr - 1) * swr_block_size;
-    int x = ((info.swr - 1.0) / ((float)max_swr - 1.0)) * (float)max_x;
-    int y1 = margin_top + 4 + DBM_BAR_HEIGHT + 2;
+    int x = ((info.swr - 1.0) / ((float)max_swr - 1)) * ((float)max_x - margin);
+    int y1 = margin_top + font->height + DBM_BAR_HEIGHT + 4;
     int y2 = y1 + SWR_BAR_HEIGHT;
     uint16_t color;
 
@@ -104,7 +104,7 @@ void PowerMeterWidget::paint_swr() {
 
         if (buf[0]) {
             display->setColor(color);
-            display->gotoXY(max_x - px - (int)strlen(buf) * 3, y2 + 6);
+            display->gotoXY(max_x - px - (int)strlen(buf) * 3, y2 + 8);
             display->write(buf);
         }
 
@@ -134,6 +134,9 @@ void PowerMeterWidget::paint_swr() {
 void PowerMeterWidget::before_paint() {
 
     rf_coupler::rf_coupler_info current_info{.v_for = 0, .v_ref = 0, .p_for_dbm = rf_coupler::info.p_for_dbm, .p_ref_dbm = 0, .swr = rf_coupler::info.swr};
+
+    current_info.swr = max_swr;
+    current_info.p_for_dbm = max_dbm / 2;
 
     // Round to 2 decimals and constrain
     current_info.p_for_dbm = constrain(current_info.p_for_dbm, 0, max_dbm);

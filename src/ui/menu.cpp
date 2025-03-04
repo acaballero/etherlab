@@ -74,6 +74,22 @@ void open_gain() {
     nav.doNav(navCmd(idxCmd, 0));
     nav.doNav(navCmd(idxCmd, 4));
 }
+
+menu_option_st<radio::FRONTEND_PATH> frontend_path_options[] = {
+    {"Att. (-10 dB)", radio::FRONTEND_PATH_ATT}, {"Pass-thru (0 dB)", radio::FRONTEND_PATH_THRU}, {"LNA (20 dB)", radio::FRONTEND_PATH_LNA}
+
+};
+
+radio::FRONTEND_PATH frontend_path = config.frontend_path;
+
+optionsPrompt<radio::FRONTEND_PATH> frontendPathMenu((const char *)"Frontend", frontend_path_options, frontend_path,
+                                                     sizeof(frontend_path_options) / sizeof(frontend_path_options[0]), [](radio::FRONTEND_PATH) {
+                                                         config.frontend_path = frontend_path;
+                                                         main_board::update();
+                                                     });
+
+Menu::numberPrompt<float> squelchEditMenu((const char *)"Squelch", &config.squelch_level, 2, ' ', '.', nullptr,
+                                          [](float) { sstrength::set_squelch(config.squelch_level); }, 0, 9);
 } // namespace Menu
 
 using namespace Menu;
@@ -85,9 +101,6 @@ TOGGLE(config.squelch_auto, autoSquelch, "Squelch Auto: ", doNothing, noEvent, n
 TOGGLE(config.agc_enabled, enableAGCToggleMenu, "AGC: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
        VALUE("Enabled", true, changeAGCEnabled, noEvent), VALUE("Disabled", false, changeAGCEnabled, noEvent))
-
-Menu::numberPrompt<float> squelchEditMenu((const char *)"Squelch", &config.squelch_level, 2, ' ', '.', nullptr,
-                                          [](float) { sstrength::set_squelch(config.squelch_level); }, 0, 9);
 
 Menu::numberPrompt<uint32_t> repeaterOffsetMenu((const char *)"Repeater offset", &config.repeater_offset, 0, ' ', '.', "kHz", nullptr, 0, 100000, 500, 5000);
 
@@ -120,23 +133,11 @@ menu_option_st<LO_POWER> lo_power_options[] = {{"Low (-4 dBm)", LO_POWER_LOW}, {
 
 };
 
-menu_option_st<radio::FRONTEND_PATH> frontend_path_options[] = {
-    {"Attenuator (-10 dB)", radio::FRONTEND_PATH_ATT}, {"Pass-thru (0 dB)", radio::FRONTEND_PATH_THRU}, {"LNA (20 dB)", radio::FRONTEND_PATH_LNA}
-
-};
-
 optionsPrompt<LO_POWER> driveStrength1stLOMenu((const char *)"1st LO drive", lo_power_options, config.lo_drive_strength_0,
                                                sizeof(lo_power_options) / sizeof(lo_power_options[0]), [](LO_POWER) { board::change_drive_strength = true; });
 
 optionsPrompt<LO_POWER> driveStrength2ndLOMenu((const char *)"2nd LO drive", lo_power_options, config.lo_drive_strength_1,
                                                sizeof(lo_power_options) / sizeof(lo_power_options[0]), [](LO_POWER) { board::change_drive_strength = true; });
-
-radio::FRONTEND_PATH frontend_path = config.frontend_path;
-optionsPrompt<radio::FRONTEND_PATH> frontendPathMenu((const char *)"Frontend", frontend_path_options, frontend_path,
-                                                     sizeof(frontend_path_options) / sizeof(frontend_path_options[0]), [](radio::FRONTEND_PATH) {
-                                                         config.frontend_path = frontend_path;
-                                                         main_board::update();
-                                                     });
 
 menu_option_st<LO_INJECTION> lo_injection_options[] = {{"LO", LOW_SIDE}, {"HIGH", HIGH_SIDE}};
 
@@ -181,9 +182,9 @@ Menu::numberPrompt<uint32_t> if1stFreqMenu((const char *)"1st. IF Frequency", &c
 Menu::numberPrompt<uint32_t> ifFMTXFreqMenu((const char *)"FM IF TX Frequency", &config.f_if_fm_tx, 0, ' ', '.', "Hz",
                                             [](uint32_t) { board::change_calibration = true; }, 10000, 100000000, 1000, 10000);
 
-MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu), OBJ(frontendPathMenu),
-     OBJ(couplerOffsetMenu), OBJ(driveStrength1stLOMenu), OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu), OBJ(if1stFreqMenu), OBJ(ifFMTXFreqMenu),
-     OBJ(loRefCorrectionMenu), OBJ(ifCorrectionMenu),
+MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu),
+     OBJ(Menu::frontendPathMenu), OBJ(couplerOffsetMenu), OBJ(driveStrength1stLOMenu), OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu),
+     OBJ(if1stFreqMenu), OBJ(ifFMTXFreqMenu), OBJ(loRefCorrectionMenu), OBJ(ifCorrectionMenu),
 #if ENABLE_RTC
      SUBMENU(dateMenu), SUBMENU(timeMenu)
 #endif

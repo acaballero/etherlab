@@ -76,7 +76,8 @@ void inputControllerInit() {
 }
 
 Widget *processTouch(Widget *w, st_inputEvent *e) {
-    if (w->can_be_seen()) {
+
+    if (w->is_point_visible(e->point)) {
 
         for (const auto child : w->children()) {
             const auto touched_widget = processTouch(child, e);
@@ -85,17 +86,14 @@ Widget *processTouch(Widget *w, st_inputEvent *e) {
             }
         }
 
-        const auto r = w->screen_rect(); // + Point{DISPLAY_PADDING, DISPLAY_PADDING};
-
-        if (r.contains(e->point)) {
-            printf_("Touched: %d,%d %d x %d\n", r.left(), r.top(), r.right(), r.bottom());
-            if (w->on_input(*e)) {
-
-                // This widget responded. Return it up the call stack.
-                return w;
-            }
+        Rect r = w->screen_rect();
+        // printf_("Touched: %d,%d %d x %d %d %s\n", r.left(), r.top(), r.right(), r.bottom(), e->type, w->get_name());
+        if (w->on_input(*e)) {
+            // This widget responded. Return it up the call stack.
+            return w;
         }
     }
+
     return nullptr;
 }
 
@@ -151,7 +149,7 @@ void processEvent(st_inputEvent *e) {
 
                     case BTN_ENCODER:
 
-                        bool very_long_press = e->ms > 3000;
+                        bool very_long_press = e->ms > 2000;
 
                         if (very_long_press) {
                             if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {

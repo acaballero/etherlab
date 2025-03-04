@@ -56,6 +56,7 @@ void main_view_warning_callback(void *, void *args) {
     status::Status *st = (status::Status *)args;
 
     view_manager::mainView.Message()->set_visible(true);
+    view_manager::mainView.Message()->set_focus(true);
 
     MessageWidget *widget = ((MessageWidget *)view_manager::mainView.Message());
     widget->set_title(st->code == status::ST_ERROR ? "WARNING" : "INFO", st->code == status::ST_ERROR ? C565_RED : C565_YELLOW);
