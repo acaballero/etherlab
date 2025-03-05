@@ -6,7 +6,10 @@
 
 #include <io/file_factory.h>
 #include <sys/_stdint.h>
+#include "Signal.h"
+#include "dsp/fft/fft.h"
 #include "menuBase.h"
+#include "s_strength.h"
 #include "types.h"
 #include "ui/menu.h"
 #include "status.h"
@@ -51,6 +54,8 @@ void scanner_callback(void *, void *args) {
     scanner_config = *config;
 }
 
+SignalToken signal_token;
+
 Menu::result on_menu_event(Menu::eventMask e) {
 
     switch (e) {
@@ -60,8 +65,8 @@ Menu::result on_menu_event(Menu::eventMask e) {
             if (scanner_config.freq_min == 0) {
                 scanner_config = {.freq_min = radio::get_frequency() - 200000,
                                   .freq_max = radio::get_frequency() + 200000,
-                                  .freq_step = 2500,
-                                  .squelch = config.squelch_level,
+                                  .freq_step = 1000,
+                                  .squelch = 0,
                                   .pause_ms = 2000,
                                   .period_s = 1,
                                   .save_found = false,
@@ -69,14 +74,18 @@ Menu::result on_menu_event(Menu::eventMask e) {
                                   .mode = scanner::scanner_config.mode};
             }
 
+            scanner_config.squelch = max2(config.squelch_level, sstrength::db_to_s_strength(fft::fft_noise_floor_db) + 3);
+
             // Subscribe to scanner signals
-            scanner::signal.add(NULL, scanner_callback);
+            signal_token = scanner::signal.add(NULL, scanner_callback);
 
             configure();
 
             break;
 
         case Menu::exitEvent:
+
+            scanner::signal.remove(signal_token);
             break;
     }
 
@@ -101,6 +110,9 @@ optionsPrompt<DIRECTION> directionMenu((const char *)"Direction", direction_opti
 TOGGLE(scanner_config.status, scanEnableToggle, "Status: ", configure, enterEvent, noStyle, VALUE("On", scanner::SCANNER_STATUS_RUNNING, doNothing, noEvent),
        VALUE("Off", scanner::SCANNER_STATUS_STOPPED, doNothing, noEvent));
 
+TOGGLE(scanner_config.save_found, scanSaveToggle, "Save: ", configure, enterEvent, noStyle, VALUE("Yes", true, doNothing, noEvent),
+       VALUE("No", false, doNothing, noEvent));
+
 Menu::numberPrompt<uint32_t> freqStepMenu((const char *)"Step", &scanner_config.freq_step, 0, ' ', '.', "Hz", [](uint32_t) { configure(); }, 1000, 1000000,
                                           1000, 10000);
 
@@ -109,6 +121,8 @@ Menu::numberPrompt<uint16_t> freqPeriodMenu((const char *)"Period", &scanner_con
 Menu::numberPrompt<uint32_t> freqPauseDelay((const char *)"Pause delay", &scanner_config.pause_ms, 0, ' ', '.', "ms", [](uint32_t) { configure(); }, 0, 10000,
                                             100, 1000);
 
-MENU(menuScan, "Scan", on_menu_event, (Menu::eventMask)(enterEvent | exitEvent), noStyle, SUBMENU(scanEnableToggle), OBJ(directionMenu), OBJ(freqStepMenu),
-     OBJ(freqPeriodMenu), OBJ(freqPauseDelay), OBJ(modeMenu), OBJ(freqEditMin), OBJ(freqEditMax));
+Menu::numberPrompt<float> squelchMenu((const char *)"S-level", &scanner_config.squelch, 0, ' ', '.', "", [](uint32_t) { configure(); }, 0, 9, 1, 0.1);
+
+MENU(menuScan, "Scan", on_menu_event, (Menu::eventMask)(enterEvent | exitEvent), noStyle, SUBMENU(scanEnableToggle), OBJ(directionMenu),
+     SUBMENU(scanSaveToggle), OBJ(freqStepMenu), OBJ(freqPeriodMenu), OBJ(freqPauseDelay), OBJ(modeMenu), OBJ(squelchMenu), OBJ(freqEditMin), OBJ(freqEditMax));
 } // namespace scanner_ui

@@ -14,11 +14,14 @@
 #include "../lib/Menu/src/plugin/userMenu.h"
 #include "menu_options.h"
 #include "menu_prompts.h"
+#include <sys/_stdint.h>
 
 namespace freq_memory {
 
 int get_index();
+int find_index(st_freq_mem);
 void open_save_current();
+void save_freq(st_freq_mem item);
 
 // Custom frequency memory menu
 struct FreqMemoryMenu : Menu::UserMenu {

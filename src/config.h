@@ -28,8 +28,18 @@ extern os::periodic_task task;
 }
 
 struct st_vfo_config {
-    unsigned long freq = 106700000UL;
+    unsigned long freq = 144000000UL;
     unsigned long step = 1000;
+
+    // Copy
+    st_vfo_config &operator=(const st_vfo_config &o) {
+        freq = o.freq;
+        step = o.step;
+        return *this;
+    }
+
+    bool operator==(const st_vfo_config &st) const { return freq == st.freq && step == st.step; }
+    bool operator!=(const st_vfo_config &st) const { return !(*this == st); }
 };
 
 // DO NOT use a packed structure if memory constraints are not critical. The misalignment has caused

@@ -53,16 +53,16 @@ class MainView : public View {
     bool on_input(const st_inputEvent event) override;
 
   protected:
-    TitleBarWidget header_w = {{0, 0, DISPLAY_X_PIXELS / 2, HEADER_HEIGHT}, &lcd};
+    TitleBarWidget header_w = {{0, 0, DISPLAY_X_PIXELS / 2 - 60, HEADER_HEIGHT}, &lcd};
     StatusWidget status_w{{0, DISPLAY_Y_PIXELS - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
     DbScaleWidget dbscale_w{{DISPLAY_X_PIXELS - DBSCALE_WIDTH, HEADER_HEIGHT, DBSCALE_WIDTH, FFT_HEIGHT}, &lcd};
     TuneWidget tune_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, TUNE_INFO_HEIGHT}, &lcd};
 
     RadioStatusWidget radio_w{{METER_WIDTH, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, DISPLAY_X_PIXELS - METER_WIDTH, INFO_HEIGHT}};
-    SMeterWidget smeter_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT}, &lcd};
+    SMeterWidget smeter_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT - 20}, &lcd};
     PowerMeterWidget powmeter_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT}, &lcd};
     InfoWidget info_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5 + TUNE_INFO_HEIGHT, METER_WIDTH, FFT_INFO_HEIGHT}, &lcd};
-    FrequencyWidget frequency_w{{DISPLAY_X_PIXELS / 2, 0, DISPLAY_X_PIXELS / 2, HEADER_HEIGHT}};
+    FrequencyWidget frequency_w{{DISPLAY_X_PIXELS / 2 - 60, 0, DISPLAY_X_PIXELS / 2 + 60, HEADER_HEIGHT}};
     FFTWidget fft_w{{0, HEADER_HEIGHT, FFT_ZONE_WIDTH, FFT_WIDGET_HEIGHT}, &lcd, config.fft.spectrum_style};
     WaterfallWidget waterfall_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
     IQBalanceWidget iqbal_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};

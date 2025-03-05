@@ -86,7 +86,7 @@ Widget *processTouch(Widget *w, st_inputEvent *e) {
             }
         }
 
-        Rect r = w->screen_rect();
+        // Rect r = w->screen_rect();
         // printf_("Touched: %d,%d %d x %d %d %s\n", r.left(), r.top(), r.right(), r.bottom(), e->type, w->get_name());
         if (w->on_input(*e)) {
             // This widget responded. Return it up the call stack.
@@ -149,7 +149,7 @@ void processEvent(st_inputEvent *e) {
 
                     case BTN_ENCODER:
 
-                        bool very_long_press = e->ms > 2000;
+                        bool very_long_press = e->ms > VERY_LONG_PRESS_MS;
 
                         if (very_long_press) {
                             if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {

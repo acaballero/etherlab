@@ -5,8 +5,10 @@
 #ifndef TRX_FRONTEND_FREQUENCY_WIDGET_H
 #define TRX_FRONTEND_FREQUENCY_WIDGET_H
 
+#include "Signal.h"
 #include "input/inputEvent.h"
 #include "label_widget.h"
+#include "scanner.h"
 #include "view.h"
 #include "types.h"
 #include <stdint.h>
@@ -27,14 +29,18 @@ class FrequencyWidget : public View {
   protected:
     static constexpr uint8_t MARGIN = 3;
     static constexpr uint8_t LBLVFO_WIDTH = 24;
-    uint16_t freq_xpos = (area.box.width / 4) + LBLVFO_WIDTH + MARGIN * 3;
+    static constexpr uint8_t LBLSCAN_WIDTH = 50;
+    static constexpr uint8_t LBLRPT_WIDTH = 50;
+
+    uint16_t freq_xpos = LBLRPT_WIDTH + LBLVFO_WIDTH + LBLSCAN_WIDTH + MARGIN * 3;
     st_freqInfo status;
     void before_paint() override;
     void init();
     bool on_touch(const st_inputEvent) override;
 
-    Label lblRpt{{0, MARGIN, area.box.width / 4, area.box.height - MARGIN * 2}};
-    Label lblVFO{{(area.box.width / 4) + 2, MARGIN, LBLVFO_WIDTH, area.box.height - MARGIN * 2}};
+    Button btnRpt{{0, MARGIN, LBLRPT_WIDTH, area.box.height - MARGIN * 2}, display, ""};
+    Button btnScan{{LBLRPT_WIDTH + MARGIN, MARGIN, LBLSCAN_WIDTH, area.box.height - MARGIN * 2}, display, ""};
+    Button btnVFO{{LBLRPT_WIDTH + LBLSCAN_WIDTH + 2 * MARGIN, MARGIN, LBLVFO_WIDTH, area.box.height - MARGIN * 2}, display, ""};
     FrequencyWidgetInner freqWidget{{freq_xpos, MARGIN, area.box.width - freq_xpos, area.box.height}, &lcd};
 };
 

@@ -18,13 +18,12 @@ class Button : public Widget {
     static const size_t MAX_CHARS_UNIT = 4;
 
     std::function<void(Button &)> on_select{};
-
     std::function<void(Button &)> on_highlight{};
 
     Button() : Widget(){};
 
-    Button(Rect parent_rect, Display *display, const char *t, uint16_t fg_color, uint16_t bg_color = C565_GREY_LIGHT, ButtonStyle style = BUTTON_STYLE_FLAT,
-           Align aling = ALIGN_LEFT, uint32_t id = 0)
+    Button(Rect parent_rect, Display *display, const char *t, uint16_t fg_color = C565_BLACK, uint16_t bg_color = C565_GREY_LIGHT,
+           ButtonStyle style = BUTTON_STYLE_FLAT, Align aling = ALIGN_LEFT, uint32_t id = 0)
         : Widget(parent_rect, display), fg_color{fg_color}, bg_color{bg_color}, style(style) {
         set_aling(aling);
         set_text(t);
@@ -74,27 +73,33 @@ class Button : public Widget {
 
     void set_two_lines(bool b);
 
+    void set_dimmed(bool);
+
     std::function<void(void)> fn_writer; // Handler to delegate the writing
 
   protected:
     char text[MAX_CHARS];
-    char value[MAX_CHARS_VALUE];
-    char unit[MAX_CHARS_UNIT];
+    char value[MAX_CHARS_VALUE]{""};
+    char unit[MAX_CHARS_UNIT]{""};
     bool two_lines = false;
 
     int fd = 1;
 
     uint16_t fg_color = C565_DARKEST;
     uint16_t text_bg_color = C565_TRANSPARENT;
-    uint16_t fg_disabled_color = C565_GREY_LIGHT;
+    uint16_t fg_disabled_color = C565_BLACK;
     uint16_t fg_color_value = C565_BLUE;
     uint16_t fg_color_unit = C565_GREY_LIGHT;
     uint16_t fg_color_focused = C565_BLACK;
+    uint16_t fg_dimmed_color = C565_GREY_LIGHT;
     uint16_t bg_color = C565_GREY_LIGHT;
     uint16_t bg_color_focused = C565_WHITE;
-    uint16_t bg_disabled_color = C565_GREY_DARK;
+    uint16_t bg_disabled_color = C565_GREY_DARKER;
+    uint16_t bg_dimmed_color = C565_GREY_DARKER;
     uint16_t shadow_light = C565_WHITE;
     uint16_t shadow = C565_GREY_DARKER;
+
+    bool dimmed = false;
 
     ButtonStyle style = BUTTON_STYLE_FLAT;
 

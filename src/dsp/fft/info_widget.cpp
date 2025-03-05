@@ -53,7 +53,7 @@ void InfoWidget::paint_callback() {
     snprintf(buf, 12, " %.1f dB", fft_peak);
     display->print(buf);
 
-    snprintf(buf, 6, "%4d", (int)fft_noise_floor_db);
+    snprintf(buf, 6, "%4d", (int)fft::fft_noise_floor_db);
     display->print(" N.Floor: ", buf, " dB");
 
     display->gotoCharXY(0, 3);
@@ -62,7 +62,7 @@ void InfoWidget::paint_callback() {
 
     display->print("IF:", buf, " kHz");
 
-    snprintf(buf, 4, "%.1f", sstrength::db_to_s_strength(fft_noise_floor_db));
+    snprintf(buf, 4, "%.1f", sstrength::db_to_s_strength(fft::fft_noise_floor_db));
     display->print(" N.Floor S: ", buf, "");
 
     // snprintf(buf, 4, "%d", agc::get_gain());

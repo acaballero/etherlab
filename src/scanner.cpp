@@ -4,11 +4,15 @@
 
 #include "scanner.h"
 #include "config.h"
+#include <ctime>
 #include <hw/stm32.h>
+#include <sys/_stdint.h>
 #include "os/periodic_task.h"
 #include "radio.h"
 #include "s_strength.h"
 #include "printf.h"
+#include "types.h"
+#include "ui/frequency_memory_ui.h"
 
 namespace scanner {
 
@@ -23,11 +27,13 @@ Signal signal;
 // Time (ms) the scan has been paused
 unsigned long sweep_pause_time_ms = 0;
 
-// Time (ms) we are exiting a singal passband
-unsigned long sweep_exiting_time_ms = 0;
+// Last detected signal's vfo config
+st_vfo_config last_vfo_config;
 
 // Current detected signal strength
 float sstrength = 0;
+
+int nsaved = 0;
 
 radio::BAND current_band;
 
@@ -58,6 +64,27 @@ void stop() {
         scanner_config.status = SCANNER_STATUS_STOPPED;
         state = EXITING;
         signal.emit(&scanner_config);
+    }
+
+    nsaved = 0;
+}
+
+void toggle() {
+
+    if (scanner_config.freq_min == 0) {
+        nav.doNav(Menu::navCmd(Menu::enterCmd));
+        nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
+    } else {
+        if (scanner_config.status == SCANNER_STATUS_RUNNING && scanner_config.direction == FORWARD) {
+            scanner_config.direction = BACKWARDS;
+        } else if (scanner_config.status != SCANNER_STATUS_STOPPED) {
+            stop();
+        } else {
+
+            scanner_config.status = SCANNER_STATUS_RUNNING;
+            scanner_config.direction = FORWARD;
+            start();
+        }
     }
 }
 
@@ -105,6 +132,23 @@ void step(DIRECTION direction) {
     radio::update_freq();
 }
 
+void generate_string(char *buffer, size_t size, int number) {
+#if ENABLE_RTC
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
+    HAL_RTC_GetTime(&hrtc, &time, FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &date, FORMAT_BIN);
+
+    // Format the timestamp in RFC 3339 format
+    snprintf(buffer, size, "%02d%02d%02d", date.Year, date.Month, date.Date);
+#else
+    snprintf(buffer, size, "scanned", date.Year, date.Month, date.Date);
+#endif
+
+    // Append the integer to the formatted timestamp
+    snprintf(buffer + strlen(buffer), size - strlen(buffer), "_%d", number);
+}
+
 void sweep() {
 
     uint64_t t = HAL_GetTick();
@@ -124,19 +168,32 @@ void sweep() {
 
                 if (s < sstrength) {
                     // The signal strength starts decreasing, so we take a step backwards and pause or stop
-
                     // Step back
+
                     direction = scanner_config.direction == FORWARD ? BACKWARDS : FORWARD;
 
                     if (scanner_config.pause_ms) {
                         printf_("Pausing after PEAK: s: %.2f, last: %.2f", s, sstrength);
                         sweep_pause_time_ms = t;
+
+                        last_vfo_config = config.vfo[radio::get_vfo()];
+
                         state = EXITING;
+
+                        uint64_t freq = radio::get_frequency();
+                        if (scanner_config.save_found) {
+                            char name[FREQ_MEM_NAME_SIZE];
+                            generate_string(name, sizeof(name), nsaved++);
+                            freq_memory::save_freq({freq, config.modulation, name});
+                        }
+
                     } else {
                         printf_("Stopping after PEAK: s: %.2f, last: %.2f", s, sstrength);
                         stop();
                     }
                 }
+
+                sstrength = s;
                 break;
 
             case EXITING:
@@ -145,15 +202,13 @@ void sweep() {
                 // squelch. However, if the squelch is below the noise, we would stay in this state forever, so
                 // we set a limit
 
-                if (!sweep_exiting_time_ms) {
-                    sweep_exiting_time_ms = t;
-                }
-
-                if (s < scanner_config.squelch || (t - sweep_exiting_time_ms > (task.get_period() * 10))) {
+                if (std::abs((int64_t)(last_vfo_config.freq - config.vfo[radio::get_vfo()].freq)) >
+                    radio::if_filters[radio::if_filter].bandwidth_khz * 2 * 1000) {
                     printf_("EXITING: s: %.2f, last: %.2f", s, sstrength);
                     state = SEARCHING;
-                    sweep_exiting_time_ms = 0;
+                    last_vfo_config = {0, 0};
                 }
+
                 break;
 
             default:
@@ -167,7 +222,6 @@ void sweep() {
         }
 
         sstrength = s;
-
         step(direction);
     }
 }

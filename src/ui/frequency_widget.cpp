@@ -19,18 +19,24 @@
 
 void FrequencyWidget::init() {
 
-    add_children({&lblRpt, &lblVFO, &freqWidget});
+    scanner::signal.add(nullptr, [this](void *, void *) { set_dirty(); });
+
+    btnVFO.on_select = [](Button &) { radio::toggle_vfo(); };
+    btnScan.on_select = [](Button &) { scanner::toggle(); };
+
+    add_children({&btnRpt, &btnVFO, &btnScan, &freqWidget});
     set_name("freq_w");
 
-    for (Widget *lbl : View::children()) {
-        lbl->set_font((FontDef *)&Font_7x10);
-        lbl->set_aling(ALIGN_CENTER);
-        ((Label *)lbl)->set_style(ButtonStyle::BUTTON_STYLE_FLAT);
-        ((Label *)lbl)->set_bg(C565_VIOLET);
-        ((Label *)lbl)->set_color(C565_WHITE, C565_CYAN, C565_WHITE);
+    for (Widget *btn : View::children()) {
+        btn->set_font((FontDef *)&Font_7x10);
+        btn->set_aling(ALIGN_CENTER);
+        ((Button *)btn)->set_style(ButtonStyle::BUTTON_STYLE_FLAT);
+        ((Button *)btn)->set_bg(C565_VIOLET);
+        ((Button *)btn)->set_fg(C565_WHITE);
     }
 
-    lblRpt.on_select = [](Label &) { Menu::open(Menu::repeaterMenu); };
+    btnRpt.set_color(C565_WHITE, C565_CYAN, C565_YELLOW);
+    btnRpt.on_select = [](Button &) { Menu::open(Menu::repeaterMenu); };
 }
 
 void FrequencyWidget::before_paint() {
@@ -39,24 +45,41 @@ void FrequencyWidget::before_paint() {
 
     if (this->dirty() || !(freqInfo == this->status)) {
 
+        if (scanner::scanner_config.status == scanner::SCANNER_STATUS_RUNNING) {
+            if (scanner::scanner_config.direction == FORWARD) {
+                btnScan.set_text("SCN >>");
+            } else {
+                btnScan.set_text("<< SCN");
+            }
+
+            btnScan.set_dimmed(false);
+            btnRpt.set_enabled(false);
+        } else {
+            btnScan.set_text("SCN");
+            btnScan.set_dimmed(true);
+            btnRpt.set_enabled(true);
+        }
+
         char buf[20];
         if (config.repeater_mode != radio::RPT_MODE_OFF) {
 
             sprintf(buf, "%d", (int)config.repeater_offset / 1000);
 
             if (config.repeater_mode == radio::RPT_MODE_NEGATIVE) {
-                lblRpt.set_label(ISTX ? "TX+" : "RX-");
+                btnRpt.set_text(ISTX ? "TX+" : "RX-");
             } else {
-                lblRpt.set_label(ISTX ? "RX-" : "TX+");
+                btnRpt.set_text(ISTX ? "RX-" : "TX+");
             }
 
-            lblRpt.set_value(buf);
-            lblRpt.set_visible(true);
+            btnRpt.set_value(buf);
+            btnRpt.set_dimmed(false);
         } else {
-            lblRpt.set_visible(false);
+            btnRpt.set_dimmed(true);
+            btnRpt.set_text("RPT");
+            btnRpt.set_value("");
         }
 
-        lblVFO.set_label(radio::get_vfo() == 0 ? "A" : "B");
+        btnVFO.set_text(radio::get_vfo() == 0 ? "A" : "B");
         this->status = freqInfo;
         this->set_dirty();
     }
@@ -64,7 +87,7 @@ void FrequencyWidget::before_paint() {
 
 bool FrequencyWidget::on_touch(const st_inputEvent e) {
 
-    if (e.ms > 1000) {
+    if (e.ms > LONG_PRESS_MS) {
         freq_memory::open_save_current();
 
     } else {

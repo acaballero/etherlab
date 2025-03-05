@@ -88,13 +88,20 @@ fft_type fft_peak = FFT_MIN_DB;
 uint16_t fft_peak_bin = 0;
 uint64_t fft_peak_f = 0;
 
+bool first_frame = true;
 // TODO: Move to storable properties
 bool fft_min_db_auto = false;
 bool fft_estimateIQBalance = false;
 /* Noise floor calculation */
 uint16_t fft_calc_noise_floor_period_ms = 200; // 0 = noise floor disabled
 unsigned long fft_last_noise_floor_calculation_ms;
+
+namespace fft {
 float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
+}
+
+using namespace fft;
+
 fft_type fft_peak_v = config.fft.min_db;
 
 /* ----------- */
@@ -626,7 +633,7 @@ void processFFT(float32_t *v) {
 
                 db = fft_output_db(fft_output[bin_ix]);
                 fft_output[bin_ix] = db;
-                gain = getSmoothGain(db);
+                gain = first_frame ? 1 : getSmoothGain(db);
                 last_bin_ix = bin_ix;
             }
 
@@ -673,7 +680,7 @@ void processFFT(float32_t *v) {
 
             if (nix == next_display_ix) { // store the accumulated value of the display
 
-                gain = getSmoothGain(db);
+                gain = first_frame ? 1 : getSmoothGain(db);
 
                 db_constrained = fmin(db, config.fft.max_db);
 
@@ -910,8 +917,16 @@ void updateFFT() {
     uint8_t slices;
     unsigned long first_slice_center_f;
 
-    // Calculate the resolution bandwith (hz per bin) to have a bin per pixel
+    // Calculate the resolution bandwith (hz per bin) required to have a bin per pixel
+    uint64_t last_start_freq = fft_params.span_f_start;
     fft_config(fft_params.span);
+
+    if (last_start_freq != fft_params.span_f_start) {
+        // If the span has changed, cancel the smoot factor for a frame so the current values are preserved
+        first_frame = true;
+    } else {
+        first_frame = false;
+    }
 
     if (config.fft.view_mode == FFT_VIEW_TIME_DOMAIN) {
         slices = 1;
@@ -947,7 +962,7 @@ void updateFFT() {
             ((uint32_t)fft_params.bw << 1U) * (int32_t)fft_slice_n; // move to the next bandwidth of interest (set by the LPF before de ADC)
 
         //  GPIOB->BSRR= GPIO_PIN_5;
-        if (radio::f_iq != f) {
+        if (radio::f_iq != f) { // slice change
 
             radio::f_iq = f;
 

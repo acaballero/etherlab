@@ -194,17 +194,6 @@ void TitleBarWidget::paint_callback() {
         display->setColor(C565_WHITE);
     }
 
-    if (scanner::scanner_config.status == scanner::SCANNER_STATUS_RUNNING) {
-
-        display->setColor(C565_MAGENTA);
-
-        if (scanner::scanner_config.direction == FORWARD) {
-            display->print(" >>");
-        } else {
-            display->print(" <<");
-        }
-    }
-
     // TODO: GPSDO lock. Meanwhile, warmup time has passed
     uint32_t uptime = rtc_uptime();
     if (uptime > 8 * 60) {

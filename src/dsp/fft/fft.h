@@ -89,6 +89,8 @@ namespace fft {
 extern os::periodic_task fft_task;
 extern os::periodic_task iqbalance_task;
 extern os::periodic_task waterfall_task;
+
+extern float fft_noise_floor_db; // Noise floor in dB
 } // namespace fft
 
 complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b);
@@ -111,7 +113,7 @@ extern uint16_t fft_peak_bin;
 extern bool fft_min_db_auto;
 extern bool fft_estimateIQBalance;
 extern uint16_t fft_calc_noise_floor_period_ms;
-extern float fft_noise_floor_db; // Noise floor in dB
+
 // extern float fft_range;
 extern bool fft_mag_overload;
 extern volatile FFT_STATUS fft_status;

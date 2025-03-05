@@ -112,7 +112,7 @@ void TuneWidget::paint_callback() {
 void TuneWidget::before_paint() { this->set_dirty(); }
 
 bool TuneWidget::on_touch(const st_inputEvent e) {
-    if (e.ms > 1000) {
+    if (e.ms > LONG_PRESS_MS) {
         config.debug = false;
         return true;
     }

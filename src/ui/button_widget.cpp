@@ -16,7 +16,6 @@ char *Button::get_text() { return text; }
 void Button::set_two_lines(bool b) { two_lines = b; }
 
 void Button::before_paint() {
-
     if (this->dirty()) {
         display->setFont(font);
     }
@@ -28,10 +27,10 @@ void Button::paint_callback() {
 
     if (!enabled()) {
         fg = fg_disabled_color, bg = bg_disabled_color;
-    }
-
-    else if (is_focused() || active()) {
-
+    } else if (dimmed) {
+        fg = fg_dimmed_color;
+        bg = bg_dimmed_color;
+    } else if (is_focused() || active()) {
         fg = fg_color_focused;
         bg = bg_color_focused;
     }
@@ -172,6 +171,8 @@ void Button::set_color(uint16_t l, uint16_t v, uint16_t u) {
     fg_color_value = v;
     fg_color_unit = u;
 }
+
+void Button::set_dimmed(bool b) { dimmed = b; };
 
 uint16_t Button::get_bg() const { return bg_color; }
 

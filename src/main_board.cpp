@@ -211,15 +211,17 @@ bool _setMode(MODE mode, bool force) {
                 if_gain(RF_DIRECTION_RX, IF_GAIN_MINUS18, (config.modulation == FM || config.modulation == WFM) ? IF_GAIN_MINUS6 : IF_GAIN_MINUS30);
             }
 
-            if (config.hpa_enabled)
+            if (config.hpa_enabled) {
                 power_amp::enable();
+            }
             rf_coupler::enable();
 
         } else {
 
             rf_coupler::disable();
-            if (config.hpa_enabled)
+            if (config.hpa_enabled) {
                 power_amp::disable();
+            }
 
             HAL_Delay(10);
 

@@ -8,7 +8,7 @@
 #include "stdio.h"
 #include "types.h"
 
-#define SCANNER_MIN_DELAY_MS 40
+#define SCANNER_MIN_DELAY_MS 5
 #define SCANNER_MAX_DELAY_MS 1000
 
 namespace scanner {
@@ -42,6 +42,7 @@ extern st_scanner_info scanner_config;
 extern Signal signal;
 extern os::periodic_task task;
 void stop();
+void toggle();
 
 void configure(st_scanner_info &);
 } // namespace scanner

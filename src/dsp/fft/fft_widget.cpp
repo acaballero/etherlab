@@ -159,7 +159,7 @@ void FFTWidget::draw_peak() {
 void FFTWidget::draw_noise_floor() {
     if (fft_calc_noise_floor_period_ms > 0) {
         uint16_t py =
-            FFT_HEIGHT - (uint8_t)(((float)(fft_noise_floor_db - config.fft.min_db) / (float)(config.fft.max_db - config.fft.min_db)) * (float)FFT_HEIGHT);
+            FFT_HEIGHT - (uint8_t)(((float)(fft::fft_noise_floor_db - config.fft.min_db) / (float)(config.fft.max_db - config.fft.min_db)) * (float)FFT_HEIGHT);
         display->writeLine(0, py, FFT_ZONE_WIDTH - 1, py, C565_PINK);
     }
 }

@@ -7,6 +7,7 @@
 
 #include "widget.h"
 #include "types.h"
+#include <sys/_stdint.h>
 
 #define MINOR_TICK_GAP 1
 #define S_LEVELS 9
@@ -34,6 +35,7 @@ class SMeterWidget : public Widget {
 
   protected:
     static constexpr int margin_top = 12;
+    static constexpr int32_t update_period_ms = 100;
     void before_paint() override;
 
     float get_s_level(float current, float smooth_factor);
@@ -41,6 +43,8 @@ class SMeterWidget : public Widget {
     st_meter_widget_state get_state();
 
     st_meter_widget_state state;
+
+    uint64_t last_update_ms{0};
 };
 
 #endif // TRX_FRONTEND_SMETER_WIDGET_H

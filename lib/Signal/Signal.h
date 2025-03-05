@@ -1,12 +1,13 @@
 #ifndef SIGNAL_H
 #define SIGNAL_H
 
+#include <functional>
 #include <stdio.h>
 
 #define MAX_LISTENERS 3
 
 typedef uint32_t SignalToken;
-typedef void(*Callback)(void *caller,void *params);
+typedef std::function<void(void *caller, void *params)> Callback;
 
 struct Signal {
 
@@ -15,20 +16,22 @@ struct Signal {
         if (next_token < MAX_LISTENERS) {
             const SignalToken token = next_token++;
             CallbackEntry listener{caller, callback, token};
-            listeners[token-1] = listener;
+            listeners[token - 1] = listener;
             return token;
         } else {
             return 0;
         }
     }
 
-    bool remove(const SignalToken token) {
+    bool remove(const SignalToken) {
 
         bool found = false;
         uint16_t i = 0;
         while (!found && i < MAX_LISTENERS) {
             found = listeners[i].token == i;
-            if (!found) i++;
+            if (!found) {
+                i++;
+            }
         }
         if (found) {
             while (i < MAX_LISTENERS - 1) {
@@ -41,28 +44,25 @@ struct Signal {
         }
 
         return found;
-
     }
 
     void emit(void *args) {
         int i = 0;
         while (listeners[i].token > 0) {
-            listeners[i].callback(listeners[i].caller,args);
+            listeners[i].callback(listeners[i].caller, args);
             i++;
         }
     }
 
-private:
-
+  private:
     struct CallbackEntry {
         void *caller;
         Callback callback;
         SignalToken token;
     };
 
-
     CallbackEntry listeners[MAX_LISTENERS];
     SignalToken next_token = 1;
 };
 
-#endif/*SIGNAL_H*/
+#endif /*SIGNAL_H*/

@@ -64,8 +64,8 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                     break;
                 case BTN_ENCODER:
 
-                    long_press = e.ms > 500;
-                    very_long_press = e.ms > 3000;
+                    long_press = e.ms > LONG_PRESS_MS;
+                    very_long_press = e.ms > VERY_LONG_PRESS_MS;
 
                     if (!very_long_press) {
                         if (long_press) {

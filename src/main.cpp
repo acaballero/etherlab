@@ -16,6 +16,7 @@
 #include "status.h"
 #include "stm32f4xx_hal.h"
 #include "os/task_manager.h"
+#include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
@@ -140,6 +141,8 @@ void standby_signal_callback(void *, void *) {
     }
 }
 
+GPIO_PinState mute_state;
+
 void frequency_signal_callback(void *, void *args) {
 
     radio::st_freq_event event = *((radio::st_freq_event *)args);
@@ -147,11 +150,12 @@ void frequency_signal_callback(void *, void *args) {
     switch (event.event) {
 
         case radio::BEFORE_UPDATE:
+            mute_state = main_board::getMute();
             // Prevent audio transients
             main_board::setMute(GPIO_PIN_SET);
             break;
         case radio::AFTER_UPDATE:
-            main_board::setMute(GPIO_PIN_RESET);
+            main_board::setMute(mute_state);
 
             if (config.filter == radio::BAND_AUTO) {
                 main_board::set_filter();
@@ -164,8 +168,8 @@ void frequency_signal_callback(void *, void *args) {
 
 void test() {
     // Go to a  function to avoid having to use the menu again and again
-    nav.doNav(Menu::navCmd(Menu::enterCmd));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
+    // nav.doNav(Menu::navCmd(Menu::enterCmd));
+    // nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 0));
     // nav.doNav(Menu::navCmd(Menu::enterCmd));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 2));

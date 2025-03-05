@@ -102,7 +102,7 @@ float get_s_strength(bool filter, uint8_t channel) {
 float update_s_strength() {
 
     // s_level = get_s_strength(false, config.modulation == SSB_LSB || config.modulation == SSB_USB ? S_STRENGTH_ADC_CHANNEL : RSSI_ADC_CHANNEL);
-    // The new AGC board outputs the conditioned RSSI level at its AFSI output, so we can use the same ADC channel to read it on either mode
+    // The current AGC board outputs the conditioned RSSI level at its AFSI output, so we can use the same ADC channel to read it on either mode
 
     s_level = get_s_strength(false, S_STRENGTH_ADC_CHANNEL);
     return s_level;
@@ -120,7 +120,7 @@ void check_signal_strength() {
 
         if (config.squelch_auto) {
             // If squelch is in auto mode, it's level is calculated from the noise floor
-            squelch_level = db_to_s_strength(fft_noise_floor_db) + 1.5;
+            squelch_level = db_to_s_strength(fft::fft_noise_floor_db) + 1.5;
         } else {
             squelch_level = config.squelch_level;
         }

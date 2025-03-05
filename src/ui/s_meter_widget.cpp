@@ -4,11 +4,14 @@
 
 #include "s_meter_widget.h"
 #include "../config.h"
+#include "input/inputEvent.h"
 #include "ips_font.h"
 #include "s_strength.h"
 #include "frequency_widget.h"
+#include "stm32f4xx_hal.h"
 #include "view_manager.h"
 #include "menu_prompts.h"
+#include <sys/_stdint.h>
 
 void SMeterWidget::paint_callback() {
 
@@ -103,9 +106,10 @@ float SMeterWidget::get_s_level(float current, float smooth_factor) {
 }
 
 st_meter_widget_state SMeterWidget::get_state() {
+
     st_meter_widget_state new_state;
     new_state.s_level = get_s_level(state.s_level, 0.3);
-    new_state.peak_s_level = fmax(get_s_level(state.peak_s_level, 0.03), new_state.s_level);
+    new_state.peak_s_level = fmax(get_s_level(state.peak_s_level, 0.08), new_state.s_level);
     return new_state;
 }
 
@@ -113,9 +117,15 @@ void SMeterWidget::before_paint() {
 
     st_meter_widget_state current_state = get_state();
 
-    if (this->dirty() || !(current_state == state)) { // Update only if status has changed
-        this->set_dirty();
+    if (!(current_state == state)) {
         state = current_state;
+    }
+
+    // Limit update rate
+    uint64_t t = HAL_GetTick();
+    if (t - last_update_ms > update_period_ms) {
+        last_update_ms = t;
+        this->set_dirty();
     }
 }
 
@@ -125,7 +135,7 @@ bool SMeterWidget::on_input(const st_inputEvent event) {
 
         case INPUT_EVENT_TYPE_TOUCH_END:
 
-            if (event.ms > 1000) { // Long press
+            if (event.ms > LONG_PRESS_MS) { // Long press
                 config.debug = true;
             } else {
                 Menu::open_keypad<float>(

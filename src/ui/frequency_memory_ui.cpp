@@ -5,8 +5,11 @@
  */
 
 #include "frequency_memory_ui.h"
+#include "config.h"
 #include "menuBase.h"
+#include "radio.h"
 #include "types.h"
+#include <sys/_stdint.h>
 
 namespace freq_memory {
 
@@ -46,23 +49,54 @@ void saveTarget() {
     }
 }
 
-void open_save_current() {
+/**
+ * Retrieves the index of a stored frequency by frequency and mode
+ */
+int find_index(st_freq_mem data) {
 
-    view_manager::keyboardView.set_text("");
-    view_manager::keyboardView.set_label("Name");
-    view_manager::keyboardView.set_size(FREQ_MEM_NAME_SIZE);
-    view_manager::keyboardView.on_changed = [](char *str) {
-        curr_index = get_index();
-        strncpy(tempFreqMem.name, str, FREQ_MEM_NAME_SIZE);
-        tempFreqMem.freq = radio::get_frequency();
-        tempFreqMem.mode = config.modulation;
-        config.freqs[curr_index] = tempFreqMem;
+    uint16_t i = 0;
+    for (; i < FREQ_MEM_SIZE; i++) {
+        if (config.freqs[i].freq == data.freq && config.freqs[i].mode == data.mode) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void save_freq(st_freq_mem item) {
+
+    int i = find_index(item);
+
+    if (i < 0) {
+        i = get_index();
+    }
+
+    using namespace status;
+
+    if (i < 0) {
+        handleError(ST_ERROR, "Memory full");
+    } else {
+        config.freqs[i] = item;
         using namespace status;
         if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {
             handleError(ST_INFO, "Saved");
         } else {
             handleError(ST_ERROR, "Error saving");
         }
+    }
+}
+
+void open_save_current() {
+
+    view_manager::keyboardView.set_text("");
+    view_manager::keyboardView.set_label("Name");
+    view_manager::keyboardView.set_size(FREQ_MEM_NAME_SIZE);
+    view_manager::keyboardView.on_changed = [](char *str) {
+        strncpy(tempFreqMem.name, str, FREQ_MEM_NAME_SIZE);
+        tempFreqMem.mode = config.modulation;
+        tempFreqMem.freq = radio::get_frequency();
+        save_freq(tempFreqMem);
     };
     view_manager::push((View *)&view_manager::keyboardView);
 }

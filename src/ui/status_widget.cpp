@@ -125,6 +125,8 @@ void StatusWidget::before_paint() {
             disabled_bg = C565_GREY_DARK;
             fg_color_auto = C565_MAGENTA;
 
+            btnAgc.set_enabled(false);
+
         } else {
             fg_color = C565_BLACK;
             bg_color = C565_WHITE;
@@ -132,12 +134,13 @@ void StatusWidget::before_paint() {
             disabled_color = C565_GREY_DARK;
             disabled_bg = C565_GREY_LIGHT;
             fg_color_auto = C565_MAGENTA;
+
+            btnAgc.set_dimmed(!config.agc_enabled);
         }
 
         btnBand.set_enabled(!ISTX);
         btnFilter1.set_enabled(!ISTX);
         btnFilter2.set_enabled(!ISTX);
-        btnAgc.set_enabled(ISTX || config.agc_enabled);
         btnFrontend.set_enabled(!ISTX);
 
         if (Menu::menuStatus == Menu::IDLE) {
