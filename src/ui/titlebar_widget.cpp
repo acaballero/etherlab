@@ -5,6 +5,7 @@
 #include <scanner.h>
 #include <rf_coupler.h>
 #include <stdint.h>
+#include "Display_afb.h"
 #include "ips_font.h"
 #include "titlebar_widget.h"
 #include "config.h"
@@ -118,7 +119,7 @@ void TitleBarWidget::paint_callback() {
 #if USB_ENABLED
     switch (getConnectionStatus()) {
         case USB_CONN_STATUS_CONNECTED:
-            color = C565_GREY_LIGHT;
+            color = C565_GREEN;
             break;
         case USB_CONN_STATUS_DISCONNECTED:
             color = C565_GREY_DARK;

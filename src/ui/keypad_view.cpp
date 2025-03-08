@@ -193,6 +193,14 @@ void KeypadView::on_button(Button &button) {
 
         double v = value();
 
+        if (min != max) {
+            double v2 = constrain(v, min, max);
+            if (v2 != v) {
+                ftoa(buff, MAX_DIGITS, v2, frac_digits);
+                v = v2;
+            }
+        }
+
         if (on_changed) {
             on_changed(v * multiplier);
         }
@@ -226,14 +234,6 @@ void KeypadView::on_button(Button &button) {
 void KeypadView::update_text() {
 
     double v = value();
-
-    if (min != max) {
-        double v2 = constrain(v, min, max);
-        if (v2 != v) {
-            ftoa(buff, MAX_DIGITS, v2, frac_digits);
-            v = v2;
-        }
-    }
 
     double i;
     double fracPart = modf(v, &i);

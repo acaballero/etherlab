@@ -8,8 +8,8 @@ Menu::result delete_file(Menu::eventMask e) {
 
     char path[PATH_SIZE];
 
-    strncpy(path, filePicker.focusedFolder, PATH_SIZE-1);
-    strncat(path, filePicker.focusedFile, PATH_SIZE-1);
+    strncpy(path, filePicker.focusedFolder, PATH_SIZE - 1);
+    strncat(path, filePicker.focusedFile, PATH_SIZE - 1);
 
     FRESULT res = f_unlink(path);
 
@@ -26,10 +26,10 @@ Menu::result delete_file(Menu::eventMask e) {
 using namespace Menu;
 
 prompt *subData[] = {
-        new prompt("Delete", delete_file, enterEvent),
-        new Exit("<Back")
+    new prompt("Delete", delete_file, enterEvent),
+
 };
 
 menuNode fileSubmenu = menuNode("Options", sizeof(subData) / sizeof(prompt *), subData);
 
-SDMenuT filePicker("File", "", doNothing, (eventMask) (updateEvent | enterEvent | refreshEvent));
+SDMenuT filePicker("File", "", doNothing, (eventMask)(updateEvent | enterEvent | refreshEvent));

@@ -74,8 +74,6 @@ uint8_t flash_write(uint32_t *src, uint32_t size) {
 }
 */
 
-uint16_t VirtAddVarTab[NB_OF_VAR];
-
 uint8_t flash_write(uint16_t *src, uint32_t size) {
 
     HAL_FLASH_Unlock();

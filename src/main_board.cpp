@@ -83,6 +83,9 @@ void rf_coupler_info_callback(void *thisptr, void *args) { check_status(); }
 void battery_callback(void *thisptr, void *args) { check_status(); }
 
 void init() {
+
+    setup_board_peripherals();
+
     power_amp::status_signal.add(NULL, power_amp_status_callback);
     rf_coupler::rf_coupler_signal.add(NULL, rf_coupler_info_callback);
     rf_coupler::set_offset(config.coupler_0db_mv);
@@ -382,7 +385,7 @@ void setModulationMode(int mod_val, bool force) {
             commitGPIOExpPort(&hmcp02, MCP23017_PORTB);
             radio::update_freq();
             // Set the mute in its original state
-            HAL_Delay(100); // skip the audio transient if any
+            // HAL_Delay(100); // skip the audio transient if any
         }
 
         setMute(muteState);

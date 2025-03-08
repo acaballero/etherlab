@@ -16,7 +16,7 @@ int16_t ST7789::begin(void) {
     ST7789_RST_Clr();
     HAL_Delay(10);
     ST7789_RST_Set();
-    HAL_Delay(100);
+    HAL_Delay(50);
 
     // Software reset
     writeCommand(ST7796S_SWRESET);
@@ -121,13 +121,13 @@ int16_t ST7789::begin(void) {
         writeData(data, sizeof(data));
     }
 
-    HAL_Delay(100);
+    HAL_Delay(50);
     writeCommand(ST7796S_NORON);
     writeCommand(ST7796S_INVOFF);
     writeCommand(ST7796S_SLPOUT);
-    HAL_Delay(100);
+    HAL_Delay(50);
     writeCommand(ST7796S_DISPON);
-    HAL_Delay(100);
+    HAL_Delay(50);
 
     // Backlight on
     HAL_GPIO_WritePin(ST7789_LED_PORT, ST7789_LED_PIN, GPIO_PIN_RESET);

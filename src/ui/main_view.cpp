@@ -16,21 +16,22 @@
 
 MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPLAY_Y_PIXELS + DISPLAY_PADDING * 2}) {
 
-    this->set_name("main");
-    this->tune_w.set_name("tune");
-    this->fft_w.set_name("fft");
-    this->waterfall_w.set_name("waterfall");
-    this->radio_w.set_name("radio");
-    this->info_w.set_name("info");
-    this->menu_w.set_name("menu");
-    this->smeter_w.set_name("smeter");
-    this->powmeter_w.set_name("powmeter");
-    this->optionButtonsView.set_name("options");
-    this->numberEditView.set_name("numedt");
-    this->msg_w.set_name("msg");
-    this->iqbal_w.set_name("iqbal");
-    this->status_w.set_name("status");
-    this->header_w.set_name("header");
+    // Set names for debuggin purposes
+    // this->set_name("main");
+    // this->tune_w.set_name("tune");
+    // this->fft_w.set_name("fft");
+    // this->waterfall_w.set_name("waterfall");
+    // this->radio_w.set_name("radio");
+    // this->info_w.set_name("info");
+    // this->menu_w.set_name("menu");
+    // this->smeter_w.set_name("smeter");
+    // this->powmeter_w.set_name("powmeter");
+    // this->optionButtonsView.set_name("options");
+    // this->numberEditView.set_name("numedt");
+    // this->msg_w.set_name("msg");
+    // this->iqbal_w.set_name("iqbal");
+    // this->status_w.set_name("status");
+    // this->header_w.set_name("header");
 
     this->fft_w.set_show_fps(true);
     // this->waterfall_w.set_show_fps(true);
@@ -139,8 +140,7 @@ bool MainView::on_input(const st_inputEvent event) {
 
             consumed = menu_w.on_input(event);
             if (consumed) {
-
-                //  menu_w.set_visible(true);
+                // menu_w.set_visible(true);
                 // menu_w.set_focus(true);
             }
         } else if (!event.is_touch()) {

@@ -64,6 +64,21 @@ int find_index(st_freq_mem data) {
     return -1;
 }
 
+/**
+ * Retrieves a register by channel id
+ */
+st_freq_mem *find_id(uint16_t group, uint16_t id) {
+
+    uint16_t i = 0;
+    for (; i < FREQ_MEM_SIZE; i++) {
+        if (config.freqs[i].id == id && config.freqs[i].group == group) {
+            return &config.freqs[i];
+        }
+    }
+
+    return nullptr;
+}
+
 void save_freq(st_freq_mem item) {
 
     int i = find_index(item);
@@ -127,6 +142,17 @@ result edit_freq(eventMask, navNode &) {
         config.f_min, config.f_max);
 
     return proceed;
+}
+
+void del_freq(int i) {
+    config.freqs[i] = {};
+
+    using namespace status;
+    if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {
+        handleError(ST_INFO, "Deleted");
+    } else {
+        handleError(ST_ERROR, "Error deleting");
+    }
 }
 
 labelPrompt freqNameMenu((const char *)"Name", tempFreqMem.name, edit_freq_name, enterEvent, noStyle);

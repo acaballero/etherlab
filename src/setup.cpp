@@ -6,6 +6,7 @@
 #include "hw/stm32.h"
 #include "hw/hw_config.h"
 #include "hw/stm32f4xx/eeprom.h"
+#include "stm32f4xx_hal.h"
 #include "ui/menu.h"
 #include "settings.h"
 #include "status.h"
@@ -37,7 +38,7 @@ void initPowerControl() {
 
     // Note that, at this point, the MCP32017 ports are just been set to outputs (BitBangI2C_setup),
     // changing their state from high impedance (they are inputs at startup) to a driven LOW level.
-    // This makes the next statement unnecessary. But anyway, we leave it for clarity
+    // This makes the next statement unnecessary. But anyway, I leave it for clarity
 }
 
 // extern void initialise_monitor_handles(void);
@@ -101,11 +102,11 @@ void setup() {
         status::handleError(status::ST_ERROR, "Settings read error");
     }
 
+    main_board::init();
+
     lcd_init();
 
     menu_setup();
-
-    setup_board_peripherals();
 
     fftInit();
 
@@ -114,8 +115,6 @@ void setup() {
 #endif
 
     radio::set_band();
-
-    main_board::init();
 
 #if USE_FRAmE_BUFFER && LCD_ENABLED
     lcd.renderAll();

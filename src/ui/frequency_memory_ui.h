@@ -4,6 +4,7 @@
 #ifndef TRX_FRONTEND_FREQUENCY_MEMORY_UI_H
 #define TRX_FRONTEND_FREQUENCY_MEMORY_UI_H
 
+#include "menuBase.h"
 #include "types.h"
 #include "config.h"
 #include "menu.h"
@@ -22,6 +23,8 @@ int get_index();
 int find_index(st_freq_mem);
 void open_save_current();
 void save_freq(st_freq_mem item);
+void del_freq(int ix);
+st_freq_mem *find_id(uint16_t group, uint16_t id);
 
 // Custom frequency memory menu
 struct FreqMemoryMenu : Menu::UserMenu {
@@ -54,18 +57,22 @@ struct FreqMemoryMenu : Menu::UserMenu {
     void doNav(Menu::navNode &nav, Menu::navCmd cmd) override {
 
         switch (cmd.cmd) {
-            case Menu::idxCmd: // Index selected
+            case Menu::idxCmd: // long clicked
 
+                if (config.freqs[nav.sel].freq) {
+                }
+
+                break;
+
+            case Menu::enterCmd: // clicked
                 if (config.freqs[nav.sel].freq) {
                     radio::set_frequency(config.freqs[nav.sel].freq);
                 }
-
-                // Exit menu
-                // UserMenu::doNav(nav, Menu::escCmd);
                 break;
-
             default:
+
                 UserMenu::doNav(nav, cmd);
+
                 break;
         }
     }

@@ -99,6 +99,10 @@ void configure(st_scanner_info &config) {
             config.period_s = 1;
         }
 
+        // Adjust to multiples of the step
+        config.freq_min = (config.freq_min / config.freq_step) * config.freq_step - config.freq_step / 2;
+        config.freq_max = (config.freq_max / config.freq_step) * config.freq_step + config.freq_step / 2;
+
         uint32_t steps = ((float)(config.freq_max - config.freq_min) / (float)config.freq_step);
 
         uint32_t task_period_ms = (float)config.period_s * 1000 / (float)steps;
@@ -184,7 +188,7 @@ void sweep() {
                         if (scanner_config.save_found) {
                             char name[FREQ_MEM_NAME_SIZE];
                             generate_string(name, sizeof(name), nsaved++);
-                            freq_memory::save_freq({freq, config.modulation, name});
+                            freq_memory::save_freq({0, 0, freq, config.modulation, name});
                         }
 
                     } else {
@@ -202,8 +206,7 @@ void sweep() {
                 // squelch. However, if the squelch is below the noise, we would stay in this state forever, so
                 // we set a limit
 
-                if (std::abs((int64_t)(last_vfo_config.freq - config.vfo[radio::get_vfo()].freq)) >
-                    radio::if_filters[radio::if_filter].bandwidth_khz * 2 * 1000) {
+                if (std::abs((int64_t)(last_vfo_config.freq - config.vfo[radio::get_vfo()].freq)) > scanner_config.freq_step * 2) {
                     printf_("EXITING: s: %.2f, last: %.2f", s, sstrength);
                     state = SEARCHING;
                     last_vfo_config = {0, 0};

@@ -98,8 +98,6 @@ EE_Status EE_Init(void);
 EE_Status EE_ReadVariable(EE_VIRTUALADDRESS_TYPE, EE_DATA_STORED_TYPE *Data);
 EE_Status EE_WriteVariable(EE_VIRTUALADDRESS_TYPE VirtAddress, EE_DATA_STORED_TYPE Data);
 static uint32_t EE_GetPageNumber(uint32_t Address);
-/* Virtual address defined by the user: 0xFFFF value is prohibited */
-extern EE_VIRTUALADDRESS_TYPE VirtAddVarTab[];
 
 #endif /* __EEPROM_H */
 

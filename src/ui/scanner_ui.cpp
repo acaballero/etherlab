@@ -9,6 +9,7 @@
 #include "Signal.h"
 #include "dsp/fft/fft.h"
 #include "menuBase.h"
+#include "radio.h"
 #include "s_strength.h"
 #include "types.h"
 #include "ui/menu.h"
@@ -63,9 +64,11 @@ Menu::result on_menu_event(Menu::eventMask e) {
         case Menu::enterEvent:
 
             if (scanner_config.freq_min == 0) {
-                scanner_config = {.freq_min = radio::get_frequency() - 200000,
+                scanner_config = {//.freq_min = radio::bands[radio::get_band()].freq_start,
+                                  //.freq_max = radio::bands[radio::get_band()].freq_end,
+                                  .freq_min = radio::get_frequency() - 200000,
                                   .freq_max = radio::get_frequency() + 200000,
-                                  .freq_step = 1000,
+                                  .freq_step = radio::if_filters[radio::if_filter].bandwidth_khz * 1000U,
                                   .squelch = 0,
                                   .pause_ms = 2000,
                                   .period_s = 1,
@@ -98,6 +101,10 @@ using namespace Menu;
 menu_option_st<scanner::SCANNER_MODE> mode_options[] = {
     {"Custom", scanner::SCANNER_MODE_CUSTOM}, {"Band", scanner::SCANNER_MODE_BAND}, {"List", scanner::SCANNER_MODE_LIST}};
 
+menu_option_st<uint32_t> filter_options[] = {{radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::if_filters[radio::IF_FILTER_3KHZ].bandwidth_khz * 1000U},
+                                             {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::if_filters[radio::IF_FILTER_15KHZ].bandwidth_khz * 1000U},
+                                             {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::if_filters[radio::IF_FILTER_150KHZ].bandwidth_khz * 1000U}};
+
 optionsPrompt<scanner::SCANNER_MODE> modeMenu((const char *)"Direction", mode_options, scanner_config.mode, sizeof(mode_options) / sizeof(mode_options[0]),
                                               [](scanner::SCANNER_MODE) { configure(); });
 
@@ -113,8 +120,9 @@ TOGGLE(scanner_config.status, scanEnableToggle, "Status: ", configure, enterEven
 TOGGLE(scanner_config.save_found, scanSaveToggle, "Save: ", configure, enterEvent, noStyle, VALUE("Yes", true, doNothing, noEvent),
        VALUE("No", false, doNothing, noEvent));
 
-Menu::numberPrompt<uint32_t> freqStepMenu((const char *)"Step", &scanner_config.freq_step, 0, ' ', '.', "Hz", [](uint32_t) { configure(); }, 1000, 1000000,
-                                          1000, 10000);
+// In alalog scan, the step must be equal to the IF filter bandwidth so the expected signals lie in the middle of the passband. Otherwise, we'd have to work
+// hard to discern the center frequency when a signal is detected and also when moving away from the last detected signal.
+Menu::optionsPrompt<uint32_t> freqStepMenu((const char *)"Step", filter_options, scanner_config.freq_step, 3, [](uint16_t) { configure(); });
 
 Menu::numberPrompt<uint16_t> freqPeriodMenu((const char *)"Period", &scanner_config.period_s, 0, ' ', '.', "s", [](uint16_t) { configure(); }, 1, 60000, 1, 10);
 

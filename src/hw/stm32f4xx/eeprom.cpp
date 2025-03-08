@@ -121,13 +121,6 @@ EE_Status EE_Init(void) {
     HAL_FLASH_Unlock();
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 
-    /* check the variable definition */
-    for (uint32_t varidx = 0; varidx < NB_OF_VAR; varidx++) {
-        if (VirtAddVarTab[varidx] == 0xFFFF) {
-            return EE_INVALID_VIRTUALADRESS;
-        }
-    }
-
     /* Get Page0 status */
     pagestatus0 = (*(__IO EE_DATA_TYPE *)PAGE0_BASE_ADDRESS);
     /* Get Page1 status */
@@ -516,14 +509,14 @@ static EE_Status EE_PageTransfer(EE_VIRTUALADDRESS_TYPE VirtAddress, EE_DATA_STO
 
     /* Transfer process: transfer variables from old to the new active page */
     for (varidx = 0; varidx < NB_OF_VAR; varidx++) {
-        if (VirtAddVarTab[varidx] != VirtAddress) /* Check each variable except the one passed as parameter */
+        if (varidx != VirtAddress) /* Check each variable except the one passed as parameter */
         {
             /* Read the other last variable updates */
-            if (EE_ReadVariable(VirtAddVarTab[varidx], &DataValue) == EE_OK) {
+            if (EE_ReadVariable(varidx, &DataValue) == EE_OK) {
                 /* In case variable corresponding to the virtual address was found */
                 /* Transfer the variable to the new active page */
                 /* If program operation was failed, a Flash error code is returned */
-                if (EE_VerifyPageFullWriteVariable(VirtAddVarTab[varidx], DataValue) != EE_OK) {
+                if (EE_VerifyPageFullWriteVariable(varidx, DataValue) != EE_OK) {
                     return EE_WRITE_ERROR;
                 }
             }

@@ -69,6 +69,7 @@ class MainView : public View {
     MenuWidget menu_w{{0, MENU_START_Y, DISPLAY_X_PIXELS, INFO_HEIGHT}, &lcd};
     OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
     NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
+    Label snr_w{{0, 0, 20, 0}};
 
     MessageWidget msg_w{
         {6, MENU_START_Y, DISPLAY_X_PIXELS - 12, INFO_HEIGHT - 6}, &lcd, (FontDef *)&Font_11x18, (FontDef *)&Font_7x10, C565_GREY_DARK, C565_RED, C565_WHITE};

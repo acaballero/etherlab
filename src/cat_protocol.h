@@ -10,6 +10,7 @@
 #include "cat_if.h"
 
 // iCOM  CI-V protocol
+// See https://www.icomeurope.com/wp-content/uploads/2020/08/IC-705_ENG_CI-V_1_20200721.pdf
 
 #define BROADCAST_ADDRESS 0x00  // Broadcast address
 #define CONTROLLER_ADDRESS 0xE0 // Controller address
@@ -31,10 +32,24 @@
 #define CMD_SET_VFO 0x07 // Write VFO
 
 #define CMD_READ_SPLIT_MODE 0x0F // Read Split ON/OFF
+#define CMD_READ_ATT 0x11
 
 #define CMD_SET_VFO_A 0x00
 #define CMD_SET_VFO_B 0x01
 #define CMD_SET_VFO_AB 0xA0
+
+// 0x1C commads
+#define CMD_SEND_READ_MODE 0x00
+#define CMD_SEND_READ_TUNER 0x01
+#define CMD_SEND_READ_XFC 0x02
+#define CMD_READ_TX_FREQ 0x03
+
+// 0x15 commands
+#define CMD_READ_SQUELCH_STATUS 0x01
+#define CMD_READ_OTHER_SQUELCH_STATUS 0x05
+#define CMD_READ_OVF_STATUS 0x07
+#define CMD_READ_S_METER 0x02
+#define CMD_READ_VCC 0x15
 
 #define CMD_SET_VFO_FREQ 0x25 // Write VFO freq
 #define CMD_SET_VFO_MODE 0x26 // Write VFO mode
@@ -43,8 +58,14 @@
 #define SUBCMD_OFF 0x00
 #define SUCBMD_ON 0x01
 
+#define CMD_SEND_READ_LEVELS 0x14
+
 #define CMD_EXTENDED 0x1A // Extended
+#define SUBCMD_SET_READ_MEM 0x00
 #define SUBCMD_READ_IF_WIDTH 0x03
+#define SUBCMD_READ_AGC_TIME_CONSTANT 0x04
+#define SUBCMD_SET 0x05
+#define SUBCMD_SET_READ_REF 0x0089 // 0000=0% 0255=100%
 
 #define IF_PASSBAND_WIDTH_WIDE 0x01
 #define IF_PASSBAND_WIDTH_MEDIUM 0x02

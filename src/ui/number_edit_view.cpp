@@ -103,6 +103,7 @@ void NumberEditView::init() {
 void NumberEditView::on_focus() { buttons[CANCEL].set_focus(true); }
 
 void NumberEditView::update_value(double v) {
+
     value = constrain(v, min, max);
 
     char buff[max_length];
@@ -173,6 +174,7 @@ void NumberEditView::on_button(Button &button) {
 
             if (on_changed) {
                 if (button.id == OK) {
+
                     on_changed(value);
                 } else {
                     if (initial_value != value) {

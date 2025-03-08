@@ -135,8 +135,9 @@ void PowerMeterWidget::before_paint() {
 
     rf_coupler::rf_coupler_info current_info{.v_for = 0, .v_ref = 0, .p_for_dbm = rf_coupler::info.p_for_dbm, .p_ref_dbm = 0, .swr = rf_coupler::info.swr};
 
-    current_info.swr = max_swr;
-    current_info.p_for_dbm = max_dbm / 2;
+    // Test
+    // current_info.swr = max_swr;
+    // current_info.p_for_dbm = max_dbm / 2;
 
     // Round to 2 decimals and constrain
     current_info.p_for_dbm = constrain(current_info.p_for_dbm, 0, max_dbm);

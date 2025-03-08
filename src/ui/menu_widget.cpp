@@ -82,7 +82,6 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                     break;
 
                 case FPANEL_DISPLAY_BUTTON_1: // LEFT / MODULATION
-
                     Menu::open(Menu::modulationMenu);
                     break;
                 case FPANEL_DISPLAY_BUTTON_2: // RIGHT / FRONTEND

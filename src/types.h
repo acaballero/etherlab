@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <cstring>
 #include <cstdint>
+#include <sys/_stdint.h>
 #include "radio.h"
 #include "dsp/dsp_common.h"
 
@@ -26,18 +27,20 @@ enum LO_POWER { LO_POWER_LOW, LO_POWER_MEDIUM, LO_POWER_HIGH };
 /*
  * Frequency station
  */
-#define FREQ_MEM_NAME_SIZE 10
+#define FREQ_MEM_NAME_SIZE 16
 #define FREQ_MEM_SIZE 50
 
 struct st_freq_mem {
+    uint16_t group;
+    uint16_t id;
     unsigned long freq;
     MODULATION_MODE mode;
     char name[FREQ_MEM_NAME_SIZE + 1] = ""; // Must be allocated beforehand or the menu won't let increase it's size beyond the NULL char
 
     // Default constructor
-    st_freq_mem() : freq(0), mode(SSB_LSB), name{""} {};
+    st_freq_mem() : group(0), id(0), freq(0), mode(SSB_LSB), name{""} {};
 
-    st_freq_mem(unsigned long f, MODULATION_MODE m, const char *n) : freq(f), mode(m) {
+    st_freq_mem(uint16_t g, uint16_t id, unsigned long f, MODULATION_MODE m, const char *n) : group(g), id(id), freq(f), mode(m) {
         strncpy(name, n, FREQ_MEM_NAME_SIZE);
         name[FREQ_MEM_NAME_SIZE] = '\0'; // Ensure null-termination
     }
@@ -46,6 +49,8 @@ struct st_freq_mem {
         strncpy(name, o.name, FREQ_MEM_NAME_SIZE);
         mode = o.mode;
         freq = o.freq;
+        group = o.group;
+        id = o.id;
     }
 
     // Copy
@@ -53,6 +58,8 @@ struct st_freq_mem {
         strncpy(name, o.name, FREQ_MEM_NAME_SIZE);
         mode = o.mode;
         freq = o.freq;
+        group = o.group;
+        id = o.id;
         return *this;
     }
 };
