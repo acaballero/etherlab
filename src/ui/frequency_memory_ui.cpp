@@ -30,7 +30,7 @@ void open_save_current();
 
 // st_freq_mem temporary register
 st_freq_mem tempFreqMem;
-char tempFreqBuf[] = "000,000,000";
+char tempFreqBuf[] = "00 000 000 000";
 int curr_index = -1;
 using namespace Menu;
 // A function to save the edited data record
@@ -79,13 +79,17 @@ st_freq_mem *find_id(uint16_t group, uint16_t id) {
     return nullptr;
 }
 
-void save_freq(st_freq_mem item) {
+void save_freq(st_freq_mem item, int i) {
 
-    int i = find_index(item);
+    if (i < 0) { // Find by frequency
+        i = find_index(item);
+    }
 
     if (i < 0) {
         i = get_index();
     }
+
+    item.id = i;
 
     using namespace status;
 
@@ -165,7 +169,7 @@ MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqN
 
 result freqMemorySelectedEvent(eventMask e, navNode &nav);
 
-FreqMemoryMenu freqMemMenu("Frequency memory", FREQ_MEM_SIZE, "<Back", freqMemEditMenu, freqMemorySelectedEvent, enterEvent);
+FreqMemoryMenu freqMemMenu("Frequency memory", FREQ_MEM_SIZE, nullptr, freqMemEditMenu, freqMemorySelectedEvent, enterEvent);
 
 /*
  * This will be called whenever an entry is selected in the frequency memory

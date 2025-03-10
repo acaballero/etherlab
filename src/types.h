@@ -32,7 +32,7 @@ enum LO_POWER { LO_POWER_LOW, LO_POWER_MEDIUM, LO_POWER_HIGH };
 
 struct st_freq_mem {
     uint16_t group;
-    uint16_t id;
+    int id = -1;
     unsigned long freq;
     MODULATION_MODE mode;
     char name[FREQ_MEM_NAME_SIZE + 1] = ""; // Must be allocated beforehand or the menu won't let increase it's size beyond the NULL char

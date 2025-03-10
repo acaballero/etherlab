@@ -22,7 +22,7 @@ namespace freq_memory {
 int get_index();
 int find_index(st_freq_mem);
 void open_save_current();
-void save_freq(st_freq_mem item);
+void save_freq(st_freq_mem item, int index = -1);
 void del_freq(int ix);
 st_freq_mem *find_id(uint16_t group, uint16_t id);
 
@@ -37,7 +37,8 @@ struct FreqMemoryMenu : Menu::UserMenu {
     Menu::Used printItem(Menu::menuOut &out, int idx, int len) override {
 
         if (len) {
-            char buf[35], sf[10];
+            static constexpr int buf_size = FREQ_MEM_NAME_SIZE + 27;
+            char buf[buf_size], sf[14];
             bool empty;
             st_freq_mem fm = config.freqs[idx];
             empty = fm.freq == 0;
@@ -45,10 +46,10 @@ struct FreqMemoryMenu : Menu::UserMenu {
                 sprintf(buf, "[%2d]", idx);
             } else {
                 format_long(fm.freq, sf);
-                snprintf(buf, 35, "[%2d] %-4s %12s  %*s", idx, radio::modulationNames[fm.mode], sf, FREQ_MEM_NAME_SIZE, fm.name);
+                snprintf(buf, buf_size, "[%2d] %-4s %14s  %*s", idx, radio::modulationNames[fm.mode], sf, FREQ_MEM_NAME_SIZE, fm.name);
             }
 
-            return out.printText(buf, 35);
+            return out.printText(buf, buf_size);
         } else {
             return 0;
         }
@@ -60,6 +61,7 @@ struct FreqMemoryMenu : Menu::UserMenu {
             case Menu::idxCmd: // long clicked
 
                 if (config.freqs[nav.sel].freq) {
+                    UserMenu::doNav(nav, cmd); // TODO: Make this the delete command
                 }
 
                 break;

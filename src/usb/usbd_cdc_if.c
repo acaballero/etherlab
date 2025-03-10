@@ -21,7 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
-#include "cat_if.h"
+#include "../io/cat_if.h"
 #include "../../lib/printf/printf.h"
 
 /* USER CODE BEGIN INCLUDE */

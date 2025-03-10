@@ -1,7 +1,7 @@
 #include "main.h"
 #include "agc.h"
 #include "battery.h"
-#include "cat_protocol.h"
+#include "io/cat_protocol.h"
 #include "input/input_controller.h"
 #include "main_board.h"
 #include "menuBase.h"
