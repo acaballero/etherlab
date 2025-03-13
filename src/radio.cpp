@@ -2,12 +2,15 @@
 // Created by Angel Dust on 17/06/2021.
 //
 
+#include "status.h"
 #include "stdio.h"
 #include "radio.h"
 #include "config.h"
 #include "signal.h"
 #include "scanner.h"
 #include "os/periodic_task.h"
+#include "types.h"
+#include "ui/frequency_memory_ui.h"
 #include <stdint.h>
 
 /*
@@ -218,6 +221,28 @@ void change_step(int amount) {
     }
 }
 
+bool get_memory_mode() { return config.memory_mode; }
+
+uint8_t toggle_memory_mode() {
+    bool memory_mode = (config.memory_mode == 0 ? 1 : 0);
+
+    if (memory_mode) {
+        // Are there any frequencies
+        st_freq_mem *mem = freq_memory::find_closest(get_frequency(), 0);
+
+        if (mem) {
+            freq_memory::set(mem);
+        } else {
+            status::handleError(status::ST_ERROR, "Frequency memory empty");
+            return 1;
+        }
+    }
+
+    config.memory_mode = memory_mode;
+
+    return 0;
+}
+
 uint8_t toggle_vfo() {
     set_vfo(get_vfo() == 0 ? 1 : 0);
     return get_vfo();
@@ -233,15 +258,19 @@ void set_vfo(uint8_t vfo_ix) {
 uint8_t get_vfo() { return config.vfo_ix; }
 
 void change_frequency(int amount) {
-    set_frequency(config.vfo[config.vfo_ix].freq + amount * config.vfo[config.vfo_ix].step);
+    if (get_memory_mode()) {
+        st_freq_mem *mem = freq_memory::next_prev(amount > 0 ? true : false);
+        if (mem) {
+            freq_memory::set(mem);
+        }
+    } else {
+        set_frequency(config.vfo[config.vfo_ix].freq + amount * config.vfo[config.vfo_ix].step);
+    }
     scanner::stop();
 }
 
 // This does not change the frequency immediatelly so it cal be called from an IRQhandler.
-void set_frequency(uint64_t f) {
-    ;
-    config.vfo[config.vfo_ix].freq = f;
-}
+void set_frequency(uint64_t f) { config.vfo[config.vfo_ix].freq = f; }
 
 uint64_t get_vfo_frequency(uint8_t vfo_ix) {
 

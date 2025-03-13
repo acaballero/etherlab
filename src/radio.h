@@ -112,6 +112,8 @@ bool tx_enabled();
 void set_band();
 void set_vfo(uint8_t);
 uint8_t toggle_vfo();
+uint8_t toggle_memory_mode();
+bool get_memory_mode();
 uint8_t get_vfo();
 BAND get_band();
 extern os::periodic_task task;

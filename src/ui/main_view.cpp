@@ -138,10 +138,10 @@ bool MainView::on_input(const st_inputEvent event) {
     if (!consumed) {
         if (!focused_widget()) {
 
-            consumed = menu_w.on_input(event);
-            if (consumed) {
-                // menu_w.set_visible(true);
-                // menu_w.set_focus(true);
+            consumed = menu_w.on_input(event); // First try to consume it by the menu
+
+            if (!consumed) { // Now let see if the status bar can consume it
+                consumed = status_w.on_input(event);
             }
         } else if (!event.is_touch()) {
             consumed = View::on_input(event);

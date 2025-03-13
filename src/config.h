@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <cstdint>
+#include <sys/_stdint.h>
 #include "hw/stm32_hal.h"
 #include "hw/hw_config.h"
 #include "dsp/fft/fft_types.h"
@@ -21,7 +22,7 @@
 #define TXMODE(mode) (mode == ANALOG_TX || mode == DIGITAL_TX)
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ISANALOG (config.mode == ANALOG_TX || config.mode == ANALOG_RX)
-#define CONFIG_VERSION "320"
+#define CONFIG_VERSION "322"
 
 namespace configuration {
 extern os::periodic_task task;
@@ -72,6 +73,7 @@ typedef struct st_config //__attribute__ ((packed))
     // VFO config
     uint8_t vfo_ix = 0;
     st_vfo_config vfo[2];
+    bool memory_mode = false;
 
     unsigned long f_carrier = 106700000UL;
     unsigned long f_step = 1000;

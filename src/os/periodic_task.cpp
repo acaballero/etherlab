@@ -52,7 +52,7 @@ uint64_t periodic_task::get_start_time() { return _start_ms; }
 
 char *periodic_task::get_log(char *buf) {
     // sprintf(buf, "start: %llu, end: %llu, last: %llu, duration: %llu, period: %llu", _start_ms, _end_ms, _last_ms, _duration_ms, _period_ms);
-    // return buf;
+    return buf;
 }
 bool periodic_task::finished() { return _end_ms && _last_ms >= _end_ms; }
 } // namespace os

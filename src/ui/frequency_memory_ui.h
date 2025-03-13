@@ -25,10 +25,15 @@ void open_save_current();
 void save_freq(st_freq_mem item, int index = -1);
 void del_freq(int ix);
 st_freq_mem *find_id(uint16_t group, uint16_t id);
+void set(st_freq_mem *);
+st_freq_mem *next_prev(bool next);
+st_freq_mem *find_closest(uint64_t frequency, uint16_t group);
 
 // Custom frequency memory menu
 struct FreqMemoryMenu : Menu::UserMenu {
     using UserMenu::UserMenu;
+
+    int curr_ix = -1;
 
     // Override sz() function to have variable/custom size
     // If using exit option an extra element has to be considered...
@@ -60,15 +65,13 @@ struct FreqMemoryMenu : Menu::UserMenu {
         switch (cmd.cmd) {
             case Menu::idxCmd: // long clicked
 
-                if (config.freqs[nav.sel].freq) {
-                    UserMenu::doNav(nav, cmd); // TODO: Make this the delete command
-                }
+                UserMenu::doNav(nav, cmd); // TODO: Make this the delete command
 
                 break;
 
             case Menu::enterCmd: // clicked
                 if (config.freqs[nav.sel].freq) {
-                    radio::set_frequency(config.freqs[nav.sel].freq);
+                    set(&config.freqs[nav.sel]);
                 }
                 break;
             default:
@@ -77,6 +80,8 @@ struct FreqMemoryMenu : Menu::UserMenu {
 
                 break;
         }
+
+        curr_ix = nav.sel;
     }
 };
 

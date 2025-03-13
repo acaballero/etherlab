@@ -9,6 +9,8 @@
 #include "stdio.h"
 #include "Display_afb.h"
 #include "types.h"
+#include "ui/ui_types.h"
+#include <functional>
 
 namespace Menu {
 
@@ -19,6 +21,18 @@ template <typename T> struct menu_option_st {
     T value;
     uint16_t fg_color = C565_TEXT_FG;
     uint16_t bg_color = C565_TEXT_BG;
+};
+
+struct menu_action_st {
+    const char *name;
+    std::function<void(void)> action;
+    uint16_t fg_color = C565_TEXT_FG;
+    uint16_t bg_color = C565_TEXT_BG;
+};
+
+struct menu_actions_st {
+    menu_action_st *actions;
+    size_t size;
 };
 
 template <typename T> using menu_options_t = menu_option_st<T> *;

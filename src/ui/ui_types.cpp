@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <algorithm>
 #include "../../lib/utils/utils.hpp"
+#include "Signal.h"
+
+Signal actions_signal;
 
 bool Rect::contains(const Point p) const { return (p.x() >= left()) && (p.y() >= top()) && (p.x() < right()) && (p.y() < bottom()); }
 

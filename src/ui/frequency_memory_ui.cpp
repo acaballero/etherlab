@@ -6,9 +6,15 @@
 
 #include "frequency_memory_ui.h"
 #include "config.h"
+#include "itemsTemplates.hpp"
+#include "main_board.h"
 #include "menuBase.h"
 #include "radio.h"
 #include "types.h"
+#include "ui/menu_actions.h"
+#include "ui/menu_options.h"
+#include "ui/ui_types.h"
+#include <cstddef>
 #include <sys/_stdint.h>
 
 namespace freq_memory {
@@ -159,6 +165,57 @@ void del_freq(int i) {
     }
 }
 
+st_freq_mem *next_prev(bool next) {
+
+    int16_t step = next ? 1 : -1;
+    uint16_t from_ix = curr_index >= 0 ? constrain(curr_index + step, 0, FREQ_MEM_SIZE) : 0;
+    int16_t to_ix = next ? FREQ_MEM_SIZE : -1;
+
+    uint16_t ix = from_ix;
+    while (ix != to_ix) {
+
+        if (config.freqs[ix].freq) {
+            return &config.freqs[ix];
+        }
+
+        ix += step;
+    }
+
+    return nullptr;
+}
+
+void set(st_freq_mem *mem) {
+    int ix = find_index(*mem);
+
+    if (ix >= 0) {
+        curr_index = ix;
+    }
+
+    main_board::setModulationMode(mem->mode, false);
+    radio::set_frequency(mem->freq);
+}
+
+st_freq_mem *find_closest(uint64_t f, uint16_t group) {
+    int ix = -1;
+    uint32_t min_distance = (uint32_t)-1;
+    uint32_t distance = 0;
+
+    for (int i = 0; i < FREQ_MEM_SIZE; i++) {
+        distance = std::abs((long)(config.freqs[i].freq - f));
+        if (distance < min_distance && config.freqs[i].group == group) {
+            min_distance = distance;
+            ix = i;
+        }
+    }
+
+    if (ix >= 0) {
+        return &config.freqs[ix];
+
+    } else {
+        return nullptr;
+    }
+}
+
 labelPrompt freqNameMenu((const char *)"Name", tempFreqMem.name, edit_freq_name, enterEvent, noStyle);
 labelPrompt freqEditMenu((const char *)"Frequency", tempFreqBuf, edit_freq, enterEvent, noStyle);
 
@@ -169,7 +226,15 @@ MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqN
 
 result freqMemorySelectedEvent(eventMask e, navNode &nav);
 
-FreqMemoryMenu freqMemMenu("Frequency memory", FREQ_MEM_SIZE, nullptr, freqMemEditMenu, freqMemorySelectedEvent, enterEvent);
+FreqMemoryMenu freqMemMenu("Frequency memory", FREQ_MEM_SIZE, nullptr, freqMemEditMenu, freqMemorySelectedEvent, (eventMask)(enterEvent | exitEvent));
+
+menu_action_st menu_actions[] = {navigation_actions_arr[Menu::UP], navigation_actions_arr[Menu::DOWN], {"Delete", []() {
+                                                                                                            if (freqMemMenu.curr_ix >= 0) {
+                                                                                                                del_freq(freqMemMenu.curr_ix);
+                                                                                                            }
+                                                                                                        }}};
+
+menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(menu_action_st)};
 
 /*
  * This will be called whenever an entry is selected in the frequency memory
@@ -177,20 +242,37 @@ FreqMemoryMenu freqMemMenu("Frequency memory", FREQ_MEM_SIZE, nullptr, freqMemEd
  */
 result freqMemorySelectedEvent(eventMask e, navNode &nav) {
     // trace(MENU_DEBUG_OUT << "copy data to temp target:" << (int)nav.target << "\n");
-    if (nav.target == &freqMemMenu) { // Only if we are on memory menu
-        tempFreqMem = config.freqs[nav.sel];
-        curr_index = nav.sel;
+    if (nav.target == &freqMemMenu && freqMemMenu.curr_ix >= 0) { // Only if we are on memory menu
+        tempFreqMem = config.freqs[freqMemMenu.curr_ix];
 
         // If it's empty: New entry. Use current frequency
         if (!tempFreqMem.freq) {
             tempFreqMem.freq = radio::get_frequency();
             tempFreqMem.mode = config.modulation;
+            curr_index = -1;
+        } else {
+            curr_index = nav.sel;
         }
 
         char buf[16];
         format_long(tempFreqMem.freq, buf);
         sprintf(tempFreqBuf, "%s", buf);
     }
+
+    if (e == Menu::enterEvent) {
+
+        if (!actions.actions[0].action) {
+            for (size_t i = 0; i < navigation_actions.size; i++) {
+                actions.actions[i] = navigation_actions.actions[i];
+            }
+        }
+
+        actions_signal.emit(&actions);
+    } else if (e == Menu::exitEvent) {
+        // Remove context actions
+        actions_signal.emit(nullptr);
+    }
+
     // nav.sel can be stored for future reference
     return proceed;
 }

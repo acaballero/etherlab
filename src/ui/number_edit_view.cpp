@@ -69,7 +69,7 @@ bool NumberEditView::on_input(const st_inputEvent event) {
 
 void NumberEditView::init() {
 
-    const auto button_fn = [this](Button &button) { this->on_button(button); };
+    const auto button_fn = [this](Button &button, st_inputEvent) { this->on_button(button); };
 
     title.set_font((FontDef *)&Font_7x10);
     title.set_aling(ALIGN_CENTER);
@@ -89,11 +89,11 @@ void NumberEditView::init() {
     add_child(&text_widget);
 
     for (Button &b : buttons) {
-        b.on_select = button_fn;
+        b.action = button_fn;
         add_child(&b);
     }
 
-    buttons[CANCEL].on_select = button_fn;
+    buttons[CANCEL].action = button_fn;
 
     display_panel_buttons.set_labels(display_buttons_labels);
 

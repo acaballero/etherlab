@@ -17,19 +17,29 @@ class StatusWidget : public View {
   public:
     StatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
 
+    bool on_input(const st_inputEvent e) override;
+
   protected:
     status::st_status _status;
 
     uint16_t fg_color, fg_color_auto, bg_color, dimm_color, disabled_color, disabled_bg;
 
-    Button btnModulation{{0, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
-    Button btnFrontend{{BTN_WIDTH, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
-    Button btnLeft{{0, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "<", C565_BLACK};
-    Button btnRight{{BTN_WIDTH, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, ">", C565_BLACK};
-    Button btnAgc{{BTN_WIDTH * 2, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
-    Button btnBand{{BTN_WIDTH * 3, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
-    Button btnFilter1{{BTN_WIDTH * 4, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
-    Button btnFilter2{{BTN_WIDTH * 5, STATUS_MARGIN_TOP, BTN_WIDTH, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK};
+    static constexpr uint8_t n_buttons = 6;
+    enum DEFAULT_ACTIONS { MODULATION, FRONTEND, AGC, BAND, FILTER1, FILTER2 };
+
+    Button default_buttons[n_buttons] = {{{0, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                         {{BTN_WIDTH, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                         {{BTN_WIDTH * 2, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                         {{BTN_WIDTH * 3, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                         {{BTN_WIDTH * 4, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                         {{BTN_WIDTH * 5, STATUS_MARGIN_TOP, BTN_WIDTH, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK}};
+
+    Button buttons[n_buttons] = {{{0, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                 {{BTN_WIDTH, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                 {{BTN_WIDTH * 2, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                 {{BTN_WIDTH * 3, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                 {{BTN_WIDTH * 4, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
+                                 {{BTN_WIDTH * 5, STATUS_MARGIN_TOP, BTN_WIDTH, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK}};
 
     char buf[20];
 
@@ -50,6 +60,9 @@ class StatusWidget : public View {
     char *agc_alc();
 
     void before_paint() override;
+
+    void set_action(uint8_t index, Menu::menu_action_st &action);
+    void set_defaults();
 };
 
 #endif // TRX_FRONTEND_STATUS_WIDGET_H

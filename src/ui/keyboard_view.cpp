@@ -101,7 +101,7 @@ void KeyboardView::on_shift() {
 
 void KeyboardView::init() {
 
-    const auto button_fn = [this](Button &button) { this->on_button(button); };
+    const auto button_fn = [this](Button &button, st_inputEvent) { this->on_button(button); };
 
     label_widget.set_font((FontDef *)&Font_7x10);
     label_widget.set_color(C565_GREY_DARKER);
@@ -115,7 +115,7 @@ void KeyboardView::init() {
     add_child(&label_widget);
     add_child(&text_widget);
 
-    button_shift.on_select = [this](Button &) { on_shift(); };
+    button_shift.action = [this](Button &, st_inputEvent) { on_shift(); };
 
     for (int n = 0; n < key_count; n++) {
 
@@ -124,7 +124,7 @@ void KeyboardView::init() {
 
         button.id = n;
         button.on_highlight = [this](Button &button) { focused_button = button.id; };
-        button.on_select = button_fn;
+        button.action = button_fn;
         button.set_aling(Align::ALIGN_CENTER);
         button.set_style(ButtonStyle::BUTTON_STYLE_3D);
         button.set_parent_rect({(n % (cols - 1)) * button_w, (n / (cols - 1)) * button_h + button_h, button_w, button_h});
@@ -142,11 +142,11 @@ void KeyboardView::init() {
     button_del.set_style(BUTTON_STYLE_3D);
     button_close.set_style(BUTTON_STYLE_3D);
 
-    button_del.on_select = [this](Button &) { text_widget.del_char(); };
+    button_del.action = [this](Button &, st_inputEvent) { text_widget.del_char(); };
 
-    button_close.on_select = [this](Button &) { this->set_visible(false); };
+    button_close.action = [this](Button &, st_inputEvent) { this->set_visible(false); };
 
-    button_ok.on_select = [this](Button &) { on_ok(); };
+    button_ok.action = [this](Button &, st_inputEvent) { on_ok(); };
 
     display_panel_buttons.set_labels(display_buttons_labels);
     display_panel_buttons.get_buttons()[4].set_fg(C565_GREEN_DARK);
@@ -157,7 +157,7 @@ void KeyboardView::init() {
 
     set_mode(mode);
 
-    button_mode.on_select = [this](Button &) { set_mode(mode == ALPHA ? NUMERIC : ALPHA); };
+    button_mode.action = [this](Button &, st_inputEvent) { set_mode(mode == ALPHA ? NUMERIC : ALPHA); };
 
     text_widget.set_focus(true);
 }

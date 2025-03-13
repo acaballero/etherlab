@@ -1,5 +1,6 @@
 
 #include "menu.h"
+#include "frequency_memory_ui.h"
 #include "Display_afb.h"
 #include "config.h"
 #include "dsp/fft/fft_types.h"
@@ -13,6 +14,7 @@
 #include "types.h"
 #include "ui/menuILI9431Out.h"
 #include "dsp/dsp_ui.h"
+#include "ui/menu_actions.h"
 #include "ui/scanner_ui.h"
 #include "dsp/fft/fft_ui.h"
 #include "main.h"
@@ -23,11 +25,11 @@
 #include "../../lib/utils/utils.hpp"
 #include "view_manager.h"
 #include "s_strength.h"
+#include <cstddef>
 #include <cstring>
 #include "settings.h"
 #include "menu_options.h"
 #include "menu_prompts.h"
-#include "frequency_memory_ui.h"
 
 namespace Menu {
 
@@ -201,7 +203,7 @@ MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::capture
 
 #endif
 
-MENU(mainMenu, "Main menu", doNothing, noEvent, noStyle, SUBMENU(menuTune),
+MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED
      SUBMENU(menuDSP),
 #endif
@@ -245,16 +247,21 @@ result idle(menuOut &o, idleEvent e) {
         case idleStart:
             Menu::menuStatus = IDLE;
             view_manager::mainView.set_dirty();
-            // o.println("suspending menu!");
+
+            // Remove custom actions
+            actions_signal.emit(nullptr);
+
             break;
         case idling:
-            // o.println("suspended...");
+
             view_manager::mainView.set_dirty(); // Mark view as dirty to know we have to redraw all widgets next time
             break;
         case idleEnd:
-            // o.println("resuming menu.");
+
             Menu::menuStatus = ACTIVE;
 
+            // Add custom actions (they'll be captured by the bottom button bar)
+            actions_signal.emit(&navigation_actions);
             break;
     }
 

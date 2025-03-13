@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_BUTTON_WIDGET_H
 
 #include "Display_afb.h"
+#include "input/inputEvent.h"
 #include "widget.h"
 #include <functional>
 
@@ -17,7 +18,7 @@ class Button : public Widget {
     static const size_t MAX_CHARS_VALUE = 8;
     static const size_t MAX_CHARS_UNIT = 4;
 
-    std::function<void(Button &)> on_select{};
+    std::function<void(Button &, st_inputEvent)> action{};
     std::function<void(Button &)> on_highlight{};
 
     Button() : Widget(){};

@@ -5,18 +5,27 @@
 #include "status_widget.h"
 #include "../config.h"
 #include "../main_board.h"
+#include "input/inputEvent.h"
 #include "printf.h"
 #include "radio.h"
 #include "ui/menu.h"
+#include <cstddef>
 #include <functional>
 
 void StatusWidget::init() {
 
-    btnBand.fn_writer = std::bind(&StatusWidget::band, this, &btnBand);
-    btnFilter1.fn_writer = std::bind(&StatusWidget::filter1, this, &btnFilter1);
-    btnFilter2.fn_writer = std::bind(&StatusWidget::filter2, this, &btnFilter2);
+    default_buttons[BAND].fn_writer = std::bind(&StatusWidget::band, this, &default_buttons[BAND]);
+    default_buttons[FILTER1].fn_writer = std::bind(&StatusWidget::filter1, this, &default_buttons[FILTER1]);
+    default_buttons[FILTER2].fn_writer = std::bind(&StatusWidget::filter2, this, &default_buttons[FILTER2]);
 
-    add_children({&btnModulation, &btnFrontend, &btnAgc, &btnBand, &btnFilter1, &btnFilter2, &btnLeft, &btnRight});
+    for (Button &b : default_buttons) {
+        add_child(&b);
+    }
+
+    for (Button &b : buttons) {
+        add_child(&b);
+        b.set_visible(false);
+    }
 
     int i = 0;
     for (Widget *btn : View::children()) {
@@ -26,6 +35,47 @@ void StatusWidget::init() {
         sprintf(name, "stb-%d", i++);
         btn->set_name(name);
     }
+
+    // Subscribe to published actions
+    actions_signal.add(this, [this](void *, void *params) {
+        if (params == nullptr) {
+            set_defaults();
+        } else {
+            Menu::menu_actions_st actions = *((Menu::menu_actions_st *)params);
+            for (size_t i = 0; i < n_buttons; i++) {
+
+                if (i < actions.size) {
+                    set_action(i, actions.actions[i]);
+                    buttons[i].set_visible(true);
+
+                } else {
+                    buttons[i].set_visible(false);
+                }
+
+                default_buttons[i].set_visible(false);
+
+                set_dirty();
+            }
+        }
+    });
+}
+
+void StatusWidget::set_defaults() {
+
+    for (Button &b : default_buttons) {
+        b.set_visible(true);
+    }
+
+    for (Button &b : buttons) {
+        b.set_visible(false);
+    }
+}
+
+void StatusWidget::set_action(uint8_t index, Menu::menu_action_st &menu_action) {
+    Button *button = &buttons[index];
+    button->action = [menu_action](Button &, st_inputEvent) { menu_action.action(); };
+    button->set_text(menu_action.name);
+    button->set_visible(true);
 }
 
 void StatusWidget::mode() { sprintf(buf, ISTX ? "TX" : "RX"); }
@@ -55,7 +105,7 @@ char *StatusWidget::frontend() {
 char *StatusWidget::agc_alc() {
     if (!ISTX) {
         sprintf(buf, "AGC");
-        btnAgc.set_fg(fg_color);
+        default_buttons[AGC].set_fg(fg_color);
     } else {
         sprintf(buf, "ALC");
     }
@@ -125,7 +175,7 @@ void StatusWidget::before_paint() {
             disabled_bg = C565_GREY_DARK;
             fg_color_auto = C565_MAGENTA;
 
-            btnAgc.set_enabled(false);
+            default_buttons[AGC].set_enabled(false);
 
         } else {
             fg_color = C565_BLACK;
@@ -135,35 +185,13 @@ void StatusWidget::before_paint() {
             disabled_bg = C565_GREY_LIGHT;
             fg_color_auto = C565_MAGENTA;
 
-            btnAgc.set_dimmed(!config.agc_enabled);
+            default_buttons[AGC].set_dimmed(!config.agc_enabled);
         }
 
-        btnBand.set_enabled(!ISTX);
-        btnFilter1.set_enabled(!ISTX);
-        btnFilter2.set_enabled(!ISTX);
-        btnFrontend.set_enabled(!ISTX);
-
-        if (Menu::menuStatus == Menu::IDLE) {
-            btnModulation.set_visible(true);
-            btnFrontend.set_visible(true);
-            btnAgc.set_visible(true);
-            btnBand.set_visible(true);
-            btnFilter1.set_visible(true);
-            btnFilter2.set_visible(true);
-
-            btnLeft.set_visible(false);
-            btnRight.set_visible(false);
-        } else {
-            btnModulation.set_visible(false);
-            btnFrontend.set_visible(false);
-            btnAgc.set_visible(false);
-            btnBand.set_visible(false);
-            btnFilter1.set_visible(false);
-            btnFilter2.set_visible(false);
-
-            btnLeft.set_visible(true);
-            btnRight.set_visible(true);
-        }
+        default_buttons[BAND].set_enabled(!ISTX);
+        default_buttons[FILTER1].set_enabled(!ISTX);
+        default_buttons[FILTER2].set_enabled(!ISTX);
+        default_buttons[FRONTEND].set_enabled(!ISTX);
 
         display->setBgColor(bg_color);
         display->setColor(fg_color);
@@ -173,9 +201,9 @@ void StatusWidget::before_paint() {
         display->setPadding(4, 4);
         display->gotoCharXY(0, 0);
 
-        btnModulation.set_text(modulation());
-        btnFrontend.set_text(frontend());
-        btnAgc.set_text(agc_alc());
+        default_buttons[MODULATION].set_text(modulation());
+        default_buttons[FRONTEND].set_text(frontend());
+        default_buttons[AGC].set_text(agc_alc());
 
         for (Widget *btn : View::children()) {
             ((Button *)btn)->set_bg(bg_color);
@@ -183,4 +211,85 @@ void StatusWidget::before_paint() {
             btn->set_dirty();
         }
     }
+}
+
+bool StatusWidget::on_input(const st_inputEvent e) {
+    bool consumed = true;
+    // bool long_press, very_long_press;
+
+    switch (e.type) {
+
+        case INPUT_EVENT_TYPE_BUTTON_PRESS:
+        case INPUT_EVENT_TYPE_BUTTON_DBL_PRESS:
+
+            switch (e.value) {
+
+                case FPANEL_DISPLAY_BUTTON_1: //  MODULATION
+                    if (buttons[0].visible()) {
+                        buttons[0].action(buttons[0], e);
+                    } else {
+                        Menu::open(Menu::modulationMenu);
+                    }
+                    break;
+                case FPANEL_DISPLAY_BUTTON_2: //  FRONTEND
+                    if (buttons[1].visible()) {
+                        buttons[1].action(buttons[0], e);
+                    } else {
+                        Menu::open(Menu::frontendPathMenu);
+                    }
+                    break;
+                case FPANEL_DISPLAY_BUTTON_3: // AGC
+                    if (buttons[2].visible()) {
+                        buttons[2].action(buttons[0], e);
+                    } else {
+                        config.agc_enabled = !config.agc_enabled;
+                    }
+                    main_board::update();
+                    break;
+                case FPANEL_DISPLAY_BUTTON_5: // FILTER 1
+                    if (buttons[3].visible()) {
+                        buttons[3].action(buttons[0], e);
+                    } else {
+                        Menu::open(Menu::filterMenu);
+                    }
+                    break;
+                case FPANEL_DISPLAY_BUTTON_6: // FILTER 2
+                    if (buttons[4].visible()) {
+                        buttons[4].action(buttons[0], e);
+                    } else {
+                        Menu::open(Menu::IFFilterMenu);
+                    }
+                    break;
+                case FPANEL_DISPLAY_BUTTON_4: // BAND
+                    if (buttons[0].visible()) {
+                        buttons[0].action(buttons[0], e);
+                    } else {
+                        Menu::open(Menu::bandMenu);
+                    }
+                    break;
+                default:
+                    consumed = false;
+            }
+            break;
+        case INPUT_EVENT_TYPE_BUTTON_RELEASE:
+
+            switch (e.value) {
+                case FPANEL_DISPLAY_BUTTON_1:
+                case FPANEL_DISPLAY_BUTTON_2:
+                case FPANEL_DISPLAY_BUTTON_3:
+                case FPANEL_DISPLAY_BUTTON_4:
+                case FPANEL_DISPLAY_BUTTON_5:
+                case FPANEL_DISPLAY_BUTTON_6:
+                    break;
+                default:
+                    consumed = false;
+            }
+
+            break;
+        default:
+            consumed = false;
+            break;
+    }
+
+    return consumed;
 }

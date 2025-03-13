@@ -33,7 +33,7 @@ enum LO_POWER { LO_POWER_LOW, LO_POWER_MEDIUM, LO_POWER_HIGH };
 struct st_freq_mem {
     uint16_t group;
     int id = -1;
-    unsigned long freq;
+    uint64_t freq;
     MODULATION_MODE mode;
     char name[FREQ_MEM_NAME_SIZE + 1] = ""; // Must be allocated beforehand or the menu won't let increase it's size beyond the NULL char
 
@@ -87,9 +87,10 @@ struct st_freqInfo {
     unsigned long f_step;
     radio::RPT_MODE repeater_mode;
     uint8_t vfo_ix;
+    bool memory_mode;
 
     bool operator==(const st_freqInfo &st) const {
-        return f_carrier == st.f_carrier && f_step == st.f_step && repeater_mode == st.repeater_mode && vfo_ix == st.vfo_ix;
+        return memory_mode == st.memory_mode && f_carrier == st.f_carrier && f_step == st.f_step && repeater_mode == st.repeater_mode && vfo_ix == st.vfo_ix;
     }
 };
 

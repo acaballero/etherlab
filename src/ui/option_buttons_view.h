@@ -7,6 +7,7 @@
 
 #include "Display_afb.h"
 #include "display_panel_buttons_widget.h"
+#include "menu_options.h"
 #include "stdio.h"
 #include "ui/widget.h"
 #include "view.h"
@@ -38,7 +39,7 @@ class OptionButtonsView : public View {
 
     void set_title(const char *text);
 
-    void add_item(const char *text, std::function<void(Button &)> on_select, bool selected, uint16_t fg_color = C565_TEXT_FG,
+    void add_item(const char *text, std::function<void(Button &, st_inputEvent)> on_select, bool selected, uint16_t fg_color = C565_TEXT_FG,
                   uint16_t text_bg_color = C565_TRANSPARENT);
 
     void clear();

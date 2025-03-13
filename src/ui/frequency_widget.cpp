@@ -21,8 +21,14 @@ void FrequencyWidget::init() {
 
     scanner::signal.add(nullptr, [this](void *, void *) { set_dirty(); });
 
-    btnVFO.on_select = [](Button &) { radio::toggle_vfo(); };
-    btnScan.on_select = [](Button &) { scanner::toggle(); };
+    btnVFO.action = [](Button &, st_inputEvent e) {
+        if (e.ms > LONG_PRESS_MS) {
+            radio::toggle_memory_mode();
+        } else {
+            radio::toggle_vfo();
+        }
+    };
+    btnScan.action = [](Button &, st_inputEvent) { scanner::toggle(); };
 
     add_children({&btnRpt, &btnVFO, &btnScan, &freqWidget});
     set_name("freq_w");
@@ -36,12 +42,13 @@ void FrequencyWidget::init() {
     }
 
     btnRpt.set_color(C565_WHITE, C565_CYAN, C565_YELLOW);
-    btnRpt.on_select = [](Button &) { Menu::open(Menu::repeaterMenu); };
+    btnRpt.action = [](Button &, st_inputEvent) { Menu::open(Menu::repeaterMenu); };
 }
 
 void FrequencyWidget::before_paint() {
 
-    st_freqInfo freqInfo = {(unsigned long)radio::get_frequency(), config.vfo[config.vfo_ix].step, config.repeater_mode, radio::get_vfo()};
+    st_freqInfo freqInfo = {(unsigned long)radio::get_frequency(), config.vfo[config.vfo_ix].step, config.repeater_mode, radio::get_vfo(),
+                            radio::get_memory_mode()};
 
     if (this->dirty() || !(freqInfo == this->status)) {
 
@@ -79,7 +86,11 @@ void FrequencyWidget::before_paint() {
             btnRpt.set_value("");
         }
 
-        btnVFO.set_text(radio::get_vfo() == 0 ? "A" : "B");
+        if (radio::get_memory_mode()) {
+            btnVFO.set_text("M");
+        } else {
+            btnVFO.set_text(radio::get_vfo() == 0 ? "A" : "B");
+        }
         this->status = freqInfo;
         this->set_dirty();
     }

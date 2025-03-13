@@ -82,7 +82,7 @@ bool KeypadView::on_input(const st_inputEvent event) {
 
 void KeypadView::init() {
 
-    const auto button_fn = [this](Button &button) { this->on_button(button); };
+    const auto button_fn = [this](Button &button, st_inputEvent) { this->on_button(button); };
 
     label_widget.set_font((FontDef *)&Font_7x10);
     label_widget.set_aling(ALIGN_CENTER);
@@ -106,7 +106,7 @@ void KeypadView::init() {
 
         button->id = n;
         button->on_highlight = [this](Button &button) { focused_button = button.id; };
-        button->on_select = button_fn;
+        button->action = button_fn;
         button->set_style(BUTTON_STYLE_3D);
         button->set_aling(ALIGN_CENTER);
         button->set_parent_rect({(n % (cols - 1)) * button_w, (n / (cols - 1)) * button_h + button_h, button_w, button_h});
@@ -115,11 +115,11 @@ void KeypadView::init() {
 
     add_children({&button_M, &button_K, &button_1, &button_close, &display_panel_buttons});
 
-    button_M.on_select = button_fn;
-    button_K.on_select = button_fn;
-    button_1.on_select = button_fn;
+    button_M.action = button_fn;
+    button_K.action = button_fn;
+    button_1.action = button_fn;
 
-    button_close.on_select = [this](Button &) { this->set_visible(false); };
+    button_close.action = [this](Button &, st_inputEvent) { this->set_visible(false); };
 
     display_panel_buttons.set_labels(show_multipliers ? display_buttons_labels : display_buttons_labels_no_mult);
 }

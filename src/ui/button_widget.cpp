@@ -127,8 +127,8 @@ bool Button::on_input(const st_inputEvent event) {
 
     if (event.type == INPUT_EVENT_TYPE_BUTTON_PRESS || event.type == INPUT_EVENT_TYPE_BUTTON_DBL_PRESS) {
         if (event.value && event.value == BTN_ENCODER) {
-            if (on_select) {
-                on_select(*this);
+            if (action) {
+                action(*this, event);
                 return true;
             }
         }
@@ -143,8 +143,8 @@ bool Button::on_input(const st_inputEvent event) {
         case INPUT_EVENT_TYPE_TOUCH_END:
             set_active(false);
             set_dirty();
-            if (on_select) {
-                on_select(*this);
+            if (action) {
+                action(*this, event);
             }
             return true;
         default:

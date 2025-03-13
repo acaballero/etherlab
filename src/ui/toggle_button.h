@@ -19,7 +19,7 @@ class ToggleButton : public Button {
         : Button(rect, display, label, fg_color, bg_color, style, aling, id) {
 
         this->on_change = on_change;
-        on_select = [this](Button &) {
+        action = [this](Button &, st_inputEvent) {
             value = !value;
             this->on_change(value);
         };

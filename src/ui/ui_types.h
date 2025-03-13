@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <vector>
 #include "Display_afb.h"
+#include "../../lib/Signal/Signal.h"
 
 #define HEADER_HEIGHT 22
 #define STATUS_HEIGHT 22
@@ -137,5 +138,7 @@ struct Rect {
 };
 
 Area to_area(Rect &r);
+
+extern Signal actions_signal;
 
 #endif // UI_TYPES_H

@@ -44,7 +44,7 @@ void RadioStatusWidget::init() {
         btn->set_font((FontDef *)&Font_Tiny8x8);
         btn->set_aling(ALIGN_CENTER);
         if (btn != &lblMode) {
-            ((Button *)btn)->on_select = [this](Button &button) { this->on_button(button); };
+            ((Button *)btn)->action = [this](Button &button, st_inputEvent) { this->on_button(button); };
         }
     }
 }

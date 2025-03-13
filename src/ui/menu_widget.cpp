@@ -80,25 +80,6 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                     }
 
                     break;
-
-                case FPANEL_DISPLAY_BUTTON_1: // LEFT / MODULATION
-                    Menu::open(Menu::modulationMenu);
-                    break;
-                case FPANEL_DISPLAY_BUTTON_2: // RIGHT / FRONTEND
-                    Menu::open(Menu::frontendPathMenu);
-                    break;
-                case FPANEL_DISPLAY_BUTTON_3: // AGC
-                    config.agc_enabled = !config.agc_enabled;
-                    main_board::update();
-                    break;
-                case FPANEL_DISPLAY_BUTTON_5: // FILTER 1
-                    Menu::open(Menu::filterMenu);
-                    break;
-                case FPANEL_DISPLAY_BUTTON_6: // FILTER 2
-                    Menu::open(Menu::IFFilterMenu);
-                    break;
-                case FPANEL_DISPLAY_BUTTON_4: // BAND
-                    Menu::open(Menu::bandMenu);
                 default:
 
                     consumed = false;
