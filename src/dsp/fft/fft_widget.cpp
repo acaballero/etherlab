@@ -10,26 +10,20 @@
 #include "agc.h"
 #include "input/inputEvent.h"
 #include "ips_font.h"
+#include <utility>
 
 FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {}
 
 void FFTWidget::draw_bandwidth() {
-    int16_t bm_s, bm_e, bm_m;
-    int16_t px_if_width = (int16_t)(radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / fft_params.display_rbw) >> 1;
+
+    int16_t bm_s, bm_e, bm_m; // start, end and mid points
+
     bm_m = DISPLAY_X_PIXELS >> 1;
 
-    if (config.modulation == SSB_USB) {
-        bm_s = bm_m + 1;
-        bm_e = bm_m + (px_if_width << 1) - 1;
-    } else if (config.modulation == SSB_LSB) {
-        bm_s = bm_m - (px_if_width << 1) + 1;
-        bm_e = bm_m - 1;
-    } else {
-        bm_s = bm_m - px_if_width;
-        bm_e = bm_m + px_if_width;
-    }
+    std::pair<int, int> bw_bins = fft::get_bandwidth_bin_limits();
+    bm_s = bw_bins.first;
+    bm_e = bw_bins.second;
 
-    bm_s = bm_s < 0 ? 0 : bm_s;
     bm_e = bm_e > (FFT_ZONE_WIDTH - 1) ? (FFT_ZONE_WIDTH - 1) : bm_e;
 
     for (uint16_t i = bm_s; i <= bm_e; i++) {
@@ -175,11 +169,13 @@ void FFTWidget::draw_spectrum_fill() {
 
 void FFTWidget::draw_spectrum_line() {
 
+    int y1, y2;
     for (uint16_t i = 0; i < FFT_ZONE_WIDTH - 1; i++) {
         // Although the fft_display array is wider, we will only draw the zone width to allow for the Db scale to be drawn next to it
-        if (fft_display[i] < FFT_HEIGHT) {
-            display->writeLine(i, fft_display[i], i + 1, fft_display[i + 1], spectrum_line_color);
-        }
+        y1 = fft_display[i];
+        y2 = fft_display[i + 1];
+
+        display->writeLine(i, y1, i + 1, y2, spectrum_line_color);
     }
 }
 

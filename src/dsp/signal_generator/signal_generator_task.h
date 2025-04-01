@@ -7,14 +7,13 @@
 
 #include <memory>
 #include "dsp/task.h"
+#include "types.h"
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
 
-
 class SignalGeneratorTask : public Task {
 
-public:
-
+  public:
     SignalGeneratorTask(void (*onSucess)(), void (*onError)(DSP_ERROR));
 
     void work() override;
@@ -23,9 +22,11 @@ public:
 
     void stop() override;
 
-private:
+    // TX: DAC output is downconverted and injected in the analog TX chain
+    // RF: DAC output goes to the audio chain
+    RF_DIRECTION mode = RF_DIRECTION_TX;
 
-
+  private:
 };
 
-#endif //TRX_FRONTEND_SIGNAL_GENERATOR_TASK_H
+#endif // TRX_FRONTEND_SIGNAL_GENERATOR_TASK_H

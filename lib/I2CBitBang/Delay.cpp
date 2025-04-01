@@ -3,21 +3,20 @@
 static int32_t initDone = 0;
 
 Delay::Delay() {
-	// TODO Auto-generated constructor stub
-	if (!initDone)
-	{
-	//  if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk))
-	  {
-	    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-	    DWT->CYCCNT = 0;
-	    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
-	  }
-	  initDone = 1;	//initialize only once regardless of number of objects
-	}
+    // TODO Auto-generated constructor stub
+    if (!initDone) {
+        //  if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk))
+        {
+            CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+            DWT->CYCCNT = 0;
+            DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+        }
+        initDone = 1; // initialize only once regardless of number of objects
+    }
 }
 
 Delay::~Delay() {
-	// TODO Auto-generated destructor stub
+    // TODO Auto-generated destructor stub
 }
 
 /*
@@ -26,26 +25,28 @@ Delay::~Delay() {
  */
 void Delay::hns(uint32_t hns) // hundreds of nanosec delay
 {
-	uint32_t curDwt = DWT->CYCCNT;
-	if (hns > 0)
-	{
-		uint32_t tp = ( hns * (SystemCoreClock/1000000UL) + 1)/10;
-		while ( (DWT->CYCCNT - curDwt) < tp);
-	}
+    uint32_t curDwt = DWT->CYCCNT;
+    if (hns > 0) {
+        uint32_t tp = (hns * (SystemCoreClock / 1000000UL) + 1) / 10;
+        while ((DWT->CYCCNT - curDwt) < tp) {
+            ;
+        }
+    }
 }
 
 void Delay::us(uint32_t us) // microseconds
 {
-	uint32_t curDwt = DWT->CYCCNT;
-	if (us > 0)
-	{
-		uint32_t tp = us * (SystemCoreClock/1000000UL);
-		while ( (DWT->CYCCNT - curDwt) < tp);
-	}
+    uint32_t curDwt = DWT->CYCCNT;
+    if (us > 0) {
+        uint32_t tp = us * (SystemCoreClock / 1000000UL);
+        while ((DWT->CYCCNT - curDwt) < tp)
+            ;
+    }
 }
 
 void Delay::ms(uint32_t ms) // microseconds
 {
-	uint32_t m = ms;
-	while(m--) us(1000UL);
+    uint32_t m = ms;
+    while (m--)
+        us(1000UL);
 }

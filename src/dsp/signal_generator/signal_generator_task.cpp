@@ -9,6 +9,7 @@
 #include "hw/stm32f4xx/timers.h"
 #include "config.h"
 #include "FIFO.h"
+#include "types.h"
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
@@ -36,20 +37,20 @@ void SignalGeneratorTask::start() {
     this->status.bits_per_sample = 16;
     this->status.n_channels = 2;
     this->status.block_size_bytes = dsp_temp_buf.size_bytes;
-    this->status.decimated_block_size =
-            dsp_temp_buf.count / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
-    this->status.decimated_block_size_bytes =
-            this->status.block_size_bytes / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->status.decimated_block_size = dsp_temp_buf.count / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->status.decimated_block_size_bytes = this->status.block_size_bytes / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
-    bool ret = radio_config(
-            {.direction=RF_DIRECTION_TX, .sample_freq=this->status.sample_rate * this->status.decimation_factor});
+    bool ret =
+        radio_config({.direction = mode,
+                      .sample_freq = this->status.sample_rate * this->status.decimation_factor,
+                      .freq = 0,
+                      .mode = (mode == RF_DIRECTION_RX) ? DSP : ANALOG}); // Radio mode is DSP if the ouput mode is RX so the signal reaches the audio amp
 
     this->status.status = DSP_STATUS_RUNNING;
 
     if (!ret) {
         this->halt(DSP_ERR);
     }
-
 }
 
 void SignalGeneratorTask::stop() {

@@ -27,7 +27,10 @@ void del_freq(int ix);
 st_freq_mem *find_id(uint16_t group, uint16_t id);
 void set(st_freq_mem *);
 st_freq_mem *next_prev(bool next);
-st_freq_mem *find_closest(uint64_t frequency, uint16_t group);
+st_freq_mem *find_closest(uint64_t frequency, uint16_t group, DIRECTION);
+void set_next_prev(DIRECTION d);
+uint8_t toggle_memory_mode();
+bool get_memory_mode();
 
 // Custom frequency memory menu
 struct FreqMemoryMenu : Menu::UserMenu {

@@ -16,7 +16,7 @@
 void SMeterWidget::paint_callback() {
 
     char buf[6];
-    int padding = 20;
+    int padding = 15;
     int block_size = (float)(this->area.box.width - padding * 2) / (float)MAX_S_LEVEL;
     int s9_x = (S_LEVELS * block_size);
     int max_x = s9_x + (DB_LEVELS * block_size) + padding;

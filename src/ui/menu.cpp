@@ -160,9 +160,15 @@ optionsPrompt<LO_INJECTION> loSideInjectionMenu((const char *)"Preferred LO inj.
 RTC_TimeTypeDef time;
 RTC_DateTypeDef date;
 
-void setDate() { HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN); }
+void setDate() {
+    HAL_RTC_SetDate(&hrtc, &date, RTC_FORMAT_BIN);
+    rtc_signal.emit(nullptr);
+}
 
-void setTime() { HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN); }
+void setTime() {
+    HAL_RTC_SetTime(&hrtc, &time, RTC_FORMAT_BIN);
+    rtc_signal.emit(nullptr);
+}
 
 PADMENU(dateMenu, "Date", setDate, updateEvent, noStyle, FIELD(date.Year, "", "/", 22, 99, 1, 0, setDate, exitEvent, noStyle),
         FIELD(date.Month, "", "/", 1, 12, 1, 0, setDate, exitEvent, wrapStyle), FIELD(date.Date, "", "", 1, 31, 1, 0, setDate, exitEvent, wrapStyle));

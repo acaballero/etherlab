@@ -21,8 +21,8 @@ void update_battery_info() {
     uint16_t adcv = GetADCValue(&BATTERY_VOLTAGE_ADC_HANDLER, INPUT_VOLTAGE_ADC_CHANNEL, 2);
     float v = ((float)adcv / (float)MAX_ADC_VALUE) * V_REF * VOLTAGE_DIVISION_RATIO;
 
-    // Round to 2 decimal places
-    v = roundf(v * 100) / 100;
+    // Round to 2 decimal places (well, kind off since that's literrally impossible with float -- and even double --)
+    v = roundf(v * 100.0f) / 100.0f;
 
     float delta = battery_info.voltage - v;
 
@@ -35,8 +35,8 @@ void update_battery_info() {
         battery_info.voltage = v;
     }
 
-    // Truncate
-    battery_info.voltage = (float)((int)(battery_info.voltage * 100) / (float)100);
+    // Round to just 1 decimal place
+    battery_info.voltage = roundf(battery_info.voltage * 10.0f) / 10.0f;
 
     // Without measuring the outgoing current is difficult to calculate the exact remaining charge, so we are just checking whether it's above 80%
     // or below 20% and setting the capacity as 100%, 50% or 10%

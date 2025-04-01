@@ -27,7 +27,7 @@ int command = DSP_COMMAND_START;
 bool loop = false;
 SignalToken signal_token;
 WaveInfo wi;
-ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y, DISPLAY_X_PIXELS / 2, INFO_HEIGHT}, &lcd};
+ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 10, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 10}, &lcd};
 
 void on_freq_signal(void *thisptr, void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
@@ -181,9 +181,9 @@ MENU(replayMenu, "Replay", on_menu_event, (eventMask)(enterEvent | exitEvent | s
      SUBMENU(loopToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle),
      FIELD(gain, "Gain:", " dB", DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 0, change_gain, exitEvent, noStyle),
      // FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle),
-     OBJ(freqEdit),
+     OBJ(freqEdit)
      // EDIT("Frequency (khz)", tempFreqBuf, digitMask, changeFreq, updateEvent, noStyle),
-     EXIT("<Back"))
+)
 
 Menu::result on_filepicker(eventMask e) {
 

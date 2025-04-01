@@ -23,7 +23,7 @@ void FrequencyWidget::init() {
 
     btnVFO.action = [](Button &, st_inputEvent e) {
         if (e.ms > LONG_PRESS_MS) {
-            radio::toggle_memory_mode();
+            freq_memory::toggle_memory_mode();
         } else {
             radio::toggle_vfo();
         }
@@ -48,7 +48,7 @@ void FrequencyWidget::init() {
 void FrequencyWidget::before_paint() {
 
     st_freqInfo freqInfo = {(unsigned long)radio::get_frequency(), config.vfo[config.vfo_ix].step, config.repeater_mode, radio::get_vfo(),
-                            radio::get_memory_mode()};
+                            freq_memory::get_memory_mode()};
 
     if (this->dirty() || !(freqInfo == this->status)) {
 
@@ -86,7 +86,7 @@ void FrequencyWidget::before_paint() {
             btnRpt.set_value("");
         }
 
-        if (radio::get_memory_mode()) {
+        if (freq_memory::get_memory_mode()) {
             btnVFO.set_text("M");
         } else {
             btnVFO.set_text(radio::get_vfo() == 0 ? "A" : "B");
@@ -103,7 +103,7 @@ bool FrequencyWidget::on_touch(const st_inputEvent e) {
 
     } else {
         Menu::open_keypad<uint64_t>(
-            radio::get_frequency(), "Hz", "Frequency", 0, true, [](uint64_t v) { radio::set_frequency((uint64_t)v); }, 0, 0);
+            radio::get_frequency(), "Hz", "Frequency", 6, true, [](uint64_t v) { radio::set_frequency((uint64_t)v); }, 0, 0);
     }
     return true;
 }

@@ -7,13 +7,17 @@
 #include "../main_board.h"
 #include "../agc.h"
 #include "Display_afb.h"
+#include "input/inputEvent.h"
 #include "menu_prompts.h"
 #include "radio.h"
 #include "printf.h"
 #include "dsp/fft/fft.h"
+#include "types.h"
 #include "ui/button_widget.h"
 #include "s_strength.h"
 #include "menu.h"
+#include "ui/frequency_memory_ui.h"
+#include <sys/_stdint.h>
 
 void RadioStatusWidget::init() {
 
@@ -21,11 +25,10 @@ void RadioStatusWidget::init() {
     btnSquelch.set_two_lines(true);
     btnGain.set_text("Gain");
     btnGain.set_two_lines(true);
-    btnVFO.set_text("VFO");
-    btnVFO.set_two_lines(true);
-    btnRIT.set_text("RIT");
-    btnRIT.set_two_lines(true);
+
     btnSettings.set_text("Menu");
+    btnSettings.set_value("Mem");
+    btnSettings.set_two_lines(true);
 
     lblMode.on_select = [](Label &) {
         MODE mode;
@@ -44,21 +47,35 @@ void RadioStatusWidget::init() {
         btn->set_font((FontDef *)&Font_Tiny8x8);
         btn->set_aling(ALIGN_CENTER);
         if (btn != &lblMode) {
-            ((Button *)btn)->action = [this](Button &button, st_inputEvent) { this->on_button(button); };
+            ((Button *)btn)->action = [this](Button &button, st_inputEvent e) { this->on_button(button, e); };
         }
     }
 }
 
-void RadioStatusWidget::on_button(Button &button) {
+void RadioStatusWidget::on_button(Button &button, st_inputEvent e) {
     if (&button == &btnSquelch) {
         Menu::open_keypad<float>(
             sstrength::get_squelch(), "x1", "Squelch", 1, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
     } else if (&button == &btnGain) {
         Menu::open(Menu::frontendPathMenu);
     } else if (&button == &btnVFO) {
-        radio::toggle_vfo();
+        if (freq_memory::get_memory_mode()) {
+            freq_memory::set_next_prev(BACKWARDS);
+        } else {
+            radio::toggle_vfo();
+        }
     } else if (&button == &btnRIT) {
+        if (freq_memory::get_memory_mode()) {
+            freq_memory::set_next_prev(FORWARD);
+        } else {
+            Menu::open_number_edit<int32_t>(
+                radio::get_rit(), "Hz", "RIT", 0, [](int32_t v) { radio::set_rit(v); }, -500, 500, 1, 10);
+        }
     } else if (&button == &btnSettings) {
+        if (e.ms > LONG_PRESS_MS) {
+            freq_memory::toggle_memory_mode();
+        } else {
+        }
     }
 }
 
@@ -73,7 +90,7 @@ char *RadioStatusWidget::mode() {
 }
 
 char *RadioStatusWidget::rit() {
-    sprintf(buf, "0");
+    sprintf(buf, "%d", radio::get_rit());
     return buf;
 }
 
@@ -100,7 +117,7 @@ char *RadioStatusWidget::squelch() {
 
 void RadioStatusWidget::before_paint() {
 
-    st_radio_status status = {config.squelch_level, ISTX, radio::get_vfo(), agc::get_gain()};
+    st_radio_status status = {config.squelch_level, ISTX, radio::get_vfo(), agc::get_gain(), freq_memory::get_memory_mode()};
 
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
 
@@ -155,10 +172,24 @@ void RadioStatusWidget::before_paint() {
             lblMode.set_style(ButtonStyle::LABEL_STYLE_HOLLOW);
         }
 
-        sprintf(buf, "VFO %s", radio::get_vfo() ? "A" : "B");
-        btnVFO.set_text(buf);
-        btnVFO.set_value(vfo());
+        if (freq_memory::get_memory_mode()) {
+            btnVFO.set_text("\x80 Mem");
+            btnVFO.set_two_lines(false);
+            btnVFO.set_value("");
+            btnRIT.set_text("Mem \x7F");
+            btnRIT.set_two_lines(false);
+            btnRIT.set_value("");
+        } else {
+            btnVFO.set_text("VFO");
+            btnVFO.set_two_lines(true);
+            btnRIT.set_text("RIT");
+            btnRIT.set_two_lines(true);
 
-        btnRIT.set_value(rit());
+            sprintf(buf, "VFO %s", radio::get_vfo() ? "A" : "B");
+            btnVFO.set_text(buf);
+            btnVFO.set_value(vfo());
+
+            btnRIT.set_value(rit());
+        }
     }
 }

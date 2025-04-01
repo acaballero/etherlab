@@ -20,7 +20,7 @@
 #define CPU_TIMER_PRESCALER_MS_HZ 264000 // OVERCLOCKED (See clocks.cpp)
 
 #define DISABLE_SD_INIT 1
-#define ENABLE_SD_CARD 0
+#define ENABLE_SD_CARD 1
 
 #include <stm32f4xx.h>
 #include <stm32f4xx_hal_dac_ex.h>
@@ -29,12 +29,12 @@
 #include "hw/stm32f4xx/dac.h"
 #include "hw/stm32f4xx/dma.h"
 #include "hw/stm32f4xx/usb.h"
-#include "hw/stm32f4xx/power.h" 
-#include "hw/stm32f4xx/timers.h" 
-#include "hw/stm32f4xx/flash.h" 
+#include "hw/stm32f4xx/power.h"
+#include "hw/stm32f4xx/timers.h"
+#include "hw/stm32f4xx/flash.h"
 #include "hw/stm32f4xx/clocks.h"
 #include "hw/stm32f4xx/connectivity.h"
-#include "fatfs/sd_diskio.h" 
+#include "fatfs/sd_diskio.h"
 #include "fatfs/spi_diskio.h"
 
 /* Board config linkage */

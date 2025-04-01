@@ -13,6 +13,7 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 #define FFT_TYPE FFT_TYPE_FLOAT
 
 #define FFT_IQBALANCE_REFRESH_PERIOD_MS 1000
+#define FFT_SNR_REFRESH_PERIOD_MS 200
 #define FFT_WATERFALL_NCOLORS 16
 #define FFT_WATERFALL_MIN_REFRESH_PERIOD_MS 75
 #define FFT_WATERFALL_MAX_PIXELS_PER_FRAME 4 // max scrolled pixels per frame
@@ -77,10 +78,10 @@ typedef struct {
 typedef struct {
 
     uint8_t max_slices = FFT_MAX_SLICES;
-    uint32_t span = 340000;
+    uint32_t span = 750000;
     uint32_t bw = FFT_BANDWIDTH; // Bandwidth of interest of the FFT. Usable bandwidth.
     int16_t min_db = -130;
-    int16_t max_db = -50;
+    int16_t max_db = -75;
     // bool min_db_auto = false;
     // bool show_noise_floor = true;
     // int resolution_bits = 16;
@@ -134,7 +135,7 @@ typedef struct {
 
     uint8_t max_decimation_factor = MAX_DECIMATION_FACTOR;
 
-    FFT_SPECTRUM_STYLE spectrum_style;
+    FFT_SPECTRUM_STYLE spectrum_style = FFT_SPECTRUM_STYLE_LINE_FILL;
     uint16_t spectrum_line_color = C565_CYAN;
     uint16_t spectrum_fill_color = C565_GREENYELLOW;
 } st_fft_config;

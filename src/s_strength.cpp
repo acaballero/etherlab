@@ -7,20 +7,21 @@
 #include "os/periodic_task.h"
 #include "config.h"
 #include "signal.h"
+#include "types.h"
 #include <hw/stm32.h>
 #include <stdio.h>
 
 /* Definitions for the audio frequency signal strength meter */
 
-#define S_STRENGTH_S9 2.89 // Voltage of S_STRENGTH_PIN at S9 level
+#define S_STRENGTH_S9 3.05 // Voltage of S_STRENGTH_PIN at S9 level
 
-#define S_STRENGTH_V_DB 0.013
+#define S_STRENGTH_V_DB 0.025
 #define S_STRENGTH_S1 (S_STRENGTH_S9 - (8 * 6 * S_STRENGTH_V_DB))
 
 /*
  * Definitions for the RSSI level of the logarithmic amplifier
  *
- * The voltage increases by 2mv/dB
+ * The voltage increases by S_STRENGTH_V_DB_LOGAMP mv/dBv (halve it for mv/dB)
  *
  */
 
@@ -71,6 +72,18 @@ float get_s_strength(bool filter, uint8_t channel) {
     uint16_t adcv = GetADCValue(&hadc3, channel, 3);
 
     float v = ((float)adcv / (float)MAX_ADC_VALUE) * (float)V_REF;
+
+    if (ISANALOG && config.modulation == AM) {
+        // The RSSI signals from the FM and AM detectors are switched by a simple diode owing to the fact that FM RSSI is down in AM mode. Like this:
+        //
+        // AM RSSI  _____DIODE>_________
+        // FM RSSI  ______________▲
+
+        // As a consequence, the AM RSSI voltage is down by the diode drop (currently 0.2v)
+        //
+        // The AM RSSI voltage is also lower than that of the FM detector since the input signal is splitted before the limiter.
+        v *= 1.28; // Measured, but not liear, so expect differences between AM and FM detected RSSI levels.
+    }
 
     // exponential filter
     float filter_factor = filter ? 0.3 : 0.95;
@@ -136,8 +149,10 @@ void check_signal_strength() {
             }
 
             last_squelch_test = in_squelch;
-        } else if (in_squelch && last_activation_trigger_ms && HAL_GetTick() - last_activation_trigger_ms > SQUELCH_TIMEOUT_MS) {
+        } else if (last_activation_trigger_ms && HAL_GetTick() - last_activation_trigger_ms > SQUELCH_TIMEOUT_MS) {
+
             emit = true;
+
             last_activation_trigger_ms = 0;
         }
 
@@ -152,6 +167,8 @@ void check_signal_strength() {
 void set_squelch(float level) {
     config.squelch_level = level;
     info.in_squelch = false;
+    last_squelch_test = false;
+    last_activation_trigger_ms = 0;
     info.level = level;
     squelch_signal.emit(&info);
 }

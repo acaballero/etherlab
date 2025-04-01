@@ -11,6 +11,7 @@
 #include "../../../lib/CMX973/cmx973.h"
 #include "../../../lib/ADF4351/adf4351.h"
 #include "../../../lib/Si5351/si5351_I2C.h"
+#include "types.h"
 
 namespace board {
 
@@ -208,6 +209,7 @@ bool lo_freq(uint8_t stage, uint64_t freq) {
 
     switch (stage) {
         case 0:
+
             ok = adf4350_out_frequency(freq) > 0;
             break;
         case 1:
@@ -374,6 +376,7 @@ bool radio_config(st_radio_config radioConfig) {
         if_freq(RF_DIRECTION_RX, 0);
         if_freq(RF_DIRECTION_TX, radio::f_dsp_if);
 
+        // Enable DAC for IF modulation
         MX_DAC_Init();
         set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq);
         DAC_DMA_Start(&hdac1);
@@ -381,23 +384,42 @@ bool radio_config(st_radio_config radioConfig) {
         // Starting the DAC causes a DC transient. Wait for it to stop
         // HAL_Delay(300);
         if_direction(RF_DIRECTION_TX);
+
     } else {
 
-        main_board::setMode(ANALOG_RX);
+        if (radioConfig.mode == ANALOG) {
 
-        if_direction(RF_DIRECTION_RX);
+            main_board::setMode(ANALOG_RX);
 
-        if_freq(RF_DIRECTION_TX, 0);
-        if_freq(RF_DIRECTION_RX, radio::f_dsp_if);
+            if_direction(RF_DIRECTION_RX);
 
-        DAC_DMA_Stop(&hdac1);
-        HAL_DAC_DeInit(&hdac1);
+            if_freq(RF_DIRECTION_TX, 0); // Stop TX quadrature clocks
+            if_freq(RF_DIRECTION_RX, radio::f_dsp_if);
 
-        // We need to set the frequency for the IF value to be calculated
-        radio::update_freq();
+            // Disable DAC audio output
+            DAC_DMA_Stop(&hdac1);
+            HAL_DAC_DeInit(&hdac1);
+
+        } else { // DSP
+
+            main_board::setMode(DIGITAL_RX);
+
+            if_direction(RF_DIRECTION_RX);
+
+            if_freq(RF_DIRECTION_TX, 0); // Stop TX quadrature clocks
+            if_freq(RF_DIRECTION_RX, radio::f_dsp_if);
+
+            // Enable DAC for audio output
+            MX_DAC_Init();
+            set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq);
+            DAC_DMA_Start(&hdac1);
+        }
 
         ADC_DMA_Start(&hadc1);
     }
+
+    // We need to set the frequency for the IF value to be calculated
+    radio::update_freq();
 
     return true;
 }

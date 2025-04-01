@@ -150,9 +150,7 @@ xpt2046_touch_pressed_t xpt2046_touch_coordinate(xpt2046_t *lcd, uint16_t *x_pos
     if (lcd->spi_hal) {
         MODIFY_REG(lcd->spi_hal->Instance->CR1, SPI_CR1_BR, SPI_BAUDRATEPRESCALER_128);
     }
-
-    HAL_GPIO_WritePin(XPT2046_TOUCH_CLK_PORT, XPT2046_TOUCH_CLK_PIN, GPIO_PIN_RESET);
-
+    
     xpt2046_spi_touch_select(lcd);
 
     while ((itpPressed == xpt2046_touch_pressed(lcd)) && (sample--)) {
@@ -186,6 +184,8 @@ xpt2046_touch_pressed_t xpt2046_touch_coordinate(xpt2046_t *lcd, uint16_t *x_pos
                 HAL_GPIO_WritePin(XPT2046_TOUCH_CLK_PORT, XPT2046_TOUCH_CLK_PIN, GPIO_PIN_RESET);
                 delay_us(10);
             }
+
+            HAL_GPIO_WritePin(XPT2046_TOUCH_CLK_PORT, XPT2046_TOUCH_CLK_PIN, GPIO_PIN_SET);
         }
     }
 
@@ -403,6 +403,8 @@ uint16_t xpt2046_read_spi(uint8_t command) {
 uint16_t xpt2046_read_bitbang(uint8_t command) {
     uint16_t result = 0;
 
+    HAL_GPIO_WritePin(XPT2046_TOUCH_CLK_PORT, XPT2046_TOUCH_CLK_PIN, GPIO_PIN_RESET);
+
     for (int i = 7; i >= 0; i--) {
         HAL_GPIO_WritePin(XPT2046_TOUCH_DATA_IN_PORT, XPT2046_TOUCH_DATA_IN_PIN, static_cast<GPIO_PinState>(command & (1 << i)));
         HAL_GPIO_WritePin(XPT2046_TOUCH_CLK_PORT, XPT2046_TOUCH_CLK_PIN, GPIO_PIN_SET);
@@ -420,6 +422,9 @@ uint16_t xpt2046_read_bitbang(uint8_t command) {
         HAL_GPIO_WritePin(XPT2046_TOUCH_CLK_PORT, XPT2046_TOUCH_CLK_PIN, GPIO_PIN_RESET);
         delay_us(10);
     }
+
+    HAL_GPIO_WritePin(XPT2046_TOUCH_DATA_IN_PORT, XPT2046_TOUCH_DATA_IN_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(XPT2046_TOUCH_CLK_PORT, XPT2046_TOUCH_CLK_PIN, GPIO_PIN_SET);
 
     return result;
 }

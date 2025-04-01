@@ -8,6 +8,9 @@
 #include "../dsp_tasks.h"
 #include "../signal_generator/signal_generator_task.h"
 #include "../dsp.h"
+#include "hw/board/board_v2.h"
+#include "menuBase.h"
+#include "types.h"
 #include "ui/main_view.h"
 #include "ui/sd_filepicker_menu.h"
 #include "signal_generator_widget.h"
@@ -25,6 +28,7 @@ int8_t gain;
 int8_t pulse_duty = 50;
 uint32_t baseband_frequency = 10000;
 uint32_t modulation_frequency = 1000;
+RF_DIRECTION mode;
 int command = DSP_COMMAND_START;
 SignalToken signal_token;
 
@@ -52,6 +56,10 @@ void on_event(st_dspStatus *status) {
 Menu::result set_signal_params(Menu::eventMask e) {
     DspSignalGeneratorProcessor *processor = ((DspSignalGeneratorProcessor *)processors[dsp::DSP_TASK_SIGNAL_GENERATOR]);
     processor->set_config(baseband_frequency, modulation_frequency, pulse_duty, config.fft.sample_rate, config.hw.dac_offset);
+
+    // Tasks parameters. Essentially, the IF direction
+    SignalGeneratorTask *task = ((SignalGeneratorTask *)dsp::tasks[dsp::DSP_TASK_SIGNAL_GENERATOR]);
+    task->mode = mode;
     return Menu::proceed;
 }
 
@@ -106,14 +114,13 @@ result set_sampling_params(eventMask e) {
     return proceed;
 }
 
-result change_gain(eventMask e) {
-    set_tx_gain_db(gain);
-    return proceed;
-}
-
-TOGGLE(command, signalGeneratorToggle, "Command: ", change_dsp_status, anyEvent, noStyle //,doExit,enterEvent,noStyle
-       ,
+TOGGLE(command, signalGeneratorToggle, "Command: ", change_dsp_status, anyEvent,
+       noStyle, //,doExit,enterEvent,noStyle       ,
        VALUE("Stop", DSP_COMMAND_STOP, change_dsp_status, anyEvent), VALUE("Start", DSP_COMMAND_START, change_dsp_status, anyEvent))
+
+TOGGLE(mode, modeToggle, "Mode: ", doNothing, anyEvent,
+       noStyle, //,doExit,enterEvent,noStyle       ,
+       VALUE("RX", RF_DIRECTION_RX, doNothing, anyEvent), VALUE("TX", RF_DIRECTION_TX, doNothing, anyEvent))
 
 Menu::result on_freq_updated(); // Forward declaration
 
@@ -124,11 +131,13 @@ Menu::result on_freq_updated() {
     return Menu::proceed;
 }
 
+Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &gain, 0, ' ', '.', "dB", [](int8_t v) { set_tx_gain_db(v); }, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB,
+                                    1, 5);
+
 MENU(signalGeneratorMenu, "Signal generator", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle, SUBMENU(signalGeneratorToggle),
-     FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle),
+     SUBMENU(modeToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle),
      FIELD(baseband_frequency, "Baseband freq.:", "", 0, FFT_BANDWIDTH, 500, 0, set_signal_params, exitEvent, noStyle),
      FIELD(modulation_frequency, "Modulation freq.:", "", 0, 5000, 100, 0, set_signal_params, exitEvent, noStyle),
-     FIELD(pulse_duty, "Pulse duty:", "", 1, 100, 1, 0, set_signal_params, exitEvent, noStyle),
-     FIELD(gain, "Gain:", " dB", DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 0, change_gain, exitEvent, noStyle),
-     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), OBJ(freqEdit), EXIT("<Back"))
+     FIELD(pulse_duty, "Pulse duty:", "", 1, 100, 1, 0, set_signal_params, exitEvent, noStyle), OBJ(gainMenu),
+     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), OBJ(freqEdit))
 } // namespace dspSignalGeneratorUI

@@ -195,14 +195,31 @@ void set(st_freq_mem *mem) {
     radio::set_frequency(mem->freq);
 }
 
-st_freq_mem *find_closest(uint64_t f, uint16_t group) {
+void set_next_prev(DIRECTION d) {
+    if (get_memory_mode() && curr_index >= 0) {
+        st_freq_mem *mem = find_closest(config.freqs[curr_index].freq, 0, d);
+        if (mem) {
+            freq_memory::set(mem);
+        }
+    } else {
+    }
+}
+
+st_freq_mem *find_closest(uint64_t f, uint16_t group, DIRECTION direction = STOP) {
     int ix = -1;
     uint32_t min_distance = (uint32_t)-1;
-    uint32_t distance = 0;
+    int32_t distance = 0;
 
     for (int i = 0; i < FREQ_MEM_SIZE; i++) {
-        distance = std::abs((long)(config.freqs[i].freq - f));
-        if (distance < min_distance && config.freqs[i].group == group) {
+        distance = config.freqs[i].freq - f;
+
+        if (!config.freqs[i].freq || (direction == FORWARD && distance <= 0) || (direction == BACKWARDS && distance >= 0)) {
+            continue;
+        }
+
+        distance = abs(distance);
+
+        if ((uint32_t)distance < min_distance && config.freqs[i].group == group) {
             min_distance = distance;
             ix = i;
         }
@@ -214,6 +231,29 @@ st_freq_mem *find_closest(uint64_t f, uint16_t group) {
     } else {
         return nullptr;
     }
+}
+
+bool get_memory_mode() { return config.memory_mode; }
+
+uint8_t toggle_memory_mode() {
+    bool memory_mode = (config.memory_mode == 0 ? 1 : 0);
+
+    if (memory_mode) {
+        // Are there any frequencies
+        st_freq_mem *mem = find_closest(radio::get_frequency(), 0);
+
+        if (mem) {
+            freq_memory::set(mem);
+        } else {
+            using namespace status;
+            handleError(ST_ERROR, "Frequency memory empty");
+            return 1;
+        }
+    }
+
+    config.memory_mode = memory_mode;
+
+    return 0;
 }
 
 labelPrompt freqNameMenu((const char *)"Name", tempFreqMem.name, edit_freq_name, enterEvent, noStyle);

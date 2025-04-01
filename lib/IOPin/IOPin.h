@@ -6,21 +6,19 @@
 #define TRX_FRONTEND_IOPIN_H
 
 #include <stm32f4xx.h>
+#include <sys/_stdint.h>
 
 class IOPin {
 
-public:
-
-    IOPin(uint8_t mode) : mode(mode) {};
+  public:
+    IOPin(uint8_t mode) : mode(mode){};
 
     virtual GPIO_PinState read() = 0;
-    virtual void set(GPIO_PinState) = 0;
+    virtual uint8_t set(GPIO_PinState) = 0;
     virtual GPIO_PinState toggle() = 0;
 
-protected:
-
+  protected:
     uint8_t mode;
-
 };
 
-#endif //TRX_FRONTEND_IOPIN_H
+#endif // TRX_FRONTEND_IOPIN_H

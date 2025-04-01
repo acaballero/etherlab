@@ -13,6 +13,9 @@
 #include "../lib/IOPin/GPIOPin.h"
 #include "../lib/IOPin/MCP23017Pin.h"
 #include "radio.h"
+#include "../lib/printf/printf.h"
+#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_def.h"
 
 namespace main_board {
 
@@ -31,6 +34,7 @@ battery::BATTERY_STATUS battery_status = battery::BATTERY_STATUS_UNDEFINED;
 
 void s_strength_callback(void *thisptr, void *args) {
     sstrength::st_sstrength_info info = *((sstrength::st_sstrength_info *)args);
+
     setMute(info.in_squelch && info.level > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
@@ -172,15 +176,21 @@ bool _setMode(MODE mode, bool force) {
         if (ISTX) {
 
             power_ctrl = POWCRL_PB1 | POWCRL_P5 | POWCRL_PA1 | (config.modulation == SSB_LSB || config.modulation == SSB_USB ? POWCRL_PC1 : 0);
-            power_ctrl =
-                (config.power_ctrl & POWCRL_P12) | power_ctrl; // Leave +12v as it was, in case this is executed twice to prevent it from enable/disable/enable
+
+            // Leave +12v as it was, in case this is executed twice to prevent it from enable/disable/enable
+            if (config.hpa_enabled) {
+                power_ctrl = (config.power_ctrl & POWCRL_P12) | power_ctrl;
+            }
 
             setPowerCtrl(power_ctrl, false);
 
             setGPIO();
 
-            power_ctrl = config.power_ctrl | POWCRL_P12;
-            setPowerCtrl(power_ctrl, force);
+            if (config.hpa_enabled) {
+                power_ctrl = config.power_ctrl | POWCRL_P12;
+
+                setPowerCtrl(power_ctrl, force);
+            }
 
             HAL_Delay(10);
 
@@ -219,7 +229,7 @@ bool _setMode(MODE mode, bool force) {
             }
             rf_coupler::enable();
 
-        } else {
+        } else { // RX
 
             rf_coupler::disable();
             if (config.hpa_enabled) {
@@ -295,7 +305,9 @@ bool setMode(MODE mode) {
 void setMute(GPIO_PinState muteState) {
     if (mute != muteState) {
         mute = muteState;
-        mutePin.set(muteState);
+        if (mutePin.set(muteState) != HAL_OK) {
+            status::handleError(status::ST_ERROR, "Error setting mute");
+        }
     }
 }
 

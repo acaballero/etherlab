@@ -10,6 +10,7 @@
 #include "Signal.h"
 #include "mixer.h"
 #include <cstdint>
+#include <sys/_stdint.h>
 
 namespace radio {
 
@@ -106,14 +107,14 @@ void set_frequency(uint64_t f);
 void change_step(int amount);
 uint64_t get_frequency();
 uint64_t get_vfo_frequency(uint8_t);
+int32_t get_rit();
+void set_rit(int32_t v);
 void update_freq();
 BAND find_band(unsigned long);
 bool tx_enabled();
 void set_band();
 void set_vfo(uint8_t);
 uint8_t toggle_vfo();
-uint8_t toggle_memory_mode();
-bool get_memory_mode();
 uint8_t get_vfo();
 BAND get_band();
 extern os::periodic_task task;

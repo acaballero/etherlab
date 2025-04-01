@@ -173,27 +173,27 @@ void TitleBarWidget::paint_callback() {
         display->setColor(C565_WHITE);
     }
 
-    if (ISTX) {
-        if (rf_coupler::info.swr > 0) {
+    // if (ISTX) {
+    //     if (rf_coupler::info.swr > 0) {
 
-            if (rf_coupler::info.swr >= rf_coupler::HIGH_SWR) {
-                display->setColor(C565_RED);
-            }
+    //         if (rf_coupler::info.swr >= rf_coupler::HIGH_SWR) {
+    //             display->setColor(C565_RED);
+    //         }
 
-            if (rf_coupler::info.swr >= rf_coupler::MAX_SWR) {
-                sprintf(buff, " S:MAX");
-            } else if (rf_coupler::info.swr > 0) {
-                sprintf(buff, " S:%.1f", rf_coupler::info.swr);
-            } else {
-                sprintf(buff, " S:?", rf_coupler::info.swr);
-            }
-        } else {
-            display->setColor(C565_GREY_LIGHT);
-            sprintf(buff, " S:?");
-        }
-        display->print(buff);
-        display->setColor(C565_WHITE);
-    }
+    //         if (rf_coupler::info.swr >= rf_coupler::MAX_SWR) {
+    //             sprintf(buff, " S:MAX");
+    //         } else if (rf_coupler::info.swr > 0) {
+    //             sprintf(buff, " S:%.1f", rf_coupler::info.swr);
+    //         } else {
+    //             sprintf(buff, " S:?", rf_coupler::info.swr);
+    //         }
+    //     } else {
+    //         display->setColor(C565_GREY_LIGHT);
+    //         sprintf(buff, " S:?");
+    //     }
+    //     display->print(buff);
+    //     display->setColor(C565_WHITE);
+    // }
 
     // TODO: GPSDO lock. Meanwhile, warmup time has passed
     uint32_t uptime = rtc_uptime();
@@ -201,14 +201,16 @@ void TitleBarWidget::paint_callback() {
         display->print(" G");
     }
 
-    // AUDIO
+    if (!ISTX) {
+        // AUDIO
 
-    if (main_board::getMute()) {
-        display->setColor(C565_GREY_DARK);
+        if (main_board::getMute()) {
+            display->setColor(C565_GREY_DARK);
+        }
+        display->print(" ");
+        display->setFont((FontDef *)&Font_Icons9x8);
+        display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
     }
-    display->print(" ");
-    display->setFont((FontDef *)&Font_Icons9x8);
-    display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
 
     display->set_trim_enabled(true);
 }
@@ -223,4 +225,7 @@ void TitleBarWidget::before_paint() {
     }
 }
 
-void TitleBarWidget::on_info_changed_signal(void *) { this->set_dirty(); }
+void TitleBarWidget::on_info_changed_signal(void *) {
+    ;
+    this->set_dirty();
+}

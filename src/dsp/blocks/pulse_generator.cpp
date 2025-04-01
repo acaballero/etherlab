@@ -7,15 +7,15 @@
 #include "blocks_common.h"
 
 void PulseGenerator::init() {
-    tone_delta = (uint32_t) (((float) (LUT_SIZE * frequency) / (float) sample_rate) * (1 << 24));
-    crossover_phase = (uint8_t)((float)LUT_SIZE*(float)duty/100.0f);
+    tone_delta = (uint32_t)(((float)(LUT_SIZE * frequency) / (float)sample_rate) * (1 << 24));
+    crossover_phase = (uint8_t)((float)(LUT_SIZE - 1) * (float)duty / 100.0f);
 }
 
 adc_type PulseGenerator::get_sample(uint32_t phase) {
 
     int8_t sample;
 
-    sample = (((phase & 0xFF000000) >> 24) < crossover_phase) ? 127 : -128;
+    sample = (((phase & 0xFF000000) >> 24) <= crossover_phase) ? 127 : -128;
 
     return sample;
 }
@@ -27,11 +27,11 @@ void PulseGenerator::get_sample(adc_type &sample) {
 
 void PulseGenerator::get_complex_sample(complex_t &sample) {
 
-//        if (!sample_count && auto_off) {
-//            txprogress_message.done = true;
-//            shared_memory.application_queue.push(txprogress_message);
-//        } else
-//            sample_count--;
+    //        if (!sample_count && auto_off) {
+    //            txprogress_message.done = true;
+    //            shared_memory.application_queue.push(txprogress_message);
+    //        } else
+    //            sample_count--;
 
     tone_phase += tone_delta;
 
@@ -58,4 +58,3 @@ void PulseGenerator::set_config(uint32_t f, uint32_t sr) {
     sample_rate = sr;
     init();
 }
-

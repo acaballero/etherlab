@@ -1,20 +1,20 @@
 /**
-  ******************************************************************************
-  * @file   fatfs.c
-  * @brief  Code for fatfs applications
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file   fatfs.c
+ * @brief  Code for fatfs applications
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under Ultimate Liberty license
+ * SLA0044, the "License"; You may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at:
+ *                             www.st.com/SLA0044
+ *
+ ******************************************************************************
+ */
 
 #include "fatfs.h"
 #include "status.h"
@@ -25,9 +25,9 @@
 
 extern Diskio_drvTypeDef SD_CARD_DRIVER; // Defined in the parent project
 
-char USERPath[4];   /* USER logical drive path */
-FATFS FatFS;    /* File system object for USER logical drive */
-FIL FatFSFileHandle;       /* File object for USER */
+char USERPath[4];    /* USER logical drive path */
+FATFS FatFS;         /* File system object for USER logical drive */
+FIL FatFSFileHandle; /* File object for USER */
 
 /* USER CODE BEGIN Variables */
 
@@ -35,6 +35,12 @@ sdcard_st_info sdcard_info;
 uint64_t sdcard_last_check_ms;
 Signal sdcard_signal;
 volatile bool sd_card_locked = false;
+
+void sdcard_loop();
+
+namespace sdcard {
+os::periodic_task task(2000, sdcard_loop);
+}
 
 /*
  * Poll to update the status of the SD card
@@ -50,8 +56,7 @@ void sdcard_loop() {
 bool lock_sd_card() {
     if (sd_card_locked) {
         return false;
-    }
-    else {
+    } else {
         sd_card_locked = true;
         SDIO_PowerState_ON(SDIO_HANDLE.Instance);
         return true;
@@ -69,7 +74,7 @@ bool unlock_sd_card() {
 void sdcard_init(void) {
 
     /* Link the USER driver */
-    //uint8_t retUSER;
+    // uint8_t retUSER;
 
     if (lock_sd_card()) {
 
@@ -98,10 +103,10 @@ void sdcard_init(void) {
         if (error) {
 
             new_status.status = MountError;
-           // handleError(status::ST_ERROR, "f_mount error");
+            // handleError(status::ST_ERROR, "f_mount error");
 
         } else {
-            //Let's get some statistics from the SD card
+            // Let's get some statistics from the SD card
             DWORD free_clusters, free_sectors, total_sectors;
 
             FATFS *getFreeFs;
@@ -113,7 +118,7 @@ void sdcard_init(void) {
                 new_status.status = IOError;
             } else {
 
-                //Formula comes from ChaN's documentation
+                // Formula comes from ChaN's documentation
                 total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
                 free_sectors = free_clusters * getFreeFs->csize;
 
@@ -138,10 +143,10 @@ void sdcard_init(void) {
 }
 
 /**
-  * @brief  Gets Time from RTC
-  * @param  None
-  * @retval Time in DWORD
-  */
+ * @brief  Gets Time from RTC
+ * @param  None
+ * @retval Time in DWORD
+ */
 DWORD get_fattime(void) {
     /* USER CODE BEGIN get_fattime */
     return 0;
@@ -152,17 +157,16 @@ DWORD get_fattime(void) {
 
 /* USER CODE BEGIN Application */
 
-
 void test_sd_card_work() {
     lock_sd_card();
 
-    FIL fil;        //File handle
-    volatile FRESULT fres; //Result after operations
+    FIL fil;               // File handle
+    volatile FRESULT fres; // Result after operations
 
     // Now let's try and write a file "write.txt"
     fres = f_open(&fil, "write.txt", FA_WRITE | FA_OPEN_ALWAYS | FA_CREATE_ALWAYS);
     if (fres == FR_OK) {
-        //printf("Opened 'write.txt' for writing\r\n");
+        // printf("Opened 'write.txt' for writing\r\n");
     } else {
         printf("f_open error (%i)\r\n", fres);
     }
@@ -177,7 +181,7 @@ void test_sd_card_work() {
     uint8_t buf[64];
     char *p;
 
-    memset((char *) buf, 12, bufsize);
+    memset((char *)buf, 12, bufsize);
     fifo.reset();
     uint64_t m = HAL_GetTick();
 
@@ -186,7 +190,7 @@ void test_sd_card_work() {
 
     while (totalBytes < bytesToWrite && fres == FR_OK) {
 
-        fifo.writeBlock((char *) buf, bufsize);
+        fifo.writeBlock((char *)buf, bufsize);
 
         uint16_t av = fifo.available(&p);
         if (av > DSP_FIFO_BLOCK_BYTES) {
@@ -199,8 +203,7 @@ void test_sd_card_work() {
     elapsed = HAL_GetTick() - m;
 
     if (fres == FR_OK) {
-        printf("Wrote %lu bytes in %lu ms: %lu Kb/s\r\n", totalBytes, (uint32_t) (elapsed),
-               (uint32_t) (totalBytes / (elapsed)));
+        printf("Wrote %lu bytes in %lu ms: %lu Kb/s\r\n", totalBytes, (uint32_t)(elapsed), (uint32_t)(totalBytes / (elapsed)));
     } else {
         printf("f_write error\r\n");
     }
@@ -209,7 +212,7 @@ void test_sd_card_work() {
 
     fres = f_close(&fil);
 
-    //Now let's try to open file
+    // Now let's try to open file
     fres = f_open(&fil, "write.txt", FA_READ);
     if (fres != FR_OK) {
         printf("f_open error\r\n");
@@ -217,8 +220,8 @@ void test_sd_card_work() {
 
     printf("Opened 'write.txt' for reading!\r\n");
 
-    //We can either use f_read OR f_gets to get data out of files
-    //f_gets is a wrapper on f_read that does some string formatting for us
+    // We can either use f_read OR f_gets to get data out of files
+    // f_gets is a wrapper on f_read that does some string formatting for us
 
     totalBytes = 0;
     m = HAL_GetTick();
@@ -235,7 +238,7 @@ void test_sd_card_work() {
         uint32_t av = fifo.available(&p);
 
         if (av >= bufsize) {
-            memcpy((char *) buf, p, bufsize);
+            memcpy((char *)buf, p, bufsize);
             fifo.consume(bufsize, &p);
             totalBytes += bufsize;
         }
@@ -243,35 +246,33 @@ void test_sd_card_work() {
     elapsed = HAL_GetTick() - m;
     f_sync(&fil);
     if (fres == FR_OK) {
-        printf("Read %lu bytes in %lu ms: %lu Kb/s\r\n", totalBytes, (uint32_t) (elapsed),
-               (uint32_t) (totalBytes / (elapsed)));
+        printf("Read %lu bytes in %lu ms: %lu Kb/s\r\n", totalBytes, (uint32_t)(elapsed), (uint32_t)(totalBytes / (elapsed)));
     } else {
         printf("f_read error\r\n");
     }
 
-//    TCHAR* rres = f_gets((TCHAR*)readBuf, 30, &fil);
-//    if(rres != 0) {
-//        printf("Read string from 'test.txt' contents: %s\r\n", readBuf);
-//    } else {
-//        printf("f_gets error (%i)\r\n", fres);
-//    }
+    //    TCHAR* rres = f_gets((TCHAR*)readBuf, 30, &fil);
+    //    if(rres != 0) {
+    //        printf("Read string from 'test.txt' contents: %s\r\n", readBuf);
+    //    } else {
+    //        printf("f_gets error (%i)\r\n", fres);
+    //    }
 
-    //Be a tidy kiwi - don't forget to close your file!
+    // Be a tidy kiwi - don't forget to close your file!
     f_close(&fil);
 
-    //We're done, so de-mount the drive
-    // f_mount(NULL, "", 0);
+    // We're done, so de-mount the drive
+    //  f_mount(NULL, "", 0);
     unlock_sd_card();
 }
 
 void test_sd_card() {
-    for (int i=0;i<4;i++) {
+    for (int i = 0; i < 4; i++) {
         test_sd_card_work();
     }
 }
 
 #endif
-
 
 /* USER CODE END Application */
 

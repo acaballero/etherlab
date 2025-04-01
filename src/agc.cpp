@@ -81,20 +81,21 @@ void check_agc() {
         if (max_power_at_dsp >= max_input_dbm || fft_mag_overload) {
 
             if (t - last_overload_ms > overload_auto_correction_delay_ms) {
-                if (vga_gain < MIN_VGA_GAIN) {
+                if (vga_gain < MIN_VGA_GAIN) { // Decrease gain of VGA first
                     vga = (IF_GAIN)(vga + 1);
                 } else if (vgb_gain < MIN_VGB_GAIN) {
                     vgb = (IF_GAIN)(vgb + 1);
                 }
             }
 
+            // overload flag refers to the signal level at the input of the quadrature detector (not at the ADC, which is fft_mag_overload)
             overload = max_power_at_dsp >= max_input_dbm;
 
         } else {
 
             overload = false;
 
-            if (!fft_mag_overload && max_power_at_dsp < max_input_dbm - 50) {
+            if (!fft_mag_overload && max_power_at_dsp < max_input_dbm - 50) { // Increase gain when there's at least 50 dbm headroom
                 if (vga_gain > config.hw.cmx973_vga) {
                     vga = (IF_GAIN)(vga - 1);
                 } else if (vgb_gain > config.hw.cmx973_vgb) {

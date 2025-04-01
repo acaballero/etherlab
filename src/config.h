@@ -22,7 +22,7 @@
 #define TXMODE(mode) (mode == ANALOG_TX || mode == DIGITAL_TX)
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ISANALOG (config.mode == ANALOG_TX || config.mode == ANALOG_RX)
-#define CONFIG_VERSION "322"
+#define CONFIG_VERSION "323"
 
 namespace configuration {
 extern os::periodic_task task;
@@ -31,15 +31,17 @@ extern os::periodic_task task;
 struct st_vfo_config {
     unsigned long freq = 144000000UL;
     unsigned long step = 1000;
+    int32_t rit = 0; // Receive incremental tuning offset
 
     // Copy
     st_vfo_config &operator=(const st_vfo_config &o) {
         freq = o.freq;
         step = o.step;
+        rit = o.rit;
         return *this;
     }
 
-    bool operator==(const st_vfo_config &st) const { return freq == st.freq && step == st.step; }
+    bool operator==(const st_vfo_config &st) const { return freq == st.freq && step == st.step && rit == st.rit; }
     bool operator!=(const st_vfo_config &st) const { return !(*this == st); }
 };
 
@@ -103,9 +105,9 @@ typedef struct st_config //__attribute__ ((packed))
 
     bool squelch_auto = false;
     /* Squelch threshold (S units). 0 to disable */
-    float squelch_level = 0;
+    float squelch_level = 1;
 
-    bool agc_enabled = false;
+    bool agc_enabled = true;
 
     bool enable_quadrature = true;
 

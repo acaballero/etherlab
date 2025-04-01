@@ -3,11 +3,13 @@
 // Created by Angel Dust on 16/10/2019.
 //
 
+#include "Display_afb.h"
 #include "config.h"
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
 #include <sys/_stdint.h>
 #include <sys/types.h>
+#include <utility>
 #include "dsp/blocks/dc_block.h"
 #include "arm_common_tables.h"
 #include "dsp/fft/fft.h"
@@ -24,6 +26,7 @@
 #include "os/periodic_task.h"
 #include "ui/main_view.h"
 #include "ui/view_manager.h"
+#include "utils.hpp"
 
 // FFT parameters
 st_fft_params fft_params;
@@ -98,7 +101,60 @@ unsigned long fft_last_noise_floor_calculation_ms;
 
 namespace fft {
 float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
+float snr = 1e-40f;
+float dbm = FFT_MIN_DB; // Power in the baseband
+std::pair<int, int> get_bandwidth_bin_limits() {
+    int bm_s, bm_e, bm_m;
+    bm_m = DISPLAY_X_PIXELS / 2;
+
+    int16_t px_if_width = (int16_t)(radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / fft_params.display_rbw) >> 1;
+    if (config.modulation == SSB_USB) {
+        bm_s = bm_m + 1;
+        bm_e = bm_m + (px_if_width << 1) - 1;
+    } else if (config.modulation == SSB_LSB) {
+        bm_s = bm_m - (px_if_width << 1) + 1;
+        bm_e = bm_m - 1;
+    } else {
+        bm_s = bm_m - px_if_width;
+        bm_e = bm_m + px_if_width;
+    }
+
+    bm_s = bm_s < 0 ? 0 : bm_s;
+
+    return std::pair<int, int>{bm_s, bm_e};
 }
+
+/**
+ * Calculates signal to noise ratio
+ * Note this contains slow math and so is intended to run at low rates.
+ * If faster SNR calculation is required, either the magnitude of the FFT
+ * has to be preserved or the SNR calculated in the FFT processing loop
+ */
+void calc_snr() {
+
+    std::pair<int, int> bin_limits = get_bandwidth_bin_limits();
+
+    float sigplusnoise = 0; // Singal plus noise
+
+    for (int i = bin_limits.first; i <= bin_limits.second; i++) {
+
+        // Power has to be converted to magnitude here
+        sigplusnoise += powf(10.0f, fft_display_db[i] / 10.0f);
+    }
+
+    float noise_floor_mag = powf(10.0f, fft_noise_floor_db / 10.0f);
+    float noise = noise_floor_mag * (bin_limits.second - bin_limits.first + 1);
+
+    // Remove noise from signal (avoiding negative powers)
+    float signal = max2(sigplusnoise - noise, 1e-45f);
+
+    float curr_snr = 10.0f * fasterlog(signal / noise);
+
+    snr = (snr - (0.3f * (snr - curr_snr)));
+    dbm = (dbm - (0.3f * (dbm - 10.0f * fasterlog(sigplusnoise))));
+}
+
+} // namespace fft
 
 using namespace fft;
 
@@ -124,6 +180,7 @@ bool initialized = false;
 void fft_loop();
 
 namespace fft {
+os::periodic_task snr_task(FFT_SNR_REFRESH_PERIOD_MS, calc_snr);
 os::periodic_task fft_task(config.fft.refresh_period_ms, fft_loop);
 os::periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
     view_manager::mainView.IQBalance()->set_visible(true);
@@ -460,7 +517,7 @@ uint8_t findFreqs(int *arr_idx_freqs, uint8_t max) {
 }
 
 /**
- * Calculate the noise floor of the FFT using the fft_display (dB) values
+ * Calculate the noise floor and SNR of the FFT using the fft_display (dB) values
  * We estimate it just by taking the median, which yields good enough approximation for our needs
  * For better FFT calculation methods: https://kluedo.ub.uni-kl.de/frontdoor/deliver/index/docId/4293/file/exact_fft_measurements.pdf
  */
@@ -553,7 +610,6 @@ inline fft_type fft_output_db(fft_type v) {
 */
 
 /*** voltage-based calculation ***/
-
 inline fft_type fft_output_db(fft_type v) {
 
     float db;
@@ -567,7 +623,6 @@ inline fft_type fft_output_db(fft_type v) {
 
     // Divide by the gain
     v /= fft_radio_gain_factor;
-
     // dBm
     db = 10.0f * fasterlog(1000.0f * (float)pow(v, 2.0) / 400.0);
 
@@ -630,7 +685,6 @@ void processFFT(float32_t *v) {
             bin_ix = uint16_t(bin_pos);
 
             if (bin_ix != last_bin_ix) {
-
                 db = fft_output_db(fft_output[bin_ix]);
                 fft_output[bin_ix] = db;
                 gain = first_frame ? 1 : getSmoothGain(db);
@@ -985,4 +1039,5 @@ void updateFFT() {
 void fft_loop() {
     updateFFT();
     view_manager::mainView.paint();
+    snr_task.run();
 }

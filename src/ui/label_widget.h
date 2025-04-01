@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_LABEL_H
 #define TRX_FRONTEND_LABEL_H
 
+#include "Display_afb.h"
 #include "button_widget.h"
 #include "input/inputEvent.h"
 #include "widget.h"
@@ -15,7 +16,7 @@ class Label : public Widget {
   public:
     static const size_t MAX_CHARS = 30;
     static const size_t MAX_CHARS_VALUE = 8;
-    static const size_t MAX_CHARS_UNIT = 4;
+    static const size_t MAX_CHARS_UNIT = 5;
 
     Label() { set_label(""); }
 
@@ -59,7 +60,7 @@ class Label : public Widget {
     char value[MAX_CHARS_VALUE];
     char unit[MAX_CHARS_UNIT];
     uint16_t fg_color = C565_WHITE;
-    uint16_t fg_color_value = C565_BLUE;
+    uint16_t fg_color_value = C565_MAGENTA;
     uint16_t fg_color_unit = C565_GREY_LIGHT;
     uint16_t bg_color = C565_TRANSPARENT;
     uint16_t canvas_bg_color = 0;

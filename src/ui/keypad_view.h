@@ -24,7 +24,7 @@ class KeypadView : public View {
 
     KeypadView(Rect parent_rect) : View(parent_rect) { init(); }
 
-    static const uint8_t MAX_DIGITS = 12 + 3; // 3 for decimal and thousands separator
+    static const uint8_t MAX_DIGITS = 12 + 3 + 6; // 3 for decimal and thousands separator, 6 for fractional places
 
     std::function<void(double)> on_changed{};
 

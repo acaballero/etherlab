@@ -3,6 +3,8 @@
 //
 
 #include "MCP23017Pin.h"
+#include "../printf/printf.h"
+#include <sys/_stdint.h>
 
 GPIO_PinState MCP23017Pin::read() {
 
@@ -10,7 +12,7 @@ GPIO_PinState MCP23017Pin::read() {
     return (GPIO_PinState)(this->handle->gpio[this->port] & (1 << this->pin));
 }
 
-void MCP23017Pin::set(GPIO_PinState state) {
+uint8_t MCP23017Pin::set(GPIO_PinState state) {
 
     uint8_t curr_state = this->handle->gpio[this->port];
 
@@ -21,8 +23,10 @@ void MCP23017Pin::set(GPIO_PinState state) {
     }
 
     if (curr_state != this->handle->gpio[this->port]) {
-        mcp23017_write_gpio(this->handle, this->port);
+        return mcp23017_write_gpio(this->handle, this->port);
     }
+
+    return 0;
 }
 
 GPIO_PinState MCP23017Pin::toggle() {

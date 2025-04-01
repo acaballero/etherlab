@@ -6,9 +6,11 @@
 #define TRX_FRONTEND_MAIN_VIEW_H
 
 #include "config.h"
+#include "dsp/fft/snr_widget.h"
 #include "hw/hw_config.h"
 #include "number_edit_view.h"
 #include "option_buttons_view.h"
+#include "ui/ui_types.h"
 #include "view.h"
 #include "menu_widget.h"
 #include "status_widget.h"
@@ -60,6 +62,7 @@ class MainView : public View {
 
     RadioStatusWidget radio_w{{METER_WIDTH, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, DISPLAY_X_PIXELS - METER_WIDTH, INFO_HEIGHT}};
     SMeterWidget smeter_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT - 20}, &lcd};
+    SNRWidget snr_w{{15, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + METERS_HEIGHT - 5, METER_WIDTH - 15, SNRWidget::height}};
     PowerMeterWidget powmeter_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT}, &lcd};
     InfoWidget info_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + 5 + TUNE_INFO_HEIGHT, METER_WIDTH, FFT_INFO_HEIGHT}, &lcd};
     FrequencyWidget frequency_w{{DISPLAY_X_PIXELS / 2 - 60, 0, DISPLAY_X_PIXELS / 2 + 60, HEADER_HEIGHT}};
@@ -69,7 +72,6 @@ class MainView : public View {
     MenuWidget menu_w{{0, MENU_START_Y, DISPLAY_X_PIXELS, INFO_HEIGHT}, &lcd};
     OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
     NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
-    Label snr_w{{0, 0, 20, 0}};
 
     MessageWidget msg_w{
         {6, MENU_START_Y, DISPLAY_X_PIXELS - 12, INFO_HEIGHT - 6}, &lcd, (FontDef *)&Font_11x18, (FontDef *)&Font_7x10, C565_GREY_DARK, C565_RED, C565_WHITE};

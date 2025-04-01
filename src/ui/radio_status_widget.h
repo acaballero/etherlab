@@ -5,6 +5,7 @@
 #ifndef TRX_RADIO_STATUS_WIDGET_H
 #define TRX_RADIO_STATUS_WIDGET_H
 
+#include "input/inputEvent.h"
 #include "view.h"
 #include "../types.h"
 #include "label_widget.h"
@@ -18,7 +19,7 @@ class RadioStatusWidget : public View {
   protected:
     st_radio_status _status;
     constexpr static uint8_t btn_height = 38;
-    constexpr static uint8_t padding_top = 5;
+    constexpr static uint8_t padding_top = 6;
     constexpr static uint8_t cols = 3;
     uint8_t btn_width = (area.box.width / cols) - 2;
 
@@ -50,7 +51,7 @@ class RadioStatusWidget : public View {
 
     char *vfo();
 
-    void on_button(Button &button);
+    void on_button(Button &button, st_inputEvent e);
 };
 
 #endif // TRX_RADIO_STATUS_WIDGET_H

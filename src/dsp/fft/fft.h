@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_FFT_H
 #define TRX_FRONTEND_FFT_H
 
+#include <utility>
 #define CALIBRATE_FFT 1
 #define DEBUG_FFT 0
 #define DEBUG_FFT_ADC 0
@@ -89,8 +90,11 @@ namespace fft {
 extern os::periodic_task fft_task;
 extern os::periodic_task iqbalance_task;
 extern os::periodic_task waterfall_task;
-
 extern float fft_noise_floor_db; // Noise floor in dB
+extern float snr;                // Signal to noise in the baseband
+extern float dbm;                // Power in the baseband
+std::pair<int, int> get_bandwidth_bin_limits();
+
 } // namespace fft
 
 complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b);

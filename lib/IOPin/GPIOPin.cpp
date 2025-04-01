@@ -3,6 +3,7 @@
 //
 
 #include "GPIOPin.h"
+#include <sys/_stdint.h>
 
 GPIO_PinState GPIOPin::read() { return HAL_GPIO_ReadPin(this->port, this->pin); }
 
@@ -13,4 +14,7 @@ GPIO_PinState GPIOPin::toggle() {
     return new_state;
 }
 
-void GPIOPin::set(GPIO_PinState state) { HAL_GPIO_WritePin(this->port, this->pin, state); }
+uint8_t GPIOPin::set(GPIO_PinState state) {
+    HAL_GPIO_WritePin(this->port, this->pin, state);
+    return 0;
+}

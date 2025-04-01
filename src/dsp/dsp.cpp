@@ -2,6 +2,7 @@
 // Created by Angel Dust on 04/04/2021.
 //
 #include "dsp.h"
+#include "dsp/dsp_common.h"
 #include "status.h"
 #include "ui/lcd.h"
 #include "hw/stm32f4xx/timers.h"
@@ -130,17 +131,10 @@ void dsp_loop() {
 }
 
 //__attribute__((section(".ccmram")))
-inline void dsp_work() {
+inline void dac_work() {
     // GPIOD->BSRR |= GPIO_PIN_5;
 
-    if (!dsp_status || dsp_status->direction == DSP_DIRECTION_IN) {
-        // Fill the FFT FIFO. Here we don't care if we overrun as the FFT doesn't need to be processed in real-time
-        // TODO: write to the FFT FIFO in a separate DspProcessor
-        FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
-        UNUSED(err);
-    }
-
-    if (current_processor) {
+    if (current_processor && current_processor->status.direction == DSP_DIRECTION_OUT) {
         current_processor->work(current_buffer);
     }
 
@@ -152,14 +146,38 @@ inline void dsp_work() {
     // GPIOD->BSRR |= GPIO_PIN_5 << 16;
 }
 
+inline void adc_work() {
+    // GPIOD->BSRR |= GPIO_PIN_5;
+
+    if ((!dsp_status || dsp_status->direction == DSP_DIRECTION_IN)) {
+        // If the IF chain direction is input, the
+
+        // Fill the FFT FIFO. Here we don't care if we overrun as the FFT doesn't need to be processed in real-time
+        // TODO: write to the FFT FIFO in a separate DspProcessor
+        FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
+        UNUSED(err);
+    }
+
+    if (current_processor && current_processor->status.direction == DSP_DIRECTION_IN) {
+        current_processor->work(current_buffer);
+    }
+
+    // if (dsp_status && dsp_status->direction == DSP_DIRECTION_OUT) {
+    //     FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
+    //     UNUSED(err);
+    // }
+
+    // GPIOD->BSRR |= GPIO_PIN_5 << 16;
+}
+
 void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *) {
     current_buffer = &dac_buffer_2;
-    dsp_work(); // Process the 2nd half of the buffer
+    dac_work(); // Process the 2nd half of the buffer
 }
 
 void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *) {
     current_buffer = &dac_buffer_1;
-    dsp_work(); // Process the 1st half of the buffer
+    dac_work(); // Process the 1st half of the buffer
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *) {
@@ -167,13 +185,13 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *) {
 
     // TODO: Check ADC buffer overruns
     current_buffer = &adc_buffer_2;
-    dsp_work(); // Process the 2nd half of the buffer
+    adc_work(); // Process the 2nd half of the buffer
 }
 
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *) {
 
     current_buffer = &adc_buffer_1;
-    dsp_work(); // Process the 1st half of the buffer
+    adc_work(); // Process the 1st half of the buffer
 
     // If DMAContinuousConversion is disabled, the adc buffer will be written only once, and HAL_ADC_Start_DMA
     // should be called in order to start again after this callback
@@ -243,6 +261,8 @@ void dspStop() {
     if (on_event) {
         on_event(dsp_status);
     }
+
+    dsp_status = NULL;
 }
 
 void dspSuccess() { dspStop(); }

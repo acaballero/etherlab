@@ -10,7 +10,6 @@
 #include "scanner.h"
 #include "os/periodic_task.h"
 #include "types.h"
-#include "ui/frequency_memory_ui.h"
 #include <stdint.h>
 
 /*
@@ -128,6 +127,10 @@ void calculate_freqs() {
     // The 1st IF is fixed and common to the two mixers
 
     mixers[1].setIf(if_filters[if_filter].freq);
+
+    // Here is where we apply RIT, since we don't want it to appear in the VFO frequency value
+
+    carrier_freq += get_rit();
     mixers[0].setRf(carrier_freq);
 
     switch (config.modulation) {
@@ -221,28 +224,6 @@ void change_step(int amount) {
     }
 }
 
-bool get_memory_mode() { return config.memory_mode; }
-
-uint8_t toggle_memory_mode() {
-    bool memory_mode = (config.memory_mode == 0 ? 1 : 0);
-
-    if (memory_mode) {
-        // Are there any frequencies
-        st_freq_mem *mem = freq_memory::find_closest(get_frequency(), 0);
-
-        if (mem) {
-            freq_memory::set(mem);
-        } else {
-            status::handleError(status::ST_ERROR, "Frequency memory empty");
-            return 1;
-        }
-    }
-
-    config.memory_mode = memory_mode;
-
-    return 0;
-}
-
 uint8_t toggle_vfo() {
     set_vfo(get_vfo() == 0 ? 1 : 0);
     return get_vfo();
@@ -258,18 +239,12 @@ void set_vfo(uint8_t vfo_ix) {
 uint8_t get_vfo() { return config.vfo_ix; }
 
 void change_frequency(int amount) {
-    if (get_memory_mode()) {
-        st_freq_mem *mem = freq_memory::next_prev(amount > 0 ? true : false);
-        if (mem) {
-            freq_memory::set(mem);
-        }
-    } else {
-        set_frequency(config.vfo[config.vfo_ix].freq + amount * config.vfo[config.vfo_ix].step);
-    }
+    set_frequency(config.vfo[config.vfo_ix].freq + amount * config.vfo[config.vfo_ix].step);
     scanner::stop();
 }
 
-// This does not change the frequency immediatelly so it cal be called from an IRQhandler.
+// This does not change the frequency immediatelly so it can be called from an IRQhandler.
+// Otherwise, SPI might clash
 void set_frequency(uint64_t f) { config.vfo[config.vfo_ix].freq = f; }
 
 uint64_t get_vfo_frequency(uint8_t vfo_ix) {
@@ -292,6 +267,10 @@ uint64_t get_vfo_frequency(uint8_t vfo_ix) {
 }
 
 uint64_t get_frequency() { return get_vfo_frequency(config.vfo_ix); }
+
+int32_t get_rit() { return config.vfo[config.vfo_ix].rit; }
+
+void set_rit(int32_t v) { config.vfo[config.vfo_ix].rit = v; }
 
 void update_freq() {
     config.vfo[config.vfo_ix].freq = constrain(config.vfo[config.vfo_ix].freq, config.f_min, config.f_max);
@@ -382,37 +361,41 @@ bool tx_enabled() {
 
 void task_loop() {
 
-    if (config.vfo[config.vfo_ix].freq != radio::f_last) {
+    uint64_t f = config.vfo[config.vfo_ix].freq;
+
+    if (f != radio::f_last) {
 
         radio::BAND band = radio::find_band(radio::f_last);
+        radio::BAND current_band = radio::find_band(f);
 
         // In auto band mode, if we get out of band, we change to the next
-        if (config.band == radio::BAND_AUTO) {
+        if (current_band == BAND_ALL && config.band == radio::BAND_AUTO) {
 
-            if (config.vfo[config.vfo_ix].freq > radio::bands[band].freq_end) {
+            if (f > radio::bands[band].freq_end) {
 
                 if (band > 0) {
                     // TODO: Skip bands that are not allowed
                     // while (!allowedBand(radio::bands[band - 1])) {
 
                     //}
-                    config.vfo[config.vfo_ix].freq = radio::bands[band - 1].freq_start;
+                    f = radio::bands[band - 1].freq_start;
                 } else {
-                    config.vfo[config.vfo_ix].freq = radio::bands[band].freq_end;
+                    f = radio::bands[band].freq_end;
                 }
 
-            } else if (config.vfo[config.vfo_ix].freq < radio::bands[band].freq_start) {
+            } else if (f < radio::bands[band].freq_start) {
 
                 if (band < (radio::BAND_AUTO - 1)) {
-                    config.vfo[config.vfo_ix].freq = radio::bands[band + 1].freq_end;
+                    f = radio::bands[band + 1].freq_end;
                 } else {
-                    config.vfo[config.vfo_ix].freq = radio::bands[band].freq_start;
+                    f = radio::bands[band].freq_start;
                 }
             }
         }
 
-        if (config.vfo[config.vfo_ix].freq != radio::f_last) {
+        if (f != radio::f_last) {
             // Still different?
+            config.vfo[config.vfo_ix].freq = f;
             update_freq();
         }
     }

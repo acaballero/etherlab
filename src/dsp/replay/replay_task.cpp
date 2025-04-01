@@ -25,7 +25,7 @@ void ReplayTask::work() {
 
     if (this->status.status == DSP_STATUS_RUNNING) {
 
-        //UINT bytesRead;
+        // UINT bytesRead;
         char *p;
         bool eof = false;
 
@@ -33,7 +33,7 @@ void ReplayTask::work() {
 
         if (free >= DSP_FIFO_BLOCK_BYTES) {
 
-            //GPIOA->BSRR = GPIO_PIN_12;
+            // GPIOA->BSRR = GPIO_PIN_12;
 
             if (FatFSFileHandle.fptr < FatFSFileHandle.fsize) {
 
@@ -77,7 +77,7 @@ void ReplayTask::work() {
                 }
             }
 
-            //GPIOA->BSRR = GPIO_PIN_12 << 16;
+            // GPIOA->BSRR = GPIO_PIN_12 << 16;
 
         } else {
             this->status.fifo_overruns++; // won't stop for an overrun, just count them
@@ -111,14 +111,13 @@ void ReplayTask::start() {
 
     } else {
 
-        //DEBUGPRINT(
-        //        "Info header:\nChannels:%d\nBits per sample :%u\nByte Rate:%lu\nCarrier:%llu\nFormat:%u\nSample rate:%lu\n",
-        //        wi.n_channels, wi.bits_sample, wi.byte_rate, wi.carrier_freq, wi.format, wi.sample_rate)
-
+        // DEBUGPRINT(
+        //         "Info header:\nChannels:%d\nBits per sample :%u\nByte Rate:%lu\nCarrier:%llu\nFormat:%u\nSample rate:%lu\n",
+        //         wi.n_channels, wi.bits_sample, wi.byte_rate, wi.carrier_freq, wi.format, wi.sample_rate)
 
         uint8_t decimation_factor = 1;
 
-        if (wi.sample_rate) {  // The stored file has sample rate information
+        if (wi.sample_rate) { // The stored file has sample rate information
 
             // The samples in the file are stored in a sample rate that may not be the same
             // as the sample rate currently used by the fft processor
@@ -139,7 +138,7 @@ void ReplayTask::start() {
             // always taking into account the lower bounds of the sampling rate for the TX chain (DAC and reconstruction filters)
 
             // Having said that, here I'm changing the span instead of throttling the sample rate of the file.
-            config.fft.span = wi.sample_rate*USABLE_BW_FACTOR;
+            config.fft.span = wi.sample_rate * USABLE_BW_FACTOR;
 
             // Update FFT and sample rate parameters
             fft_config(config.fft.span);
@@ -169,10 +168,8 @@ void ReplayTask::start() {
         this->status.bits_per_sample = wi.bits_sample;
         this->status.n_channels = wi.n_channels; // I/Q
         this->status.block_size_bytes = dsp_temp_buf.size_bytes;
-        this->status.decimated_block_size =
-                dsp_temp_buf.count / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
-        this->status.decimated_block_size_bytes =
-                this->status.block_size_bytes / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+        this->status.decimated_block_size = dsp_temp_buf.count / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+        this->status.decimated_block_size_bytes = this->status.block_size_bytes / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
         // Start media read processing timer
         HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
@@ -186,11 +183,11 @@ void ReplayTask::start() {
         this->status.n_channels = 1;
 #endif
 
-        // The wave samples will be interpolated by the decimation factor to adapt the rate
-        // to that of the fft processing (which will again downsample by the same amount)
-        // So we'll write samples to the dac a rate equal to the desired sample rate multiplied
-        // by the interpolation/decimation factor
-        bool ret = radio_config({.direction=RF_DIRECTION_TX, .sample_freq=this->status.sample_rate * this->status.decimation_factor});
+        // The signal samples will be interpolated by the current decimation factor to adapt the rate
+        // to that of the FFT processing chain (which will in turn downsample them by the same factor)
+        // So we write samples to the DAC at a rate equal to the desired sample rate multiplied
+        // by the interpolation (->DAC) or decimation (ADC->) factor
+        bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = this->status.sample_rate * this->status.decimation_factor});
 
         this->status.status = DSP_STATUS_RUNNING;
 
@@ -212,7 +209,8 @@ void ReplayTask::stop() {
 
         if (fres != FR_OK) {
 
-            if (this->status.error != DSP_ERR_NONE) this->status.error = DSP_ERR_FILECLOSE;
+            if (this->status.error != DSP_ERR_NONE)
+                this->status.error = DSP_ERR_FILECLOSE;
         }
 
         // Stop media read processing timer
@@ -230,14 +228,8 @@ void ReplayTask::stop() {
     }
 }
 
-void ReplayTask::setFile(std::unique_ptr<File> file) {
-    m_file = move(file);
-}
+void ReplayTask::setFile(std::unique_ptr<File> file) { m_file = move(file); }
 
-bool ReplayTask::getLoop() const {
-    return loop;
-}
+bool ReplayTask::getLoop() const { return loop; }
 
-void ReplayTask::setLoop(bool b) {
-    ReplayTask::loop = b;
-}
+void ReplayTask::setLoop(bool b) { ReplayTask::loop = b; }

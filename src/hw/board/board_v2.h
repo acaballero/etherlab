@@ -33,6 +33,7 @@ struct st_radio_config {
     RF_DIRECTION direction;
     uint64_t sample_freq;
     uint64_t freq = 0;
+    IF_PROCESSING_MODE mode = ANALOG;
 };
 
 extern adf4350_init_param adf4350Params;

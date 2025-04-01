@@ -25,7 +25,7 @@ FileType ftype = FTYPE_WAV;
 int command = DSP_COMMAND_START;
 char fname[PATH_SIZE];
 bool filename_is_edited = false;
-CaptureWidget capture_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y, DISPLAY_X_PIXELS / 2, INFO_HEIGHT}, &lcd};
+CaptureWidget capture_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 10, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 10}, &lcd};
 
 Menu::result on_freq_updated(Menu::eventMask e); // Forward declaration
 void get_file_name(char *buff);                  // Forward declaration
@@ -163,5 +163,5 @@ TOGGLE(command, captureToggle, "Command: ", change_dsp_status, Menu::anyEvent, M
 
 MENU(captureMenu, "Capture", on_menu_event, (Menu::eventMask)(Menu::enterEvent | Menu::exitEvent), Menu::noStyle, SUBMENU(captureToggle),
      EDIT("File:", fname, Menu::alphaNumMask, on_file_updated, Menu::updateEvent, Menu::noStyle), OBJ(freqEdit),
-     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu), EXIT("<Back"))
+     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu))
 } // namespace dspCaptureUI

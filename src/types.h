@@ -12,6 +12,8 @@
 #include "radio.h"
 #include "dsp/dsp_common.h"
 
+enum IF_PROCESSING_MODE { ANALOG, DSP };
+
 enum RF_DIRECTION { RF_DIRECTION_RX, RF_DIRECTION_TX };
 
 enum SSB_MODE { SSB_MODE_LSB, SSB_MODE_USB };
@@ -70,8 +72,11 @@ struct st_radio_status {
     bool tx;
     uint8_t vfo_ix;
     int gain;
+    bool memory_mode;
 
-    bool operator==(const st_radio_status &st) const { return squelch_level == st.squelch_level && tx == st.tx && vfo_ix == st.vfo_ix && gain == st.gain; }
+    bool operator==(const st_radio_status &st) const {
+        return memory_mode == st.memory_mode && squelch_level == st.squelch_level && tx == st.tx && vfo_ix == st.vfo_ix && gain == st.gain;
+    }
 };
 
 // Top bar info

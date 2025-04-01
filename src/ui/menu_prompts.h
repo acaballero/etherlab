@@ -191,6 +191,7 @@ template class numberPrompt<uint16_t>;
 template class numberPrompt<uint32_t>;
 template class numberPrompt<uint64_t>;
 template class numberPrompt<int16_t>;
+template class numberPrompt<int8_t>;
 template class numberPrompt<int>;
 
 } // namespace Menu
