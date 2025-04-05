@@ -11,6 +11,7 @@
 #include "hw/stm32_hal.h"
 #include "hw/hw_config.h"
 #include "dsp/fft/fft_types.h"
+#include "dsp/dsp_config.h"
 #include "radio.h"
 #include "types.h"
 #include "rf_coupler.h"
@@ -22,15 +23,15 @@
 #define TXMODE(mode) (mode == ANALOG_TX || mode == DIGITAL_TX)
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ISANALOG (config.mode == ANALOG_TX || config.mode == ANALOG_RX)
-#define CONFIG_VERSION "323"
+#define CONFIG_VERSION "324"
 
 namespace configuration {
 extern os::periodic_task task;
 }
 
 struct st_vfo_config {
-    unsigned long freq = 144000000UL;
-    unsigned long step = 1000;
+    unsigned long freq = 118500000UL;
+    unsigned long step = 10000;
     int32_t rit = 0; // Receive incremental tuning offset
 
     // Copy
@@ -57,7 +58,7 @@ typedef struct st_config //__attribute__ ((packed))
 
     uint8_t power_ctrl = 0; // Power control byte (8 power control lines)
 
-    radio::BAND filter = radio::BAND_ALL;
+    radio::BAND filter = radio::BAND_AUTO;
     radio::IF_FILTER if_filter = radio::IF_FILTER_AUTO;
     radio::FRONTEND_PATH frontend_path = radio::FRONTEND_PATH_LNA; // LNA enabled
     MODULATION_MODE modulation = FM;
@@ -88,6 +89,9 @@ typedef struct st_config //__attribute__ ((packed))
 
     // FFT
     st_fft_config fft;
+
+    // DSP
+    dsp::st_dsp_config dsp;
 
     // Output power from the frequency synthesizers
     LO_POWER lo_drive_strength_0 = LO_POWER_HIGH;   // 1st LO

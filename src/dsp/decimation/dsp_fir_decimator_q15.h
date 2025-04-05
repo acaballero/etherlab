@@ -9,37 +9,27 @@
 #include "dsp_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft_types.h"
+#include <sys/_stdint.h>
 
+template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = int16_t> class DspFIRDecimatorQ15 : public DspDecimator<T> {
 
-class DspFIRDecimatorQ15 : public DspDecimator<int16_t> {
+  public:
+    DspFIRDecimatorQ15() : DspDecimator<T>(0){};
 
-public:
+    DspFIRDecimatorQ15(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<T>(input_rate, output_rate, factor) { this->initFilter(); };
 
-    DspFIRDecimatorQ15() : DspDecimator<int16_t>(0) {};
-
-    DspFIRDecimatorQ15(uint32_t input_rate, uint32_t output_rate, uint16_t factor)
-    : DspDecimator<int16_t>(input_rate, output_rate, factor)
-    {
-        this->initFilter();
-    };
-
-    void decimate(buffer_t <int16_t> &src, buffer_t <int16_t> &dst) override;
+    void decimate(buffer_t<T> &src, buffer_t<T> &dst) override;
     void config(uint32_t input_rate, uint32_t output_rate, uint16_t factor);
-    void decimate(buffer_t <int16_t> &src, buffer_t <int16_t> &dst, uint8_t start, uint8_t n_channels);
+    void decimate(buffer_t<T> &src, buffer_t<T> &dst, uint8_t start, uint8_t n_channels);
 
-private:
-
+  private:
     void initFilter();
 
-    q15_t dsp_firCoeffs15[FFT_LPF_FIR_FILTER_NTAPS];
+    q15_t dsp_firCoeffs15[TAPS];
 
-    q15_t dsp_firStateBuffer[FFT_LPF_FIR_FILTER_NTAPS + DSP_BLOCK - 1];
+    q15_t dsp_firStateBuffer[TAPS + DSP_BLOCK - 1];
 
-    arm_fir_decimate_instance_q15 dsp_fir_decimate_instance = {
-            1, FFT_LPF_FIR_FILTER_NTAPS, dsp_firCoeffs15, dsp_firStateBuffer
-    };
-
+    arm_fir_decimate_instance_q15 dsp_fir_decimate_instance = {1, TAPS, dsp_firCoeffs15, dsp_firStateBuffer};
 };
 
-
-#endif //TRX_FRONTEND_DSP_FIR_DECIMATOR_Q15_H
+#endif // TRX_FRONTEND_DSP_FIR_DECIMATOR_Q15_H

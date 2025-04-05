@@ -412,6 +412,8 @@ bool radio_config(st_radio_config radioConfig) {
             // Enable DAC for audio output
             MX_DAC_Init();
             set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq);
+
+            // TODO: Use only one DAC instead of two in quadrature
             DAC_DMA_Start(&hdac1);
         }
 

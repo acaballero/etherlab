@@ -5,11 +5,11 @@
 #ifndef TRX_FRONTEND_DSP_DECIMATORS_H
 #define TRX_FRONTEND_DSP_DECIMATORS_H
 
+#include "dsp/decimation/dsp_fir_decimator_float.h"
+#include "dsp/fft/fft_types.h"
 #include "dsp_iir_decimator.h"
-
 
 extern DspIIRDecimator IIRDecimator_I;
 extern DspIIRDecimator IIRDecimator_Q;
 
-
-#endif //TRX_FRONTEND_DSP_DECIMATORS_H
+#endif // TRX_FRONTEND_DSP_DECIMATORS_H

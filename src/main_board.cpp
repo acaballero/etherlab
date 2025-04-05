@@ -3,6 +3,8 @@
 //
 
 #include "main_board.h"
+#include "dsp/dsp.h"
+#include "dsp/dsp_common.h"
 #include "s_strength.h"
 #include "rf_coupler.h"
 #include "config.h"
@@ -16,6 +18,9 @@
 #include "../lib/printf/printf.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_def.h"
+#include "stm32f4xx_hal_gpio.h"
+#include "types.h"
+#include "dsp/dsp_tasks.h"
 
 namespace main_board {
 
@@ -140,6 +145,21 @@ void setGPIO() {
     }
 }
 
+void on_dsp_event(st_dspStatus *status) {
+    switch (status->status) {
+
+        case DSP_STATUS_RUNNING:
+        case DSP_STATUS_PENDING:
+
+            break;
+
+        case DSP_STATUS_STOPPED:
+        default:
+
+            break;
+    }
+}
+
 bool _setMode(MODE mode, bool force) {
 
     if (force || mode != config.mode) {
@@ -149,9 +169,14 @@ bool _setMode(MODE mode, bool force) {
             return false;
         }
 
+        if (config.mode == DIGITAL_RX && mode != DIGITAL_RX) {
+            dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, on_dsp_event);
+        }
+
         config.mode = mode;
 
-        GPIO_PinState muteState = mute;
+        // TODO: DSP squelch not implemented yet, so we disable mute in DSP mode
+        GPIO_PinState muteState = ISANALOG ? mute : GPIO_PIN_RESET;
 
         setMute(GPIO_PIN_SET);
 
@@ -248,6 +273,7 @@ bool _setMode(MODE mode, bool force) {
 
                 power_ctrl = POWCRL_PB1 | POWCRL_P5 | POWCRL_PA2 | (config.modulation == SSB_LSB || config.modulation == SSB_USB ? POWCRL_PC2 : 0);
             }
+
             setPowerCtrl(power_ctrl, force);
 
             HAL_Delay(10);
@@ -263,8 +289,15 @@ bool _setMode(MODE mode, bool force) {
         set_filter();
 
         if (config.mode == DIGITAL_TX) {
+
             // Turn off 2nd and 3rd mixers LOs
             lo_enable(1, 0);
+            lo_enable(2, 0);
+
+        } else if (config.mode == DIGITAL_RX) {
+
+            dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, on_dsp_event);
+            // Turn off 3rd mixer LO
             lo_enable(2, 0);
         } else {
             lo_enable(1, 1);
@@ -353,7 +386,7 @@ void setModulationMode(int mod_val, bool force) {
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, true, false);
-                changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, ISTX,
+                changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, ISTX || !ISANALOG,
                                                   false); // When low, it powers up the +5v rail that goes into the FM detector board
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_MODULATOR, !(config.mode == ANALOG_TX), false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_AM_DETECTOR, true,
@@ -364,7 +397,7 @@ void setModulationMode(int mod_val, bool force) {
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, true, false);
-                changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_AM_DETECTOR, ISTX, false);
+                changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_AM_DETECTOR, ISTX || !ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, true, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_MODULATOR, true, false);
 
@@ -428,8 +461,9 @@ void setPowerCtrl(uint8_t value, bool force, bool oneByOne) {
                 // the last bit
                 if (current_ctrl != ctrl && (set || i == 7)) {
 
-                    if (set)
+                    if (set) {
                         HAL_Delay(1); // if has changed from 0 to 1
+                    }
                     current_ctrl = ctrl;
                     PowControlShiftReg.write(ctrl);
                 }
@@ -585,13 +619,13 @@ void set_if_filter(radio::IF_FILTER fil) {
             // Apply an offset to put the left sideband onto the filter passband
             int offset = (int)(radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / 2) + 500; // +500 to account for the skirt
 
-            lo_enable(2, true);
+            lo_enable(2, 1);
             lo_freq(2, radio::if_filters[radio::if_filter].freq + offset);
             //}
 
             // commitGPIPExpPin(&hmcp02, MCP23017_PORTB);
         } else {
-            lo_enable(2, false);
+            lo_enable(2, 0);
             // setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, true, true);
         }
     }

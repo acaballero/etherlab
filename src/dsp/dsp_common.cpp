@@ -3,6 +3,7 @@
 //
 
 #include "dsp_common.h"
+#include "dsp_config.h"
 #include "config.h"
 
 const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
@@ -37,6 +38,13 @@ void set_max_sample_freq(uint32_t rate) {
 
 void set_tx_gain_db(int8_t gain_db) {
     dsp_tx_gain = constrain(gain_db, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB);
-    dsp_status->gain = pow(10.0, (float) dsp_tx_gain / 20.0);
+    dsp_status->gain = pow(10.0, (float)dsp_tx_gain / 20.0);
     dsp_common_params_signal.emit(&dsp_status);
 }
+
+namespace dsp {
+
+st_dsp_config config;
+void set_config(dsp::st_dsp_config &dsp_config) { config = dsp_config; }
+
+} // namespace dsp

@@ -111,7 +111,8 @@ void setup() {
     fftInit();
 
 #if DSP_ENABLED
-    dsp_init();
+    dsp_init(config.dsp);
+
 #endif
 
     radio::set_band();

@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_DSP_COMMON_H
 #define TRX_FRONTEND_DSP_COMMON_H
 
+#include "stm32f4xx_hal.h"
 #define __FPU_PRESENT 1U
 #define __FPU_USED 1U
 #define ARM_MATH_CM4 1
@@ -25,12 +26,8 @@ typedef struct {
     adc_type i;
 } complex_t;
 
-enum DSP_COMMAND {
-    DSP_COMMAND_NONE, DSP_COMMAND_STOP, DSP_COMMAND_START
-};
-enum DSP_STATUS {
-    DSP_STATUS_STOPPED, DSP_STATUS_STOPPING, DSP_STATUS_RUNNING, DSP_STATUS_PENDING
-};
+enum DSP_COMMAND { DSP_COMMAND_NONE, DSP_COMMAND_STOP, DSP_COMMAND_START };
+enum DSP_STATUS { DSP_STATUS_STOPPED, DSP_STATUS_STOPPING, DSP_STATUS_RUNNING, DSP_STATUS_PENDING };
 enum DSP_ERROR {
     DSP_ERR_NONE,
     DSP_ERR,
@@ -60,13 +57,16 @@ enum DSP_ERROR {
  * Direction of the baseband flow
  */
 enum DSP_DIRECTION {
-    DSP_DIRECTION_IN = 0, // A/D
-    DSP_DIRECTION_OUT // D/A
+    DSP_DIRECTION_IN = 0,
+    DSP_DIRECTION_OUT,
+    DSP_DIRECTION_INOUT // BOTH
 };
 
 struct st_dspCommand {
     DSP_COMMAND command;
     uint8_t id = 0;
+
+    bool operator==(const st_dspCommand &st) const { return command == st.command && id == st.id; }
 };
 
 struct st_dspStatus {
@@ -90,33 +90,27 @@ struct st_dspStatus {
     volatile uint32_t processed_blocks;
     volatile uint32_t fifo_underruns;
     volatile uint32_t fifo_overruns;
-    float delta_phase; // Experimental. Phase increment in the sin/cos lookup table
 
     uint64_t start_ms;
     uint64_t stop_ms;
+    uint64_t last_error_ms;
 
     bool operator==(const st_dspStatus &st) const {
-        return status == st.status
-               && error == st.error
-               && fifo_underruns == st.fifo_underruns
-               && fifo_overruns == st.fifo_overruns
-               && sample_rate == st.sample_rate
-               && processed_blocks == st.processed_blocks
-               && block_size_bytes == st.block_size_bytes
-               && bits_per_sample == st.bits_per_sample
-               && n_channels == st.n_channels
-               && id == st.id
-               && gain == st.gain
-               && decimation_factor == st.decimation_factor
-               && bandwidth == st.bandwidth;
+        return status == st.status && error == st.error && fifo_underruns == st.fifo_underruns && fifo_overruns == st.fifo_overruns &&
+               sample_rate == st.sample_rate && processed_blocks == st.processed_blocks && block_size_bytes == st.block_size_bytes &&
+               bits_per_sample == st.bits_per_sample && n_channels == st.n_channels && id == st.id && gain == st.gain &&
+               decimation_factor == st.decimation_factor && bandwidth == st.bandwidth && last_error_ms == st.last_error_ms;
+        ;
     }
+
+    uint32_t elapsed_ms() { return ((stop_ms ? stop_ms : HAL_GetTick()) - start_ms); }
+    float drop_rate() { return processed_blocks ? (((float)(fifo_overruns + fifo_underruns) / (float)processed_blocks) * 100.0) : 0; }
+    float drop_freq() { return elapsed_ms() > 1000 ? ((float)(fifo_overruns + fifo_underruns)) / ((float)elapsed_ms() / 1000.0f) : 0; }
 };
 
 extern Signal dsp_common_params_signal;
 
 extern st_dspStatus *dsp_status;
-// Phase in the LUT table
-// extern float dsp_lut_phase;
 
 // Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
 extern uint32_t dsp_max_sample_rate;
@@ -139,4 +133,4 @@ extern "C" {
 }
 #endif
 
-#endif //TRX_FRONTEND_DSP_COMMON_H
+#endif // TRX_FRONTEND_DSP_COMMON_H

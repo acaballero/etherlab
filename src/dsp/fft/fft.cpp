@@ -49,8 +49,8 @@ complex_t fft_fifo_buff[FFT_FIFO_SIZE];
 FIFO fft_fifo((char *)fft_fifo_buff, FFT_FIFO_SIZE * sizeof(complex_t));
 
 // We need a decimator for each chanel
-DspFIRDecimatorFloat decimator_i{};
-DspFIRDecimatorFloat decimator_q{};
+DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_i{};
+DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_q{};
 
 #if FFT_N == 64
 
@@ -103,11 +103,12 @@ namespace fft {
 float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
 float snr = 1e-40f;
 float dbm = FFT_MIN_DB; // Power in the baseband
+
 std::pair<int, int> get_bandwidth_bin_limits() {
     int bm_s, bm_e, bm_m;
     bm_m = DISPLAY_X_PIXELS / 2;
 
-    int16_t px_if_width = (int16_t)(radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / fft_params.display_rbw) >> 1;
+    int16_t px_if_width = (int16_t)(radio::get_bandwidth_hz() / fft_params.display_rbw) >> 1;
     if (config.modulation == SSB_USB) {
         bm_s = bm_m + 1;
         bm_e = bm_m + (px_if_width << 1) - 1;
@@ -201,6 +202,8 @@ void st_fft_params::calc() {
 
     // Minimum sample frequency, taking into account the usable bandwidth of each slice
     sample_freq = span * decimation_factor / n_slices / USABLE_BW_FACTOR;
+
+    sample_freq = sample_freq & ~1023; // Floor to nearet 1024 factor
 
     // Resolution bandwidth (per FFT bin)
     rbw = sample_freq / size / decimation_factor;

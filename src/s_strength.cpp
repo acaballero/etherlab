@@ -127,7 +127,8 @@ void check_signal_strength() {
 
     s_strength_signal.emit(&s_level);
 
-    if (!ISTX && (config.squelch_auto || config.squelch_level > 0)) {
+    // TODO: Squelch control is disabled in DIGITAL_RX mode until DSP signal strength is implemented
+    if (!ISTX && ISANALOG && (config.squelch_auto || config.squelch_level > 0)) {
 
         double squelch_level;
 

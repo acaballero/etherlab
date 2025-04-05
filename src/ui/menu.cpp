@@ -203,9 +203,28 @@ MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggle
  */
 
 #if DSP_ENABLED
+
+bool dsp_enabled = false;
+
+result toggle_dsp(eventMask) {
+
+    if (dsp_enabled) {
+        main_board::setMode(DIGITAL_RX);
+
+    } else {
+
+        main_board::setMode(ANALOG_RX);
+    }
+
+    return proceed;
+}
+
+TOGGLE(dsp_enabled, toggleDSP, "DSP receiver: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
+       VALUE("On", true, toggle_dsp, noEvent), VALUE("Off", false, toggle_dsp, noEvent));
+
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), SUBMENU(toggleDSP));
 
 #endif
 

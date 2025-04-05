@@ -119,6 +119,7 @@ uint8_t get_vfo();
 BAND get_band();
 extern os::periodic_task task;
 bool is_freq_inverted();
+uint32_t get_bandwidth_hz();
 
 #ifdef __cplusplus
 }

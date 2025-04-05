@@ -2,6 +2,7 @@
 // Created by Angel Dust on 01/11/2019.
 //
 #include "settings.h"
+#include "dsp/dsp_config.h"
 #include "hw/stm32f4xx/eeprom.h"
 #include "main.h"
 #include "hw/stm32.h"
@@ -57,7 +58,6 @@ uint8_t settings_read(Config *settings) {
     uint8_t status = flash_read((uint16_t *)version, 2);
 
     if (status == EE_OK) {
-
         if (memcmp(version, &settings->version, 3) == 0) {
             status = flash_read((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
         }
@@ -66,7 +66,12 @@ uint8_t settings_read(Config *settings) {
     return status;
 }
 
-uint8_t settings_write(Config *settings) { return flash_write((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t))); }
+uint8_t settings_write(Config *settings) {
+
+    // TODO: Make plugin-like configuration system so things like the dsp subsystem is not so coupled here
+    config.dsp = dsp::config;
+    return flash_write((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
+}
 
 // static void _settings_reset_to_defaults(Config *settings) {
 //

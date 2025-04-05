@@ -115,6 +115,8 @@ void task_loop();
 
 os::periodic_task task(50, task_loop);
 
+uint32_t get_bandwidth_hz() { return radio::if_filters[radio::if_filter].bandwidth_khz * 1000; }
+
 void calculate_freqs() {
 
     uint16_t if_bw_khz = if_filters[if_filter].bandwidth_khz;

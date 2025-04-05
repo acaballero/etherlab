@@ -4,6 +4,7 @@
 
 #include <dsp/decimation/dsp_decimators.h>
 #include "dsp/buffer.hpp"
+#include "dsp/dsp_buffers.h"
 #include "dsp_capture_processor.h"
 
 void DspCaptureProcessor::work(const buffer_t<complex_t> *buffer) {
@@ -11,7 +12,7 @@ void DspCaptureProcessor::work(const buffer_t<complex_t> *buffer) {
     this->status.processed_blocks++;
 
     // Wrap the complex_t buffer with an adc_type buffer
-    buffer_t<adc_type> buff = {(adc_type *)buffer->p,DSP_BLOCK*2};
+    buffer_t<adc_type> buff = {(adc_type *)buffer->p, DSP_BLOCK * 2};
 
     if (this->status.decimation_factor > 1) {
 
@@ -21,21 +22,20 @@ void DspCaptureProcessor::work(const buffer_t<complex_t> *buffer) {
         }
     }
 
-    buff.count=buff.count/this->status.decimation_factor;
+    buff.count = buff.count / this->status.decimation_factor;
 
-    dc_blocker_i.filter(buff,this->status.n_channels,0);
-    dc_blocker_q.filter(buff,this->status.n_channels,1);
+    dc_blocker_i.filter(buff, this->status.n_channels, 0);
+    dc_blocker_q.filter(buff, this->status.n_channels, 1);
 
-    FIFO_ERROR err = fifo.writeBlock((char *) buff.p, this->status.decimated_block_size_bytes);
+    FIFO_ERROR err = input_stream.writeBlock((char *)buff.p, this->status.decimated_block_size_bytes);
 
     if (err != FIFO_ERROR_NONE) {
-        //GPIOD->BSRR |= GPIO_PIN_5;
+        // GPIOD->BSRR |= GPIO_PIN_5;
         this->status.fifo_overruns++;
 
         if (this->status.fifo_overruns > 10) {
             this->status.error = DSP_ERR_FIFO_OVERRUN;
         }
-        //GPIOD->BSRR |= GPIO_PIN_5 << 16;
+        // GPIOD->BSRR |= GPIO_PIN_5 << 16;
     }
 }
-

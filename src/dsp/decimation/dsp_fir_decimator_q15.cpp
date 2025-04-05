@@ -11,12 +11,12 @@
 #include "../../../lib/DspFilters/include/ChebyshevI.h"
 #include "../../../lib/DspFilters/include/State.h"
 #include "../../../lib/DspFilters/include/Cascade.h"
+#include <sys/_stdint.h>
 
+template class DspFIRDecimatorQ15<32, short>;
+template class DspFIRDecimatorQ15<24, short>;
 
-
-void DspFIRDecimatorQ15::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) {
-    this->decimate(src,dst,0,2);
-}
+template <int TAPS, typename T> void DspFIRDecimatorQ15<TAPS, T>::decimate(buffer_t<T> &src, buffer_t<T> &dst) { this->decimate(src, dst, 0, 2); }
 
 /*
  * Decimate a DSP_BLOCK size I/Q sample buffer (I/Q are interleaved)
@@ -25,45 +25,42 @@ void DspFIRDecimatorQ15::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst
  */
 
 //__attribute__((section(".ccmram")))
-void DspFIRDecimatorQ15::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, uint8_t start, uint8_t n_channels) {
+template <int TAPS, typename T> void DspFIRDecimatorQ15<TAPS, T>::decimate(buffer_t<T> &src, buffer_t<T> &dst, uint8_t start, uint8_t n_channels) {
 
     // TODO: Consider skipping the first processed blocks to account for the delay group of the filter
 
-    uint16_t decimated_block_size = dst.decimated_size_bytes; // DMA buffer size (DSP_BLOCK) / decimation factor
+    uint16_t decimated_block_size = src.count / this->factor;
     q15_t signalb[src.count];
     q15_t signalOut[decimated_block_size];
 
     // Extract the signal from the interleaved IQ buffer
 
     for (uint16_t i = start, j = 0; j < src.count; i += n_channels, j++) {
-        signalb[j] = (25+(j%2))<<4; //buffer[i]<<3; //scale
+        signalb[j] = src.p[i];
     }
 
-    arm_fir_decimate_fast_q15(&dsp_fir_decimate_instance, signalb, signalOut, src.count);
+    arm_fir_decimate_q15(&dsp_fir_decimate_instance, signalb, signalOut, src.count);
 
     // Write to the final adc_buffer in interleaved IQ format
     for (uint16_t i = start, j = 0; j < decimated_block_size; i += 2, j++) {
-        dst.p[i] = signalOut[j] >> 4;
+        dst.p[i] = signalOut[j];
     }
-
-
 }
 
-
-void DspFIRDecimatorQ15::initFilter() {
+template <int TAPS, typename T> void DspFIRDecimatorQ15<TAPS, T>::initFilter() {
 
     // Generate a FIR filter with a cutoff frequency of f_khz
 
-    generateFIRFilterCoeffsq15(LPF, dsp_firCoeffs15, FFT_LPF_FIR_FILTER_NTAPS, this->input_rate, this->output_rate, 0);
+    generateFIRFilterCoeffsq15(LPF, dsp_firCoeffs15, TAPS, this->input_rate, this->output_rate, 0);
 
     // Apply window
 
-    float fir_filter_window[FFT_LPF_FIR_FILTER_NTAPS];
-    generate_window(1, fir_filter_window, FFT_LPF_FIR_FILTER_NTAPS);
-    q15_t fir_filter_window_q15[FFT_LPF_FIR_FILTER_NTAPS];
-    arm_float_to_q15(fir_filter_window, fir_filter_window_q15, FFT_LPF_FIR_FILTER_NTAPS);
+    float fir_filter_window[TAPS];
+    generate_window(1, fir_filter_window, TAPS);
+    q15_t fir_filter_window_q15[TAPS];
+    arm_float_to_q15(fir_filter_window, fir_filter_window_q15, TAPS);
 
-    arm_mult_q15(dsp_firCoeffs15, fir_filter_window_q15, dsp_firCoeffs15, FFT_LPF_FIR_FILTER_NTAPS);
+    arm_mult_q15(dsp_firCoeffs15, fir_filter_window_q15, dsp_firCoeffs15, TAPS);
 
 #if DEBUG_FFT
     printf("DSP LPF FIR Filter coefficients:\r\n");
@@ -73,16 +70,12 @@ void DspFIRDecimatorQ15::initFilter() {
 
     this->dsp_fir_decimate_instance.M = this->factor;
     memset(dsp_fir_decimate_instance.pState, 0, sizeof(dsp_firStateBuffer));
-
-
 }
 
-
-void DspFIRDecimatorQ15::config(uint32_t input_rate, uint32_t output_rate, uint16_t factor) {
+template <int TAPS, typename T> void DspFIRDecimatorQ15<TAPS, T>::config(uint32_t input_rate, uint32_t output_rate, uint16_t factor) {
 
     this->input_rate = input_rate;
     this->output_rate = output_rate;
     this->factor = factor;
     this->initFilter();
 }
-

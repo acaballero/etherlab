@@ -3,6 +3,8 @@
 //
 
 #include <io/file_factory.h>
+#include <sys/_stdint.h>
+#include "dsp/fft/fft_types.h"
 #include "dsp_signal_generator_ui.h"
 #include "../dsp_common.h"
 #include "../dsp_tasks.h"
@@ -24,10 +26,6 @@
 
 namespace dspSignalGeneratorUI {
 
-int8_t gain;
-int8_t pulse_duty = 50;
-uint32_t baseband_frequency = 10000;
-uint32_t modulation_frequency = 1000;
 RF_DIRECTION mode;
 int command = DSP_COMMAND_START;
 SignalToken signal_token;
@@ -53,14 +51,14 @@ void on_event(st_dspStatus *status) {
     }
 }
 
-Menu::result set_signal_params(Menu::eventMask e) {
+void set_signal_params() {
     DspSignalGeneratorProcessor *processor = ((DspSignalGeneratorProcessor *)processors[dsp::DSP_TASK_SIGNAL_GENERATOR]);
-    processor->set_config(baseband_frequency, modulation_frequency, pulse_duty, config.fft.sample_rate, config.hw.dac_offset);
+    processor->set_config(dsp::config.test_signal.baseband_frequency, dsp::config.test_signal.modulation_frequency, dsp::config.test_signal.pulse_duty,
+                          config.fft.sample_rate, config.hw.dac_offset);
 
     // Tasks parameters. Essentially, the IF direction
     SignalGeneratorTask *task = ((SignalGeneratorTask *)dsp::tasks[dsp::DSP_TASK_SIGNAL_GENERATOR]);
     task->mode = mode;
-    return Menu::proceed;
 }
 
 Menu::result change_dsp_status(Menu::eventMask e) {
@@ -68,8 +66,9 @@ Menu::result change_dsp_status(Menu::eventMask e) {
     if (e == Menu::activateEvent) {
         DSP_COMMAND nextCommand = command == DSP_COMMAND_START ? DSP_COMMAND_STOP : DSP_COMMAND_START;
         dsp_command({(DSP_COMMAND)nextCommand, dsp::DSP_TASK_SIGNAL_GENERATOR}, on_event);
+        set_tx_gain_db(dsp::config.gain);
 
-        set_signal_params(e);
+        set_signal_params();
     }
 
     return Menu::proceed;
@@ -131,13 +130,20 @@ Menu::result on_freq_updated() {
     return Menu::proceed;
 }
 
-Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &gain, 0, ' ', '.', "dB", [](int8_t v) { set_tx_gain_db(v); }, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB,
-                                    1, 5);
+Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &dsp::config.gain, 0, ' ', '.', "dB", [](int8_t v) { set_tx_gain_db(v); }, DSP_MIN_TX_GAIN_DB,
+                                    DSP_MAX_TX_GAIN_DB, 1, 5);
+
+Menu::numberPrompt<uint32_t> basebandFrequencyMenu((const char *)"Baseband freq:", &dsp::config.test_signal.baseband_frequency, 0, ' ', '.', "Hz",
+                                                   [](uint32_t) { set_signal_params(); }, 10, FFT_BANDWIDTH, 10, 100);
+
+Menu::numberPrompt<uint32_t> modulationFrequencyMenu((const char *)"Modulation freq:", &dsp::config.test_signal.modulation_frequency, 0, ' ', '.', "Hz",
+                                                     [](uint32_t) { set_signal_params(); }, 10, FFT_BANDWIDTH, 10, 100);
+
+Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::config.test_signal.pulse_duty, 0, ' ', '.', "%",
+                                         [](int8_t) { set_signal_params(); }, 0, 100, 1, 10);
 
 MENU(signalGeneratorMenu, "Signal generator", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle, SUBMENU(signalGeneratorToggle),
-     SUBMENU(modeToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle),
-     FIELD(baseband_frequency, "Baseband freq.:", "", 0, FFT_BANDWIDTH, 500, 0, set_signal_params, exitEvent, noStyle),
-     FIELD(modulation_frequency, "Modulation freq.:", "", 0, 5000, 100, 0, set_signal_params, exitEvent, noStyle),
-     FIELD(pulse_duty, "Pulse duty:", "", 1, 100, 1, 0, set_signal_params, exitEvent, noStyle), OBJ(gainMenu),
+     SUBMENU(modeToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle), OBJ(basebandFrequencyMenu),
+     OBJ(modulationFrequencyMenu), OBJ(pulseDutyMenu), OBJ(gainMenu),
      FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), OBJ(freqEdit))
 } // namespace dspSignalGeneratorUI

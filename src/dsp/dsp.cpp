@@ -2,7 +2,9 @@
 // Created by Angel Dust on 04/04/2021.
 //
 #include "dsp.h"
+#include "diskio.h"
 #include "dsp/dsp_common.h"
+#include "dsp/dsp_config.h"
 #include "status.h"
 #include "ui/lcd.h"
 #include "hw/stm32f4xx/timers.h"
@@ -17,6 +19,7 @@
 #include "hw/stm32f4xx/adc.h"
 #include "dsp_tasks.h"
 #include "dsp_processors.h"
+#include "dsp_config.h"
 #include "buffer.hpp"
 #include "dsp_buffers.h"
 
@@ -47,15 +50,14 @@ void dsp_set_real_time(bool b) {
         current_max_slices = config.fft.max_slices;
         config.fft.max_slices = 1;
     } else {
-        // When doing real-time DSP, we can only process one slice (no frequency hops allowed)
         config.fft.max_slices = current_max_slices;
-        fft_config(config.fft.span);
     }
 
     fft_config(config.fft.span);
 }
 
-void dsp_init() {
+void dsp_init(dsp::st_dsp_config &config) {
+    dsp::set_config(config);
     ADC_DMA_Start(&hadc1);
     set_max_sample_freq(false);
 }
@@ -68,11 +70,22 @@ void dsp_stop_tasks() {
 
 uint8_t dsp_command(st_dspCommand command, void (*cb)(st_dspStatus *)) {
 
+    Task *task = dsp::tasks[command.id];
+    if (current_task == task) {
+        DSP_STATUS s = current_task->status.status;
+        if ((command.command == DSP_COMMAND_START && s == DSP_STATUS_RUNNING) || (command.command == DSP_COMMAND_STOP && s == DSP_STATUS_STOPPED) ||
+            s == DSP_STATUS_PENDING) {
+            return 1;
+        }
+    }
+
     on_event = cb;
     pending_command = command;
-    current_task = dsp::tasks[pending_command.id];
+    current_task = task;
     current_task->status.status = DSP_STATUS_PENDING;
     current_task->status.id = pending_command.id;
+
+    // FIXME: Ugly
     dsp_status = &current_task->status;
 
     return 0;
@@ -94,6 +107,8 @@ void dsp_start_task() {
         current_processor->start();
         current_buffer->sample_rate = current_task->status.sample_rate;
 
+        dsp_status = current_task->status.id == dsp::DSP_TASK_RECEIVE ? &current_processor->status : &current_task->status;
+
         if (on_event) {
             on_event(dsp_status);
         }
@@ -102,8 +117,10 @@ void dsp_start_task() {
 
 void dsp_loop() {
 
-    if (pending_command.command != DSP_COMMAND_NONE) {
-        switch (pending_command.command) {
+    st_dspCommand command = pending_command;
+
+    if (command.command != DSP_COMMAND_NONE) {
+        switch (command.command) {
 
             case DSP_COMMAND_START:
 
@@ -119,7 +136,9 @@ void dsp_loop() {
                 break;
         }
 
-        pending_command.command = DSP_COMMAND_NONE;
+        if (pending_command == command) {
+            pending_command.command = DSP_COMMAND_NONE;
+        }
     }
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
@@ -134,7 +153,7 @@ void dsp_loop() {
 inline void dac_work() {
     // GPIOD->BSRR |= GPIO_PIN_5;
 
-    if (current_processor && current_processor->status.direction == DSP_DIRECTION_OUT) {
+    if (current_processor && (current_processor->status.direction == DSP_DIRECTION_OUT || current_processor->status.direction == DSP_DIRECTION_INOUT)) {
         current_processor->work(current_buffer);
     }
 
@@ -149,7 +168,7 @@ inline void dac_work() {
 inline void adc_work() {
     // GPIOD->BSRR |= GPIO_PIN_5;
 
-    if ((!dsp_status || dsp_status->direction == DSP_DIRECTION_IN)) {
+    if (!dsp_status || dsp_status->direction == DSP_DIRECTION_IN || dsp_status->direction == DSP_DIRECTION_INOUT) {
         // If the IF chain direction is input, the
 
         // Fill the FFT FIFO. Here we don't care if we overrun as the FFT doesn't need to be processed in real-time
@@ -158,7 +177,7 @@ inline void adc_work() {
         UNUSED(err);
     }
 
-    if (current_processor && current_processor->status.direction == DSP_DIRECTION_IN) {
+    if (current_processor && (current_processor->status.direction == DSP_DIRECTION_IN || current_processor->status.direction == DSP_DIRECTION_INOUT)) {
         current_processor->work(current_buffer);
     }
 

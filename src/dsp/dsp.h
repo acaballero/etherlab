@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_DSP_H
 #define TRX_FRONTEND_DSP_H
 
+#include "dsp/dsp_config.h"
 #include "hw/stm32.h"
 #include "hw/hw_config.h"
 #include "dsp_common.h"
@@ -18,7 +19,7 @@ extern os::periodic_task task;
 extern "C" {
 #endif
 
-void dsp_init();
+void dsp_init(dsp::st_dsp_config &);
 void dsp_set_real_time(bool);
 uint8_t dsp_command(st_dspCommand command, void (*)(st_dspStatus *));
 

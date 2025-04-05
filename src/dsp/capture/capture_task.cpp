@@ -3,6 +3,7 @@
 //
 
 #include "capture_task.h"
+#include "dsp/dsp_buffers.h"
 
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
@@ -19,7 +20,7 @@ File *CaptureTask::getFile() { return file.get(); }
 void CaptureTask::work() {
     char *p;
 
-    uint16_t av = fifo.available(&p);
+    uint16_t av = input_stream.available(&p);
 
     // GPIOD->BSRR |= GPIO_PIN_6;
     if (av >= DSP_FIFO_BLOCK_BYTES) {
@@ -43,7 +44,7 @@ void CaptureTask::work() {
              DEBUGPRINT("\n",0);*/
 
             // Free the FIFO
-            fifo.consume(DSP_FIFO_BLOCK_BYTES, &p);
+            input_stream.consume(DSP_FIFO_BLOCK_BYTES, &p);
 
             if (this->status.status == DSP_STATUS_RUNNING) { // Maybe there was an error in the ADC thread while writing
                 if (fres == FR_OK) {
@@ -57,7 +58,7 @@ void CaptureTask::work() {
                 }
             }
 
-            av = fifo.available(&p);
+            av = input_stream.available(&p);
         }
     } else {
         this->status.fifo_underruns++;
@@ -112,7 +113,7 @@ void CaptureTask::start() {
     lcd.setEnabled(false);
 #endif
 
-    fifo.reset();
+    input_stream.reset();
 
     this->status.direction = DSP_DIRECTION_IN;
     this->status.bandwidth = config.fft.span;
@@ -124,8 +125,9 @@ void CaptureTask::start() {
     this->status.block_size_bytes = dsp_temp_buf.size_bytes;
     this->status.decimated_block_size_bytes = this->status.block_size_bytes / this->status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
-    while (!lock_sd_card())
+    while (!lock_sd_card()) {
         ; // prevent other tasks to use the sd_card
+    }
 
     FRESULT fres; // Result after operations
 

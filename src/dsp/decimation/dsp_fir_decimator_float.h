@@ -11,40 +11,29 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft_types.h"
 
+template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRDecimatorFloat : public DspDecimator<T> {
 
-class DspFIRDecimatorFloat : public DspDecimator<float> {
+  public:
+    DspFIRDecimatorFloat() : DspDecimator<T>(0){};
 
-public:
+    DspFIRDecimatorFloat(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<T>(input_rate, output_rate, factor) { this->initFilter(); };
 
-    DspFIRDecimatorFloat() : DspDecimator<float>(0) {};
-
-    DspFIRDecimatorFloat(uint32_t input_rate, uint32_t output_rate, uint16_t factor)
-    : DspDecimator<float>(input_rate, output_rate, factor)
-    {
-        this->initFilter();
-    };
-
-    void decimate(buffer_t <float> &src, buffer_t <float> &dst) override;
+    void decimate(buffer_t<T> &src, buffer_t<T> &dst) override;
     void config(uint32_t input_rate, uint32_t output_rate, uint16_t factor);
     void clear_state();
-    void decimate(buffer_t <float> &src, buffer_t <float> &dst, uint8_t start, uint8_t n_channels);
+    void decimate(buffer_t<T> &src, buffer_t<T> &dst, uint8_t start, uint8_t n_channels);
     bool isInitialized() const;
     void setFactor(uint16_t factor);
 
-private:
-
+  private:
     void initFilter();
 
-    bool initialized=false;
+    bool initialized = false;
 
-    float firCoeffs[FFT_LPF_FIR_FILTER_NTAPS];
-    float firStateBuffer[FFT_LPF_FIR_FILTER_NTAPS + DSP_BLOCK - 1];
+    float firCoeffs[TAPS];
+    float firStateBuffer[TAPS + DSP_BLOCK - 1];
 
-    arm_fir_decimate_instance_f32 dsp_fir_decimate_instance = {
-            1, FFT_LPF_FIR_FILTER_NTAPS, firCoeffs, firStateBuffer
-    };
-
+    arm_fir_decimate_instance_f32 dsp_fir_decimate_instance = {1, TAPS, firCoeffs, firStateBuffer};
 };
 
-
-#endif //TRX_FRONTEND_DSP_FIR_DECIMATOR_FLOAT_H
+#endif // TRX_FRONTEND_DSP_FIR_DECIMATOR_FLOAT_H

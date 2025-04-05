@@ -61,6 +61,7 @@ void SignalGeneratorTask::stop() {
 
         Task::stop(); // Let the base class finish
 
+        // TODO: Centralize returning to digital RX
         radio_config({RF_DIRECTION_RX, 0});
     }
 }

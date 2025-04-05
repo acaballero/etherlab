@@ -6,6 +6,7 @@
 #include <rf_coupler.h>
 #include <stdint.h>
 #include "Display_afb.h"
+#include "dsp/dsp_common.h"
 #include "ips_font.h"
 #include "titlebar_widget.h"
 #include "config.h"
@@ -122,7 +123,7 @@ void TitleBarWidget::paint_callback() {
             color = C565_GREEN;
             break;
         case USB_CONN_STATUS_DISCONNECTED:
-            color = C565_GREY_DARK;
+            color = C565_GREY_DARKER;
             break;
     }
 
@@ -144,14 +145,18 @@ void TitleBarWidget::paint_callback() {
         display->writeChar(ICON_ANALOG);
     } else {
 
-        if (dsp_status->error != DSP_ERR_NONE) {
+        float drop_freq = dsp_status ? dsp_status->drop_freq() : 0;
+        if (!dsp_status || dsp_status->error != DSP_ERR_NONE || drop_freq > 20) {
             color = C565_RED;
+        } else if (drop_freq > 5) {
+            color = C565_YELLOW;
         } else if (dsp_status->status == DSP_STATUS_RUNNING) {
             color = C565_GREEN;
         }
 
         display->setColor(color);
         display->writeChar(ICON_DIGITAL);
+        display->setColor(C565_WHITE);
     }
 
     display->setFont((FontDef *)&Font_Tiny8x8);
@@ -205,7 +210,9 @@ void TitleBarWidget::paint_callback() {
         // AUDIO
 
         if (main_board::getMute()) {
-            display->setColor(C565_GREY_DARK);
+            display->setColor(C565_GREY_DARKER);
+        } else {
+            display->setColor(C565_WHITE);
         }
         display->print(" ");
         display->setFont((FontDef *)&Font_Icons9x8);

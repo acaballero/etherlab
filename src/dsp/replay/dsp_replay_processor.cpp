@@ -4,6 +4,7 @@
 
 #include "dsp_replay_processor.h"
 
+#include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "config.h"
 #include "FIFO.h"
@@ -29,18 +30,15 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
     // e.g. if interpolation/decimation factor is 4, we read 4 times fewer bytes that the DAC block size
     volatile uint16_t bytesToRead = this->status.decimated_block_size_bytes;
 
-    uint32_t av = fifo.available(&p);
+    uint32_t av = output_stream.available(&p);
 
     if (av >= bytesToRead) {
 
-        int16_t *out_p = (int16_t *) buffer->p;
+        int16_t *out_p = (int16_t *)buffer->p;
 
-#if DSP_REPLAY_DEBUG
-        sig_gen.get_block(const_cast<buffer_t<complex_t> &>(*buffer));
-#else
         // Naive interpolation
         // Output channel number is always 2
-        //uint8_t d = 0;
+        // uint8_t d = 0;
         for (size_t i = 0, j = 0; i < buffer->count * 2; i += 2) {
 
             if ((i >> 1) & (this->status.decimation_factor - 1)) {
@@ -49,12 +47,12 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
                 //  if (this->status.n_channels==2) {
                 out_p[i + 1] = out_p[i - 1];
                 //  }
-                //d--;
+                // d--;
             } else {
-                out_p[i] = ((uint16_t *) p)[j] + config.hw.dac_offset;
+                out_p[i] = ((uint16_t *)p)[j] + config.hw.dac_offset;
                 out_p[i] *= dsp_status->gain;
                 if (this->status.n_channels == 2) {
-                    out_p[i + 1] = ((uint16_t *) p)[j + 1] + config.hw.dac_offset;
+                    out_p[i + 1] = ((uint16_t *)p)[j + 1] + config.hw.dac_offset;
                     out_p[i + 1] *= dsp_status->gain;
                     j++;
                 } else {
@@ -64,12 +62,11 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
                 //   d = this->status.decimation_factor-1;
             }
         }
-#endif
 
-        fifo.consume(bytesToRead, &p);
+        output_stream.consume(bytesToRead, &p);
 
         // printf("I:", 0);
-        //for (int i = 0; i < bytesToRead / 2; i += 2) {
+        // for (int i = 0; i < bytesToRead / 2; i += 2) {
         //    printf("\n%d", ((int16_t *) p)[i]);
         //}
         //  printf("\nQ:", 0);
@@ -82,8 +79,7 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
 
         this->status.fifo_underruns++;
 
-//endDsp();
-//dspError(DSP_ERR_FIFO_UNDERRUN);
+        // endDsp();
+        // dspError(DSP_ERR_FIFO_UNDERRUN);
     }
 }
-

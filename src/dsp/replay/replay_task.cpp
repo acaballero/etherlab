@@ -3,6 +3,7 @@
 //
 
 #include "replay_task.h"
+#include "dsp/dsp_buffers.h"
 #include "dsp/firFilter.h"
 #include "dsp/dsp_common.h"
 #include "status.h"
@@ -29,7 +30,7 @@ void ReplayTask::work() {
         char *p;
         bool eof = false;
 
-        uint32_t free = fifo.free(&p);
+        uint32_t free = output_stream.free(&p);
 
         if (free >= DSP_FIFO_BLOCK_BYTES) {
 
@@ -41,7 +42,7 @@ void ReplayTask::work() {
 
                 if (fres == FR_OK) {
 
-                    FIFO_ERROR fifo_res = fifo.feed(DSP_FIFO_BLOCK_BYTES);
+                    FIFO_ERROR fifo_res = output_stream.feed(DSP_FIFO_BLOCK_BYTES);
 
                     if (fifo_res != FIFO_ERROR_NONE) {
                         this->status.fifo_overruns++; // won't stop for an overrun, just count them
