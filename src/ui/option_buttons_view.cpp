@@ -70,23 +70,18 @@ bool OptionButtonsView::on_input(const st_inputEvent event) {
         case INPUT_EVENT_TYPE_BUTTON_DBL_PRESS:
 
             switch (event.value) {
-
                 case KEY_BACK:
                     this->set_visible(false);
                     break;
                 case FPANEL_DISPLAY_BUTTON_1:
-
                     consumed = update_focus(focused_button + event.value);
                     break;
                 case FPANEL_DISPLAY_BUTTON_2:
-
                     consumed = update_focus(focused_button + event.value);
                     break;
                 case FPANEL_DISPLAY_BUTTON_3:
-
                     break;
                 case FPANEL_DISPLAY_BUTTON_5:
-
                     break;
                 case FPANEL_DISPLAY_BUTTON_6:
                     this->set_visible(false);
@@ -104,6 +99,11 @@ bool OptionButtonsView::on_input(const st_inputEvent event) {
     }
 
     return consumed;
+}
+
+void OptionButtonsView::set_enabled(uint16_t index, bool b) {
+    Button *button = &buttons[index];
+    button->set_enabled(b);
 }
 
 void OptionButtonsView::add_item(const char *text, std::function<void(Button &, st_inputEvent)> on_select_handler, bool selected, uint16_t fg_color,

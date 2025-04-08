@@ -52,9 +52,11 @@ template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::decimate(buf
 
 template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::initFilter() {
 
-    // Generate a FIR filter with a cutoff frequency of f_khz
-
-    generateFIRFilterCoeffs(LPF, firCoeffs, TAPS, this->input_rate, this->output_rate, 0);
+    if (filter_type == BPF) {
+        generateFIRFilterCoeffs(filter_type, firCoeffs, TAPS, this->input_rate, start_frequency, this->output_rate);
+    } else {
+        generateFIRFilterCoeffs(filter_type, firCoeffs, TAPS, this->input_rate, this->output_rate, 0);
+    }
 
     // Apply window
 
@@ -67,17 +69,24 @@ template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::initFilter()
     print_vector_f32(firCoeffs32, FFT_LPF_FIR_FILTER_NTAPS);
 #endif
 
-    this->dsp_fir_decimate_instance.M = this->factor;
-    this->initialized = true;
-    this->clear_state();
+    dsp_fir_decimate_instance.M = this->factor;
+    initialized = true;
+    clear_state();
 }
 
-template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::config(uint32_t input_rate, uint32_t output_rate, uint16_t factor) {
+template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::config(uint32_t input_rate, uint32_t output_rate, uint16_t f, uint32_t start_freq) {
 
     this->input_rate = input_rate;
     this->output_rate = output_rate;
-    this->factor = factor;
-    this->initFilter();
+    this->factor = f;
+    if (start_freq) {
+        filter_type = BPF;
+        start_frequency = start_freq;
+    } else {
+        filter_type = LPF;
+        start_frequency = 0;
+    }
+    initFilter();
 }
 
 template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::clear_state() { memset(dsp_fir_decimate_instance.pState, 0, sizeof(firStateBuffer)); }
@@ -86,5 +95,5 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloat<TAPS, T>::isInitialize
 
 template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::setFactor(uint16_t factor) {
     this->factor = factor;
-    this->dsp_fir_decimate_instance.M = this->factor;
+    dsp_fir_decimate_instance.M = factor;
 }

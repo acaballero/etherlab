@@ -34,11 +34,12 @@ typedef struct {
 
 } st_band;
 
-typedef struct {
+typedef struct st_filter {
 
-    unsigned long freq;
-    uint16_t bandwidth_khz;
-    uint8_t pin; // output pin of the IO extender module
+    unsigned long freq; // For anaog filters, the center frequency
+    uint32_t bandwidth;
+    bool analog_available = false; // Whether the filter exists in analog mode
+    uint8_t pin;                   // For analog filters, the output pin of the IO extender module
 
 } st_filter;
 
@@ -72,7 +73,7 @@ enum BAND {
     BAND_NONE
 };
 
-enum IF_FILTER { IF_FILTER_3KHZ, IF_FILTER_15KHZ, IF_FILTER_150KHZ, IF_FILTER_AUTO, IF_FILTER_NONE };
+enum IF_FILTER { IF_FILTER_500HZ, IF_FILTER_3KHZ, IF_FILTER_9KHZ, IF_FILTER_15KHZ, IF_FILTER_150KHZ, IF_FILTER_AUTO, IF_FILTER_NONE };
 
 enum IF_FILTER_2 { IF_FILTER_2_AUTO, IF_FILTER_2_AUTO_THRU, IF_FILTER_2_NONE };
 

@@ -96,15 +96,19 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
                          {1810000, 1850000, FLT_5_CODE, HIGH_SIDE, false},
                          {7000000, 500000000, FLT_5_CODE, ANY_SIDE, false},
                          {7000000, 500000000, FLT_5_CODE, ANY_SIDE, false}};
+
 const st_filter if_filters[] = {
-    {9998500, 3, GPIOEXP_IF_FILTER_3KHZ},      // 3Khz
-    {10698000, 15, GPIOEXP_IF_FILTER_15KHZ},   // 15Kh
-    {10700000, 150, GPIOEXP_IF_FILTER_150KHZ}, // 150Khz
+    {10000000, 500, false, 0},                          // 500 Hz (digital only)
+    {9998500, 3000, true, GPIOEXP_IF_FILTER_3KHZ},      // 3 Khz
+    {10000000, 9000, false, 0},                         // 9 Khz (digital only)
+    {10698000, 15000, true, GPIOEXP_IF_FILTER_15KHZ},   // 15 Kh
+    {10700000, 150000, true, GPIOEXP_IF_FILTER_150KHZ}, // 150 Khz
+
 };
 const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "10 m",  "11 m", "12 m", "15 m",
                            "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "None"};
 const char *modulationNames[] = {"LSB", "USB", "FM", "WFM", "AM", "CW"};
-const char *IFFilterNames[] = {"3 k", "15 k", "150 k", "Auto"};
+const char *IFFilterNames[] = {"500 Hz", "3 k", "9 K", "15 k", "150 k", "Auto"};
 const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
 BAND filter = BAND_NONE;
@@ -115,11 +119,12 @@ void task_loop();
 
 os::periodic_task task(50, task_loop);
 
-uint32_t get_bandwidth_hz() { return radio::if_filters[radio::if_filter].bandwidth_khz * 1000; }
+uint32_t get_bandwidth_hz() { return radio::if_filters[radio::if_filter].bandwidth; }
 
 void calculate_freqs() {
 
-    uint16_t if_bw_khz = if_filters[if_filter].bandwidth_khz;
+    uint32_t if_bw = if_filters[if_filter].bandwidth;
+
     int offset = 0;
 
     unsigned long carrier_freq = get_frequency();
@@ -156,7 +161,7 @@ void calculate_freqs() {
             mixers[1].setRf(config.f_1st_if);
 
             // Apply an offset to put the left sideband onto the filter passband
-            offset = (int)(if_bw_khz * 1000 / 2) + (is_freq_inverted() ? 1000 : 500); // +500 to account for the skirt
+            offset = (int)(if_bw / 2) + (is_freq_inverted() ? 1000 : 500); // +500 to account for the skirt
 
             mixers[1].setIf(mixers[1].getIf() + offset);
 

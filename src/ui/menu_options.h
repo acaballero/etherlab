@@ -21,6 +21,7 @@ template <typename T> struct menu_option_st {
     T value;
     uint16_t fg_color = C565_TEXT_FG;
     uint16_t bg_color = C565_TEXT_BG;
+    bool enabled = true;
 };
 
 struct menu_action_st {
@@ -40,7 +41,7 @@ template <typename T> using menu_options_t = menu_option_st<T> *;
 extern menu_option_st<uint16_t> color_options[23];
 extern menu_option_st<MODULATION_MODE> modulation_options[6];
 extern menu_option_st<radio::BAND> band_options[radio::BAND_NONE + 1];
-extern menu_option_st<radio::IF_FILTER> if_filter_options[4];
+extern menu_option_st<radio::IF_FILTER> if_filter_options[6];
 
 } // namespace Menu
 

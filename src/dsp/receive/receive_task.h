@@ -17,6 +17,8 @@
 class ReceiveTask : public Task {
 
   public:
+    static constexpr uint32_t audio_bw_hz = 48000; // Audio bandwidth
+
     ReceiveTask(void (*onSucess)(), void (*onError)(DSP_ERROR));
 
     void work() override;
@@ -26,8 +28,8 @@ class ReceiveTask : public Task {
     void stop() override;
 
   private:
-    DspFIRDecimatorFloat<51, adc_type> decimator_i_0{};
-    DspFIRDecimatorFloat<24, adc_type> decimator_i_1{};
+    DspFIRDecimatorFloat<24, adc_type> decimator_i_0{};
+    DspFIRDecimatorFloat<32, adc_type> decimator_i_1{};
 };
 
 #endif // TRX_FRONTEND_RECEIVE_TASK_H

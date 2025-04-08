@@ -22,8 +22,9 @@
 
 #define TXMODE(mode) (mode == ANALOG_TX || mode == DIGITAL_TX)
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
-#define ISANALOG (config.mode == ANALOG_TX || config.mode == ANALOG_RX)
-#define CONFIG_VERSION "324"
+#define ANALOGMODE(mode) (mode == ANALOG_TX || mode == ANALOG_RX)
+#define ISANALOG (ANALOGMODE(config.mode))
+#define CONFIG_VERSION "326"
 
 namespace configuration {
 extern os::periodic_task task;

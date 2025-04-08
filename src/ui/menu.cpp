@@ -45,7 +45,8 @@ menu_option_st<radio::RPT_MODE> rpt_mode_options[] = {{radio::repeaterNames[radi
                                                       {radio::repeaterNames[radio::RPT_MODE_POSITIVE], radio::RPT_MODE_POSITIVE},
                                                       {radio::repeaterNames[radio::RPT_MODE_NEGATIVE], radio::RPT_MODE_NEGATIVE}};
 
-optionsPrompt<MODULATION_MODE> modulationMenu((const char *)"Modulation", modulation_options, config.modulation,
+MODULATION_MODE modulation;
+optionsPrompt<MODULATION_MODE> modulationMenu((const char *)"Modulation", modulation_options, modulation,
                                               sizeof(modulation_options) / sizeof(modulation_options[0]),
                                               [](MODULATION_MODE v) { main_board::setModulationMode(v, true); });
 
@@ -202,20 +203,24 @@ MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggle
  ****************** DSP MENU *****************
  */
 
-#if DSP_ENABLED
+bool dsp_enabled = !ISANALOG;
 
-bool dsp_enabled = false;
+void update_options() {
+    dsp_enabled = !ISANALOG;
+    modulation = config.modulation;
+
+    // Set enabled options for current mode
+    for (auto &option : if_filter_options) {
+        if (option.value != radio::IF_FILTER_AUTO) {
+            option.enabled = radio::if_filters[option.value].analog_available || !ISANALOG;
+        }
+    }
+}
+
+void mode_signal_handler(void *, void *) { update_options(); }
 
 result toggle_dsp(eventMask) {
-
-    if (dsp_enabled) {
-        main_board::setMode(DIGITAL_RX);
-
-    } else {
-
-        main_board::setMode(ANALOG_RX);
-    }
-
+    main_board::toggle_dsp();
     return proceed;
 }
 
@@ -225,8 +230,6 @@ TOGGLE(dsp_enabled, toggleDSP, "DSP receiver: ", doNothing, noEvent, noStyle, //
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
      SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), SUBMENU(toggleDSP));
-
-#endif
 
 MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED
@@ -326,6 +329,10 @@ void menu_setup() {
     HAL_RTC_GetTime(&hrtc, &time, FORMAT_BIN);
     HAL_RTC_GetDate(&hrtc, &date, FORMAT_BIN);
 #endif
+
+    update_options();
+
+    main_board::mode_signal.add(nullptr, mode_signal_handler);
 }
 
 void menu_exit() {

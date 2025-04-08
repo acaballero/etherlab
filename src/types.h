@@ -81,10 +81,10 @@ struct st_radio_status {
 
 // Top bar info
 struct st_topBar {
-    st_dspStatus *dspState;
+
     bool mute;
 
-    bool operator==(const st_topBar &st) const { return *dspState == *st.dspState && mute == st.mute; }
+    bool operator==(const st_topBar &st) const { return mute == st.mute; }
 };
 
 struct st_freqInfo {
@@ -106,6 +106,12 @@ struct st_scale {
     int max;
 
     bool operator==(const st_scale &st) const { return min == st.min && max == st.max; }
+};
+
+// Modulation modes
+struct st_modulation_mode {
+    MODULATION_MODE modulation;
+    bool analog_allowed = false; // Can be demodulated in analog mode?
 };
 
 #endif // TRX_FRONTEND_TYPES_H

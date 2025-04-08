@@ -3,6 +3,7 @@
 //
 
 #include "main_board.h"
+#include "Signal.h"
 #include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
 #include "s_strength.h"
@@ -35,20 +36,40 @@ ShiftReg PowControlShiftReg(&powCtrlDataPin, &powCtrlClkPin, &powCtrlSetPin);
 
 GPIO_PinState mute = GPIO_PIN_RESET;
 
+Signal mode_signal;
+Signal if_filter_signal;
+
+st_modulation_mode modes[] = {{CW, false}};
+
 battery::BATTERY_STATUS battery_status = battery::BATTERY_STATUS_UNDEFINED;
 
-void s_strength_callback(void *thisptr, void *args) {
+void s_strength_callback(void *, void *args) {
     sstrength::st_sstrength_info info = *((sstrength::st_sstrength_info *)args);
 
     setMute(info.in_squelch && info.level > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
-void s_level_callback(void *thisptr, void *args) {
+void s_level_callback(void *, void *args) {
     if (false) { // TODO: If frontend amplification is set to AUTO
         float s_level = *((float *)args);
         if (s_level > 11 && config.frontend_path != radio::FRONTEND_PATH_ATT) {
             config.frontend_path = (radio::FRONTEND_PATH)(config.frontend_path - 1);
         }
+    }
+}
+
+void on_dsp_event(st_dspStatus *status) {
+    switch (status->status) {
+
+        case DSP_STATUS_RUNNING:
+        case DSP_STATUS_PENDING:
+
+            break;
+
+        case DSP_STATUS_STOPPED:
+        default:
+
+            break;
     }
 }
 
@@ -85,11 +106,17 @@ void check_status() {
     setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_POW_AMP_BIAS, biased, true);
 }
 
-void power_amp_status_callback(void *thisptr, void *args) { check_status(); }
+void power_amp_status_callback(void *, void *) { check_status(); }
 
-void rf_coupler_info_callback(void *thisptr, void *args) { check_status(); }
+void rf_coupler_info_callback(void *, void *) { check_status(); }
 
-void battery_callback(void *thisptr, void *args) { check_status(); }
+void battery_callback(void *, void *) { check_status(); }
+
+void if_filter_signal_callback(void *, void *) {
+    if (config.mode == DIGITAL_RX) { // Restart receive task
+        dsp_restart();
+    }
+}
 
 void init() {
 
@@ -101,6 +128,7 @@ void init() {
     sstrength::squelch_signal.add(NULL, s_strength_callback);
     sstrength::s_strength_signal.add(NULL, s_level_callback);
     battery::battery_signal.add(NULL, battery_callback);
+    main_board::if_filter_signal.add(nullptr, if_filter_signal_callback);
     setModulationMode(config.modulation, true);
 
     // Standby led
@@ -145,18 +173,39 @@ void setGPIO() {
     }
 }
 
-void on_dsp_event(st_dspStatus *status) {
-    switch (status->status) {
+st_modulation_mode *find_modulation_info(MODULATION_MODE modulation) {
+    st_modulation_mode *mode = nullptr;
 
-        case DSP_STATUS_RUNNING:
-        case DSP_STATUS_PENDING:
-
+    for (auto m : modes) {
+        if (m.modulation == modulation) {
+            mode = &m;
             break;
+        }
+    }
 
-        case DSP_STATUS_STOPPED:
-        default:
+    return mode;
+}
 
-            break;
+bool allow_modulation_in_mode(MODE mode, MODULATION_MODE modulation) {
+    st_modulation_mode *mode_info = find_modulation_info(modulation);
+    if (!mode_info || mode_info->analog_allowed ||
+        ANALOGMODE(mode)) { // Not all modes are worth storing in the extended info struct. Just being lazy as hell, right?
+        return true;
+    }
+    return false;
+}
+
+void toggle_dsp() {
+    if (!ISTX) {
+        if (config.mode != DIGITAL_RX) {
+            setMode(DIGITAL_RX);
+        } else {
+            if (allow_modulation_in_mode(config.mode, config.modulation)) {
+                setMode(ANALOG_RX);
+            } else {
+                status::handleError(status::ST_WARN, "Modulation disabled in analog");
+            }
+        }
     }
 }
 
@@ -169,6 +218,7 @@ bool _setMode(MODE mode, bool force) {
             return false;
         }
 
+        // TODO: DSP commands shouldn't be fired here
         if (config.mode == DIGITAL_RX && mode != DIGITAL_RX) {
             dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, on_dsp_event);
         }
@@ -266,7 +316,7 @@ bool _setMode(MODE mode, bool force) {
             power_ctrl = config.power_ctrl & ~POWCRL_P12;
             setPowerCtrl(power_ctrl, false);
 
-            if (battery::battery_info.status == battery::BATTERY_STATUS_LOW) {
+            if (battery::battery_info.status == battery::BATTERY_STATUS_VERY_LOW) {
                 // In low battery mode. Disable all power rails
                 power_ctrl = POWCRL_P5;
             } else {
@@ -306,6 +356,8 @@ bool _setMode(MODE mode, bool force) {
         }
 
         setMute(muteState);
+
+        mode_signal.emit(nullptr);
     }
 
     return true;
@@ -348,13 +400,14 @@ GPIO_PinState getMute() { return mute; }
 
 MODULATION_MODE getModulationMode() { return config.modulation; }
 
-void setModulationMode(int mod_val, bool force) {
+void setModulationMode(MODULATION_MODE mod_val, bool force) {
 
-    if (battery::battery_info.status == battery::BATTERY_STATUS_LOW) {
+    if (battery::battery_info.status == battery::BATTERY_STATUS_VERY_LOW) { // Disble all if low power
         setGPIOExpPort(&hmcp01, MCP23017_PORTA, 0x00);
         setGPIOExpPort(&hmcp01, MCP23017_PORTB, 0xFF);
         setGPIOExpPort(&hmcp02, MCP23017_PORTA, 0x00);
         setGPIOExpPort(&hmcp02, MCP23017_PORTB, 0xFF);
+
     } else if (force || mod_val != (int)config.modulation) {
 
         bool changed = mod_val != (int)config.modulation;
@@ -370,6 +423,12 @@ void setModulationMode(int mod_val, bool force) {
 
         setMute(GPIO_PIN_SET);
 
+        if (!allow_modulation_in_mode(config.mode, config.modulation)) {
+            // Only-digital modes allowed for some modulations
+
+            config.mode = ISTX ? DIGITAL_TX : DIGITAL_RX;
+        }
+
         // Set RX/TX mode to set the power lines according to the new modulation
         _setMode(config.mode, true);
 
@@ -383,9 +442,9 @@ void setModulationMode(int mod_val, bool force) {
         switch (config.modulation) {
             case FM:
             case WFM:
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && !ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, true, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, ISTX || !ISANALOG,
                                                   false); // When low, it powers up the +5v rail that goes into the FM detector board
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_MODULATOR, !(config.mode == ANALOG_TX), false);
@@ -394,9 +453,9 @@ void setModulationMode(int mod_val, bool force) {
 
                 break;
             case AM:
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && !ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, true, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_AM_DETECTOR, ISTX || !ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, true, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_MODULATOR, true, false);
@@ -431,6 +490,8 @@ void setModulationMode(int mod_val, bool force) {
             radio::update_freq();
             // Set the mute in its original state
             // HAL_Delay(100); // skip the audio transient if any
+
+            mode_signal.emit(nullptr);
         }
 
         setMute(muteState);
@@ -571,8 +632,10 @@ void set_if_filter(radio::IF_FILTER fil) {
         switch (config.modulation) {
             case SSB_USB:
             case SSB_LSB:
-            case CW:
                 new_filter = radio::IF_FILTER_3KHZ;
+                break;
+            case CW:
+                new_filter = radio::IF_FILTER_500HZ;
                 break;
             case FM:
             case WFM:
@@ -583,7 +646,12 @@ void set_if_filter(radio::IF_FILTER fil) {
                 }
                 break;
             case AM:
-                new_filter = radio::IF_FILTER_15KHZ;
+
+                if (ISANALOG) {
+                    new_filter = radio::IF_FILTER_15KHZ;
+                } else {
+                    new_filter = radio::IF_FILTER_9KHZ;
+                }
                 break;
             default:
                 new_filter = radio::IF_FILTER_15KHZ;
@@ -617,7 +685,7 @@ void set_if_filter(radio::IF_FILTER fil) {
             // setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
 
             // Apply an offset to put the left sideband onto the filter passband
-            int offset = (int)(radio::if_filters[radio::if_filter].bandwidth_khz * 1000 / 2) + 500; // +500 to account for the skirt
+            int offset = (int)(radio::if_filters[radio::if_filter].bandwidth / 2) + 500; // +500 to account for the skirt
 
             lo_enable(2, 1);
             lo_freq(2, radio::if_filters[radio::if_filter].freq + offset);
@@ -628,6 +696,8 @@ void set_if_filter(radio::IF_FILTER fil) {
             lo_enable(2, 0);
             // setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, true, true);
         }
+
+        if_filter_signal.emit(nullptr);
     }
 }
 } // namespace main_board

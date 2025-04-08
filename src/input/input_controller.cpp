@@ -77,7 +77,7 @@ void inputControllerInit() {
 
 Widget *processTouch(Widget *w, st_inputEvent *e) {
 
-    if (w->is_point_visible(e->point)) {
+    if (w->is_point_visible(e->point) && w->enabled()) {
 
         for (const auto child : w->children()) {
             const auto touched_widget = processTouch(child, e);

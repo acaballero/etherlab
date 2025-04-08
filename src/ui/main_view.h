@@ -55,7 +55,7 @@ class MainView : public View {
     bool on_input(const st_inputEvent event) override;
 
   protected:
-    TitleBarWidget header_w = {{0, 0, DISPLAY_X_PIXELS / 2 - 60, HEADER_HEIGHT}, &lcd};
+    TitleBarWidget header_w = {{0, 0, DISPLAY_X_PIXELS / 2 - 60, HEADER_HEIGHT}};
     StatusWidget status_w{{0, DISPLAY_Y_PIXELS - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
     DbScaleWidget dbscale_w{{DISPLAY_X_PIXELS - DBSCALE_WIDTH, HEADER_HEIGHT, DBSCALE_WIDTH, FFT_HEIGHT}, &lcd};
     TuneWidget tune_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, TUNE_INFO_HEIGHT}, &lcd};

@@ -4,10 +4,14 @@
 
 #include "button_widget.h"
 #include "input/inputEvent.h"
+#include "ui/ui_types.h"
 #include <stdint.h>
 
 void Button::set_text(char const *t) {
     strncpy(text, t, MAX_CHARS);
+    if (variable_width) {
+        set_width();
+    }
     set_dirty();
 }
 
@@ -19,6 +23,51 @@ void Button::before_paint() {
     if (this->dirty()) {
         display->setFont(font);
     }
+}
+
+void Button::draw_box(int box_width, uint16_t bg) {
+
+    uint16_t fg = display->getColor();
+
+    if (style == BUTTON_STYLE_3D) {
+        display->writeRect(0, 0, box_width - 1, 1, shadow_light);
+        display->writeRect(0, 0, 1, parent_rect().height() - 1, shadow);
+        display->writeRect(box_width - 2, 0, box_width - 1, parent_rect().height() - 1, shadow_light);
+        display->writeRect(0, parent_rect().height() - 2, box_width - 1, parent_rect().height() - 1, shadow);
+        display->fill(1, 1, box_width - 1, parent_rect().height() - 2, bg);
+    } else {
+        display->clear();
+        display->setColor(bg);
+        display->drawRoundedRectangle(0, 0, box_width, parent_rect().height(), 3, true);
+    }
+
+    display->setColor(fg);
+}
+
+void Button::set_width() {
+
+    Rect r = parent_rect();
+
+    uint16_t lw = strlen(text);
+    uint16_t vw = strlen(value);
+    uint16_t uw = strlen(unit);
+
+    if (two_lines) {
+        uint16_t line1w = lw * font->width;
+        uint16_t line2w = (vw + uw) * font->width;
+        r.set_width(max2(line1w, line2w) + (2 * display->get_padding_x()));
+    } else {
+        uint16_t w = (lw + vw + uw);
+        if (uw) {
+            w++;
+        }
+
+        int16_t width = w * (font->width);
+
+        r.set_width(width + (2 * display->get_padding_x()));
+    }
+
+    set_parent_rect(r);
 }
 
 void Button::paint_callback() {
@@ -35,25 +84,15 @@ void Button::paint_callback() {
         bg = bg_color_focused;
     }
 
-    if (style == BUTTON_STYLE_3D) {
-        display->writeRect(0, 0, parent_rect().width() - 1, 1, shadow_light);
-        display->writeRect(0, 0, 1, parent_rect().height() - 1, shadow);
-        display->writeRect(parent_rect().width() - 2, 0, parent_rect().width() - 1, parent_rect().height() - 1, shadow_light);
-        display->writeRect(0, parent_rect().height() - 2, parent_rect().width() - 1, parent_rect().height() - 1, shadow);
-        display->fill(1, 1, parent_rect().width() - 1, parent_rect().height() - 2, bg);
-    } else {
-        display->clear();
-        display->setColor(bg);
-        display->drawRoundedRectangle(0, 0, parent_rect().width(), parent_rect().height(), 3, true);
-    }
-
     display->setColor(fg);
     display->setBgColor(text_bg_color);
     display->setFont(font);
 
     uint16_t text_height = font->height;
+    uint16_t box_width = parent_rect().width();
 
     if (fn_writer) {
+        draw_box(box_width, bg);
         display->gotoXY(display->get_padding_x(), (parent_rect().height() - text_height) / 2);
         fn_writer();
     } else {
@@ -63,11 +102,15 @@ void Button::paint_callback() {
 
         if (two_lines) {
 
-            uint16_t w = (vw + uw) * font->width;
-            uint16_t xlabel = (parent_rect().width() - lw * font->width) >> 1;
-            uint16_t xval = (parent_rect().width() - w) >> 1;
+            uint16_t line2w = (vw + uw) * font->width;
+
+            uint16_t xlabel = (box_width - lw * font->width) >> 1;
+            uint16_t xval = (box_width - line2w) >> 1;
             uint16_t ylabel = (parent_rect().height() - ((font->height + 1) << 1)) >> 1;
             uint16_t yval = ylabel + font->height + 3;
+
+            draw_box(box_width, bg);
+
             display->gotoXY(xlabel, ylabel);
             display->print(text);
             if (vw) {
@@ -83,15 +126,18 @@ void Button::paint_callback() {
             }
 
             int16_t width = w * (font->width);
+
             int16_t x;
 
             if (align == ALIGN_CENTER) {
-                x = (parent_rect().width() - width) >> 1;
+                x = (box_width - width + 1) >> 1;
             } else if (align == ALIGN_RIGHT) {
-                x = parent_rect().width() - width - display->get_padding_x();
+                x = box_width - width - display->get_padding_x();
             } else {
                 x = display->get_padding_x();
             }
+
+            draw_box(box_width, bg);
 
             display->gotoXY(x, (parent_rect().height() - font->height + 2) >> 1);
             if (vw) {

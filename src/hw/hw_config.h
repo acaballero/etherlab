@@ -75,6 +75,7 @@
 #define GPIOEXP_IF_FILTER_3KHZ 0
 #define GPIOEXP_IF_FILTER_15KHZ 1
 #define GPIOEXP_IF_FILTER_150KHZ 2
+
 #define GPIOEXP_ANALOG_RXTX_DIGITAL_TX_SWITCH 3
 /* Bits 4-7 are used in the frontend filter bank */
 

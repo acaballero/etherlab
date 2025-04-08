@@ -22,7 +22,7 @@ extern "C" {
 void dsp_init(dsp::st_dsp_config &);
 void dsp_set_real_time(bool);
 uint8_t dsp_command(st_dspCommand command, void (*)(st_dspStatus *));
-
+bool dsp_restart();
 inline void dsp_work();
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc);

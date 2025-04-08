@@ -62,9 +62,7 @@ float db_to_s_strength(float db) {
         s = 9 + ((db + 93) / 10);
     }
 
-    // TODO: Currently the dB units used in the FFT are not calibrated and doesn't match the analog signal strength level
-    // readings, so I subtract some constant to visually match it
-    return max2(s - 6, 0);
+    return s;
 }
 
 float get_s_strength(bool filter, uint8_t channel) {
@@ -73,7 +71,7 @@ float get_s_strength(bool filter, uint8_t channel) {
 
     float v = ((float)adcv / (float)MAX_ADC_VALUE) * (float)V_REF;
 
-    if (ISANALOG && config.modulation == AM) {
+    if (config.modulation == AM) {
         // The RSSI signals from the FM and AM detectors are switched by a simple diode owing to the fact that FM RSSI is down in AM mode. Like this:
         //
         // AM RSSI  _____DIODE>_________
@@ -114,10 +112,14 @@ float get_s_strength(bool filter, uint8_t channel) {
 
 float update_s_strength() {
 
-    // s_level = get_s_strength(false, config.modulation == SSB_LSB || config.modulation == SSB_USB ? S_STRENGTH_ADC_CHANNEL : RSSI_ADC_CHANNEL);
-    // The current AGC board outputs the conditioned RSSI level at its AFSI output, so we can use the same ADC channel to read it on either mode
+    if (ISANALOG) {
+        // s_level = get_s_strength(false, config.modulation == SSB_LSB || config.modulation == SSB_USB ? S_STRENGTH_ADC_CHANNEL : RSSI_ADC_CHANNEL);
+        // The current AGC board outputs the conditioned RSSI level at its AFSI output, so we can use the same ADC channel to read it on either mode
 
-    s_level = get_s_strength(false, S_STRENGTH_ADC_CHANNEL);
+        s_level = get_s_strength(false, S_STRENGTH_ADC_CHANNEL);
+    } else {
+        s_level = db_to_s_strength(fft::dbm);
+    }
     return s_level;
 }
 
@@ -127,8 +129,7 @@ void check_signal_strength() {
 
     s_strength_signal.emit(&s_level);
 
-    // TODO: Squelch control is disabled in DIGITAL_RX mode until DSP signal strength is implemented
-    if (!ISTX && ISANALOG && (config.squelch_auto || config.squelch_level > 0)) {
+    if (!ISTX && (config.squelch_auto || config.squelch_level > 0)) {
 
         double squelch_level;
 

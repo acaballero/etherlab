@@ -6,6 +6,7 @@
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_config.h"
 #include "status.h"
+#include "types.h"
 #include "ui/lcd.h"
 #include "hw/stm32f4xx/timers.h"
 
@@ -22,11 +23,13 @@
 #include "dsp_config.h"
 #include "buffer.hpp"
 #include "dsp_buffers.h"
+#include "main_board.h"
 
 void dsp_loop();
 namespace dsp {
 os::periodic_task task(50, dsp_loop);
-}
+
+} // namespace dsp
 Task *current_task;
 DspProcessor *current_processor;
 buffer_t<complex_t> *current_buffer;
@@ -91,12 +94,20 @@ uint8_t dsp_command(st_dspCommand command, void (*cb)(st_dspStatus *)) {
     return 0;
 }
 
+bool dsp_restart() {
+    if (current_task && dsp_status && dsp_status->status == DSP_STATUS_RUNNING) {
+        current_task->start();
+        return true;
+    }
+
+    return false;
+}
+
 void dsp_start_task() {
 
     //  current_task = tasks[pending_command.id];
     //  dsp_status = &current_task->status;
     if (dsp_status->status != DSP_STATUS_RUNNING) {
-        current_task->reset();
         current_task->start();
         current_processor = processors[pending_command.id];
         current_processor->status.block_size_bytes = current_task->status.block_size_bytes;

@@ -10,18 +10,15 @@
 #include "dsp/buffer.hpp"
 #include "dsp/dsp_common.h"
 
-template<typename T>
-class DspDecimator {
+template <typename T> class DspDecimator {
 
-public:
-
-    DspDecimator(const uint16_t factor) : factor(factor) {};
+  public:
+    DspDecimator(const uint16_t factor) : factor(factor){};
 
     DspDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor)
-    : input_rate(input_rate), output_rate(output_rate), factor(factor)
-    {
+        : input_rate(input_rate), output_rate(output_rate), factor(factor){
 
-    };
+                                                            };
 
     virtual void decimate(buffer_t<T> &src, buffer_t<T> &dst) = 0;
 
@@ -37,13 +34,10 @@ public:
 
     void setOutputRate(uint32_t outputRate);
 
-protected:
-
+  protected:
     uint32_t input_rate;
     uint32_t output_rate;
     uint16_t factor;
-
 };
 
-
-#endif //TRX_FRONTEND_DSP_DECIMATOR_H
+#endif // TRX_FRONTEND_DSP_DECIMATOR_H

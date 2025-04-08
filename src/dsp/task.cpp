@@ -8,6 +8,7 @@
 
 void Task::reset() {
 
+    // TODO: I don't remember why this was required for, but now there are two streams, so probably that's not what I want
     output_stream.reset();
 
     this->status.fifo_overruns = 0;

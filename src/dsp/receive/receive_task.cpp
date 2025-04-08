@@ -6,6 +6,7 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/firFilter.h"
 #include "dsp/dsp_common.h"
+#include "radio.h"
 #include "status.h"
 #include "hw/stm32f4xx/timers.h"
 #include "config.h"
@@ -28,33 +29,39 @@ ReceiveTask::ReceiveTask(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
 void ReceiveTask::work() {
     if (status.status == DSP_STATUS_RUNNING) {
 
-        char *in;
         char *in_start;
-        char *out;
+        char *in_p;
+        char *out_p;
 
-        uint32_t free = output_stream.free(&out);
-        uint16_t av = input_stream.available(&in_start);
+        uint16_t block_size_in = status.block_size_bytes / 2;
+        uint16_t block_size_out = status.decimated_block_size;
+
+        uint32_t free = output_stream.free(&out_p);
+        uint16_t av = input_stream.available(&in_p);
 
         if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
 
             this->status.processed_blocks++;
             av = DSP_FIFO_BLOCK_BYTES;
-            in = in_start;
-            uint16_t block_size_in = status.block_size_bytes / 2;
-            uint16_t block_size_out = status.decimated_block_size;
+
+            in_start = in_p;
+
+            // Wrap the complex_t buffers with an adc_type buffer
+            buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, 16};
 
             // Process input block
             while (av >= status.block_size_bytes) {
 
-                // Wrap the complex_t buffers with an adc_type buffer
-                buffer_t<adc_type> buff = {(adc_type *)in, block_size_in};
-                buffer_t<adc_type> buff_out = {(adc_type *)out, block_size_out};
+                buffer_t<adc_type> buff = {(adc_type *)in_p, block_size_in};
+                buffer_t<adc_type> buff_out = {(adc_type *)out_p, block_size_out};
 
-                decimator_i_0.decimate(buff, buff_out, 0, status.n_channels);
-                // decimator_i_1.decimate(buff_out, buff_out, 0, this->status.n_channels);
+                decimator_i_0.decimate(buff, buff_tmp, 0, status.n_channels);
+                if (status.decimation_factor > 2) {
+                    decimator_i_1.decimate(buff_tmp, buff_out, 0, status.n_channels);
+                }
 
-                out += status.decimated_block_size_bytes;
-                in += status.block_size_bytes;
+                out_p += status.decimated_block_size_bytes;
+                in_p += status.block_size_bytes;
                 av -= status.block_size_bytes;
             }
 
@@ -89,7 +96,7 @@ void ReceiveTask::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > 48000 * 2) {
+    while (status.sample_rate > audio_bw_hz * 2) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }
@@ -97,7 +104,7 @@ void ReceiveTask::start() {
     // If the decimation factor is greater than
 
     status.direction = DSP_DIRECTION_IN;
-    status.bandwidth = radio::get_bandwidth_hz();
+    status.bandwidth = radio::get_bandwidth_hz(); // This is the desired filter bandwidth based on current modulation and user selected filter
     status.decimation_factor = dec_factor;
     status.bits_per_sample = 16;
     status.n_channels = 2;
@@ -105,10 +112,15 @@ void ReceiveTask::start() {
     status.decimated_block_size = dsp_temp_buf.count / dec_factor / (status.n_channels == 1 ? 2 : 1);
     status.decimated_block_size_bytes = status.block_size_bytes / dec_factor / (status.n_channels == 1 ? 2 : 1);
 
-    decimator_i_0.config(config.fft.sample_rate, status.bandwidth, dec_factor);
-    decimator_i_1.config(config.fft.sample_rate / decimator_i_0.getFactor(), status.bandwidth, 1);
-    // IIRDecimator_Q.config(config.fft.sample_rate, status.bandwidth, status.decimation_factor);
+    // decimator_i_0.config(config.fft.sample_rate, status.bandwidth, dec_factor, status.bandwidth - 1000);
+    uint8_t factor = 2;
+    uint32_t stage_1_fs = (config.fft.sample_rate / factor) - 1;
 
+    decimator_i_0.config(config.fft.sample_rate, stage_1_fs, factor);
+    if (dec_factor > 2) {
+        factor = dec_factor - factor;
+        decimator_i_1.config(stage_1_fs, status.bandwidth, factor);
+    }
     // Start task processing timer
     // TODO: This should be done by the caller of this method and be generic for all tasks
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);

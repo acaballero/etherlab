@@ -9,6 +9,7 @@
 #include "menuBase.h"
 #include "menu_options.h"
 #include "ui/menuILI9431Out.h"
+#include "ui/option_buttons_view.h"
 #include "view_manager.h"
 #include <cstdint>
 #include <functional>
@@ -29,10 +30,11 @@ void open_number_edit(T value, const char *units, const char *name, uint8_t frac
 
 template <typename T> void open_option_buttons(menu_options_t<T> options, const char *title, T &value, uint16_t size, std::function<void(T)> on_select) {
 
-    view_manager::mainView.OptionButtons()->clear();
+    OptionButtonsView *view = view_manager::mainView.OptionButtons();
+    view->clear();
 
     const auto fn = [&value, options, on_select](uint16_t index) {
-        view_manager::mainView.OptionButtons()->set_visible(false);
+        view_manager::mainView.OptionButtons()->set_visible(false); // Close
 
         value = options[index].value;
         if (on_select) {
@@ -43,13 +45,17 @@ template <typename T> void open_option_buttons(menu_options_t<T> options, const 
     for (int i = 0; i < size; i++) {
         menu_option_st<T> option = options[i];
 
-        view_manager::mainView.OptionButtons()->on_select = fn;
-        view_manager::mainView.OptionButtons()->add_item(option.name, nullptr, value == option.value, option.fg_color, option.bg_color);
+        view->on_select = fn;
+        view->add_item(option.name, nullptr, value == option.value, option.fg_color, option.bg_color);
+
+        printf_("Option %d: %b\n", i, option.enabled);
+
+        view->set_enabled(i, option.enabled);
     }
 
-    view_manager::mainView.OptionButtons()->set_title(title);
-    view_manager::mainView.OptionButtons()->set_visible(true);
-    view_manager::mainView.OptionButtons()->set_focus(true);
+    view->set_title(title);
+    view->set_visible(true);
+    view->set_focus(true);
 }
 
 template <typename T>

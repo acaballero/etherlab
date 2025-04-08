@@ -50,10 +50,12 @@ void update_battery_info() {
         battery_info.status = BATTERY_STATUS_CHARGING;
     } else if (battery_info.voltage > battery_voltage_80) {
         battery_info.status = BATTERY_STATUS_HIGH;
-    } else if (battery_info.voltage < battery_voltage_20) {
+    } else if (battery_info.voltage > battery_voltage_20) {
+        battery_info.status = BATTERY_STATUS_MEDIUM;
+    } else if (battery_info.voltage > (battery_voltage_20 * 0.2)) {
         battery_info.status = BATTERY_STATUS_LOW;
     } else {
-        battery_info.status = BATTERY_STATUS_MEDIUM;
+        battery_info.status = BATTERY_STATUS_VERY_LOW;
     }
 }
 

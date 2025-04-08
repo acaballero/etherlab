@@ -68,7 +68,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
                                   //.freq_max = radio::bands[radio::get_band()].freq_end,
                                   .freq_min = radio::get_frequency() - 200000,
                                   .freq_max = radio::get_frequency() + 200000,
-                                  .freq_step = radio::if_filters[radio::if_filter].bandwidth_khz * 1000U,
+                                  .freq_step = radio::if_filters[radio::if_filter].bandwidth,
                                   .squelch = 0,
                                   .pause_ms = 2000,
                                   .period_s = 1,
@@ -101,9 +101,9 @@ using namespace Menu;
 menu_option_st<scanner::SCANNER_MODE> mode_options[] = {
     {"Custom", scanner::SCANNER_MODE_CUSTOM}, {"Band", scanner::SCANNER_MODE_BAND}, {"List", scanner::SCANNER_MODE_LIST}};
 
-menu_option_st<uint32_t> filter_options[] = {{radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::if_filters[radio::IF_FILTER_3KHZ].bandwidth_khz * 1000U},
-                                             {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::if_filters[radio::IF_FILTER_15KHZ].bandwidth_khz * 1000U},
-                                             {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::if_filters[radio::IF_FILTER_150KHZ].bandwidth_khz * 1000U}};
+menu_option_st<uint32_t> filter_options[] = {{radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::if_filters[radio::IF_FILTER_3KHZ].bandwidth},
+                                             {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::if_filters[radio::IF_FILTER_15KHZ].bandwidth},
+                                             {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::if_filters[radio::IF_FILTER_150KHZ].bandwidth}};
 
 optionsPrompt<scanner::SCANNER_MODE> modeMenu((const char *)"Direction", mode_options, scanner_config.mode, sizeof(mode_options) / sizeof(mode_options[0]),
                                               [](scanner::SCANNER_MODE) { configure(); });

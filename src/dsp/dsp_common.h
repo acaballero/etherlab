@@ -87,7 +87,7 @@ struct st_dspStatus {
     uint8_t n_channels;
 
     volatile uint32_t block_size_bytes; // Size of each processed block, in bytes
-    volatile uint32_t processed_blocks;
+    volatile uint64_t processed_blocks;
     volatile uint32_t fifo_underruns;
     volatile uint32_t fifo_overruns;
 
@@ -102,10 +102,12 @@ struct st_dspStatus {
                decimation_factor == st.decimation_factor && bandwidth == st.bandwidth && last_error_ms == st.last_error_ms;
         ;
     }
-
     uint32_t elapsed_ms() { return ((stop_ms ? stop_ms : HAL_GetTick()) - start_ms); }
     float drop_rate() { return processed_blocks ? (((float)(fifo_overruns + fifo_underruns) / (float)processed_blocks) * 100.0) : 0; }
-    float drop_freq() { return elapsed_ms() > 1000 ? ((float)(fifo_overruns + fifo_underruns)) / ((float)elapsed_ms() / 1000.0f) : 0; }
+    float drop_freq() {
+        volatile uint32_t elapsed = elapsed_ms();
+        return elapsed > 1000 ? ((float)(fifo_overruns + fifo_underruns)) / ((float)elapsed / 1000.0f) : 0;
+    }
 };
 
 extern Signal dsp_common_params_signal;

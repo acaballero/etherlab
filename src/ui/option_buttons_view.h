@@ -44,7 +44,11 @@ class OptionButtonsView : public View {
 
     void clear();
 
-    Button get_item(uint16_t index);
+    // Button get_item(uint16_t index);
+
+    // TODO: There are better ways of indexing these options (and still decouple them from the source of options the are created from)
+    // This forces the client to keep the same index type. Not a concern currently though.
+    void set_enabled(uint16_t index, bool b);
 
     void set_show_arrows(bool b);
 

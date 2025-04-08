@@ -133,7 +133,7 @@ void StatusWidget::filter2(Widget *) {
     } else {
         sprintf(buf, "%s", radio::IFFilterNames[this->_status.if_filter]);
     }
-    display->print("~:", buf, "", dimm_color, config.filter < radio::BAND_AUTO ? fg_color : fg_color_auto, dimm_color);
+    display->print("~:", buf, "", dimm_color, config.if_filter != radio::IF_FILTER_AUTO ? fg_color : fg_color_auto, dimm_color);
 }
 
 void StatusWidget::band(Widget *) {
@@ -201,7 +201,8 @@ void StatusWidget::before_paint() {
         display->setPadding(4, 4);
         display->gotoCharXY(0, 0);
 
-        default_buttons[MODULATION].set_text(modulation());
+        const char *modulation_str = modulation();
+        default_buttons[MODULATION].set_text(modulation_str);
         default_buttons[FRONTEND].set_text(frontend());
         default_buttons[AGC].set_text(agc_alc());
 

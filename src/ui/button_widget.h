@@ -27,6 +27,8 @@ class Button : public Widget {
            ButtonStyle style = BUTTON_STYLE_FLAT, Align aling = ALIGN_LEFT, uint32_t id = 0)
         : Widget(parent_rect, display), fg_color{fg_color}, bg_color{bg_color}, style(style) {
         set_aling(aling);
+
+        variable_width = parent_rect.width() == 0;
         set_text(t);
         this->id = id;
     };
@@ -76,6 +78,8 @@ class Button : public Widget {
 
     void set_dimmed(bool);
 
+    void set_width();
+
     std::function<void(void)> fn_writer; // Handler to delegate the writing
 
   protected:
@@ -83,19 +87,20 @@ class Button : public Widget {
     char value[MAX_CHARS_VALUE]{""};
     char unit[MAX_CHARS_UNIT]{""};
     bool two_lines = false;
+    bool variable_width = false;
 
     int fd = 1;
 
     uint16_t fg_color = C565_DARKEST;
     uint16_t text_bg_color = C565_TRANSPARENT;
-    uint16_t fg_disabled_color = C565_BLACK;
+    uint16_t fg_disabled_color = C565_GREY_LIGHT;
     uint16_t fg_color_value = C565_BLUE;
     uint16_t fg_color_unit = C565_GREY_LIGHT;
     uint16_t fg_color_focused = C565_BLACK;
     uint16_t fg_dimmed_color = C565_GREY_LIGHT;
     uint16_t bg_color = C565_GREY_LIGHT;
     uint16_t bg_color_focused = C565_WHITE;
-    uint16_t bg_disabled_color = C565_GREY_DARKER;
+    uint16_t bg_disabled_color = C565_GREY_DARK;
     uint16_t bg_dimmed_color = C565_GREY_DARKER;
     uint16_t shadow_light = C565_WHITE;
     uint16_t shadow = C565_GREY_DARKER;
@@ -105,6 +110,8 @@ class Button : public Widget {
     ButtonStyle style = BUTTON_STYLE_FLAT;
 
     void before_paint() override;
+
+    void draw_box(int box_width, uint16_t bg);
 };
 
 #endif // TRX_FRONTEND_BUTTON_WIDGET_H

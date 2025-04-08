@@ -30,11 +30,11 @@ void clearError() {
 
 void handleError(StatusCode code, const char *msg) {
 
-    DEBUGPRINT(msg, 0)  // Print to console, if enabled
-    DEBUGPRINT("\n", 0) // Print to console, if enabled
+    DEBUGPRINT(msg, 0) // Print to console, if enabled
+    DEBUGPRINT("\n", 0)
 
     systemStatus.code = code;
-    snprintf(systemStatus.msg, 30, "%s", msg);
+    snprintf(systemStatus.msg, 40, "%s", msg);
 
     status_signal.emit(&systemStatus);
 }

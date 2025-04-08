@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "Display_afb.h"
 #include "dsp/dsp_common.h"
+#include "input/inputEvent.h"
 #include "ips_font.h"
 #include "titlebar_widget.h"
 #include "config.h"
@@ -14,25 +15,26 @@
 #include "power_amp.h"
 #include "fatfs/fatfs.h"
 #include "main_board.h"
+#include "utils.hpp"
 
-TitleBarWidget::TitleBarWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
-    sdcard_signal.add(this, TitleBarWidget::signal_static_callback);
-    battery::battery_signal.add(this, TitleBarWidget::signal_static_callback);
-    power_amp::temp_signal.add(this, TitleBarWidget::signal_static_callback);
-    rf_coupler::rf_coupler_signal.add(this, TitleBarWidget::signal_static_callback);
-    rtc_signal.add(this, TitleBarWidget::signal_static_callback);
+TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
+    sdcard_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    battery::battery_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    power_amp::temp_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    rf_coupler::rf_coupler_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    rtc_signal.add(this, TitleBarWidgetInner::signal_static_callback);
 }
 
-void TitleBarWidget::paint_callback() {
+void TitleBarWidgetInner::paint_callback() {
 
     FontDef *font = (FontDef *)&Font_Tiny8x8;
-    uint8_t margin = (area.box.height - font->height) / 2;
+
     uint16_t color = C565_BLACK;
     char buff[20];
 
     display->clear();
 
-    display->gotoXY(0, margin);
+    display->gotoXY(0, MARGIN);
 
     display->setColor(C565_WHITE);
     display->setBgColor(C565_BLACK);
@@ -48,15 +50,18 @@ void TitleBarWidget::paint_callback() {
     display->print("TRX_100");
 #endif
 
-    display->set_trim_enabled(false);
     if (battery::battery_info.status != battery::BATTERY_STATUS_UNDEFINED) {
 
         char c;
 
         switch (battery::battery_info.status) {
-            case battery::BATTERY_STATUS_LOW:
+            case battery::BATTERY_STATUS_VERY_LOW:
                 color = C565_RED;
                 c = ICON_BATT_LOW;
+                break;
+            case battery::BATTERY_STATUS_LOW:
+                color = C565_RED;
+                c = ICON_BATT_MID;
                 break;
             case battery::BATTERY_STATUS_MEDIUM:
                 color = C565_GREENYELLOW;
@@ -134,31 +139,6 @@ void TitleBarWidget::paint_callback() {
     display->writeChar(ICON_USB);
 #endif
 
-    display->setColor(C565_GREY_LIGHT);
-    display->setFont((FontDef *)&Font_Tiny8x8);
-    display->print(" ");
-    display->setFont((FontDef *)&Font_Icons9x8);
-
-    color = C565_GREY_LIGHT;
-    if (ISANALOG) {
-        display->setColor(color);
-        display->writeChar(ICON_ANALOG);
-    } else {
-
-        float drop_freq = dsp_status ? dsp_status->drop_freq() : 0;
-        if (!dsp_status || dsp_status->error != DSP_ERR_NONE || drop_freq > 20) {
-            color = C565_RED;
-        } else if (drop_freq > 5) {
-            color = C565_YELLOW;
-        } else if (dsp_status->status == DSP_STATUS_RUNNING) {
-            color = C565_GREEN;
-        }
-
-        display->setColor(color);
-        display->writeChar(ICON_DIGITAL);
-        display->setColor(C565_WHITE);
-    }
-
     display->setFont((FontDef *)&Font_Tiny8x8);
 
     if (power_amp::temp >= power_amp::params.MIN_TEMP) {
@@ -222,9 +202,9 @@ void TitleBarWidget::paint_callback() {
     display->set_trim_enabled(true);
 }
 
-void TitleBarWidget::before_paint() {
+void TitleBarWidgetInner::before_paint() {
 
-    st_topBar topBar = {dsp_status, main_board::getMute() ? true : false};
+    st_topBar topBar = {main_board::getMute() ? true : false};
 
     if (this->dirty() || !(topBar == this->status)) {
         this->status = topBar;
@@ -232,7 +212,62 @@ void TitleBarWidget::before_paint() {
     }
 }
 
-void TitleBarWidget::on_info_changed_signal(void *) {
+void TitleBarWidgetInner::on_info_changed_signal(void *) {
     ;
     this->set_dirty();
+}
+
+void TitleBarWidget::init() {
+
+    btnDSP.action = [this](Button &, st_inputEvent) {
+        main_board::toggle_dsp();
+        set_dirty();
+    };
+
+    add_children({&titleBarWidgetInner, &btnDSP});
+    set_name("tit_w");
+
+    for (Widget *btn : View::children()) {
+        btn->set_font((FontDef *)&Font_Fixed5x7);
+        btn->set_aling(ALIGN_CENTER);
+        ((Button *)btn)->set_style(ButtonStyle::BUTTON_STYLE_FLAT);
+        ((Button *)btn)->set_bg(C565_VIOLET);
+        ((Button *)btn)->set_fg(C565_WHITE);
+    }
+
+    // Update every rtc update event
+    rtc_signal.add(this, [this](void *, void *) { set_dirty(); });
+}
+
+void TitleBarWidget::before_paint() {
+
+    if (dirty()) {
+        uint16_t color = C565_BLACK;
+
+        color = C565_GREY_LIGHT;
+
+        if (ISANALOG) {
+
+            btnDSP.set_text("ANA");
+
+        } else {
+
+            float drop_freq = dsp_status && dsp_status->status == DSP_STATUS_RUNNING ? dsp_status->drop_freq() : 0;
+            bool error = true;
+            if (!dsp_status || dsp_status->error != DSP_ERR_NONE || drop_freq > 20) {
+                color = C565_RED;
+            } else if (drop_freq > 5) {
+                color = C565_YELLOW;
+            } else {
+                error = false;
+            }
+
+            char buf[20];
+            sprintf(buf, "%s%s", "DSP", error ? "!" : "");
+            trim(buf);
+            btnDSP.set_text(buf);
+        }
+
+        btnDSP.set_fg(color);
+    }
 }
