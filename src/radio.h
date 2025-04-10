@@ -88,7 +88,7 @@ extern const char *modulationNames[];
 extern const char *repeaterNames[];
 extern BAND filter;
 extern IF_FILTER if_filter;
-extern const st_filter if_filters[];
+extern const st_filter if_filters[5];
 extern const st_band bands[];
 extern mixer mixers[];
 extern Signal freq_signal;

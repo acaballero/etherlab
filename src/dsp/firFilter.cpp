@@ -38,6 +38,7 @@
  */
 
 #include "firFilter.h"
+#include "printf.h"
 #include <arm_math.h>
 
 static double sinc(const double x) {
@@ -54,10 +55,15 @@ void designLPF(float *m_taps, int m_num_taps, float fs, float fx) {
 
     double f = fx / fs;
 
+    printf("LPF: fx:%f,fs:%f,taps:%d\n", fx, fs, m_num_taps);
+
     for (n = 0; n < m_num_taps; n++) {
-        int nn = n - int(m_num_taps / 2);
+        int nn = n - m_num_taps / 2;
         m_taps[n] = 2.0 * f * sinc(2.0 * f * (double)nn);
+        printf_(",%f", m_taps[n]);
     }
+
+    printf_("\n");
 }
 
 void designHPF(float *m_taps, int m_num_taps, float Fs, float Fx) {
@@ -101,7 +107,7 @@ void designBPF(float *m_taps, int m_num_taps, float Fs, float Fx, float Fu) {
 // Handles LPF and HPF case
 bool generateFIRFilterCoeffs(filterType filt_t, float32_t *m_taps, int m_num_taps, float fs, float fx, float fu) {
 
-    if ((fs >= 0) && (fx >= 0 && fx < fs / 2) && (m_num_taps >= 0 && m_num_taps <= MAX_FILTER_TAPS)) {
+    if ((fs >= 0) && (fx >= 0 && fx <= fs / 2) && (m_num_taps >= 0 && m_num_taps <= MAX_FILTER_TAPS)) {
 
         if (filt_t == LPF) {
             designLPF(m_taps, m_num_taps, fs, fx);

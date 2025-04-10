@@ -8,7 +8,6 @@
 #include "dsp/blocks/signal_generator.h"
 #include "types.h"
 #include "printf.h"
-#include <sys/_stdint.h>
 
 void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
 

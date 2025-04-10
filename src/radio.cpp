@@ -11,6 +11,7 @@
 #include "os/periodic_task.h"
 #include "types.h"
 #include <stdint.h>
+#include "printf.h"
 
 /*
  * Bits 4-7 int the PORT_A of the hmcp01 MCP23017 instance corresponding
@@ -97,7 +98,7 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
                          {7000000, 500000000, FLT_5_CODE, ANY_SIDE, false},
                          {7000000, 500000000, FLT_5_CODE, ANY_SIDE, false}};
 
-const st_filter if_filters[] = {
+const st_filter if_filters[5] = {
     {10000000, 500, false, 0},                          // 500 Hz (digital only)
     {9998500, 3000, true, GPIOEXP_IF_FILTER_3KHZ},      // 3 Khz
     {10000000, 9000, false, 0},                         // 9 Khz (digital only)
@@ -205,6 +206,16 @@ void calculate_freqs() {
 
     // TAPPED IF center frequency going into DSP. In TX mode, it goes directly from the DSP to the 1st mixer
     f_dsp_if = config.mode == DIGITAL_TX ? mixers[0].getIf() : mixers[1].getIf();
+
+    // char buf[20];
+    // for (int i = 0; i < 2; i++) {
+    //     format_long(mixers[i].getIf(), buf);
+    //     printf_("mixer %d if: %s", i, buf);
+    //     format_long(mixers[i].getRf(), buf);
+    //     printf_(" | rf: %s", buf);
+    //     format_long(mixers[i].getLo(), buf);
+    //     printf_(" | lo: %s\n", buf);
+    // }
 }
 
 bool is_freq_inverted() { return mixers[0].getLoInjection() != mixers[1].getLoInjection(); }

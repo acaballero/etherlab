@@ -22,6 +22,7 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "dsp/dsp_tasks.h"
+#include <sys/_stdint.h>
 
 namespace main_board {
 
@@ -442,7 +443,7 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
         switch (config.modulation) {
             case FM:
             case WFM:
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && !ISANALOG, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, ISTX || !ISANALOG,
@@ -453,7 +454,7 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
 
                 break;
             case AM:
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && !ISANALOG, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_AM_DETECTOR, ISTX || !ISANALOG, false);
@@ -664,12 +665,22 @@ void set_if_filter(radio::IF_FILTER fil) {
 
         radio::if_filter = new_filter;
 
-        // Switch off all filters
-        for (int i = 0; i < 3; i++) {
-            setGPIOExpPin(&hmcp01, MCP23017_PORTA, radio::if_filters[i].pin, false, false);
+        // Switch off all (analog) filters
+        uint8_t pin;
+        int n_filters = sizeof(radio::if_filters) / sizeof(radio::if_filters[0]);
+        for (int i = 0; i < n_filters; i++) {
+            pin = radio::if_filters[i].pin;
+
+            if (radio::if_filters[i].analog_available) {
+                setGPIOExpPin(&hmcp01, MCP23017_PORTA, pin, false, false);
+            }
         }
 
-        setGPIOExpPin(&hmcp01, MCP23017_PORTA, radio::if_filters[radio::if_filter].pin, true, false);
+        pin = radio::if_filters[radio::if_filter].pin;
+
+        if (radio::if_filters[radio::if_filter].analog_available) { // Digital filters don't have a GPIO pin
+            setGPIOExpPin(&hmcp01, MCP23017_PORTA, pin, true, false);
+        }
         commitGPIOExpPort(&hmcp01, MCP23017_PORTA);
 
         // The 10Mhz mixer can be fed either by its 10Mhz TCXO or a synthesized Si5351 output. Currently, we use

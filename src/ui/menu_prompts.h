@@ -47,9 +47,6 @@ template <typename T> void open_option_buttons(menu_options_t<T> options, const 
 
         view->on_select = fn;
         view->add_item(option.name, nullptr, value == option.value, option.fg_color, option.bg_color);
-
-        printf_("Option %d: %b\n", i, option.enabled);
-
         view->set_enabled(i, option.enabled);
     }
 

@@ -104,7 +104,7 @@ void ReceiveTask::start() {
     // If the decimation factor is greater than
 
     status.direction = DSP_DIRECTION_IN;
-    status.bandwidth = radio::get_bandwidth_hz(); // This is the desired filter bandwidth based on current modulation and user selected filter
+    status.bandwidth = radio::get_bandwidth_hz() / 2; // Desired filter bandwidth based on current modulation and user selected filter
     status.decimation_factor = dec_factor;
     status.bits_per_sample = 16;
     status.n_channels = 2;
@@ -114,7 +114,7 @@ void ReceiveTask::start() {
 
     // decimator_i_0.config(config.fft.sample_rate, status.bandwidth, dec_factor, status.bandwidth - 1000);
     uint8_t factor = 2;
-    uint32_t stage_1_fs = (config.fft.sample_rate / factor) - 1;
+    uint32_t stage_1_fs = (config.fft.sample_rate / 4); // Half-band filter
 
     decimator_i_0.config(config.fft.sample_rate, stage_1_fs, factor);
     if (dec_factor > 2) {
