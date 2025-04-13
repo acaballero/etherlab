@@ -334,7 +334,9 @@ bool _setMode(MODE mode, bool force) {
             // Restore configured gain of the quadrature demodulator
             if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);
 
-            fft_config(config.fft.span);
+            if (ISANALOG) { // Restore analog span (in digital mode it is set by the current dsp task)
+                fft_config(config.fft.span);
+            }
         }
 
         set_filter();

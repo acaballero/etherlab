@@ -8,9 +8,9 @@ namespace dsp {
 HilbertTransform::HilbertTransform() {
     n = 0;
 
-    sos_input.configure(half_band_lpf_config);
-    sos_i.configure(half_band_lpf_config);
-    sos_q.configure(half_band_lpf_config);
+    //   sos_input.configure(half_band_lpf_config);
+    // sos_i.configure(half_band_lpf_config);
+    // sos_q.configure(half_band_lpf_config);
 }
 
 void HilbertTransform::execute(float in, float &out_i, float &out_q) {
@@ -72,10 +72,10 @@ Real_to_Complex::Real_to_Complex() {
 
     n = 0;
 
-    sos_input.configure(full_band_lpf_config);
-    sos_i.configure(full_band_lpf_config);
-    sos_q.configure(full_band_lpf_config);
-    sos_mag_sq.configure(quarter_band_lpf_config); // for APT LPF subcarrier filter. (1/4 Nyquist fs/2 = 1/4 * 12Khz/2 = 1.5khz)
+    // sos_input.configure(full_band_lpf_config);
+    // sos_i.configure(full_band_lpf_config);
+    // sos_q.configure(full_band_lpf_config);
+    // sos_mag_sq.configure(quarter_band_lpf_config); // for APT LPF subcarrier filter. (1/4 Nyquist fs/2 = 1/4 * 12Khz/2 = 1.5khz)
 }
 
 void Real_to_Complex::execute(float in, float &out_mag_sq_lpf) {

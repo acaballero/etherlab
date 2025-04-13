@@ -7,6 +7,7 @@
 #include "../../../lib/utils/utils.hpp"
 #include "Display_afb.h"
 #include "hw/stm32.h"
+#include "dsp/dsp_common.h"
 
 enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_SPECTRUM_STYLE_LINE_FILL };
 
@@ -28,7 +29,7 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 #define USABLE_BW_FACTOR 0.75
 // Needs to be >= FFT_BANDWIDTH*2 by a safe margin, depending on the width of
 // the transition band of the low pass filter
-#define FFT_MIN_SAMPLE_RATE 300000
+#define FFT_MIN_SAMPLE_RATE (FFT_BANDWIDTH * 2 / USABLE_BW_FACTOR)
 // Minimum allowed span for the FTT
 #define FFT_MIN_SPAN 50000
 // Maximum allowed span for the FTT
@@ -69,11 +70,6 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 enum FFT_WINDOW_TYPES { FFT_WINDOW_NONE, FFT_WINDOW_HAMMING };
 
 enum FFT_VIEW_MODE { FFT_VIEW_SPECTRUM, FFT_VIEW_TIME_DOMAIN };
-
-typedef struct {
-    float32_t i;
-    float32_t r;
-} complex_t_f32;
 
 typedef struct {
 

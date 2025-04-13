@@ -101,7 +101,7 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
 const st_filter if_filters[5] = {
     {10000000, 500, false, 0},                          // 500 Hz (digital only)
     {9998500, 3000, true, GPIOEXP_IF_FILTER_3KHZ},      // 3 Khz
-    {10000000, 9000, false, 0},                         // 9 Khz (digital only)
+    {10700000, 9000, false, 0},                         // 9 Khz (digital only)
     {10698000, 15000, true, GPIOEXP_IF_FILTER_15KHZ},   // 15 Kh
     {10700000, 150000, true, GPIOEXP_IF_FILTER_150KHZ}, // 150 Khz
 

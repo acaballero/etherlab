@@ -41,8 +41,7 @@ volatile bool execute_task = false;
 
 void (*on_event)(st_dspStatus *);
 
-uint8_t current_max_slices = config.fft.max_slices;
-
+/** Sets or unsets the real-time DSP mode, for which only one slice of FFT can be used **/
 void dsp_set_real_time(bool b) {
 
     // Update FFT and sample rate parameters
@@ -50,10 +49,9 @@ void dsp_set_real_time(bool b) {
 
     if (b) {
         // When doing real-time DSP, we can only process one slice (no frequency hops allowed)
-        current_max_slices = config.fft.max_slices;
-        config.fft.max_slices = 1;
+        fft::current_max_slices = 1;
     } else {
-        config.fft.max_slices = current_max_slices;
+        fft::current_max_slices = config.fft.max_slices;
     }
 
     fft_config(config.fft.span);

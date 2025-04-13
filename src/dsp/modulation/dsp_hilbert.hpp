@@ -22,7 +22,7 @@ class HilbertTransform {
 
 class Real_to_Complex {
   public:
-    Real_to_Complex(); // Additional initialization
+    Real_to_Complex();
     void execute(float in, float &out_mag_sq_lpf);
 
   private:

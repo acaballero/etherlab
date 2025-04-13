@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_FFT_H
 #define TRX_FRONTEND_FFT_H
 
+#include <sys/_stdint.h>
 #include <utility>
 #define CALIBRATE_FFT 1
 #define DEBUG_FFT 0
@@ -87,6 +88,8 @@ typedef struct st_fft_params {
 } st_fft_params;
 
 namespace fft {
+void set_max_slices(uint8_t);
+extern uint8_t current_max_slices;
 extern os::periodic_task fft_task;
 extern os::periodic_task iqbalance_task;
 extern os::periodic_task waterfall_task;

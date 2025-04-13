@@ -16,8 +16,8 @@
 
 template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, float>;
 template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, adc_type>;
-template class DspFIRDecimatorFloat<32, adc_type>;
-template class DspFIRDecimatorFloat<24, adc_type>;
+template class DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, adc_type>;
+template class DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, adc_type>;
 
 template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::decimate(buffer_t<T> &src, buffer_t<T> &dst) { this->decimate(src, dst, 0, 2); }
 

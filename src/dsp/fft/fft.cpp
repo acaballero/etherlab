@@ -103,6 +103,16 @@ namespace fft {
 float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
 float snr = 1e-40f;
 float dbm = FFT_MIN_DB; // Power in the baseband
+uint8_t current_max_slices = config.fft.max_slices;
+
+void set_max_slices(uint8_t n) {
+
+    config.fft.max_slices = n;
+
+    if (ISANALOG) {
+        current_max_slices = n;
+    }
+}
 
 std::pair<int, int> get_bandwidth_bin_limits() {
     int bm_s, bm_e, bm_m;
@@ -200,8 +210,13 @@ uint64_t last_iqbalance_estimate_ms = 0;
 // Calculates FFT parameters from desired span, decimation factor and n_slices
 void st_fft_params::calc() {
 
-    // Minimum sample frequency, taking into account the usable bandwidth of each slice
-    sample_freq = span * decimation_factor / n_slices / USABLE_BW_FACTOR;
+    if (sample_freq == 0) {
+        // Minimum sample frequency, taking into account the usable bandwidth of each slice
+        sample_freq = span * decimation_factor / n_slices / USABLE_BW_FACTOR;
+    } else {
+        // Fixed sample_freq
+        span = sample_freq / (decimation_factor / n_slices / USABLE_BW_FACTOR);
+    }
 
     sample_freq = sample_freq & ~1023; // Floor to nearet 1024 factor
 
@@ -329,7 +344,7 @@ void fftInit() {
 
 void resetIQBalancer() { fftIQBalancer.reset(); }
 
-uint32_t fft_max_span() { return config.fft.max_slices * FFT_BANDWIDTH * 2; }
+uint32_t fft_max_span() { return current_max_slices * FFT_BANDWIDTH * 2; }
 
 /* Finds the optimal FFT parameters based on the current selected span
  *
@@ -361,12 +376,13 @@ bool fft_config(uint32_t span) {
     bool found = false;
     st_fft_params best;
 
-    for (int s = 1; s <= config.fft.max_slices; s++) {
+    for (int s = 1; s <= current_max_slices; s++) {
         for (int d = 1; d <= config.fft.max_decimation_factor; d <<= 1) {
 
             params.decimation_factor = d;
             params.n_slices = s;
             params.size = FFT_N;
+            params.sample_freq = 0; // calculate
             params.calc();
 
             if (params.valid()) {
@@ -377,6 +393,16 @@ bool fft_config(uint32_t span) {
                 }
             }
         }
+    }
+
+    if (!found) {
+        params.decimation_factor = 1;
+        params.n_slices = 1;
+        params.size = FFT_N;
+        params.sample_freq = config.fft.min_sample_rate;
+        // Floor to nearet 1024 factor
+        params.calc();
+        best = params;
     }
 
     if (found) {

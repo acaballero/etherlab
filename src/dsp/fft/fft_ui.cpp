@@ -122,7 +122,7 @@ optionsPrompt<uint8_t> decimationMenu((const char *)"Max decimation", decimation
 
 Menu::numberPrompt<uint32_t> maxSampleRateMenu((const char *)"Max sample rate", &config.fft.max_sample_rate, 0, ' ', '.', "Hz", nullptr, FFT_MIN_SAMPLE_RATE,
                                                ADC_MAX_SAMPLE_RATE, 10000, 25000);
-Menu::numberPrompt<uint32_t> maxDSPSampleRateMenu((const char *)"DSP min sample rate", &config.fft.dsp_max_sample_rate, 0, ' ', '.', "Hz",
+Menu::numberPrompt<uint32_t> maxDSPSampleRateMenu((const char *)"DSP max sample rate", &config.fft.dsp_max_sample_rate, 0, ' ', '.', "Hz",
                                                   [](uint32_t v) { fft_config(v); }, FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 25000);
 Menu::numberPrompt<uint32_t> spanMenu((const char *)"Span", &config.fft.span, 0, ' ', '.', "Hz", [](uint32_t v) { fft_config(v); }, FFT_MIN_SPAN, FFT_MAX_SPAN,
                                       10000, 25000);
@@ -141,16 +141,18 @@ Menu::numberPrompt<uint16_t> fftCalcNoisePeriodMenu((const char *)"Noise floor c
 
 Menu::numberPrompt<int> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "", [](float) { fftInit(); }, 0x00FF, 0xFFFF, 10, 100);
 
+Menu::numberPrompt<uint8_t> slicesMenu((const char *)"MAx slices", &config.fft.max_slices, 0, ' ', '.', "",
+                                       [](uint8_t) { fft::set_max_slices(config.fft.max_slices); }, 1, FFT_MAX_SLICES, 1, 1);
+
 Menu::numberPrompt<int32_t> fCorrectionMenu((const char *)"Freq. correction", &config.f_correction, 0, ' ', '.', "kHz", nullptr, 0, 100000, 10, 100);
 
 MENU(fftSamplingMenu, "Sampling", doNothing, anyEvent, noStyle, OBJ(maxSampleRateMenu), OBJ(maxDSPSampleRateMenu), OBJ(spanMenu))
 
 MENU(fftUIMenu, "Style", doNothing, anyEvent, noStyle, OBJ(fftStyleMenu), OBJ(lineColorMenu), OBJ(fillColorMenu), OBJ(waterfallSpeedMenu));
 
-MENU(fftMenu, "Spectrum", doNothing, anyEvent, noStyle, SUBMENU(setEnableFFT),
-     FIELD(config.fft.max_slices, "Slices", "", 1, FFT_MAX_SLICES, 1, 0, doNothing, noEvent, noStyle), OBJ(decimationMenu), SUBMENU(fftSamplingMenu),
-     OBJ(smoothMenu), SUBMENU(fftWindowMenu), SUBMENU(fftUIMenu), SUBMENU(fftViewMenu), SUBMENU(fftRemoveDC), SUBMENU(menuIQBalance), SUBMENU(autoMinDbToggle),
-     OBJ(minDbMenu), OBJ(maxDbMenu), OBJ(fftCalcNoisePeriodMenu), OBJ(amplitudeMenu), OBJ(fCorrectionMenu));
+MENU(fftMenu, "Spectrum", doNothing, anyEvent, noStyle, SUBMENU(setEnableFFT), OBJ(slicesMenu), OBJ(decimationMenu), SUBMENU(fftSamplingMenu), OBJ(smoothMenu),
+     SUBMENU(fftWindowMenu), SUBMENU(fftUIMenu), SUBMENU(fftViewMenu), SUBMENU(fftRemoveDC), SUBMENU(menuIQBalance), SUBMENU(autoMinDbToggle), OBJ(minDbMenu),
+     OBJ(maxDbMenu), OBJ(fftCalcNoisePeriodMenu), OBJ(amplitudeMenu), OBJ(fCorrectionMenu));
 
 void open_waterfall_config() { Menu::open(waterfallSpeedMenu); }
 void open_dbscale_config() { Menu::open(maxDbMenu); }

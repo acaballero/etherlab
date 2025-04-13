@@ -428,7 +428,7 @@ void FFTIQBalancer::leak() {
 /* map index (0..filtersize) to -0.5..0.5
 the negative part is in the upper half of the array
  */
-float FFTIQBalancer::polyX(int i) {
+float FFTIQBalancer::polyX(int) {
 
     // TODO:
     return 0;

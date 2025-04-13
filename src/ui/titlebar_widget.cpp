@@ -9,6 +9,7 @@
 #include "dsp/dsp_common.h"
 #include "input/inputEvent.h"
 #include "ips_font.h"
+#include "stm32f4xx_hal.h"
 #include "titlebar_widget.h"
 #include "config.h"
 #include "battery.h"
@@ -252,18 +253,20 @@ void TitleBarWidget::before_paint() {
 
         } else {
 
-            float drop_freq = dsp_status && dsp_status->status == DSP_STATUS_RUNNING ? dsp_status->drop_freq() : 0;
+            float drop_freq = dsp_status && dsp_status->status == DSP_STATUS_RUNNING ? dsp_status->drop_rate() : 0;
+            float starve_freq = dsp_status && dsp_status->status == DSP_STATUS_RUNNING ? dsp_status->starve_rate() : 0;
+
             bool error = true;
-            if (!dsp_status || dsp_status->error != DSP_ERR_NONE || drop_freq > 20) {
+            if (!dsp_status || dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 2 || starve_freq * 100 > 2) {
                 color = C565_RED;
-            } else if (drop_freq > 5) {
+            } else if (drop_freq * 100 > 1 || starve_freq * 100 > 1) {
                 color = C565_YELLOW;
             } else {
                 error = false;
             }
-
+            dsp_status->reset();
             char buf[20];
-            sprintf(buf, "%s%s", "DSP", error ? "!" : "");
+            sprintf(buf, "%s%s %.1f %.1f ", "DSP", error ? "!" : "", error ? drop_freq : 0, error ? starve_freq : 0);
             trim(buf);
             btnDSP.set_text(buf);
         }

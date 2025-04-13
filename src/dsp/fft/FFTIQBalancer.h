@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_FFTIQBALANCER_H
 
 #include "fft_types.h"
+#include "dsp/dsp_common.h"
 
 #define DEBUG_FFT_IQ_BALANCER 0
 

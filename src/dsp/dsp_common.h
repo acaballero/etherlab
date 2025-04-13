@@ -7,7 +7,7 @@
 
 #include "stm32f4xx_hal.h"
 #define __FPU_PRESENT 1U
-#define __FPU_USED 1U
+//#define __FPU_USED 1U
 #define ARM_MATH_CM4 1
 
 #define DSP_MIN_TX_GAIN_DB -20
@@ -20,11 +20,20 @@
 #include "FIFO.h"
 
 typedef int16_t adc_type;
+typedef uint32_t adc_type_complex_union;
+
+union complex_t {
+    adc_type_complex_union _rep;
+    struct {
+        adc_type r;
+        adc_type i;
+    };
+};
 
 typedef struct {
-    adc_type r;
-    adc_type i;
-} complex_t;
+    float32_t i;
+    float32_t r;
+} complex_t_f32;
 
 enum DSP_COMMAND { DSP_COMMAND_NONE, DSP_COMMAND_STOP, DSP_COMMAND_START };
 enum DSP_STATUS { DSP_STATUS_STOPPED, DSP_STATUS_STOPPING, DSP_STATUS_RUNNING, DSP_STATUS_PENDING };
@@ -41,6 +50,8 @@ enum DSP_ERROR {
 };
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
+#define FIR_DECIMATOR_1ST_HALFBAND_TAPS 23
+#define FIR_DECIMATOR_SIGNAL_TAPS 35
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
 // A LCD SPI DMA transfer and cause problems
@@ -103,10 +114,22 @@ struct st_dspStatus {
         ;
     }
     uint32_t elapsed_ms() { return ((stop_ms ? stop_ms : HAL_GetTick()) - start_ms); }
-    float drop_rate() { return processed_blocks ? (((float)(fifo_overruns + fifo_underruns) / (float)processed_blocks) * 100.0) : 0; }
+    float drop_rate() { return processed_blocks ? (((float)(fifo_overruns) / (float)processed_blocks) * 100.0) : 0; }
     float drop_freq() {
         volatile uint32_t elapsed = elapsed_ms();
-        return elapsed > 1000 ? ((float)(fifo_overruns + fifo_underruns)) / ((float)elapsed / 1000.0f) : 0;
+        return ((float)(fifo_overruns)) / ((float)elapsed / 1000.0f);
+    }
+    float starve_rate() { return processed_blocks ? (((float)(fifo_underruns) / (float)processed_blocks) * 100.0) : 0; }
+    float starve_freq() {
+        volatile uint32_t elapsed = elapsed_ms();
+        return ((float)(fifo_underruns)) / ((float)elapsed / 1000.0f);
+    }
+    void reset() {
+        start_ms = HAL_GetTick();
+        processed_blocks = 0;
+        stop_ms = 0;
+        fifo_overruns = 0;
+        fifo_underruns = 0;
     }
 };
 

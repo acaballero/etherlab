@@ -5,6 +5,7 @@
 #include "dsp_common.h"
 #include "dsp_config.h"
 #include "config.h"
+#include <sys/_stdint.h>
 
 const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
 

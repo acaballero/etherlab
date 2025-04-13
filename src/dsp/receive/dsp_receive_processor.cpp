@@ -28,7 +28,7 @@ void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
             for (size_t i = 0; i < buffer->count * 2; i += 2) {
                 // TODO: Gain should be a generic and stackable block
                 p[i] = ((uint16_t *)in_p)[i];
-                //   p[i + 1] = ((uint16_t *)in_p)[i + 1];
+                p[i + 1] = ((uint16_t *)in_p)[i + 1];
             }
 
             input_stream.feed(block_size_bytes);
@@ -46,7 +46,7 @@ void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
 
             for (size_t i = 0; i < buffer->count * 2; i += 2) {
                 out_p[i] = ((uint16_t *)p)[i] + config.hw.dac_offset;
-                //  out_p[i + 1] = ((uint16_t *)p)[i + 1] + config.hw.dac_offset;
+                // out_p[i + 1] = ((uint16_t *)p)[i + 1] + config.hw.dac_offset;
             }
 
             output_stream.consume(block_size_bytes, (char **)&p);
