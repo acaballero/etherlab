@@ -266,7 +266,7 @@ void TitleBarWidget::before_paint() {
             }
             dsp_status->reset();
             char buf[20];
-            sprintf(buf, "%s%s %.1f %.1f ", "DSP", error ? "!" : "", error ? drop_freq : 0, error ? starve_freq : 0);
+            sprintf(buf, "%s%s %s %s", "DSP", error ? "!" : "", drop_freq > 0 ? "D" : "", starve_freq > 0 ? "S" : "");
             trim(buf);
             btnDSP.set_text(buf);
         }

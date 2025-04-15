@@ -54,15 +54,17 @@ void pop() {
 void main_view_warning_callback(void *, void *args) {
 
     status::Status *st = (status::Status *)args;
+    MessageWidget *w = ((MessageWidget *)view_manager::mainView.Message());
+    if (w->visible()) {
 
-    view_manager::mainView.Message()->set_visible(true);
-    view_manager::mainView.Message()->set_focus(true);
+    } else {
+        w->set_visible(true);
+        w->set_focus(true);
+        os::task_manager.set_timeout(4000, []() { view_manager::mainView.Message()->set_visible(false); });
+    }
 
-    MessageWidget *widget = ((MessageWidget *)view_manager::mainView.Message());
-    widget->set_title(st->code == status::ST_ERROR ? "WARNING" : "INFO", st->code == status::ST_ERROR ? C565_RED : C565_YELLOW);
-    widget->set_msg(st->msg);
-
-    os::task_manager.set_timeout(4000, []() { view_manager::mainView.Message()->set_visible(false); });
+    w->set_title(st->code == status::ST_ERROR ? "WARNING" : "INFO", st->code == status::ST_ERROR ? C565_RED : C565_YELLOW);
+    w->set_msg(st->msg);
 }
 
 void init() {

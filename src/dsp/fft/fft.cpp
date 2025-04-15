@@ -16,6 +16,7 @@
 #include "dsp/fft/fft_types.h"
 #include "hw/stm32f4xx/adc.h"
 #include "hw/stm32f4xx/timers.h"
+#include "status.h"
 #include "ui/view.h"
 #include "fft_widget.h"
 #include "fft_ui.h"
@@ -403,6 +404,9 @@ bool fft_config(uint32_t span) {
         // Floor to nearet 1024 factor
         params.calc();
         best = params;
+
+        found = true;
+        // status::handleError(status::ST_ERROR, "FFT params can't be fit");
     }
 
     if (found) {
@@ -819,7 +823,7 @@ void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
     // We decimate in DSP_BLOCK block sizes to save memory, at the expense of speed, since we need two buffers
     // to process the signal (one of DSP_BLOCK length and one of DSP_BLOCK / fft_decimation_factor length)
     complex_t_f32 signal[DSP_BLOCK];
-    buffer_t<float> src((float *)signal, DSP_BLOCK);
+    buffer_t<float> src((float *)signal, DSP_BLOCK * 2);
     uint16_t ix = 0;
     uint16_t ixOut = 0;
 

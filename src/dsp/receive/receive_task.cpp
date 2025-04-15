@@ -22,6 +22,7 @@
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
 #include "dsp/decimation/dsp_decimators.h"
+#include <cstddef>
 #include <memory>
 #include <sys/_stdint.h>
 
@@ -40,9 +41,6 @@ void ReceiveTask::work() {
         char *in_p;
         char *out_p;
 
-        uint16_t block_size_in = status.block_size_bytes / 2;
-        uint16_t block_size_out = status.decimated_block_size;
-
         uint32_t free = output_stream.free(&out_p);
         uint32_t av = input_stream.available(&in_p);
 
@@ -53,27 +51,43 @@ void ReceiveTask::work() {
 
             in_start = in_p;
 
-            // Wrap the complex_t buffers with an adc_type buffer
-            // TODO: Calculate the length
-            buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, 16};
+            // Wrap buffers
+            buffer_t<adc_type> buff_out = {(adc_type *)out_p, status.decimated_block_size};
+            buffer_t<complex_t> buff_out_complex = {(complex_t *)out_p, (size_t)(status.decimated_block_size >> 1)}; // single channel
 
             // Process input block
             while (av >= status.block_size_bytes) {
 
-                buffer_t<adc_type> buff = {(adc_type *)in_p, block_size_in};
-                buffer_t<adc_type> buff_out = {(adc_type *)out_p, block_size_out};
-                buffer_t<complex_t> buff_out_complex = {(complex_t *)out_p, (size_t)(block_size_out / 2)}; // single channel
+                uint16_t block_size_in = status.block_size_bytes >> 1;
+                uint16_t block_size_out = block_size_in >> 1;
 
                 for (int i = 0; i < n_decimators; i++) {
+
+                    buffer_t<adc_type> buff = {(adc_type *)in_p, block_size_in};
+
                     if (i < n_decimators - 1) {
                         // Half decimators
-                        decimators_0[i][0].decimate(buff, buff_tmp, 0, status.n_channels);
-                        decimators_0[i][1].decimate(buff, buff_tmp, 1, status.n_channels);
+
+                        if (i == 0) {
+                            buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, block_size_out};
+                            decimators_0[i][0].decimate(buff, buff_tmp, 0, status.n_channels);
+                            decimators_0[i][1].decimate(buff, buff_tmp, 1, status.n_channels);
+                        } else {
+                            buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, block_size_in};
+                            decimators_0[i][0].decimate(buff_tmp, buff_tmp, 0, status.n_channels);
+                            decimators_0[i][1].decimate(buff_tmp, buff_tmp, 1, status.n_channels);
+                        }
+
                     } else {
+                        buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, block_size_in};
+
                         // Signal decimators
                         decimators_1[0].decimate(buff_tmp, buff_out, 0, status.n_channels);
                         decimators_1[1].decimate(buff_tmp, buff_out, 1, status.n_channels);
                     }
+
+                    block_size_in >>= 1;
+                    block_size_out >>= 1;
                 }
 
                 // DC block;
@@ -141,7 +155,7 @@ void ReceiveTask::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz * 2) {
+    while (status.sample_rate > audio_bw_hz * 2 && dec_factor < config.fft.max_decimation_factor) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }
@@ -175,7 +189,7 @@ void ReceiveTask::start() {
     dec = dec / factor;
     n_decimators = 1;
 
-    if (false) { // dec > 2) {
+    if (dec > 2) {
         stage_fs = next_stage_fs;
         next_stage_fs = stage_fs / 4;
         decimators_0[1][0].config(stage_fs, next_stage_fs, factor);

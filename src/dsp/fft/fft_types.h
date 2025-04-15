@@ -21,7 +21,7 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 
 // Length (number of bins) of a single fourier transform
 #define FFT_N 256
-// Max bandwidth of the FFT. Determined by the low pass filters before the ADCs.
+// Max bandwidth of the FFT. This is the cutoff frequency of the low pass filters before the ADCs.
 // Note the complex bandwidth is twice since we're sampling quadrature signals
 #define FFT_BANDWIDTH 130000
 // The usable percentage of the FTT bandwidth. We discard frequencies on the
@@ -29,7 +29,7 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 #define USABLE_BW_FACTOR 0.75
 // Needs to be >= FFT_BANDWIDTH*2 by a safe margin, depending on the width of
 // the transition band of the low pass filter
-#define FFT_MIN_SAMPLE_RATE (FFT_BANDWIDTH * 2 / USABLE_BW_FACTOR)
+#define FFT_MIN_SAMPLE_RATE (FFT_BANDWIDTH * 2 * USABLE_BW_FACTOR)
 // Minimum allowed span for the FTT
 #define FFT_MIN_SPAN 50000
 // Maximum allowed span for the FTT

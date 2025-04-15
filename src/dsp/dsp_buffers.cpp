@@ -11,8 +11,8 @@ complex_t adc_buff[DSP_BLOCK * 2];
 // ACD DAC buffer
 complex_t dac_buff[DSP_BLOCK * 2];
 
-__attribute__((section(".fccmram"))) adc_type dsp_temp_buf_data[DSP_BLOCK * 2]; // complex_t is twice the size of adc_type (I/Q samples), so a temp buffer to
-                                                                                // store only one half of the adc_buff is DSP_BLOCK*2 adc_type items
+__attribute__((section(".fccmram"))) adc_type dsp_temp_buf_data[DSP_BLOCK * 2]; // complex_t is twice the size of adc_type (I/Q samples), so a temp buffer
+                                                                                // to store only one half of the adc_buff is DSP_BLOCK*2 adc_type items
 buffer_t<adc_type> dsp_temp_buf = {(adc_type *const)dsp_temp_buf_data, DSP_BLOCK * 2, 0};
 
 //__attribute__((section(".fccmram"))) // Can't be in CCM RAM if DMA is used

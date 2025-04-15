@@ -6,9 +6,9 @@
 #include "timers.h"
 #include "config.h"
 
-TIM_HandleTypeDef htim3; // Led blink
-TIM_HandleTypeDef htim2; // ADC DMA
-TIM_HandleTypeDef htim6; // DAC DMA
+TIM_HandleTypeDef htim3;  // Led blink
+TIM_HandleTypeDef htim2;  // ADC DMA
+TIM_HandleTypeDef htim6;  // DAC DMA
 TIM_HandleTypeDef htim13; // Debouncer timer
 TIM_HandleTypeDef htim14; // SD Card FIFO processing task timer
 
@@ -21,8 +21,6 @@ extern void Error_Handler(void);
 }
 #endif
 
-
-
 /*
 void TIM2_IRQHandler(void) {
 
@@ -31,13 +29,12 @@ void TIM2_IRQHandler(void) {
 }
 */
 
-
 /**
-* @brief TIM_Base MSP Initialization
-* This function configures the hardware resources used in this example
-* @param htim_base: TIM_Base handle pointer
-* @retval None
-*/
+ * @brief TIM_Base MSP Initialization
+ * This function configures the hardware resources used in this example
+ * @param htim_base: TIM_Base handle pointer
+ * @retval None
+ */
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
     if (htim_base->Instance == TIM2) {
         /* USER CODE BEGIN TIM2_MspInit 0 */
@@ -68,7 +65,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
         /* Peripheral clock enable */
         __HAL_RCC_TIM13_CLK_ENABLE();
         /* TIM13 interrupt Init */
-        HAL_NVIC_SetPriority(TIM8_UP_TIM13_IRQn, 6, 0);
+        HAL_NVIC_SetPriority(TIM8_UP_TIM13_IRQn, 4, 0);
         HAL_NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
         /* USER CODE BEGIN TIM13_MspInit 1 */
 
@@ -92,7 +89,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
         /* Peripheral clock enable */
         __HAL_RCC_TIM3_CLK_ENABLE();
         /* TIM3 interrupt Init */
-        HAL_NVIC_SetPriority(TIM3_IRQn, 3, 0);
+        HAL_NVIC_SetPriority(TIM3_IRQn, 5, 0);
         HAL_NVIC_EnableIRQ(TIM3_IRQn);
         /* USER CODE BEGIN TIM3_MspInit 1 */
 
@@ -101,21 +98,19 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
 }
 
 /**
-* @brief TIM_OC MSP Initialization
-* This function configures the hardware resources used in this example
-* @param htim_oc: TIM_OC handle pointer
-* @retval None
-*/
-void HAL_TIM_OC_MspInit(TIM_HandleTypeDef *htim_oc) {
-
-}
+ * @brief TIM_OC MSP Initialization
+ * This function configures the hardware resources used in this example
+ * @param htim_oc: TIM_OC handle pointer
+ * @retval None
+ */
+void HAL_TIM_OC_MspInit(TIM_HandleTypeDef *htim_oc) {}
 
 /**
-* @brief TIM_Base MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param htim_base: TIM_Base handle pointer
-* @retval None
-*/
+ * @brief TIM_Base MSP De-Initialization
+ * This function freeze the hardware resources used in this example
+ * @param htim_base: TIM_Base handle pointer
+ * @retval None
+ */
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim_base) {
     if (htim_base->Instance == TIM2) {
         /* USER CODE BEGIN TIM2_MspDeInit 0 */
@@ -173,25 +168,21 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim_base) {
 }
 
 /**
-* @brief TIM_OC MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param htim_oc: TIM_OC handle pointer
-* @retval None
-*/
-void HAL_TIM_OC_MspDeInit(TIM_HandleTypeDef *htim_oc) {
-
-}
+ * @brief TIM_OC MSP De-Initialization
+ * This function freeze the hardware resources used in this example
+ * @param htim_oc: TIM_OC handle pointer
+ * @retval None
+ */
+void HAL_TIM_OC_MspDeInit(TIM_HandleTypeDef *htim_oc) {}
 
 /* Timers associated pins initialization */
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim) {
-
-}
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim) {}
 
 /**
-  * @brief TIM3 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM3 Initialization Function
+ * @param None
+ * @retval None
+ */
 void MX_TIM3_Init(void) {
 
     /* USER CODE BEGIN TIM3_Init 0 */
@@ -229,10 +220,10 @@ void MX_TIM3_Init(void) {
 }
 
 /**
-  * @brief TIM2 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM2 Initialization Function
+ * @param None
+ * @retval None
+ */
 void MX_TIM2_Init(void) {
 
     /* USER CODE BEGIN TIM2_Init 0 */
@@ -270,78 +261,76 @@ void MX_TIM2_Init(void) {
     /* USER CODE BEGIN TIM2_Init 2 */
 
     /* USER CODE END TIM2_Init 2 */
-
 }
 /**
-  * @brief TIM4 Initialization Function
-  * @param None
-  * @retval None
-  *//*
+ * @brief TIM4 Initialization Function
+ * @param None
+ * @retval None
+ *//*
 
 void MX_TIM4_Init(void) {
 
     */
-/* USER CODE BEGIN TIM4_Init 0 *//*
+/* USER CODE BEGIN TIM4_Init 0 */ /*
 
 
-    */
-/* USER CODE END TIM4_Init 0 *//*
+     */
+/* USER CODE END TIM4_Init 0 */   /*
+  
+  
+       TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+       TIM_MasterConfigTypeDef sMasterConfig = {0};
+       TIM_OC_InitTypeDef sConfigOC = {0};
+  
+       */
+/* USER CODE BEGIN TIM4_Init 1 */ /*
 
 
-    TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-    TIM_MasterConfigTypeDef sMasterConfig = {0};
-    TIM_OC_InitTypeDef sConfigOC = {0};
-
-    */
-/* USER CODE BEGIN TIM4_Init 1 *//*
-
-
-    */
-/* USER CODE END TIM4_Init 1 *//*
-
-    htim4.Instance = TIM4;
-    htim4.Init.Prescaler = 3;
-    htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim4.Init.Period = 1000;
-    htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-    if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
-    {
-        Error_Handler();
-    }
-    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-    if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
-    {
-        Error_Handler();
-    }
-    if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
-    {
-        Error_Handler();
-    }
-    sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC1REF;
-    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
-    {
-        Error_Handler();
-    }
-    sConfigOC.OCMode = TIM_OCMODE_TIMING;
-    sConfigOC.Pulse = 0;
-    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-    if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-    {
-        Error_Handler();
-    }
-    */
-/* USER CODE BEGIN TIM4_Init 2 *//*
+     */
+/* USER CODE END TIM4_Init 1 */   /*
+  
+       htim4.Instance = TIM4;
+       htim4.Init.Prescaler = 3;
+       htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+       htim4.Init.Period = 1000;
+       htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+       htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+       if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+       {
+           Error_Handler();
+       }
+       sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+       if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+       {
+           Error_Handler();
+       }
+       if (HAL_TIM_OC_Init(&htim4) != HAL_OK)
+       {
+           Error_Handler();
+       }
+       sMasterConfig.MasterOutputTrigger = TIM_TRGO_OC1REF;
+       sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+       if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+       {
+           Error_Handler();
+       }
+       sConfigOC.OCMode = TIM_OCMODE_TIMING;
+       sConfigOC.Pulse = 0;
+       sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+       sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+       if (HAL_TIM_OC_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+       {
+           Error_Handler();
+       }
+       */
+/* USER CODE BEGIN TIM4_Init 2 */ /*
 
 
-    */
-/* USER CODE END TIM4_Init 2 *//*
-
-}
-*/
-
+     */
+/* USER CODE END TIM4_Init 2 */   /*
+  
+   }
+   */
 
 void MX_TIM6_Init(void) {
 
@@ -370,14 +359,13 @@ void MX_TIM6_Init(void) {
     /* USER CODE BEGIN TIM6_Init 2 */
 
     /* USER CODE END TIM6_Init 2 */
-
 }
 
 /**
-  * @brief TIM14 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM14 Initialization Function
+ * @param None
+ * @retval None
+ */
 void MX_TIM14_Init(void) {
 
     /* USER CODE BEGIN TIM14_Init 0 */
@@ -412,7 +400,6 @@ void MX_TIM14_Init(void) {
     /* USER CODE BEGIN TIM14_Init 2 */
 
     /* USER CODE END TIM14_Init 2 */
-
 }
 
 void MX_TIM13_Init(void) {
@@ -449,7 +436,6 @@ void MX_TIM13_Init(void) {
     /* USER CODE BEGIN TIM13_Init 2 */
 
     /* USER CODE END TIM13_Init 2 */
-
 }
 
 void update_timer(TIM_TypeDef *timer, uint32_t period, uint32_t prescaler) {
@@ -459,7 +445,7 @@ void update_timer(TIM_TypeDef *timer, uint32_t period, uint32_t prescaler) {
     /* Set the Prescaler value */
     timer->PSC = prescaler - 1;
 
-    //if (IS_TIM_REPETITION_COUNTER_INSTANCE(timer))
+    // if (IS_TIM_REPETITION_COUNTER_INSTANCE(timer))
     //{
     /* Set the Repetition Counter value */
     //    timer->RCR = Structure->RepetitionCounter;
@@ -499,7 +485,7 @@ void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
     /* Set the Prescaler value */
     timer->PSC = prescaler - 1;
 
-    //if (IS_TIM_REPETITION_COUNTER_INSTANCE(TIM4))
+    // if (IS_TIM_REPETITION_COUNTER_INSTANCE(TIM4))
     //{
     /* Set the Repetition Counter value */
     //    timer->RCR = Structure->RepetitionCounter;
@@ -512,9 +498,9 @@ void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
 
 void setup_timers() {
 
-    MX_TIM3_Init(); // LED timer
-    MX_TIM2_Init(); // ADC DMA timer
-    MX_TIM6_Init(); // DAC DMA timer
+    MX_TIM3_Init();  // LED timer
+    MX_TIM2_Init();  // ADC DMA timer
+    MX_TIM6_Init();  // DAC DMA timer
     MX_TIM13_Init(); // Input pin debouncer timer (TODO: I think it's initialized in the constuctor of the InputPinController)
     MX_TIM14_Init(); // IO task timer
 
@@ -522,11 +508,9 @@ void setup_timers() {
     HAL_DBGMCU_EnableDBGStandbyMode();
     HAL_DBGMCU_EnableDBGStopMode();
 
-    DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM2_STOP | DBGMCU_APB1_FZ_DBG_TIM6_STOP | DBGMCU_APB1_FZ_DBG_TIM14_STOP |
-                      DBGMCU_APB1_FZ_DBG_TIM3_STOP;;
+    DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM2_STOP | DBGMCU_APB1_FZ_DBG_TIM6_STOP | DBGMCU_APB1_FZ_DBG_TIM14_STOP | DBGMCU_APB1_FZ_DBG_TIM3_STOP;
+    ;
 
     // Calculate the pre-scaler and period for the config sample rate
     set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, fft_params.sample_freq);
 }
-
-

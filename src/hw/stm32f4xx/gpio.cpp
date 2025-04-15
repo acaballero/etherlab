@@ -12,10 +12,10 @@ MCP23017_HandleTypeDef hmcp02;
 MCP23017_HandleTypeDef hmcp03; // Front panel
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
 void MX_GPIO_Init(void) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -32,8 +32,7 @@ void MX_GPIO_Init(void) {
     HAL_GPIO_WritePin(GPIOE, ADF4351_LE_PIN | CMX973_CS_PIN, GPIO_PIN_SET);
 
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOD, LED_0_PIN | LED_1_PIN | RX_SW_V1_PIN | RX_SW_V2_PIN
-                             | DISP_RST_PIN | DISP_DC_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, LED_0_PIN | LED_1_PIN | RX_SW_V1_PIN | RX_SW_V2_PIN | DISP_RST_PIN | DISP_DC_PIN, GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
     HAL_GPIO_WritePin(GPIOB, POW_CTRL_SET_PIN | POW_CTRL_CLK_PIN, GPIO_PIN_RESET);
@@ -47,8 +46,7 @@ void MX_GPIO_Init(void) {
 
     /*Configure GPIO pins : PC13 PC14 PC15 PC6
                              PC7 */
-    GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_6
-                          | GPIO_PIN_7;
+    GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_6 | GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -98,25 +96,24 @@ void MX_GPIO_Init(void) {
 
     /*Configure GPIO pins : PA8 PA9 PA10 PA11
                              PA12 DISP_CE */
-    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11
-                          | GPIO_PIN_12 | DISP_CE_PIN;
+    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | DISP_CE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin =  DISP_CE_PIN;
+    GPIO_InitStruct.Pin = DISP_CE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /****** TEST PINS **************/
-    GPIO_InitStruct.Pin =  GPIO_PIN_13 | GPIO_PIN_11;
+    GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_11;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
     /* TOUCH_CE_PIN  */
-    GPIO_InitStruct.Pin =  TOUCH_CE_PIN ;
+    GPIO_InitStruct.Pin = TOUCH_CE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -135,7 +132,6 @@ void MX_GPIO_Init(void) {
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(DISP_DC_PORT, &GPIO_InitStruct);
-
 
     /*Configure GPIO pins : POW_CTRL_SET_PIN POW_CTRL_CLK_PIN */
     GPIO_InitStruct.Pin = POW_CTRL_SET_PIN | POW_CTRL_CLK_PIN;
@@ -159,7 +155,7 @@ void MX_GPIO_Init(void) {
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
     // Analog keyboard interrupt
-    HAL_NVIC_SetPriority(EXTI0_IRQn, 6, 0);
+    HAL_NVIC_SetPriority(EXTI0_IRQn, 6, 01);
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
     HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);

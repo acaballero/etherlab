@@ -352,6 +352,7 @@ bool _setMode(MODE mode, bool force) {
             dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, on_dsp_event);
             // Turn off 3rd mixer LO
             lo_enable(2, 0);
+            set_if_filter(config.if_filter);
         } else {
             lo_enable(1, 1);
             // lo_enable(2, 1);
