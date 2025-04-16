@@ -2,7 +2,9 @@
 // Created by Angel Dust on 31/10/2019.
 //
 #include "adc.h"
+#include "Legacy/stm32_hal_legacy.h"
 #include "hw/hw_config.h"
+#include "stm32f4xx_hal_adc.h"
 #include "ui/lcd.h"
 
 ADC_HandleTypeDef hadc1;
@@ -18,9 +20,9 @@ static uint32_t HAL_RCC_ADC1_CLK_ENABLED = 0;
 static uint32_t HAL_RCC_ADC2_CLK_ENABLED = 0;
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 static void ADC_Error_Handler(void) {
     /* USER CODE BEGIN ADC_Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
@@ -31,13 +33,12 @@ static void ADC_Error_Handler(void) {
     /* USER CODE END ADC_Error_Handler_Debug */
 }
 
-
 /**
-* @brief ADC MSP Initialization
-* This function configures the hardware resources used in this example
-* @param hadc: ADC handle pointer
-* @retval None
-*/
+ * @brief ADC MSP Initialization
+ * This function configures the hardware resources used in this example
+ * @param hadc: ADC handle pointer
+ * @retval None
+ */
 void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     if (hadc->Instance == ADC1) {
@@ -72,8 +73,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc) {
 #error DMA_PALIGN must be declared first
 #endif
 
-        hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD; //DMA_PALIGN;
-        hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD; //DMA_MALIGN;
+        hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD; // DMA_PALIGN;
+        hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;    // DMA_MALIGN;
         hdma_adc1.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
         hdma_adc1.Init.Mode = DMA_CIRCULAR;
         hdma_adc1.Init.Priority = DMA_PRIORITY_HIGH;
@@ -133,10 +134,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc) {
         GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
     }
 }
-
 
 // Configure ACD1-CH3 and ADC2-CH1 in DMA DUAL SIMULTANEOUS MODE
 void Config_ADC_DMA() {
@@ -144,20 +143,18 @@ void Config_ADC_DMA() {
     ADC_MultiModeTypeDef multimode = {0};
     ADC_ChannelConfTypeDef sConfig = {0};
 
-    if (hadc1_mode !=
-        1) { // Prevent reinitializing this ADC in the same mode (we're using it in both DMA and synchronous mode, using MX_ADC1_Init())
+    if (hadc1_mode != 1) { // Prevent reinitializing this ADC in the same mode (we're using it in both DMA and synchronous mode, using MX_ADC1_Init())
 
         hadc1_mode = 1;
         /* USER CODE BEGIN ADC1_Init 0 */
 
         /* USER CODE END ADC1_Init 0 */
 
-
         /* USER CODE BEGIN ADC1_Init 1 */
 
         /* USER CODE END ADC1_Init 1 */
         /** Common config
-        */
+         */
         hadc1.Instance = ADC1;
         hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
         hadc1.Init.Resolution = ADC_RESOLUTION_12B;
@@ -165,7 +162,7 @@ void Config_ADC_DMA() {
         hadc1.Init.ContinuousConvMode = DISABLE;
         hadc1.Init.DiscontinuousConvMode = DISABLE;
         hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-        hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T2_TRGO; //ADC_EXTERNALTRIGCONV_T2_TRGO;
+        hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T2_TRGO; // ADC_EXTERNALTRIGCONV_T2_TRGO;
         hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
         hadc1.Init.NbrOfConversion = 1; // 1 channel
         hadc1.Init.NbrOfDiscConversion = 0;
@@ -176,7 +173,7 @@ void Config_ADC_DMA() {
             ADC_Error_Handler();
         }
         /** Configure the ADC multi-mode
-        */
+         */
         multimode.Mode = ADC_DUALMODE_REGSIMULT;
         multimode.DMAAccessMode = ADC_DMAACCESSMODE_2;
         multimode.TwoSamplingDelay = ADC_TWOSAMPLINGDELAY_5CYCLES;
@@ -184,10 +181,10 @@ void Config_ADC_DMA() {
             ADC_Error_Handler();
         }
         /** Configure Regular Channel
-        */
+         */
         sConfig.Channel = ADC_CHANNEL_14;
         sConfig.Rank = 1;
-        //sConfig.SingleDiff = ADC_SINGLE_ENDED;
+        // sConfig.SingleDiff = ADC_SINGLE_ENDED;
 
         // The total conversion time is (sampling time + 12)*number of channels converted
         // So, for example, the conversion time for 2 channels with 7 cycles of sample time is 38 cycles
@@ -221,7 +218,7 @@ void Config_ADC_DMA() {
             ADC_Error_Handler();
         }
         /** Configure Regular Channel
-        */
+         */
         sConfig.Channel = ADC_CHANNEL_15;
         sConfig.Rank = 1;
         // sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -231,18 +228,15 @@ void Config_ADC_DMA() {
         if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
             ADC_Error_Handler();
         }
-
     }
-
 }
 
-
 /**
-* @brief ADC MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param hadc: ADC handle pointer
-* @retval None
-*/
+ * @brief ADC MSP De-Initialization
+ * This function freeze the hardware resources used in this example
+ * @param hadc: ADC handle pointer
+ * @retval None
+ */
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc) {
 
     if (hadc->Instance == ADC1) {
@@ -323,7 +317,7 @@ void MX_ADC1_Init(void) {
 
     /* USER CODE END ADC1_Init 1 */
     /** Common config
-    */
+     */
     hadc1.Instance = ADC1;
     hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
     hadc1.Init.Resolution = ADC_RESOLUTION_12B;
@@ -342,13 +336,13 @@ void MX_ADC1_Init(void) {
         ADC_Error_Handler();
     }
     /** Configure the ADC multi-mode
-    */
+     */
     multimode.Mode = ADC_MODE_INDEPENDENT;
     if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK) {
         ADC_Error_Handler();
     }
     /** Configure Regular Channel
-    */
+     */
     sConfig.Channel = ADC_CHANNEL_14;
     sConfig.Rank = 1;
 
@@ -359,20 +353,16 @@ void MX_ADC1_Init(void) {
         ADC_Error_Handler();
     }
 
-
-
     /* USER CODE BEGIN ADC1_Init 2 */
 
     /* USER CODE END ADC1_Init 2 */
-
 }
 
-
 /**
-  * @brief ADC2 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief ADC2 Initialization Function
+ * @param None
+ * @retval None
+ */
 void MX_ADC2_Init(void) {
 
     /* USER CODE BEGIN ADC2_Init 0 */
@@ -387,7 +377,7 @@ void MX_ADC2_Init(void) {
 
     /* USER CODE END ADC2_Init 1 */
     /** Common config
-    */
+     */
     hadc2.Instance = ADC2;
     hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
     hadc2.Init.Resolution = ADC_RESOLUTION_12B;
@@ -405,10 +395,10 @@ void MX_ADC2_Init(void) {
         ADC_Error_Handler();
     }
     /** Configure Regular Channel
-    */
+     */
     sConfig.Channel = ADC_CHANNEL_15;
     sConfig.Rank = 1;
-    //sConfig.SingleDiff = ADC_SINGLE_ENDED;
+    // sConfig.SingleDiff = ADC_SINGLE_ENDED;
     sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
 
     sConfig.Offset = 0;
@@ -418,11 +408,9 @@ void MX_ADC2_Init(void) {
     /* USER CODE BEGIN ADC2_Init 2 */
 
     /* USER CODE END ADC2_Init 2 */
-
 }
 
 void MX_ADC3_Init(void) {
-
 
     /* USER CODE BEGIN ADC3_Init 0 */
 
@@ -434,7 +422,7 @@ void MX_ADC3_Init(void) {
 
     /* USER CODE END ADC3_Init 1 */
     /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-    */
+     */
     hadc3.Instance = ADC3;
     hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
     hadc3.Init.Resolution = ADC_RESOLUTION_12B;
@@ -452,7 +440,7 @@ void MX_ADC3_Init(void) {
         ADC_Error_Handler();
     }
     /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-    */
+     */
     sConfig.Channel = ADC_CHANNEL_1;
     sConfig.Rank = 1;
     sConfig.SamplingTime = ADC_SAMPLETIME_56CYCLES;
@@ -462,8 +450,6 @@ void MX_ADC3_Init(void) {
     /* USER CODE BEGIN ADC3_Init 2 */
 
     /* USER CODE END ADC3_Init 2 */
-
-
 }
 
 /*
@@ -502,14 +488,12 @@ HAL_StatusTypeDef CUSTOM_HAL_ADC_Start(ADC_HandleTypeDef *hadc) {
         /* Set ADC state                                                          */
         /* - Clear state bitfield related to regular group conversion results     */
         /* - Set state bitfield related to regular group operation                */
-                ADC_STATE_CLR_SET(hadc->State,
-                                  HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR,
-                                  HAL_ADC_STATE_REG_BUSY);
+        ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR, HAL_ADC_STATE_REG_BUSY);
 
         /* If conversions on group regular are also triggering group injected,    */
         /* update ADC state.                                                      */
         if (READ_BIT(hadc->Instance->CR1, ADC_CR1_JAUTO) != RESET) {
-                    ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_INJ_EOC, HAL_ADC_STATE_INJ_BUSY);
+            ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_INJ_EOC, HAL_ADC_STATE_INJ_BUSY);
         }
 
         /* State machine update: Check if an injected conversion is ongoing */
@@ -536,31 +520,31 @@ HAL_StatusTypeDef CUSTOM_HAL_ADC_Start(ADC_HandleTypeDef *hadc) {
         __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_EOC | ADC_FLAG_OVR);
 
         /* Check if Multimode enabled */
-       /*  if(HAL_IS_BIT_CLR(tmpADC_Common->CCR, ADC_CCR_MULTI))
-            {
-#if defined(ADC2) && defined(ADC3)
-                  if((hadc->Instance == ADC1) || ((hadc->Instance == ADC2) && ((ADC->CCR & ADC_CCR_MULTI_Msk) < ADC_CCR_MULTI_0)) \
-                                      || ((hadc->Instance == ADC3) && ((ADC->CCR & ADC_CCR_MULTI_Msk) < ADC_CCR_MULTI_4)))
-                {
-#endif *//* ADC2 || ADC3 */
+        /*  if(HAL_IS_BIT_CLR(tmpADC_Common->CCR, ADC_CCR_MULTI))
+             {
+ #if defined(ADC2) && defined(ADC3)
+                   if((hadc->Instance == ADC1) || ((hadc->Instance == ADC2) && ((ADC->CCR & ADC_CCR_MULTI_Msk) < ADC_CCR_MULTI_0)) \
+                                       || ((hadc->Instance == ADC3) && ((ADC->CCR & ADC_CCR_MULTI_Msk) < ADC_CCR_MULTI_4)))
+                 {
+ #endif *//* ADC2 || ADC3 */
         /* if no external trigger present enable software conversion of regular channels */
         if ((hadc->Instance->CR2 & ADC_CR2_EXTEN) == RESET) {
             /* Enable the selected ADC software conversion for regular group */
-            hadc->Instance->CR2 |= (uint32_t) ADC_CR2_SWSTART;
+            hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
         }
-//#if defined(ADC2) && defined(ADC3)
+        //#if defined(ADC2) && defined(ADC3)
         //          }
-//#endif /* ADC2 || ADC3 */
-       /*     }
-           else
-         {*/
+        //#endif /* ADC2 || ADC3 */
+        /*     }
+            else
+          {*/
         /* if instance of handle correspond to ADC1 and  no external trigger present enable software conversion of regular channels */
-     /*       if((hadc->Instance == ADC1) && ((hadc->Instance->CR2 & ADC_CR2_EXTEN) == RESET))
-            {*/
+        /*       if((hadc->Instance == ADC1) && ((hadc->Instance->CR2 & ADC_CR2_EXTEN) == RESET))
+               {*/
         /* Enable the selected ADC software conversion for regular group */
-      /*        hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
-           }
-         }*/
+        /*        hadc->Instance->CR2 |= (uint32_t)ADC_CR2_SWSTART;
+             }
+           }*/
     }
 
     /* Return function status */
@@ -569,12 +553,13 @@ HAL_StatusTypeDef CUSTOM_HAL_ADC_Start(ADC_HandleTypeDef *hadc) {
 
 int GetADCValue(ADC_HandleTypeDef *hadc, uint32_t Channel, int count) {
 
-
     // If we are reinitializing the same ADC between single shot and DMA mode we need to initialize for single shot here
     // TODO: Check if it's already in single shot mode to avoid reinitializing it in the same mode
 
-    if (hadc == &hadc1) MX_ADC1_Init();
-    else if (hadc == &hadc2) MX_ADC2_Init();
+    if (hadc == &hadc1)
+        MX_ADC1_Init();
+    else if (hadc == &hadc2)
+        MX_ADC2_Init();
 
     int val = 0, v = 0;
     HAL_StatusTypeDef err = HAL_OK;
@@ -587,13 +572,12 @@ int GetADCValue(ADC_HandleTypeDef *hadc, uint32_t Channel, int count) {
         ADC_Error_Handler();
     }
 
-    int cnt=0;
+    int cnt = 0;
     for (int i = 0; i < count + 1 && err == HAL_OK; i++) {
 
-        if (hadc==&hadc3) {
+        if (hadc == &hadc3) {
             CUSTOM_HAL_ADC_Start(hadc);
-        }
-        else  {
+        } else {
             HAL_ADC_Start(hadc);
         }
 
@@ -607,8 +591,7 @@ int GetADCValue(ADC_HandleTypeDef *hadc, uint32_t Channel, int count) {
 
         // If we are changing between DMA and direct conversion mode we should stop the ADC here. It seems that, otherwise, the DMA mode
         // won't fire interrupts (don't know why)
-        //HAL_ADC_Stop(hadc);
-
+        // HAL_ADC_Stop(hadc);
     }
     HAL_ADC_Stop(hadc);
     return cnt ? val / cnt : -1;
@@ -625,18 +608,17 @@ void ADC_DMA_Start(ADC_HandleTypeDef *hadc) {
 
         // Start dual simultaneous conversions in ADCs 1&2
         HAL_ADC_Start(&hadc2);
-        HAL_ADCEx_MultiModeStart_DMA(hadc, (uint32_t *) adc_buff, capture_length);
+        HAL_ADCEx_MultiModeStart_DMA(hadc, (uint32_t *)adc_buff, capture_length);
 
         HAL_TIM_Base_Start_IT(&htim2); // Start ACD DMA timer
 
 #else
         uint16_t capture_length = DSP_BLOCK * 2 * 2;
         // Start single ADC sequenced conversion
-        HAL_ADC_Start_DMA(hadc, (uint32_t *) &adc_buff, capture_length);
+        HAL_ADC_Start_DMA(hadc, (uint32_t *)&adc_buff, capture_length);
 #endif
         adc_dma_started = true;
     }
-
 }
 
 void ADC_DMA_Stop(ADC_HandleTypeDef *hadc) {
@@ -666,14 +648,9 @@ void setup_adcs() {
 
     MX_ADC3_Init();
 
-
 #if ENABLE_FFT
     Config_ADC_DMA();
 #endif
 
-    //MX_ADC2_Init();
-
-
-
+    // MX_ADC2_Init();
 }
-

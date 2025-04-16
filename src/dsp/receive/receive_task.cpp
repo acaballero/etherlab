@@ -17,6 +17,7 @@
 #include "hw/stm32f4xx/timers.h"
 #include "config.h"
 #include "FIFO.h"
+#include "stm32f4xx_hal.h"
 #include "types.h"
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
@@ -25,6 +26,8 @@
 #include <cstddef>
 #include <memory>
 #include <sys/_stdint.h>
+#include "printf.h"
+#include "utils.hpp"
 
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
@@ -51,12 +54,11 @@ void ReceiveTask::work() {
 
             in_start = in_p;
 
-            // Wrap buffers
-            buffer_t<adc_type> buff_out = {(adc_type *)out_p, status.decimated_block_size};
-            buffer_t<complex_t> buff_out_complex = {(complex_t *)out_p, (size_t)(status.decimated_block_size >> 1)}; // single channel
-
             // Process input block
             while (av >= status.block_size_bytes) {
+
+                buffer_t<adc_type> buff_out = {(adc_type *)out_p, status.decimated_block_size};
+                buffer_t<complex_t> buff_out_complex = {(complex_t *)out_p, (size_t)(status.decimated_block_size >> 1)}; // single channel
 
                 uint16_t block_size_in = status.block_size_bytes >> 1;
                 uint16_t block_size_out = block_size_in >> 1;
@@ -66,7 +68,7 @@ void ReceiveTask::work() {
                     buffer_t<adc_type> buff = {(adc_type *)in_p, block_size_in};
 
                     if (i < n_decimators - 1) {
-                        // Half decimators
+                        // Half decimatorsy
 
                         if (i == 0) {
                             buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, block_size_out};
@@ -210,7 +212,7 @@ void ReceiveTask::start() {
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
     // Se the fifo processing frequency
-    update_timer(TASKS_TIMER_TYPEDEF, 2, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000);
+    update_timer(TASKS_TIMER_TYPEDEF, 4, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000);
 
     bool ret = radio_config({.direction = RF_DIRECTION_RX,
                              .sample_freq = status.sample_rate,
