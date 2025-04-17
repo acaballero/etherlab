@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <cstring>
 #include <cstdint>
-#include <sys/_stdint.h>
+
 #include "radio.h"
 #include "dsp/dsp_common.h"
 
@@ -84,7 +84,9 @@ struct st_topBar {
 
     bool mute;
 
-    bool operator==(const st_topBar &st) const { return mute == st.mute; }
+    bool operator==(const st_topBar &st) const {
+        return mute == st.mute;
+    }
 };
 
 struct st_freqInfo {
@@ -105,7 +107,9 @@ struct st_scale {
     int min;
     int max;
 
-    bool operator==(const st_scale &st) const { return min == st.min && max == st.max; }
+    bool operator==(const st_scale &st) const {
+        return min == st.min && max == st.max;
+    }
 };
 
 // Modulation modes

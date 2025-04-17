@@ -6,7 +6,6 @@
 #include "config.h"
 #include <ctime>
 #include <hw/stm32.h>
-#include <sys/_stdint.h>
 #include "os/periodic_task.h"
 #include "radio.h"
 #include "s_strength.h"

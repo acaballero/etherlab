@@ -5,7 +5,7 @@
 #include "scanner_ui.h"
 
 #include <io/file_factory.h>
-#include <sys/_stdint.h>
+
 #include "Signal.h"
 #include "dsp/fft/fft.h"
 #include "menuBase.h"
@@ -106,13 +106,17 @@ menu_option_st<uint32_t> filter_options[] = {{radio::IFFilterNames[radio::IF_FIL
                                              {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::if_filters[radio::IF_FILTER_150KHZ].bandwidth}};
 
 optionsPrompt<scanner::SCANNER_MODE> modeMenu((const char *)"Direction", mode_options, scanner_config.mode, sizeof(mode_options) / sizeof(mode_options[0]),
-                                              [](scanner::SCANNER_MODE) { configure(); });
+                                              [](scanner::SCANNER_MODE) {
+                                                  configure();
+                                              });
 
 // TODO: Add 'Band' mode to automatically select the current band frequency span
 menu_option_st<DIRECTION> direction_options[] = {{"Backwards", BACKWARDS}, {"Forward", FORWARD}};
 
 optionsPrompt<DIRECTION> directionMenu((const char *)"Direction", direction_options, scanner_config.direction,
-                                       sizeof(direction_options) / sizeof(direction_options[0]), [](DIRECTION) { configure(); });
+                                       sizeof(direction_options) / sizeof(direction_options[0]), [](DIRECTION) {
+                                           configure();
+                                       });
 
 TOGGLE(scanner_config.status, scanEnableToggle, "Status: ", configure, enterEvent, noStyle, VALUE("On", scanner::SCANNER_STATUS_RUNNING, doNothing, noEvent),
        VALUE("Off", scanner::SCANNER_STATUS_STOPPED, doNothing, noEvent));
@@ -122,14 +126,27 @@ TOGGLE(scanner_config.save_found, scanSaveToggle, "Save: ", configure, enterEven
 
 // In alalog scan, the step must be equal to the IF filter bandwidth so the expected signals lie in the middle of the passband. Otherwise, we'd have to work
 // hard to discern the center frequency when a signal is detected and also when moving away from the last detected signal.
-Menu::optionsPrompt<uint32_t> freqStepMenu((const char *)"Step", filter_options, scanner_config.freq_step, 3, [](uint16_t) { configure(); });
+Menu::optionsPrompt<uint32_t> freqStepMenu((const char *)"Step", filter_options, scanner_config.freq_step, 3, [](uint16_t) {
+    configure();
+});
 
-Menu::numberPrompt<uint16_t> freqPeriodMenu((const char *)"Period", &scanner_config.period_s, 0, ' ', '.', "s", [](uint16_t) { configure(); }, 1, 60000, 1, 10);
+Menu::numberPrompt<uint16_t> freqPeriodMenu((const char *)"Period", &scanner_config.period_s, 0, ' ', '.', "s",
+                                            [](uint16_t) {
+                                                configure();
+                                            },
+                                            1, 60000, 1, 10);
 
-Menu::numberPrompt<uint32_t> freqPauseDelay((const char *)"Pause delay", &scanner_config.pause_ms, 0, ' ', '.', "ms", [](uint32_t) { configure(); }, 0, 10000,
-                                            100, 1000);
+Menu::numberPrompt<uint32_t> freqPauseDelay((const char *)"Pause delay", &scanner_config.pause_ms, 0, ' ', '.', "ms",
+                                            [](uint32_t) {
+                                                configure();
+                                            },
+                                            0, 10000, 100, 1000);
 
-Menu::numberPrompt<float> squelchMenu((const char *)"S-level", &scanner_config.squelch, 0, ' ', '.', "", [](uint32_t) { configure(); }, 0, 9, 1, 0.1);
+Menu::numberPrompt<float> squelchMenu((const char *)"S-level", &scanner_config.squelch, 0, ' ', '.', "",
+                                      [](uint32_t) {
+                                          configure();
+                                      },
+                                      0, 9, 1, 0.1);
 
 MENU(menuScan, "Scan", on_menu_event, (Menu::eventMask)(enterEvent | exitEvent), noStyle, SUBMENU(scanEnableToggle), OBJ(directionMenu),
      SUBMENU(scanSaveToggle), OBJ(freqStepMenu), OBJ(freqPeriodMenu), OBJ(freqPauseDelay), OBJ(modeMenu), OBJ(squelchMenu), OBJ(freqEditMin), OBJ(freqEditMax));

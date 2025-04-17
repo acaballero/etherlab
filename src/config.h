@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <cstdint>
-#include <sys/_stdint.h>
+
 #include "hw/stm32_hal.h"
 #include "hw/hw_config.h"
 #include "dsp/fft/fft_types.h"
@@ -43,8 +43,12 @@ struct st_vfo_config {
         return *this;
     }
 
-    bool operator==(const st_vfo_config &st) const { return freq == st.freq && step == st.step && rit == st.rit; }
-    bool operator!=(const st_vfo_config &st) const { return !(*this == st); }
+    bool operator==(const st_vfo_config &st) const {
+        return freq == st.freq && step == st.step && rit == st.rit;
+    }
+    bool operator!=(const st_vfo_config &st) const {
+        return !(*this == st);
+    }
 };
 
 // DO NOT use a packed structure if memory constraints are not critical. The misalignment has caused

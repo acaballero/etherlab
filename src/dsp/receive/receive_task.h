@@ -6,8 +6,8 @@
 #define TRX_FRONTEND_RECEIVE_TASK_H
 
 #include <memory>
-#include <sys/_stdint.h>
 #include "dsp/decimation/dsp_fir_decimator_q15.h"
+#include "dsp/dsp_common.h"
 #include "dsp/task.h"
 #include "types.h"
 #include "ui/sd_filepicker_menu.h"
@@ -25,13 +25,13 @@ class ReceiveTask : public Task {
 
     void work() override;
 
-    void start() override;
+    bool start() override;
 
     void stop() override;
 
   private:
-    DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, adc_type> decimators_0[2][2];
-    DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, adc_type> decimators_1[2];
+    DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, complex_t_f32> decimators_0[2];
+    DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, complex_t_f32> decimators_1[1];
     DCBlock block_i{0.98};
     DCBlock block_q{0.98};
     std::unique_ptr<dsp::demodulator> demodulator;

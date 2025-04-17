@@ -28,7 +28,7 @@ void SignalGeneratorTask::work() {
     // TODO: Use the FIFO as a buffer for the generated signal.
 }
 
-void SignalGeneratorTask::start() {
+bool SignalGeneratorTask::start() {
 
     this->status.direction = DSP_DIRECTION_OUT;
     this->status.bandwidth = fft_params.span;
@@ -50,7 +50,10 @@ void SignalGeneratorTask::start() {
 
     if (!ret) {
         this->halt(DSP_ERR);
+        return false;
     }
+
+    return true;
 }
 
 void SignalGeneratorTask::stop() {

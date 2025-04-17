@@ -13,7 +13,6 @@
 #include "ui/widget.h"
 #include "utils.hpp"
 #include <functional>
-#include <sys/_stdint.h>
 
 bool OptionButtonsView::update_focus(int button_index) {
 
@@ -120,7 +119,9 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &, 
         button->id = index;
         index++;
 
-        button->on_highlight = [this](Button &button) { update_focus(button.id); };
+        button->on_highlight = [this](Button &button) {
+            update_focus(button.id);
+        };
 
         if (on_select_handler) {
             button->action = on_select_handler;
@@ -161,7 +162,9 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &, 
     }
 }
 
-void OptionButtonsView::set_title(const char *text) { label_widget.set_label(text); }
+void OptionButtonsView::set_title(const char *text) {
+    label_widget.set_label(text);
+}
 
 void OptionButtonsView::clear() {
     for (Button &button : buttons) {
@@ -218,7 +221,9 @@ void OptionButtonsView::update_buttons(bool update_layout = false) {
     }
 }
 
-void OptionButtonsView::set_show_arrows(bool b) { show_arrows = b; }
+void OptionButtonsView::set_show_arrows(bool b) {
+    show_arrows = b;
+}
 
 void OptionButtonsView::init() {
 
@@ -235,11 +240,16 @@ void OptionButtonsView::init() {
 
     add_children({&button_close, &button_next, &button_prev, &display_panel_buttons});
 
-    button_close.action = [this](Button &, st_inputEvent) { this->set_visible(false); };
+    button_close.action = [this](Button &, st_inputEvent) {
+        this->set_visible(false);
+    };
 
     display_panel_buttons.set_labels(display_buttons_labels);
 }
 
-void OptionButtonsView::on_focus() { update_focus(focused_button); }
+void OptionButtonsView::on_focus() {
+    update_focus(focused_button);
+}
 
-void OptionButtonsView::before_paint() {}
+void OptionButtonsView::before_paint() {
+}

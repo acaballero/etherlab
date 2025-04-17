@@ -18,7 +18,7 @@ class SignalGeneratorTask : public Task {
 
     void work() override;
 
-    void start() override;
+    bool start() override;
 
     void stop() override;
 

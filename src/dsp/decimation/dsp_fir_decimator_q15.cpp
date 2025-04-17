@@ -11,12 +11,13 @@
 #include "../../../lib/DspFilters/include/ChebyshevI.h"
 #include "../../../lib/DspFilters/include/State.h"
 #include "../../../lib/DspFilters/include/Cascade.h"
-#include <sys/_stdint.h>
 
 template class DspFIRDecimatorQ15<32, short>;
 template class DspFIRDecimatorQ15<24, short>;
 
-template <int TAPS, typename T> void DspFIRDecimatorQ15<TAPS, T>::decimate(buffer_t<T> &src, buffer_t<T> &dst) { this->decimate(src, dst, 0, 2); }
+template <int TAPS, typename T> void DspFIRDecimatorQ15<TAPS, T>::decimate(buffer_t<T> &src, buffer_t<T> &dst) {
+    this->decimate(src, dst, 0, 2);
+}
 
 /*
  * Decimate a DSP_BLOCK size I/Q sample buffer (I/Q are interleaved)
@@ -51,7 +52,7 @@ template <int TAPS, typename T> void DspFIRDecimatorQ15<TAPS, T>::initFilter() {
 
     // Generate a FIR filter with a cutoff frequency of f_khz
 
-    generateFIRFilterCoeffsq15(LPF, dsp_firCoeffs15, TAPS, this->input_rate, this->output_rate, 0);
+    generate_fir_filter_taps_q15(LPF, dsp_firCoeffs15, TAPS, this->input_rate, this->output_rate, 0);
 
     // Apply window
 

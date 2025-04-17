@@ -7,3 +7,7 @@ ColumnLimit: 160
 NamespaceIndentation: Inner
 IndentCaseLabels: true
 AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLambdasOnASingleLine: false
+PenaltyBreakTemplateDeclaration: 0

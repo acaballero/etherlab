@@ -23,24 +23,22 @@
 #include "io/file_factory.h"
 
 class CaptureTask : public Task {
-public:
-
-    CaptureTask(void(*onSucess)(), void(*onError)(DSP_ERROR));
+  public:
+    CaptureTask(void (*onSucess)(), void (*onError)(DSP_ERROR));
 
     void work() override;
 
-    void start() override;
+    bool start() override;
 
     void stop() override;
 
     void configureDsp();
 
     void setFile(std::unique_ptr<File> file);
-    File* getFile();
+    File *getFile();
 
-private:
-
+  private:
     std::unique_ptr<File> file;
 };
 
-#endif //TRX_FRONTEND_CAPTURE_TASK_H
+#endif // TRX_FRONTEND_CAPTURE_TASK_H

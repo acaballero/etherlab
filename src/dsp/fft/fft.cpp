@@ -7,7 +7,6 @@
 #include "config.h"
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
-#include <sys/_stdint.h>
 #include <sys/types.h>
 #include <utility>
 #include "dsp/blocks/dc_block.h"
@@ -343,9 +342,13 @@ void fftInit() {
     fft::waterfall_task.set_period(fftUI::get_waterfall_period());
 }
 
-void resetIQBalancer() { fftIQBalancer.reset(); }
+void resetIQBalancer() {
+    fftIQBalancer.reset();
+}
 
-uint32_t fft_max_span() { return current_max_slices * FFT_BANDWIDTH * 2; }
+uint32_t fft_max_span() {
+    return current_max_slices * FFT_BANDWIDTH * 2;
+}
 
 /* Finds the optimal FFT parameters based on the current selected span
  *
@@ -417,7 +420,7 @@ bool fft_config(uint32_t span) {
         // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
         // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
 
-        if (fft_sf != config.fft.sample_rate || !decimator_i.isInitialized()) { // sample frequency changed not yet initialized
+        if (fft_sf != config.fft.sample_rate || !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
 
             decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);

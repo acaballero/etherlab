@@ -15,10 +15,7 @@ template <typename T> class DspDecimator {
   public:
     DspDecimator(const uint16_t factor) : factor(factor){};
 
-    DspDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor)
-        : input_rate(input_rate), output_rate(output_rate), factor(factor){
-
-                                                            };
+    DspDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : input_rate(input_rate), output_rate(output_rate), factor(factor){};
 
     virtual void decimate(buffer_t<T> &src, buffer_t<T> &dst) = 0;
 

@@ -5,7 +5,6 @@
 #include "cat_if.h"
 #include "FIFO.h"
 #include "memory.h"
-#include <sys/_stdint.h>
 
 char *usb_rx_fifo_buffer[CAT_COMMAND_SIZE * 4];
 FIFO usb_rx_fifo((char *)usb_rx_fifo_buffer, CAT_COMMAND_SIZE);

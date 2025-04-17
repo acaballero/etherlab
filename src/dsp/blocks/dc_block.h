@@ -15,20 +15,20 @@
  */
 class DCBlock {
 
-public:
-
-    explicit DCBlock() : pole_radius{0.985} {}
-    explicit DCBlock(float pole_radius) : pole_radius{pole_radius} {}
+  public:
+    explicit DCBlock() : pole_radius{0.985} {
+    }
+    explicit DCBlock(float pole_radius) : pole_radius{pole_radius} {
+    }
     int16_t filter(int16_t sample);
     float32_t filter(float32_t input);
     void filter(buffer_t<int16_t> &src, uint8_t n_channels, uint8_t channel);
     void filter(buffer_t<float32_t> &src, uint8_t n_channels, uint8_t channel_n);
 
-private:
-
+  private:
     float32_t pole_radius;
-    float32_t last_x=0;
-    float32_t last_y=0;
+    float32_t last_x = 0;
+    float32_t last_y = 0;
 };
 
-#endif //TRX_FRONTEND_DC_BLOCK_H
+#endif // TRX_FRONTEND_DC_BLOCK_H

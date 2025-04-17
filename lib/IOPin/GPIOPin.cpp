@@ -3,9 +3,10 @@
 //
 
 #include "GPIOPin.h"
-#include <sys/_stdint.h>
 
-GPIO_PinState GPIOPin::read() { return HAL_GPIO_ReadPin(this->port, this->pin); }
+GPIO_PinState GPIOPin::read() {
+    return HAL_GPIO_ReadPin(this->port, this->pin);
+}
 
 GPIO_PinState GPIOPin::toggle() {
     GPIO_PinState state = HAL_GPIO_ReadPin(this->port, this->pin);

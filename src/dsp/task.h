@@ -9,22 +9,18 @@
 
 class Task {
 
-public:
-
+  public:
     virtual ~Task() = default;
-    virtual void start();
+    virtual bool start();
     virtual void stop();
     virtual void work() = 0;
     void reset();
     void halt(DSP_ERROR);
     st_dspStatus status;
 
-protected:
-
-    void(*on_success)();
-    void(*on_error)(DSP_ERROR);
-
+  protected:
+    void (*on_success)();
+    void (*on_error)(DSP_ERROR);
 };
 
-
-#endif //TRX_FRONTEND_TASK_H
+#endif // TRX_FRONTEND_TASK_H

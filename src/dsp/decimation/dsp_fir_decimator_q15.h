@@ -9,14 +9,15 @@
 #include "dsp_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft_types.h"
-#include <sys/_stdint.h>
 
 template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = int16_t> class DspFIRDecimatorQ15 : public DspDecimator<T> {
 
   public:
     DspFIRDecimatorQ15() : DspDecimator<T>(0){};
 
-    DspFIRDecimatorQ15(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<T>(input_rate, output_rate, factor) { this->initFilter(); };
+    DspFIRDecimatorQ15(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<T>(input_rate, output_rate, factor) {
+        this->initFilter();
+    };
 
     void decimate(buffer_t<T> &src, buffer_t<T> &dst) override;
     void config(uint32_t input_rate, uint32_t output_rate, uint16_t factor);

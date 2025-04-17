@@ -17,7 +17,6 @@
 #include "s_strength.h"
 #include "menu.h"
 #include "ui/frequency_memory_ui.h"
-#include <sys/_stdint.h>
 
 void RadioStatusWidget::init() {
 
@@ -47,7 +46,9 @@ void RadioStatusWidget::init() {
         btn->set_font((FontDef *)&Font_Tiny8x8);
         btn->set_aling(ALIGN_CENTER);
         if (btn != &lblMode) {
-            ((Button *)btn)->action = [this](Button &button, st_inputEvent e) { this->on_button(button, e); };
+            ((Button *)btn)->action = [this](Button &button, st_inputEvent e) {
+                this->on_button(button, e);
+            };
         }
     }
 }
@@ -55,7 +56,11 @@ void RadioStatusWidget::init() {
 void RadioStatusWidget::on_button(Button &button, st_inputEvent e) {
     if (&button == &btnSquelch) {
         Menu::open_keypad<float>(
-            sstrength::get_squelch(), "x1", "Squelch", 1, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
+            sstrength::get_squelch(), "x1", "Squelch", 1, false,
+            [](float v) {
+                sstrength::set_squelch((float)v);
+            },
+            0, 9);
     } else if (&button == &btnGain) {
         Menu::open(Menu::frontendPathMenu);
     } else if (&button == &btnVFO) {
@@ -69,7 +74,11 @@ void RadioStatusWidget::on_button(Button &button, st_inputEvent e) {
             freq_memory::set_next_prev(FORWARD);
         } else {
             Menu::open_number_edit<int32_t>(
-                radio::get_rit(), "Hz", "RIT", 0, [](int32_t v) { radio::set_rit(v); }, -500, 500, 1, 10);
+                radio::get_rit(), "Hz", "RIT", 0,
+                [](int32_t v) {
+                    radio::set_rit(v);
+                },
+                -500, 500, 1, 10);
         }
     } else if (&button == &btnSettings) {
         if (e.ms > LONG_PRESS_MS) {

@@ -13,9 +13,13 @@ CaptureTask::CaptureTask(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
     this->on_success = onSucess;
 }
 
-void CaptureTask::setFile(std::unique_ptr<File> file) { this->file = move(file); }
+void CaptureTask::setFile(std::unique_ptr<File> file) {
+    this->file = move(file);
+}
 
-File *CaptureTask::getFile() { return file.get(); }
+File *CaptureTask::getFile() {
+    return file.get();
+}
 
 void CaptureTask::work() {
     char *p;
@@ -107,7 +111,7 @@ void CaptureTask::configureDsp() {
     set_max_sample_freq(max_sample_rate);
 }
 
-void CaptureTask::start() {
+bool CaptureTask::start() {
 
 #ifdef LCD_DISABLE_ON_DSP
     lcd.setEnabled(false);
@@ -142,6 +146,7 @@ void CaptureTask::start() {
 
     if (fres != FR_OK) {
         this->halt(DSP_ERR_FILEOPEN);
+        return false;
     } else {
 
         // DEBUGPRINT(
@@ -162,6 +167,8 @@ void CaptureTask::start() {
 
         this->status.status = DSP_STATUS_RUNNING;
     }
+
+    return true;
 }
 
 void CaptureTask::stop() {

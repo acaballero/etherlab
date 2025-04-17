@@ -13,7 +13,6 @@
 #include "ui/menu.h"
 #include "ui/menu_prompts.h"
 #include "ui/view_manager.h"
-#include <sys/_stdint.h>
 
 using namespace Menu;
 
@@ -39,15 +38,25 @@ void init_waterfall() {
     view_manager::mainView.Waterfall()->set_step(waterfall_step_size);
 }
 
-uint16_t get_waterfall_period() { return waterfall_period; }
+uint16_t get_waterfall_period() {
+    return waterfall_period;
+}
 
-uint8_t get_waterfall_step_size() { return waterfall_step_size; }
+uint8_t get_waterfall_step_size() {
+    return waterfall_step_size;
+}
 
-void change_spectrum_colors() { set_spectrum_colors(config.fft.spectrum_line_color, config.fft.spectrum_fill_color); }
+void change_spectrum_colors() {
+    set_spectrum_colors(config.fft.spectrum_line_color, config.fft.spectrum_fill_color);
+}
 
-void set_spectrum_style(FFT_SPECTRUM_STYLE style) { ((FFTWidget *)view_manager::mainView.FFT())->set_style(style); }
+void set_spectrum_style(FFT_SPECTRUM_STYLE style) {
+    ((FFTWidget *)view_manager::mainView.FFT())->set_style(style);
+}
 
-void set_spectrum_colors(uint16_t line, uint16_t fill) { ((FFTWidget *)view_manager::mainView.FFT())->set_colors(line, fill); }
+void set_spectrum_colors(uint16_t line, uint16_t fill) {
+    ((FFTWidget *)view_manager::mainView.FFT())->set_colors(line, fill);
+}
 
 prompt *windowValues[] = {new Menu::menuValue<FFT_WINDOW_TYPES>(fftWindowNames[FFT_WINDOW_NONE], FFT_WINDOW_NONE, doNothing, noEvent),
                           new Menu::menuValue<FFT_WINDOW_TYPES>(fftWindowNames[FFT_WINDOW_HAMMING], FFT_WINDOW_HAMMING, doNothing, noEvent)};
@@ -64,14 +73,19 @@ prompt *fftViewValues[] = {new Menu::menuValue<FFT_VIEW_MODE>("Spectrum", FFT_VI
 Menu::select<uint8_t> &fftViewMenu = *new Menu::select<uint8_t>("View", config.fft.view_mode, sizeof(fftViewValues) / sizeof(prompt *), fftViewValues);
 
 Menu::optionsPrompt<FFT_SPECTRUM_STYLE> fftStyleMenu((const char *)"Style", spectrum_style_options, config.fft.spectrum_style,
-                                                     sizeof(spectrum_style_options) / sizeof(spectrum_style_options[0]),
-                                                     [](FFT_SPECTRUM_STYLE s) { set_spectrum_style(s); });
+                                                     sizeof(spectrum_style_options) / sizeof(spectrum_style_options[0]), [](FFT_SPECTRUM_STYLE s) {
+                                                         set_spectrum_style(s);
+                                                     });
 
 Menu::optionsPrompt<uint16_t> fillColorMenu((const char *)"Fill color", Menu::color_options, config.fft.spectrum_fill_color,
-                                            sizeof(Menu::color_options) / sizeof(Menu::color_options[0]), [](uint16_t) { change_spectrum_colors(); });
+                                            sizeof(Menu::color_options) / sizeof(Menu::color_options[0]), [](uint16_t) {
+                                                change_spectrum_colors();
+                                            });
 
 Menu::optionsPrompt<uint16_t> lineColorMenu((const char *)"Line color", Menu::color_options, config.fft.spectrum_line_color,
-                                            sizeof(Menu::color_options) / sizeof(Menu::color_options[0]), [](uint16_t) { change_spectrum_colors(); });
+                                            sizeof(Menu::color_options) / sizeof(Menu::color_options[0]), [](uint16_t) {
+                                                change_spectrum_colors();
+                                            });
 
 Menu::numberPrompt<uint8_t> iqBalancePeriodMenu((const char *)"IQ bal. estimate period", &config.fft.iq_balance_estimate_period_ms, 0, ' ', '.', "ms", nullptr,
                                                 0, 255, 5, 10);
@@ -123,14 +137,26 @@ optionsPrompt<uint8_t> decimationMenu((const char *)"Max decimation", decimation
 Menu::numberPrompt<uint32_t> maxSampleRateMenu((const char *)"Max sample rate", &config.fft.max_sample_rate, 0, ' ', '.', "Hz", nullptr, FFT_MIN_SAMPLE_RATE,
                                                ADC_MAX_SAMPLE_RATE, 10000, 25000);
 Menu::numberPrompt<uint32_t> maxDSPSampleRateMenu((const char *)"DSP max sample rate", &config.fft.dsp_max_sample_rate, 0, ' ', '.', "Hz",
-                                                  [](uint32_t v) { fft_config(v); }, FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 25000);
-Menu::numberPrompt<uint32_t> spanMenu((const char *)"Span", &config.fft.span, 0, ' ', '.', "Hz", [](uint32_t v) { fft_config(v); }, FFT_MIN_SPAN, FFT_MAX_SPAN,
-                                      10000, 25000);
-Menu::numberPrompt<float> smoothMenu((const char *)"Smooth", &config.fft.smooth_factor, 1, ' ', '.', "", [](float) { fftInit(); }, 0, 1, 0.1, 1);
+                                                  [](uint32_t v) {
+                                                      fft_config(v);
+                                                  },
+                                                  FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 25000);
+Menu::numberPrompt<uint32_t> spanMenu((const char *)"Span", &config.fft.span, 0, ' ', '.', "Hz",
+                                      [](uint32_t v) {
+                                          fft_config(v);
+                                      },
+                                      FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 25000);
+Menu::numberPrompt<float> smoothMenu((const char *)"Smooth", &config.fft.smooth_factor, 1, ' ', '.', "",
+                                     [](float) {
+                                         fftInit();
+                                     },
+                                     0, 1, 0.1, 1);
 
 Menu::numberPrompt<uint16_t> waterfallSpeedMenu((const char *)"Waterfall speed", &config.fft.waterfall_pixels_per_second, 0, ' ', '.', "pps",
-                                                [](uint16_t) { fftInit(); }, 2,
-                                                (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 5);
+                                                [](uint16_t) {
+                                                    fftInit();
+                                                },
+                                                2, (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 5);
 
 Menu::numberPrompt<int16_t> minDbMenu((const char *)"DB Min", &config.fft.min_db, 0, ' ', '.', "dB", nullptr, FFT_MIN_DB, FFT_MAX_DB, 1, 5);
 
@@ -139,10 +165,17 @@ Menu::numberPrompt<int16_t> maxDbMenu((const char *)"DB Max", &config.fft.max_db
 Menu::numberPrompt<uint16_t> fftCalcNoisePeriodMenu((const char *)"Noise floor calc period", &fft_calc_noise_floor_period_ms, 0, ' ', '.', "ms", nullptr, 0,
                                                     1000, 10, 100);
 
-Menu::numberPrompt<int> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "", [](float) { fftInit(); }, 0x00FF, 0xFFFF, 10, 100);
+Menu::numberPrompt<int> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "",
+                                      [](float) {
+                                          fftInit();
+                                      },
+                                      0x00FF, 0xFFFF, 10, 100);
 
 Menu::numberPrompt<uint8_t> slicesMenu((const char *)"MAx slices", &config.fft.max_slices, 0, ' ', '.', "",
-                                       [](uint8_t) { fft::set_max_slices(config.fft.max_slices); }, 1, FFT_MAX_SLICES, 1, 1);
+                                       [](uint8_t) {
+                                           fft::set_max_slices(config.fft.max_slices);
+                                       },
+                                       1, FFT_MAX_SLICES, 1, 1);
 
 Menu::numberPrompt<int32_t> fCorrectionMenu((const char *)"Freq. correction", &config.f_correction, 0, ' ', '.', "kHz", nullptr, 0, 100000, 10, 100);
 
@@ -154,7 +187,13 @@ MENU(fftMenu, "Spectrum", doNothing, anyEvent, noStyle, SUBMENU(setEnableFFT), O
      SUBMENU(fftWindowMenu), SUBMENU(fftUIMenu), SUBMENU(fftViewMenu), SUBMENU(fftRemoveDC), SUBMENU(menuIQBalance), SUBMENU(autoMinDbToggle), OBJ(minDbMenu),
      OBJ(maxDbMenu), OBJ(fftCalcNoisePeriodMenu), OBJ(amplitudeMenu), OBJ(fCorrectionMenu));
 
-void open_waterfall_config() { Menu::open(waterfallSpeedMenu); }
-void open_dbscale_config() { Menu::open(maxDbMenu); }
-void open_span_config() { Menu::open(spanMenu); }
+void open_waterfall_config() {
+    Menu::open(waterfallSpeedMenu);
+}
+void open_dbscale_config() {
+    Menu::open(maxDbMenu);
+}
+void open_span_config() {
+    Menu::open(spanMenu);
+}
 } // namespace fftUI

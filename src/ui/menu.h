@@ -5,7 +5,7 @@
 #include "hw/stm32.h"
 #include <functional>
 #include <math.h>
-#include <sys/_stdint.h>
+
 #include <type_traits>
 #include "../../lib/Menu/src/menu.h"
 #include "menuBase.h"

@@ -86,7 +86,7 @@ void ReplayTask::work() {
     }
 }
 
-void ReplayTask::start() {
+bool ReplayTask::start() {
 
 #if LCD_DISABLE_ON_DSP
     lcd.setEnabled(false);
@@ -109,6 +109,7 @@ void ReplayTask::start() {
     if (fres != FR_OK) {
 
         this->halt(DSP_ERR_FILEREAD);
+        return false;
 
     } else {
 
@@ -194,8 +195,11 @@ void ReplayTask::start() {
 
         if (!ret) {
             this->halt(DSP_ERR);
+            return false;
         }
     }
+
+    return true;
 }
 
 void ReplayTask::stop() {
@@ -229,8 +233,14 @@ void ReplayTask::stop() {
     }
 }
 
-void ReplayTask::setFile(std::unique_ptr<File> file) { m_file = move(file); }
+void ReplayTask::setFile(std::unique_ptr<File> file) {
+    m_file = move(file);
+}
 
-bool ReplayTask::getLoop() const { return loop; }
+bool ReplayTask::getLoop() const {
+    return loop;
+}
 
-void ReplayTask::setLoop(bool b) { ReplayTask::loop = b; }
+void ReplayTask::setLoop(bool b) {
+    ReplayTask::loop = b;
+}

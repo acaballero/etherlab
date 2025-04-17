@@ -22,7 +22,6 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "dsp/dsp_tasks.h"
-#include <sys/_stdint.h>
 
 namespace main_board {
 
@@ -107,11 +106,17 @@ void check_status() {
     setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_POW_AMP_BIAS, biased, true);
 }
 
-void power_amp_status_callback(void *, void *) { check_status(); }
+void power_amp_status_callback(void *, void *) {
+    check_status();
+}
 
-void rf_coupler_info_callback(void *, void *) { check_status(); }
+void rf_coupler_info_callback(void *, void *) {
+    check_status();
+}
 
-void battery_callback(void *, void *) { check_status(); }
+void battery_callback(void *, void *) {
+    check_status();
+}
 
 void if_filter_signal_callback(void *, void *) {
     if (config.mode == DIGITAL_RX) { // Restart receive task
@@ -378,9 +383,13 @@ void sleep() {
     }
 }
 
-void wakeup() { setModulationMode(config.modulation, true); }
+void wakeup() {
+    setModulationMode(config.modulation, true);
+}
 
-void update() { _setMode(config.mode, true); }
+void update() {
+    _setMode(config.mode, true);
+}
 
 bool setMode(MODE mode) {
     if (_setMode(mode, false)) {
@@ -400,9 +409,13 @@ void setMute(GPIO_PinState muteState) {
     }
 }
 
-GPIO_PinState getMute() { return mute; }
+GPIO_PinState getMute() {
+    return mute;
+}
 
-MODULATION_MODE getModulationMode() { return config.modulation; }
+MODULATION_MODE getModulationMode() {
+    return config.modulation;
+}
 
 void setModulationMode(MODULATION_MODE mod_val, bool force) {
 
@@ -552,7 +565,9 @@ void setPowerCtrl(uint8_t value, bool force) {
     setPowerCtrl(value, force, true);
 }
 
-bool setGPIOExpPin(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort, uint8_t pin, bool set) { return setGPIOExpPin(hmcp, mcpPort, pin, set, true); }
+bool setGPIOExpPin(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort, uint8_t pin, bool set) {
+    return setGPIOExpPin(hmcp, mcpPort, pin, set, true);
+}
 
 bool setGPIOExpPin(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort, uint8_t pin, bool set, bool commit) {
 

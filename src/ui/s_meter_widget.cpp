@@ -11,7 +11,6 @@
 #include "stm32f4xx_hal.h"
 #include "view_manager.h"
 #include "menu_prompts.h"
-#include <sys/_stdint.h>
 
 void SMeterWidget::paint_callback() {
 
@@ -139,7 +138,11 @@ bool SMeterWidget::on_input(const st_inputEvent event) {
                 config.debug = true;
             } else {
                 Menu::open_keypad<float>(
-                    sstrength::get_squelch(), "x1", "Squelch", 1, false, [](float v) { sstrength::set_squelch((float)v); }, 0, 9);
+                    sstrength::get_squelch(), "x1", "Squelch", 1, false,
+                    [](float v) {
+                        sstrength::set_squelch((float)v);
+                    },
+                    0, 9);
             }
             return true;
         default:

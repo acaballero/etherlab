@@ -18,7 +18,6 @@
 #include "radio.h"
 #include "ui/view_manager.h"
 #include "../../lib/ST77XX-STM32/XPT2046_touch.h"
-#include <sys/_stdint.h>
 
 namespace input_controller {
 os::periodic_task task(20, dispatchEvents);

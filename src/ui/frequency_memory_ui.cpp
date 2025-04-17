@@ -15,7 +15,6 @@
 #include "ui/menu_options.h"
 #include "ui/ui_types.h"
 #include <cstddef>
-#include <sys/_stdint.h>
 
 namespace freq_memory {
 
@@ -233,7 +232,9 @@ st_freq_mem *find_closest(uint64_t f, uint16_t group, DIRECTION direction = STOP
     }
 }
 
-bool get_memory_mode() { return config.memory_mode; }
+bool get_memory_mode() {
+    return config.memory_mode;
+}
 
 uint8_t toggle_memory_mode() {
     bool memory_mode = (config.memory_mode == 0 ? 1 : 0);
@@ -260,7 +261,9 @@ labelPrompt freqNameMenu((const char *)"Name", tempFreqMem.name, edit_freq_name,
 labelPrompt freqEditMenu((const char *)"Frequency", tempFreqBuf, edit_freq, enterEvent, noStyle);
 
 optionsPrompt<MODULATION_MODE> modulationModeMenu((const char *)"Modulation", modulation_options, config.modulation,
-                                                  sizeof(modulation_options) / sizeof(modulation_options[0]), [](MODULATION_MODE) { saveTarget(); });
+                                                  sizeof(modulation_options) / sizeof(modulation_options[0]), [](MODULATION_MODE) {
+                                                      saveTarget();
+                                                  });
 
 MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqNameMenu), OBJ(modulationModeMenu), OBJ(freqEditMenu));
 

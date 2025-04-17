@@ -25,7 +25,6 @@
 #include "dsp/decimation/dsp_decimators.h"
 #include <cstddef>
 #include <memory>
-#include <sys/_stdint.h>
 #include "printf.h"
 #include "utils.hpp"
 
@@ -57,35 +56,30 @@ void ReceiveTask::work() {
             // Process input block
             while (av >= status.block_size_bytes) {
 
-                buffer_t<adc_type> buff_out = {(adc_type *)out_p, status.decimated_block_size};
-                buffer_t<complex_t> buff_out_complex = {(complex_t *)out_p, (size_t)(status.decimated_block_size >> 1)}; // single channel
-
-                uint16_t block_size_in = status.block_size_bytes >> 1;
+                uint16_t block_size_in = status.block_size_bytes / sizeof(complex_t_f32);
                 uint16_t block_size_out = block_size_in >> 1;
+
+                buffer_t<float32_t> buff_out_f32 = {(float32_t *)out_p, block_size_out};
+                buffer_t<adc_type> buff_out_s16 = {(adc_type *)out_p, block_size_out};
+                buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)out_p, block_size_out};
 
                 for (int i = 0; i < n_decimators; i++) {
 
-                    buffer_t<adc_type> buff = {(adc_type *)in_p, block_size_in};
+                    buffer_t<complex_t_f32> buff = {(complex_t_f32 *)in_p, block_size_in};
+                    buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)out_p, block_size_out};
 
                     if (i < n_decimators - 1) {
-                        // Half decimatorsy
-
+                        // Half-band decimators
                         if (i == 0) {
-                            buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, block_size_out};
-                            decimators_0[i][0].decimate(buff, buff_tmp, 0, status.n_channels);
-                            decimators_0[i][1].decimate(buff, buff_tmp, 1, status.n_channels);
+                            decimators_0[i].decimate(buff, buff);
                         } else {
-                            buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, block_size_in};
-                            decimators_0[i][0].decimate(buff_tmp, buff_tmp, 0, status.n_channels);
-                            decimators_0[i][1].decimate(buff_tmp, buff_tmp, 1, status.n_channels);
+                            decimators_0[i].decimate(buff, buff);
                         }
 
                     } else {
                         buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, block_size_in};
-
                         // Signal decimators
-                        decimators_1[0].decimate(buff_tmp, buff_out, 0, status.n_channels);
-                        decimators_1[1].decimate(buff_tmp, buff_out, 1, status.n_channels);
+                        decimators_1[0].decimate(buff, buff_out);
                     }
 
                     block_size_in >>= 1;
@@ -93,10 +87,10 @@ void ReceiveTask::work() {
                 }
 
                 // DC block;
-                block_i.filter(buff_out, 2, 0);
-                block_q.filter(buff_out, 2, 1);
+                block_i.filter(buff_out_f32, 2, 0);
+                block_q.filter(buff_out_f32, 2, 1);
 
-                demodulator->work(buff_out_complex, buff_out);
+                demodulator->work(buff_out, buff_out_s16);
 
                 out_p += status.decimated_block_size_bytes;
                 in_p += status.block_size_bytes;
@@ -105,17 +99,8 @@ void ReceiveTask::work() {
 
             uint32_t processed = DSP_FIFO_BLOCK_BYTES - av;
 
-            FIFO_ERROR fifo_res = input_stream.consume(processed, &in_start);
-
-            if (fifo_res != FIFO_ERROR_NONE) {
-                status.fifo_underruns++;
-            }
-
-            fifo_res = output_stream.feed(processed / status.decimation_factor);
-
-            if (fifo_res != FIFO_ERROR_NONE) {
-                status.fifo_overruns++;
-            }
+            input_stream.consume(processed, &in_start);
+            output_stream.feed(processed / status.decimation_factor);
 
         } else {
             if (free < DSP_FIFO_BLOCK_BYTES) {
@@ -143,7 +128,7 @@ std::unique_ptr<dsp::demodulator> ReceiveTask::get_modulator() {
     }
 }
 
-void ReceiveTask::start() {
+bool ReceiveTask::start() {
 
     dsp_set_real_time(true);
 
@@ -186,16 +171,22 @@ void ReceiveTask::start() {
 
     uint32_t stage_fs = config.fft.sample_rate;
     uint32_t next_stage_fs = (config.fft.sample_rate / 4);
-    decimators_0[0][0].config(stage_fs, next_stage_fs, factor);
-    decimators_0[0][1].config(stage_fs, next_stage_fs, factor);
+    bool ret = decimators_0[0].config(stage_fs, next_stage_fs, factor);
+    if (!ret) {
+        halt(DSP_ERR);
+        return false;
+    }
     dec = dec / factor;
     n_decimators = 1;
 
     if (dec > 2) {
         stage_fs = next_stage_fs;
         next_stage_fs = stage_fs / 4;
-        decimators_0[1][0].config(stage_fs, next_stage_fs, factor);
-        decimators_0[1][1].config(stage_fs, next_stage_fs, factor);
+        ret = decimators_0[1].config(stage_fs, next_stage_fs, factor);
+        if (!ret) {
+            halt(DSP_ERR);
+            return false;
+        }
         dec = dec / factor;
         n_decimators++;
     }
@@ -203,8 +194,11 @@ void ReceiveTask::start() {
     if (dec) {
         stage_fs = next_stage_fs;
         factor = dec;
-        decimators_1[0].config(stage_fs, status.bandwidth, factor);
-        decimators_1[1].config(stage_fs, status.bandwidth, factor);
+        ret = decimators_1[0].config(stage_fs, status.bandwidth, factor);
+        if (!ret) {
+            halt(DSP_ERR);
+            return false;
+        }
         n_decimators++;
     }
     // Start task processing timer
@@ -214,10 +208,10 @@ void ReceiveTask::start() {
     // Se the fifo processing frequency
     update_timer(TASKS_TIMER_TYPEDEF, 4, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000);
 
-    bool ret = radio_config({.direction = RF_DIRECTION_RX,
-                             .sample_freq = status.sample_rate,
-                             .freq = 0,
-                             .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
+    ret = radio_config({.direction = RF_DIRECTION_RX,
+                        .sample_freq = status.sample_rate,
+                        .freq = 0,
+                        .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
 
     status.status = DSP_STATUS_RUNNING;
 
@@ -225,7 +219,10 @@ void ReceiveTask::start() {
 
     if (!ret) {
         halt(DSP_ERR);
+        return false;
     }
+
+    return true;
 }
 
 void ReceiveTask::stop() {

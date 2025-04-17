@@ -30,10 +30,11 @@ void Task::halt(DSP_ERROR e) {
     this->stop();
 }
 
-void Task::start() {
+bool Task::start() {
     this->status.status = DSP_STATUS_RUNNING;
     this->reset();
     this->status.start_ms = HAL_GetTick();
+    return true;
 }
 
 void Task::stop() {

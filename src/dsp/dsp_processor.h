@@ -11,14 +11,14 @@
 
 class DspProcessor : public Task {
 
-public:
-
+  public:
     virtual void work(const buffer_t<complex_t> *buffer) = 0;
 
-    void start() override {
+    bool start() override {
         this->status.status = DSP_STATUS_RUNNING;
         this->reset();
         this->status.start_ms = HAL_GetTick();
+        return true;
     }
 
     void stop() override {
@@ -26,10 +26,8 @@ public:
         this->status.stop_ms = HAL_GetTick();
     }
 
-private:
-
-    void work() {};
-
+  private:
+    void work(){};
 };
 
-#endif //TRX_FRONTEND_DSP_PROCESSOR_H
+#endif // TRX_FRONTEND_DSP_PROCESSOR_H

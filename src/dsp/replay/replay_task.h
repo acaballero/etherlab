@@ -10,16 +10,14 @@
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
 
-
 class ReplayTask : public Task {
 
-public:
-
+  public:
     ReplayTask(void (*onSucess)(), void (*onError)(DSP_ERROR));
 
     void work() override;
 
-    void start() override;
+    bool start() override;
 
     void stop() override;
 
@@ -29,10 +27,9 @@ public:
 
     void setLoop(bool loop);
 
-private:
-
+  private:
     bool loop;
     std::unique_ptr<File> m_file;
 };
 
-#endif //TRX_FRONTEND_REPLAY_TASK_H
+#endif // TRX_FRONTEND_REPLAY_TASK_H

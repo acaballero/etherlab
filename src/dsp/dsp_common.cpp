@@ -5,7 +5,6 @@
 #include "dsp_common.h"
 #include "dsp_config.h"
 #include "config.h"
-#include <sys/_stdint.h>
 
 const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
 
@@ -46,6 +45,8 @@ void set_tx_gain_db(int8_t gain_db) {
 namespace dsp {
 
 st_dsp_config config;
-void set_config(dsp::st_dsp_config &dsp_config) { config = dsp_config; }
+void set_config(dsp::st_dsp_config &dsp_config) {
+    config = dsp_config;
+}
 
 } // namespace dsp

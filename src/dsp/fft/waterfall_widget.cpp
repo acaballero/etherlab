@@ -8,7 +8,6 @@
 #include "dsp/fft/fft_ui.h"
 #include "fft.h"
 #include "input/inputEvent.h"
-#include <sys/_stdint.h>
 
 #define PIXELS_BYTE 2
 // Map db to color linearly
@@ -54,7 +53,9 @@ bool WaterfallWidget::on_touch(const st_inputEvent) {
     return true;
 }
 
-void WaterfallWidget::set_step(uint8_t value) { step = value; }
+void WaterfallWidget::set_step(uint8_t value) {
+    step = value;
+}
 
 /*
  * Displaces the waterfall by frequency offset

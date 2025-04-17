@@ -8,7 +8,6 @@
 #include "stdio.h"
 #include "stdint.h"
 #include "stm32f4xx_hal.h"
-#include <sys/_stdint.h>
 
 namespace os {
 
@@ -26,8 +25,12 @@ class periodic_task {
             _next_ms = HAL_GetTick() + delay_ms;
         }
     };
-    void set_period(uint64_t period) { _period_ms = period; }
-    uint64_t get_period() { return _period_ms; }
+    void set_period(uint64_t period) {
+        _period_ms = period;
+    }
+    uint64_t get_period() {
+        return _period_ms;
+    }
     void set_enabled(bool b);
 
     // Set next execution time

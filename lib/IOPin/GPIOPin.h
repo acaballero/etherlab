@@ -6,7 +6,6 @@
 #define TRX_FRONTEND_GPIOPIN_H
 
 #include <stm32f4xx.h>
-#include <sys/_stdint.h>
 #include "IOPin.h"
 
 class GPIOPin : public IOPin {

@@ -7,7 +7,6 @@
 #include "stm32f4xx_hal_def.h"
 #include "stm32f4xx_hal_flash.h"
 #include <string>
-#include <sys/_stdint.h>
 
 /*
 uint8_t flash_write(uint32_t *src, uint32_t size) {

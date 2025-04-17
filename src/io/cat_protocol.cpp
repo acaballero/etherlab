@@ -15,7 +15,6 @@
 #include "printf.h"
 #include "utils.hpp"
 #include <string.h>
-#include <sys/_stdint.h>
 
 namespace cat_protocol {
 

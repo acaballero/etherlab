@@ -6,7 +6,6 @@
 #define TRX_FRONTEND_MCP23017PIN_H
 
 #include <stm32f4xx.h>
-#include <sys/_stdint.h>
 #include "../MCP23017/mcp23017.h"
 #include "IOPin.h"
 

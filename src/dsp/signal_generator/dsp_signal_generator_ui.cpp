@@ -3,7 +3,6 @@
 //
 
 #include <io/file_factory.h>
-#include <sys/_stdint.h>
 #include "dsp/fft/fft_types.h"
 #include "dsp_signal_generator_ui.h"
 #include "../dsp_common.h"
@@ -130,17 +129,29 @@ Menu::result on_freq_updated() {
     return Menu::proceed;
 }
 
-Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &dsp::config.gain, 0, ' ', '.', "dB", [](int8_t v) { set_tx_gain_db(v); }, DSP_MIN_TX_GAIN_DB,
-                                    DSP_MAX_TX_GAIN_DB, 1, 5);
+Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &dsp::config.gain, 0, ' ', '.', "dB",
+                                    [](int8_t v) {
+                                        set_tx_gain_db(v);
+                                    },
+                                    DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 5);
 
 Menu::numberPrompt<uint32_t> basebandFrequencyMenu((const char *)"Baseband freq:", &dsp::config.test_signal.baseband_frequency, 0, ' ', '.', "Hz",
-                                                   [](uint32_t) { set_signal_params(); }, 10, FFT_BANDWIDTH, 10, 100);
+                                                   [](uint32_t) {
+                                                       set_signal_params();
+                                                   },
+                                                   10, FFT_BANDWIDTH, 10, 100);
 
 Menu::numberPrompt<uint32_t> modulationFrequencyMenu((const char *)"Modulation freq:", &dsp::config.test_signal.modulation_frequency, 0, ' ', '.', "Hz",
-                                                     [](uint32_t) { set_signal_params(); }, 10, FFT_BANDWIDTH, 10, 100);
+                                                     [](uint32_t) {
+                                                         set_signal_params();
+                                                     },
+                                                     10, FFT_BANDWIDTH, 10, 100);
 
 Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::config.test_signal.pulse_duty, 0, ' ', '.', "%",
-                                         [](int8_t) { set_signal_params(); }, 0, 100, 1, 10);
+                                         [](int8_t) {
+                                             set_signal_params();
+                                         },
+                                         0, 100, 1, 10);
 
 MENU(signalGeneratorMenu, "Signal generator", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle, SUBMENU(signalGeneratorToggle),
      SUBMENU(modeToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle), OBJ(basebandFrequencyMenu),

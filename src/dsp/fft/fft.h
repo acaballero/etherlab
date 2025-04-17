@@ -5,7 +5,6 @@
 #ifndef TRX_FRONTEND_FFT_H
 #define TRX_FRONTEND_FFT_H
 
-#include <sys/_stdint.h>
 #include <utility>
 #define CALIBRATE_FFT 1
 #define DEBUG_FFT 0

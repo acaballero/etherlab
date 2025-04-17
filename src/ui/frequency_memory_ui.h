@@ -14,8 +14,6 @@
 #include "keyboard_view.h"
 #include "../lib/Menu/src/plugin/userMenu.h"
 #include "menu_options.h"
-#include "menu_prompts.h"
-#include <sys/_stdint.h>
 
 namespace freq_memory {
 

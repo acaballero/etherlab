@@ -7,7 +7,6 @@
 
 #include "widget.h"
 #include "types.h"
-#include <sys/_stdint.h>
 
 #define MINOR_TICK_GAP 1
 #define S_LEVELS 9

@@ -4,7 +4,6 @@
 
 #include "MCP23017Pin.h"
 #include "../printf/printf.h"
-#include <sys/_stdint.h>
 
 GPIO_PinState MCP23017Pin::read() {
 
