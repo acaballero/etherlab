@@ -53,42 +53,35 @@ void ReceiveTask::work() {
 
             in_start = in_p;
 
-            // Process input block
+            // Process blocks (DSP_BLOCK items each)
             while (av >= status.block_size_bytes) {
 
-                uint16_t block_size_in = status.block_size_bytes / sizeof(complex_t_f32);
+                uint16_t block_size_in = status.block_size_bytes / sizeof(complex_t);
                 uint16_t block_size_out = block_size_in >> 1;
 
-                buffer_t<float32_t> buff_out_f32 = {(float32_t *)out_p, block_size_out};
-                buffer_t<adc_type> buff_out_s16 = {(adc_type *)out_p, block_size_out};
-                buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)out_p, block_size_out};
+                buffer_t<complex_t> buff_out = {(complex_t *)out_p, block_size_out};
 
                 for (int i = 0; i < n_decimators; i++) {
 
-                    buffer_t<complex_t_f32> buff = {(complex_t_f32 *)in_p, block_size_in};
-                    buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)out_p, block_size_out};
+                    buffer_t<complex_t> buff = {(complex_t *)in_p, block_size_in};
+                    buffer_t<complex_t> buff_out = {(complex_t *)out_p, block_size_out};
 
                     if (i < n_decimators - 1) {
                         // Half-band decimators
-                        if (i == 0) {
-                            decimators_0[i].decimate(buff, buff);
-                        } else {
-                            decimators_0[i].decimate(buff, buff);
-                        }
-
+                        decimators[i].decimate(buff, buff);
                     } else {
-                        buffer_t<adc_type> buff_tmp = {(adc_type *)dsp_temp_buf.p, block_size_in};
-                        // Signal decimators
-                        decimators_1[0].decimate(buff, buff_out);
+                        // Output decimator. This is final nawrrowband singal decimator
+                        signal_decimator.decimate(buff, buff_out);
                     }
 
                     block_size_in >>= 1;
                     block_size_out >>= 1;
                 }
 
+                buffer_t<adc_type> buff_out_s16 = {(adc_type *)out_p, (size_t)block_size_out * 2};
                 // DC block;
-                block_i.filter(buff_out_f32, 2, 0);
-                block_q.filter(buff_out_f32, 2, 1);
+                dc_block_i.filter(buff_out_s16, 2, 0);
+                dc_block_i.filter(buff_out_s16, 2, 1);
 
                 demodulator->work(buff_out, buff_out_s16);
 
@@ -128,26 +121,51 @@ std::unique_ptr<dsp::demodulator> ReceiveTask::get_modulator() {
     }
 }
 
+bool ReceiveTask::init_decimators() {
+    // First staes are half-band filters (https://en.wikipedia.org/wiki/Half-band_filter)
+    uint8_t factor = 2;
+    uint8_t dec = status.decimation_factor;
+    uint32_t stage_fs;
+    uint32_t next_stage_fs = config.fft.sample_rate;
+    n_decimators = 0;
+
+    bool ret;
+    while (dec > 1) {
+        stage_fs = next_stage_fs;
+
+        if (n_decimators == max_decimators || dec == 2) {
+            factor = dec;
+            next_stage_fs = status.bandwidth;
+            ret = signal_decimator.config(stage_fs, next_stage_fs, factor);
+        } else {
+            next_stage_fs = (stage_fs / 4);
+            ret = decimators[n_decimators].config(stage_fs, next_stage_fs, factor);
+        }
+
+        if (!ret) {
+            return false;
+        }
+
+        dec = dec / factor;
+        n_decimators++;
+    }
+
+    dec = dec / factor;
+
+    return true;
+}
+
 bool ReceiveTask::start() {
 
     dsp_set_real_time(true);
 
-    // bool b = fft_config(audio_bw_hz * 2);
-
-    // if (!b) {
-    //     this->halt(DSP_ERR);
-    //     return;
-    // }
-
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz * 2 && dec_factor < config.fft.max_decimation_factor) {
+    while (status.sample_rate > audio_bw_hz && dec_factor < config.fft.max_decimation_factor) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }
-
-    // If the decimation factor is greater than
 
     status.direction = DSP_DIRECTION_IN;
 
@@ -159,48 +177,19 @@ bool ReceiveTask::start() {
         status.bandwidth = radio::get_bandwidth_hz() / 2; // Desired filter bandwidth based on current modulation and user selected filter
     }
     status.decimation_factor = dec_factor;
-    status.bits_per_sample = 16;
+    status.bits_per_sample = sizeof(adc_type) * 8;
     status.n_channels = 2;
-    status.block_size_bytes = dsp_temp_buf.size_bytes;
+    status.block_size_bytes = DSP_BLOCK * status.n_channels * sizeof(complex_t);
     status.decimated_block_size = dsp_temp_buf.count / dec_factor / (status.n_channels == 1 ? 2 : 1);
     status.decimated_block_size_bytes = status.block_size_bytes / dec_factor / (status.n_channels == 1 ? 2 : 1);
 
-    // First staes are half-band filters (https://en.wikipedia.org/wiki/Half-band_filter)
-    uint8_t factor = 2;
-    uint8_t dec = dec_factor;
+    bool ret = init_decimators();
 
-    uint32_t stage_fs = config.fft.sample_rate;
-    uint32_t next_stage_fs = (config.fft.sample_rate / 4);
-    bool ret = decimators_0[0].config(stage_fs, next_stage_fs, factor);
     if (!ret) {
         halt(DSP_ERR);
         return false;
     }
-    dec = dec / factor;
-    n_decimators = 1;
 
-    if (dec > 2) {
-        stage_fs = next_stage_fs;
-        next_stage_fs = stage_fs / 4;
-        ret = decimators_0[1].config(stage_fs, next_stage_fs, factor);
-        if (!ret) {
-            halt(DSP_ERR);
-            return false;
-        }
-        dec = dec / factor;
-        n_decimators++;
-    }
-
-    if (dec) {
-        stage_fs = next_stage_fs;
-        factor = dec;
-        ret = decimators_1[0].config(stage_fs, status.bandwidth, factor);
-        if (!ret) {
-            halt(DSP_ERR);
-            return false;
-        }
-        n_decimators++;
-    }
     // Start task processing timer
     // TODO: This should be done by the caller of this method and be generic for all tasks
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);

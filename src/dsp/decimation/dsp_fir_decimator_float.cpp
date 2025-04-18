@@ -32,19 +32,17 @@ template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::decimate(buf
 
     uint16_t n_samples = src.count / n_channels;
     uint16_t decimated_block_size = n_samples / this->factor; // DMA buffer size (DSP_BLOCK) / decimation factor
-    float signalb[n_samples];
-    float signalOut[decimated_block_size];
 
     // Extract the signal from the interleaved IQ buffer
     for (uint16_t i = start, j = 0; j < n_samples; i += n_channels, j++) {
-        signalb[j] = src.p[i];
+        this->tmp_buff_in[j] = src.p[i];
     }
 
-    arm_fir_decimate_f32(&this->dsp_fir_decimate_instance, signalb, signalOut, n_samples);
+    arm_fir_decimate_f32(&this->dsp_fir_decimate_instance, this->tmp_buff_in, this->tmp_buff_out, n_samples);
 
     // Write to the final adc_buffer in interleaved IQ format
     for (uint16_t i = start, j = 0; j < decimated_block_size; i += n_channels, j++) {
-        dst.p[i] = signalOut[j];
+        dst.p[i] = this->tmp_buff_out[j];
     }
 }
 

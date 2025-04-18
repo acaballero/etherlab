@@ -19,7 +19,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
     DspFIRDecimatorFloatBase() : DspDecimator<T>(0){};
 
     DspFIRDecimatorFloatBase(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<T>(input_rate, output_rate, factor) {
-        this->initFilter();
+        this->init();
     };
     DspFIRDecimatorFloatBase(uint32_t input_rate, uint32_t start_freq, uint32_t end_freq, uint16_t factor)
         : DspDecimator<T>(input_rate, end_freq, factor), filter_type{BPF}, start_frequency{start_freq} {
@@ -54,7 +54,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
 };
 
 /**
- * Specialization for comple buffers
+ * Specialization for complex float_32 buffers
  */
 template <int TAPS> class DspFIRDecimatorFloat<TAPS, complex_t_f32> : public DspFIRDecimatorFloatBase<TAPS, complex_t_f32> {
   public:

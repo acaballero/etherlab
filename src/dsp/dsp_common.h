@@ -13,6 +13,11 @@
 #define DSP_MIN_TX_GAIN_DB -20
 #define DSP_MAX_TX_GAIN_DB 20
 
+// Manual PKHBT: pack halfword bottom
+#define __PKHBT(a, b) (((b)&0xFFFF) | ((a & 0xFFFF) << 16))
+// Manual PKHTB: pack halfword top
+#define __PKHTB(a, b) (((a)&0xFFFF0000) | (((b) >> 16) & 0xFFFF))
+
 #include <stddef.h>
 #include <stdint.h>
 #include <arm_math.h>
@@ -77,7 +82,9 @@ struct st_dspCommand {
     DSP_COMMAND command;
     uint8_t id = 0;
 
-    bool operator==(const st_dspCommand &st) const { return command == st.command && id == st.id; }
+    bool operator==(const st_dspCommand &st) const {
+        return command == st.command && id == st.id;
+    }
 };
 
 struct st_dspStatus {
@@ -113,13 +120,19 @@ struct st_dspStatus {
                decimation_factor == st.decimation_factor && bandwidth == st.bandwidth && last_error_ms == st.last_error_ms;
         ;
     }
-    uint32_t elapsed_ms() { return ((stop_ms ? stop_ms : HAL_GetTick()) - start_ms); }
-    float drop_rate() { return processed_blocks ? (((float)(fifo_overruns) / (float)processed_blocks) * 100.0) : 0; }
+    uint32_t elapsed_ms() {
+        return ((stop_ms ? stop_ms : HAL_GetTick()) - start_ms);
+    }
+    float drop_rate() {
+        return processed_blocks ? (((float)(fifo_overruns) / (float)processed_blocks) * 100.0) : 0;
+    }
     float drop_freq() {
         volatile uint32_t elapsed = elapsed_ms();
         return ((float)(fifo_overruns)) / ((float)elapsed / 1000.0f);
     }
-    float starve_rate() { return processed_blocks ? (((float)(fifo_underruns) / (float)processed_blocks) * 100.0) : 0; }
+    float starve_rate() {
+        return processed_blocks ? (((float)(fifo_underruns) / (float)processed_blocks) * 100.0) : 0;
+    }
     float starve_freq() {
         volatile uint32_t elapsed = elapsed_ms();
         return ((float)(fifo_underruns)) / ((float)elapsed / 1000.0f);
