@@ -1,7 +1,7 @@
 //
 // Created by Angel Dust on 11/04/2025.
 //
-#include "dsp_demodulate.hpp"
+#include "dsp_demodulate.h"
 #include <cstdint>
 #include <cstdio>
 #include "arm_math.h"
@@ -42,6 +42,30 @@ static inline complex_t_f32 multiply_conjugate_cf32_cf32(const complex_t_f32 a, 
      */
     const complex_t_f32 result = {a.i * b.i + a.r * b.r, a.r * b.i - a.i * b.r};
     return result;
+}
+
+/*
+ * Rotate 90 degrees for f/4 frequency shift (to avoid DC-centered demodulation)
+ * Static state: No thread safe, and so on...
+ */
+static inline void rotate_fs4(int16_t &i, int16_t &q) {
+    static uint32_t rot_state = 0;
+    switch (rot_state++ & 0x3) {
+        case 0: // Nothing to be done
+            break;
+        case 1:
+            std::swap(i, q);
+            i = -i;
+            break;
+        case 2:
+            i = -i;
+            q = -q;
+            break;
+        case 3:
+            std::swap(i, q);
+            q = -q;
+            break;
+    }
 }
 
 void am_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {

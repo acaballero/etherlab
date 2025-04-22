@@ -248,7 +248,7 @@ void st_fft_params::calc() {
 
 bool st_fft_params::valid() {
 
-    bool b = (bw) <= FFT_BANDWIDTH && sample_freq >= config.fft.min_sample_rate && sample_freq <= dsp_max_sample_rate;
+    bool b = (bw) <= FFT_BANDWIDTH && sample_freq >= config.fft.min_sample_rate && sample_freq <= dsp::dsp_max_sample_rate;
 
     return b;
 }
@@ -426,8 +426,8 @@ bool fft_config(uint32_t span) {
             decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
         } else {
-            decimator_i.setFactor(fft_params.decimation_factor);
-            decimator_q.setFactor(fft_params.decimation_factor);
+            decimator_i.set_factor(fft_params.decimation_factor);
+            decimator_q.set_factor(fft_params.decimation_factor);
         }
 
         if (current_dec_factor != fft_params.decimation_factor) {

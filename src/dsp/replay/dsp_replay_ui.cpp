@@ -145,14 +145,14 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
 using namespace Menu;
 
-result set_sampling_params(eventMask e) {
+result set_sampling_params(eventMask) {
     fft_config(config.fft.span);
     return proceed;
 }
 
-result change_gain(eventMask e) {
+result change_gain(eventMask) {
 
-    set_tx_gain_db(gain);
+    dsp::set_tx_gain_db(gain);
     return proceed;
 }
 

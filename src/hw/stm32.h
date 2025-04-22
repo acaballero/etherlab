@@ -3,7 +3,6 @@
 #ifndef TRX_FRONTEND_STM32_H
 #define TRX_FRONTEND_STM32_H
 
-#define TICK_INT_PRIORITY ((uint32_t)0) // The tick interrupt has the highest
 // priority
 
 #ifndef STM32F4xx

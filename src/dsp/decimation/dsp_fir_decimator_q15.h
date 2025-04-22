@@ -21,13 +21,13 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = complex_t> class Dsp
         this->init();
     };
 
-    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor);
-    void clear_state();
+    virtual bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor);
+    virtual void clear_state();
     bool get_initialized() const;
     void set_factor(uint16_t factor);
 
   protected:
-    bool init();
+    virtual bool init();
 
     bool initialized = false;
     q15_t coeffs[TAPS];
@@ -51,7 +51,10 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = complex_t> class Dsp
 template <int TAPS> class DspFIRDecimatorQ15<TAPS, complex_t> : public DspFIRDecimatorQ15Base<TAPS, complex_t> {
   public:
     void decimate(buffer_t<complex_t> &src, buffer_t<complex_t> &dst) override;
-    void clear_state();
+    void decimate(buffer_t<complex_t> &src, adc_type *dst_i, adc_type *dst_q);
+    void decimate(adc_type *src_i, adc_type *src_q, adc_type *dst_i, adc_type *dst_q, size_t n_samples);
+    void decimate(adc_type *src_i, adc_type *src_q, buffer_t<complex_t> &dst, size_t n_samples);
+    void clear_state() override;
 
   protected:
     using DspFIRDecimatorQ15Base<TAPS, complex_t>::state;
@@ -59,7 +62,7 @@ template <int TAPS> class DspFIRDecimatorQ15<TAPS, complex_t> : public DspFIRDec
     using DspFIRDecimatorQ15Base<TAPS, complex_t>::tmp_buff_out;
     using DspFIRDecimatorQ15Base<TAPS, complex_t>::dsp_fir_decimate_instance;
 
-    bool init();
+    bool init() override;
 
     q15_t state_q[TAPS + DSP_BLOCK - 1];
     q15_t tmp_buff_in_q[DSP_BLOCK];

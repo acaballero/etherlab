@@ -567,7 +567,7 @@ static EE_Status EE_PageErase(uint32_t Page) {
  * @param  Address: Address of the FLASH Memory
  * @retval The page of a given address
  */
-static uint32_t EE_GetPageNumber(uint32_t Address) {
+uint32_t EE_GetPageNumber(uint32_t Address) {
     uint32_t sector = 0;
 
     if ((Address < 0x08003FFF) && (Address >= 0x08000000)) {

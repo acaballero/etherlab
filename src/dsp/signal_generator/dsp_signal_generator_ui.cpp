@@ -52,8 +52,8 @@ void on_event(st_dspStatus *status) {
 
 void set_signal_params() {
     DspSignalGeneratorProcessor *processor = ((DspSignalGeneratorProcessor *)processors[dsp::DSP_TASK_SIGNAL_GENERATOR]);
-    processor->set_config(dsp::config.test_signal.baseband_frequency, dsp::config.test_signal.modulation_frequency, dsp::config.test_signal.pulse_duty,
-                          config.fft.sample_rate, config.hw.dac_offset);
+    processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
+                          dsp::dsp_config.test_signal.pulse_duty, config.fft.sample_rate, config.hw.dac_offset);
 
     // Tasks parameters. Essentially, the IF direction
     SignalGeneratorTask *task = ((SignalGeneratorTask *)dsp::tasks[dsp::DSP_TASK_SIGNAL_GENERATOR]);
@@ -65,7 +65,7 @@ Menu::result change_dsp_status(Menu::eventMask e) {
     if (e == Menu::activateEvent) {
         DSP_COMMAND nextCommand = command == DSP_COMMAND_START ? DSP_COMMAND_STOP : DSP_COMMAND_START;
         dsp_command({(DSP_COMMAND)nextCommand, dsp::DSP_TASK_SIGNAL_GENERATOR}, on_event);
-        set_tx_gain_db(dsp::config.gain);
+        dsp::set_tx_gain_db(dsp::dsp_config.gain);
 
         set_signal_params();
     }
@@ -129,25 +129,25 @@ Menu::result on_freq_updated() {
     return Menu::proceed;
 }
 
-Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &dsp::config.gain, 0, ' ', '.', "dB",
+Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &dsp::dsp_config.gain, 0, ' ', '.', "dB",
                                     [](int8_t v) {
-                                        set_tx_gain_db(v);
+                                        dsp::set_tx_gain_db(v);
                                     },
                                     DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 5);
 
-Menu::numberPrompt<uint32_t> basebandFrequencyMenu((const char *)"Baseband freq:", &dsp::config.test_signal.baseband_frequency, 0, ' ', '.', "Hz",
+Menu::numberPrompt<uint32_t> basebandFrequencyMenu((const char *)"Baseband freq:", &dsp::dsp_config.test_signal.baseband_frequency, 0, ' ', '.', "Hz",
                                                    [](uint32_t) {
                                                        set_signal_params();
                                                    },
                                                    10, FFT_BANDWIDTH, 10, 100);
 
-Menu::numberPrompt<uint32_t> modulationFrequencyMenu((const char *)"Modulation freq:", &dsp::config.test_signal.modulation_frequency, 0, ' ', '.', "Hz",
+Menu::numberPrompt<uint32_t> modulationFrequencyMenu((const char *)"Modulation freq:", &dsp::dsp_config.test_signal.modulation_frequency, 0, ' ', '.', "Hz",
                                                      [](uint32_t) {
                                                          set_signal_params();
                                                      },
                                                      10, FFT_BANDWIDTH, 10, 100);
 
-Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::config.test_signal.pulse_duty, 0, ' ', '.', "%",
+Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::dsp_config.test_signal.pulse_duty, 0, ' ', '.', "%",
                                          [](int8_t) {
                                              set_signal_params();
                                          },

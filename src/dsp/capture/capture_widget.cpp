@@ -64,7 +64,7 @@ void CaptureWidget::paint_callback() {
 
         if (this->task_status->error != DSP_ERR_NONE) {
             this->display->setColor(C565_RED);
-            this->display->print(dsp_error_names[this->task_status->error]);
+            this->display->print(dsp::dsp_error_names[this->task_status->error]);
             this->display->print("\n");
         }
 
@@ -92,6 +92,10 @@ void CaptureWidget::before_paint() {
     }
 }
 
-void CaptureWidget::setTaskStatus(st_dspStatus *status) { CaptureWidget::task_status = status; }
+void CaptureWidget::setTaskStatus(st_dspStatus *status) {
+    CaptureWidget::task_status = status;
+}
 
-void CaptureWidget::setProcessorStatus(st_dspStatus *status) { CaptureWidget::processor_status = status; }
+void CaptureWidget::setProcessorStatus(st_dspStatus *status) {
+    CaptureWidget::processor_status = status;
+}

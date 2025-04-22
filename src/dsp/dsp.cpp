@@ -45,7 +45,7 @@ void (*on_event)(st_dspStatus *);
 void dsp_set_real_time(bool b) {
 
     // Update FFT and sample rate parameters
-    set_max_sample_freq(b);
+    dsp::set_max_sample_freq(b);
 
     if (b) {
         // When doing real-time DSP, we can only process one slice (no frequency hops allowed)
@@ -60,7 +60,7 @@ void dsp_set_real_time(bool b) {
 void dsp_init(dsp::st_dsp_config &config) {
     dsp::set_config(config);
     ADC_DMA_Start(&hadc1);
-    set_max_sample_freq(false);
+    dsp::set_max_sample_freq(false);
 }
 
 void dsp_stop_tasks() {
@@ -87,13 +87,13 @@ uint8_t dsp_command(st_dspCommand command, void (*cb)(st_dspStatus *)) {
     current_task->status.id = pending_command.id;
 
     // FIXME: Ugly
-    dsp_status = &current_task->status;
+    dsp::dsp_status = &current_task->status;
 
     return 0;
 }
 
 bool dsp_restart() {
-    if (current_task && dsp_status && dsp_status->status == DSP_STATUS_RUNNING) {
+    if (current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
         current_task->start();
         return true;
     }
@@ -105,7 +105,7 @@ void dsp_start_task() {
 
     //  current_task = tasks[pending_command.id];
     //  dsp_status = &current_task->status;
-    if (dsp_status->status != DSP_STATUS_RUNNING) {
+    if (dsp::dsp_status->status != DSP_STATUS_RUNNING) {
         current_task->start();
         current_processor = processors[pending_command.id];
         current_processor->status.block_size_bytes = current_task->status.block_size_bytes;
@@ -116,10 +116,10 @@ void dsp_start_task() {
         current_processor->start();
         current_buffer->sample_rate = current_task->status.sample_rate;
 
-        dsp_status = current_task->status.id == dsp::DSP_TASK_RECEIVE ? &current_processor->status : &current_task->status;
+        dsp::dsp_status = current_task->status.id == dsp::DSP_TASK_RECEIVE ? &current_processor->status : &current_task->status;
 
         if (on_event) {
-            on_event(dsp_status);
+            on_event(dsp::dsp_status);
         }
     }
 }
@@ -166,7 +166,7 @@ inline void dac_work() {
         current_processor->work(current_buffer);
     }
 
-    if (dsp_status && dsp_status->direction == DSP_DIRECTION_OUT) {
+    if (dsp::dsp_status && dsp::dsp_status->direction == DSP_DIRECTION_OUT) {
         FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
         UNUSED(err);
     }
@@ -177,7 +177,7 @@ inline void dac_work() {
 inline void adc_work() {
     // GPIOD->BSRR |= GPIO_PIN_5;
 
-    if (!dsp_status || dsp_status->direction == DSP_DIRECTION_IN || dsp_status->direction == DSP_DIRECTION_INOUT) {
+    if (!dsp::dsp_status || dsp::dsp_status->direction == DSP_DIRECTION_IN || dsp::dsp_status->direction == DSP_DIRECTION_INOUT) {
         // If the IF chain direction is input, the
 
         // Fill the FFT FIFO. Here we don't care if we overrun as the FFT doesn't need to be processed in real-time
@@ -254,7 +254,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
 
 void dsp_test_cb(st_dspStatus *) {
 
-    if (dsp_status->error == DSP_ERR_NONE && dsp_status->id != dsp::DSP_TASK_REPLAY) {
+    if (dsp::dsp_status->error == DSP_ERR_NONE && dsp::dsp_status->id != dsp::DSP_TASK_REPLAY) {
         dsp_command({DSP_COMMAND_START, dsp::DSP_TASK_REPLAY}, dsp_test_cb);
     }
 }
@@ -287,13 +287,15 @@ void dspStop() {
 #endif
 
     if (on_event) {
-        on_event(dsp_status);
+        on_event(dsp::dsp_status);
     }
 
-    dsp_status = NULL;
+    dsp::dsp_status = NULL;
 }
 
-void dspSuccess() { dspStop(); }
+void dspSuccess() {
+    dspStop();
+}
 
 void dspError(DSP_ERROR err) {
 

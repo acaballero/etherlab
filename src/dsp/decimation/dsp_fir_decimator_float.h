@@ -22,21 +22,21 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
         this->init();
     };
     DspFIRDecimatorFloatBase(uint32_t input_rate, uint32_t start_freq, uint32_t end_freq, uint16_t factor)
-        : DspDecimator<T>(input_rate, end_freq, factor), filter_type{BPF}, start_frequency{start_freq} {
+        : DspDecimator<T>(input_rate, end_freq, factor), type{BPF}, start_frequency{start_freq} {
         this->init();
     };
 
-    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0);
-    void clear_state();
+    virtual bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0);
+    virtual void clear_state();
     bool get_initialized() const;
     void set_factor(uint16_t factor);
 
   protected:
-    bool init();
+    virtual bool init();
 
     bool initialized = false;
 
-    filter_type filter_type = LPF;
+    filter_type type = LPF;
     uint32_t start_frequency; // Start frequency for the band-pass case
     float coeffs[TAPS];
     float state[TAPS + DSP_BLOCK - 1];
@@ -48,6 +48,8 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
 template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRDecimatorFloat : public DspFIRDecimatorFloatBase<TAPS, T> {
 
   public:
+    using DspFIRDecimatorFloatBase<TAPS, T>::config;
+
     void decimate(buffer_t<T> &src, buffer_t<T> &dst) override;
     // Specialization for decimating interleaved buffers
     void decimate(buffer_t<T> &src, buffer_t<T> &dst, uint8_t start, uint8_t n_channels);
@@ -59,6 +61,9 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
 template <int TAPS> class DspFIRDecimatorFloat<TAPS, complex_t_f32> : public DspFIRDecimatorFloatBase<TAPS, complex_t_f32> {
   public:
     void decimate(buffer_t<complex_t_f32> &src, buffer_t<complex_t_f32> &dst) override;
+    void decimate(buffer_t<complex_t_f32> &src, float *dst_i, float *dst_q);
+    void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples);
+    void decimate(float *src_i, float *src_q, buffer_t<complex_t_f32> &dst, size_t n_samples);
 
   protected:
     using DspFIRDecimatorFloatBase<TAPS, complex_t_f32>::state;
@@ -66,8 +71,8 @@ template <int TAPS> class DspFIRDecimatorFloat<TAPS, complex_t_f32> : public Dsp
     using DspFIRDecimatorFloatBase<TAPS, complex_t_f32>::tmp_buff_out;
     using DspFIRDecimatorFloatBase<TAPS, complex_t_f32>::dsp_fir_decimate_instance;
 
-    bool init();
-    void clear_state();
+    bool init() override;
+    void clear_state() override;
 
     float state_q[TAPS + DSP_BLOCK - 1];
     float tmp_buff_in_q[DSP_BLOCK];

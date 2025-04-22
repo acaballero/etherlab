@@ -76,7 +76,7 @@
   (sleep-for 1)
 
   ;; Run pio upload
-  (message "Starting dap-debug...") 
+  (message "Uploading...") 
 (call-interactively 'platformio-upload))
 
 (defvar my-current-dir (file-name-directory (or load-file-name buffer-file-name)) "The directory of the currently loaded or evaluated .el file.")

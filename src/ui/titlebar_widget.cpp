@@ -237,7 +237,9 @@ void TitleBarWidget::init() {
     }
 
     // Update every rtc update event
-    rtc_signal.add(this, [this](void *, void *) { set_dirty(); });
+    rtc_signal.add(this, [this](void *, void *) {
+        set_dirty();
+    });
 }
 
 void TitleBarWidget::before_paint() {
@@ -253,18 +255,18 @@ void TitleBarWidget::before_paint() {
 
         } else {
 
-            float drop_freq = dsp_status && dsp_status->status == DSP_STATUS_RUNNING ? dsp_status->drop_rate() : 0;
-            float starve_freq = dsp_status && dsp_status->status == DSP_STATUS_RUNNING ? dsp_status->starve_rate() : 0;
+            float drop_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->drop_rate() : 0;
+            float starve_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->starve_rate() : 0;
 
             bool error = true;
-            if (!dsp_status || dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 2 || starve_freq * 100 > 2) {
+            if (!dsp::dsp_status || dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 2 || starve_freq * 100 > 2) {
                 color = C565_RED;
             } else if (drop_freq * 100 > 1 || starve_freq * 100 > 1) {
                 color = C565_YELLOW;
             } else {
                 error = false;
             }
-            dsp_status->reset();
+            dsp::dsp_status->reset();
             char buf[20];
             sprintf(buf, "%s%s %s %s", "DSP", error ? "!" : "", drop_freq > 0 ? "D" : "", starve_freq > 0 ? "S" : "");
             trim(buf);

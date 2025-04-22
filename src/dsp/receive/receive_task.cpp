@@ -3,14 +3,13 @@
 //
 
 #include "receive_task.h"
-#include "arm_math.h"
 #include "dsp/blocks/dc_block.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft.h"
 #include "dsp/fft/fft_types.h"
 #include "dsp/firFilter.h"
 #include "dsp/dsp_common.h"
-#include "dsp/modulation/dsp_demodulate.hpp"
+#include "dsp/modulation/dsp_demodulate.h"
 #include "main_board.h"
 #include "radio.h"
 #include "status.h"
@@ -57,33 +56,68 @@ void ReceiveTask::work() {
             while (av >= status.block_size_bytes) {
 
                 uint16_t block_size_in = status.block_size_bytes / sizeof(complex_t);
-                uint16_t block_size_out = block_size_in >> 1;
+                uint16_t block_size_out = status.decimated_block_size;
 
-                buffer_t<complex_t> buff_out = {(complex_t *)out_p, block_size_out};
+                dsp::s16_to_f32((const adc_type *)in_p, bi2_p, block_size_in << 1);
+
+                // DC issues strategies:
+                // Goals:
+                // - Avoid hardware DC issues (flickr noise, DC leakage)
+                // - Elude digital DC-blockers which inevitabily attenuate some band around DC
+                //
+                // 1st Attemp (does not meet goals)
+                // --------------------------
+                // After the first decimation, samples are frequency shifted by fs/4
+                // Then, another decimation by 4 finds the signal of interest at fs, which
+                // aliases it at DC. This 'trick' to
+
+                // Cons:
+                // This method requires that at least one decimator in the chain finds the signal
+                // of interest at fs/<decimation factor>
+                //
+                // It does not avoid hardware DC leakage or noise, just moves it around
+                //
+                // Implemented method:
+                // ------------------
+                // De-tune by +fs/4 in hardware, then shift -fs/4 in the first decimation/filter phase
+                //
+                // Improvement: Do this work also for the FFT so the DC blockers can be removed there?
+                // Improvement: The FS/4 can be done in the decimation loop. This makes the decimator kind of 'impure', but may eventually be necessary
+
+                // dsp::rotate_fs4_q15(tmp_buff_data, (const adc_type *)bi2_p, block_size_in);
+                //   dsp::unzip_f32((const float32_t *)bi2_p, bi1_p, bq1_p, block_size_in);
 
                 for (int i = 0; i < n_decimators; i++) {
 
-                    buffer_t<complex_t> buff = {(complex_t *)in_p, block_size_in};
-                    buffer_t<complex_t> buff_out = {(complex_t *)out_p, block_size_out};
-
                     if (i < n_decimators - 1) {
                         // Half-band decimators
-                        decimators[i].decimate(buff, buff);
+                        decimators[i].decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
                     } else {
-                        // Output decimator. This is final nawrrowband singal decimator
-                        signal_decimator.decimate(buff, buff_out);
+                        // Output decimator. This is the final nawrrowband singal decimator
+                        signal_decimator.decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
                     }
 
                     block_size_in >>= 1;
-                    block_size_out >>= 1;
+
+                    SWAP_PTR(bi1_p, bi2_p);
+                    SWAP_PTR(bq1_p, bq2_p);
                 }
 
-                buffer_t<adc_type> buff_out_s16 = {(adc_type *)out_p, (size_t)block_size_out * 2};
-                // DC block;
-                dc_block_i.filter(buff_out_s16, 2, 0);
-                dc_block_i.filter(buff_out_s16, 2, 1);
+                if (n_decimators & 1) {
+                    // Odd number of decimators -> one more swap
+                    SWAP_PTR(bi1_p, bi2_p);
+                    SWAP_PTR(bq1_p, bq2_p);
+                }
 
-                demodulator->work(buff_out, buff_out_s16);
+                // dsp::zip_f32(bi1_p, bq1_p, (float32_t *)bi2_p, block_size_out);
+
+                //  dsp::f32_to_s16(bi2_p, (adc_type *)out_p, block_size_out << 1);
+
+                // Wrap the destination buffer
+                buffer_t<complex_t> buff_out = {(complex_t *)bi2_p, (size_t)block_size_out};
+                buffer_t<adc_type> dem_out = {(adc_type *)out_p, (size_t)block_size_out};
+
+                demodulator->work(buff_out, dem_out);
 
                 out_p += status.decimated_block_size_bytes;
                 in_p += status.block_size_bytes;
@@ -151,7 +185,6 @@ bool ReceiveTask::init_decimators() {
     }
 
     dec = dec / factor;
-
     return true;
 }
 
@@ -162,7 +195,7 @@ bool ReceiveTask::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz && dec_factor < config.fft.max_decimation_factor) {
+    while (status.sample_rate > audio_bw_hz * 2 && dec_factor < config.fft.max_decimation_factor) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }
@@ -179,9 +212,9 @@ bool ReceiveTask::start() {
     status.decimation_factor = dec_factor;
     status.bits_per_sample = sizeof(adc_type) * 8;
     status.n_channels = 2;
-    status.block_size_bytes = DSP_BLOCK * status.n_channels * sizeof(complex_t);
-    status.decimated_block_size = dsp_temp_buf.count / dec_factor / (status.n_channels == 1 ? 2 : 1);
-    status.decimated_block_size_bytes = status.block_size_bytes / dec_factor / (status.n_channels == 1 ? 2 : 1);
+    status.block_size_bytes = DSP_BLOCK * sizeof(complex_t);
+    status.decimated_block_size = DSP_BLOCK / dec_factor;
+    status.decimated_block_size_bytes = status.decimated_block_size * sizeof(complex_t);
 
     bool ret = init_decimators();
 

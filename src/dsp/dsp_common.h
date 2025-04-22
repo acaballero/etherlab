@@ -5,6 +5,8 @@
 #ifndef TRX_FRONTEND_DSP_COMMON_H
 #define TRX_FRONTEND_DSP_COMMON_H
 
+#include "dsp/buffer.hpp"
+#include "dsp_config.h"
 #include "stm32f4xx_hal.h"
 #define __FPU_PRESENT 1U
 //#define __FPU_USED 1U
@@ -14,9 +16,13 @@
 #define DSP_MAX_TX_GAIN_DB 20
 
 // Manual PKHBT: pack halfword bottom
+#if !defined(__PKHBT)
 #define __PKHBT(a, b) (((b)&0xFFFF) | ((a & 0xFFFF) << 16))
+#endif
 // Manual PKHTB: pack halfword top
+#if !defined(__PKHTB)
 #define __PKHTB(a, b) (((a)&0xFFFF0000) | (((b) >> 16) & 0xFFFF))
+#endif
 
 #include <stddef.h>
 #include <stdint.h>
@@ -39,6 +45,13 @@ typedef struct {
     float32_t i;
     float32_t r;
 } complex_t_f32;
+
+#define SWAP_PTR(a, b)                                                                                                                                         \
+    do {                                                                                                                                                       \
+        void *_tmp = (a);                                                                                                                                      \
+        (a) = (b);                                                                                                                                             \
+        (b) = (decltype(a))_tmp;                                                                                                                               \
+    } while (0)
 
 enum DSP_COMMAND { DSP_COMMAND_NONE, DSP_COMMAND_STOP, DSP_COMMAND_START };
 enum DSP_STATUS { DSP_STATUS_STOPPED, DSP_STATUS_STOPPING, DSP_STATUS_RUNNING, DSP_STATUS_PENDING };
@@ -146,6 +159,21 @@ struct st_dspStatus {
     }
 };
 
+namespace dsp {
+
+struct st_test_signal_params {
+    int8_t pulse_duty = 50;
+    uint32_t baseband_frequency = 1000;
+    uint32_t modulation_frequency = 1000;
+};
+
+struct st_dsp_config {
+    int8_t gain = DSP_MIN_TX_GAIN_DB;
+    st_test_signal_params test_signal;
+};
+
+extern st_dsp_config dsp_config;
+
 extern Signal dsp_common_params_signal;
 
 extern st_dspStatus *dsp_status;
@@ -163,6 +191,22 @@ void set_max_sample_freq(uint32_t rate);
 /* Sets the digital domain TX direction gain */
 void set_tx_gain_db(int8_t gain_db);
 
+void s16_to_q15(const adc_type *__restrict src, adc_type *__restrict dst, size_t size);
+void s16_to_f32(const adc_type *__restrict src, float32_t *__restrict dst, size_t size);
+
+void q15_to_s16(const adc_type *__restrict src, adc_type *__restrict dst, size_t size);
+void f32_to_s16(const float32_t *__restrict src, adc_type *__restrict dst, size_t size);
+
+void unzip_c16(const adc_type *__restrict src, adc_type *__restrict dst_i, adc_type *__restrict dst_q, size_t n_samples);
+void zip_c16(const adc_type *__restrict src_i, adc_type *__restrict src_q, adc_type *__restrict dst, size_t n_samples);
+void unzip_f32(const float32_t *__restrict src, float32_t *__restrict dst_i, float32_t *__restrict dst_q, size_t n_samples);
+void zip_f32(const float32_t *__restrict src_i, float32_t *__restrict src_q, float32_t *__restrict dst, size_t n_samples);
+
+void rotate_fs4_q15(const q15_t *__restrict src, q15_t *__restrict dst, size_t n_samples);
+
+void set_config(st_dsp_config &);
+st_dsp_config get_config();
+} // namespace dsp
 #ifdef __cplusplus
 extern "C" {
 #endif

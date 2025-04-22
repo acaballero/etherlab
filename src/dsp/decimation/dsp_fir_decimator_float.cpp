@@ -10,8 +10,9 @@
 #include "dsp/window.h"
 #include <exception>
 
+template class DspFIRDecimatorFloatBase<FFT_LPF_FIR_FILTER_NTAPS, float>;
 template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, float>;
-template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, adc_type>;
+// template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, adc_type>;
 template class DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, complex_t_f32>;
 template class DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, complex_t_f32>;
 
@@ -46,35 +47,75 @@ template <int TAPS, typename T> void DspFIRDecimatorFloat<TAPS, T>::decimate(buf
     }
 }
 
+// template <int TAPS> void DspFIRDecimatorFloat<TAPS, complex_t_f32>::decimate(buffer_t<complex_t_f32> &src, buffer_t<complex_t_f32> &dst) {
+
+//     uint16_t n_samples = src.count;
+//     uint16_t decimated_block_size = n_samples / this->factor; // DMA buffer size (DSP_BLOCK) / decimation factor
+
+//     // Extract the signal from the interleaved IQ buffer
+//     for (uint16_t i = 0; i < n_samples; i++) {
+//         tmp_buff_in[i] = src.p[i].i;
+//         tmp_buff_in_q[i] = src.p[i].r;
+//     }
+
+//     arm_fir_decimate_f32(&dsp_fir_decimate_instance, tmp_buff_in, tmp_buff_out, n_samples);
+//     arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, tmp_buff_in_q, tmp_buff_out_q, n_samples);
+
+//     // Write to the final buffer in interleaved IQ format
+//     for (uint16_t i = 0; i < decimated_block_size; i++) {
+//         dst.p[i].i = tmp_buff_out[i];
+//         dst.p[i].r = tmp_buff_out_q[i];
+//     }
+// }
+
+template <int TAPS> void DspFIRDecimatorFloat<TAPS, complex_t_f32>::decimate(buffer_t<complex_t_f32> &src, float32_t *dst_i, float32_t *dst_q) {
+
+    uint16_t n_samples = src.count;
+
+    dsp::unzip_f32((const float32_t *)src.p, tmp_buff_in, tmp_buff_in_q, n_samples);
+
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance, tmp_buff_in, dst_i, n_samples);
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, tmp_buff_in_q, dst_q, n_samples);
+}
+
 template <int TAPS> void DspFIRDecimatorFloat<TAPS, complex_t_f32>::decimate(buffer_t<complex_t_f32> &src, buffer_t<complex_t_f32> &dst) {
 
     uint16_t n_samples = src.count;
     uint16_t decimated_block_size = n_samples / this->factor; // DMA buffer size (DSP_BLOCK) / decimation factor
 
-    // Extract the signal from the interleaved IQ buffer
-    for (uint16_t i = 0; i < n_samples; i++) {
-        tmp_buff_in[i] = src.p[i].i;
-        tmp_buff_in_q[i] = src.p[i].r;
-    }
+    dsp::unzip_f32((const float32_t *)src.p, tmp_buff_in, tmp_buff_in_q, n_samples);
 
     arm_fir_decimate_f32(&dsp_fir_decimate_instance, tmp_buff_in, tmp_buff_out, n_samples);
     arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, tmp_buff_in_q, tmp_buff_out_q, n_samples);
 
-    // Write to the final buffer in interleaved IQ format
-    for (uint16_t i = 0; i < decimated_block_size; i++) {
-        dst.p[i].i = tmp_buff_out[i];
-        dst.p[i].r = tmp_buff_out_q[i];
-    }
+    dsp::zip_f32(tmp_buff_out, tmp_buff_out_q, (float32_t *)dst.p, decimated_block_size);
+}
+
+template <int TAPS>
+void DspFIRDecimatorFloat<TAPS, complex_t_f32>::decimate(float32_t *src_i, float32_t *src_q, float32_t *dst_i, float32_t *dst_q, size_t n_samples) {
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance, src_i, dst_i, n_samples);
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, src_q, dst_q, n_samples);
+}
+
+template <int TAPS>
+void DspFIRDecimatorFloat<TAPS, complex_t_f32>::decimate(float32_t *src_i, float32_t *src_q, buffer_t<complex_t_f32> &dst, size_t n_samples) {
+
+    uint16_t decimated_block_size = n_samples / this->factor; // DMA buffer size (DSP_BLOCK) / decimation factor
+
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance, src_i, tmp_buff_out, n_samples);
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, src_q, tmp_buff_out_q, n_samples);
+
+    dsp::zip_f32(tmp_buff_out, tmp_buff_out_q, (float32_t *)dst.p, decimated_block_size);
 }
 
 template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
 
     bool b = false;
 
-    if (filter_type == BPF) {
-        b = generate_fir_filter_taps(filter_type, coeffs, TAPS, this->input_rate, start_frequency, this->output_rate);
+    if (type == BPF) {
+        b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate, start_frequency, this->output_rate);
     } else {
-        b = generate_fir_filter_taps(filter_type, coeffs, TAPS, this->input_rate, this->output_rate, 0);
+        b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate, this->output_rate, 0);
     }
 
     dsp_fir_decimate_instance.M = this->factor;
@@ -87,10 +128,10 @@ template <int TAPS> bool DspFIRDecimatorFloat<TAPS, complex_t_f32>::init() {
 
     bool b = false;
 
-    if (this->filter_type == BPF) {
-        b = generate_fir_filter_taps(this->filter_type, this->coeffs, TAPS, this->input_rate, this->start_frequency, this->output_rate);
+    if (this->type == BPF) {
+        b = generate_fir_filter_taps(this->type, this->coeffs, TAPS, this->input_rate, this->start_frequency, this->output_rate);
     } else {
-        b = generate_fir_filter_taps(this->filter_type, this->coeffs, TAPS, this->input_rate, this->output_rate, 0);
+        b = generate_fir_filter_taps(this->type, this->coeffs, TAPS, this->input_rate, this->output_rate, 0);
     }
     dsp_fir_decimate_instance.M = this->factor;
     this->initialized = b;
@@ -104,10 +145,10 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::config(u
     this->output_rate = output_rate;
     this->factor = f;
     if (start_freq) {
-        filter_type = BPF;
+        type = BPF;
         start_frequency = start_freq;
     } else {
-        filter_type = LPF;
+        type = LPF;
         start_frequency = 0;
     }
     return init();

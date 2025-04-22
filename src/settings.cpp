@@ -69,7 +69,7 @@ uint8_t settings_read(Config *settings) {
 uint8_t settings_write(Config *settings) {
 
     // TODO: Make plugin-like configuration system so things like the dsp subsystem is not so coupled here
-    config.dsp = dsp::config;
+    config.dsp = dsp::dsp_config;
     return flash_write((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
 }
 

@@ -108,7 +108,7 @@ void CaptureTask::configureDsp() {
     // TODO: In reality, the maximum sample rate might be greater than this if we take into account the
     // decimation factor
     uint32_t max_sample_rate = (uint32_t)(SD_CARD_WRITE_MAX_KBPS * 1000 * 0.5 / this->status.n_channels);
-    set_max_sample_freq(max_sample_rate);
+    dsp::set_max_sample_freq(max_sample_rate);
 }
 
 bool CaptureTask::start() {
@@ -192,7 +192,7 @@ void CaptureTask::stop() {
 
         Task::stop(); // Let the base class do its common finish
 
-        set_max_sample_freq(false);
+        dsp::set_max_sample_freq(false);
 
         fft_config(config.fft.span);
 

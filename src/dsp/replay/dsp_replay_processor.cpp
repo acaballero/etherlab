@@ -50,10 +50,10 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
                 // d--;
             } else {
                 out_p[i] = ((uint16_t *)p)[j] + config.hw.dac_offset;
-                out_p[i] *= dsp_status->gain;
+                out_p[i] *= dsp::dsp_status->gain;
                 if (this->status.n_channels == 2) {
                     out_p[i + 1] = ((uint16_t *)p)[j + 1] + config.hw.dac_offset;
-                    out_p[i + 1] *= dsp_status->gain;
+                    out_p[i + 1] *= dsp::dsp_status->gain;
                     j++;
                 } else {
                     out_p[i + 1] = 0;

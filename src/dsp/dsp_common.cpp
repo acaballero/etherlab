@@ -5,21 +5,28 @@
 #include "dsp_common.h"
 #include "dsp_config.h"
 #include "config.h"
+#include "arm_math.h"
+#include <cstddef>
+#include <sys/_stdint.h>
 
-const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
+namespace dsp {
 
-st_dspStatus *dsp_status;
-
-// Phase in the LUT table
-// float dsp_lut_phase;
+// TX gain for the digital domain
+int8_t dsp_tx_gain = 0;
 
 // Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
 uint32_t dsp_max_sample_rate = config.fft.max_sample_rate;
 
 Signal dsp_common_params_signal;
 
-// TX gain for the digital domain
-int8_t dsp_tx_gain = 0;
+const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
+
+st_dspStatus *dsp_status;
+
+st_dsp_config dsp_config;
+void set_config(dsp::st_dsp_config &c) {
+    dsp_config = c;
+}
 
 void set_max_sample_freq(bool dsp) {
     // Set the max sample frequency according to the amount of processing we will be doing
@@ -42,11 +49,148 @@ void set_tx_gain_db(int8_t gain_db) {
     dsp_common_params_signal.emit(&dsp_status);
 }
 
-namespace dsp {
+void s16_to_q15(const adc_type *__restrict src, const adc_type *__restrict dst, size_t size) {
 
-st_dsp_config config;
-void set_config(dsp::st_dsp_config &dsp_config) {
-    config = dsp_config;
+    for (size_t i = 0; i < size; i += 2) {
+        int32_t packed = *__SIMD32(src)++;
+
+        // Subtract 2048 from each halfword
+
+        int16_t s0 = (int16_t)(packed & 0xFFFF);
+        int16_t s1 = (int16_t)((packed >> 16) & 0xFFFF);
+
+        // Shift to range
+        int32_t q0 = ((s0 - 2048) << 3) & 0xFFFF;
+        int32_t q1 = ((s1 - 2048) << 3) & 0xFFFF;
+
+        // Pack back into 32-bit result
+        *__SIMD32(dst)++ = (q0 << 16) | q1;
+    }
+}
+
+void s16_to_f32(const adc_type *__restrict src, float32_t *__restrict dst, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        *(dst++) = *(src++);
+    }
+}
+
+void q15_to_s16(const adc_type *__restrict src, adc_type *__restrict dst, size_t size) {
+
+    for (size_t i = 0; i < size; i += 2) {
+
+        // Load 2 Q15 values at once (packed into a single 32-bit word)
+        int32_t q_pair = *__SIMD32(src)++; // [Q1 | Q0]
+
+        // Shift down by 3 bits to scale from Q15 to 12-bit range
+        int32_t q0_shifted = (q_pair & 0xFFFF) >> 3; // Q0
+        int32_t q1_shifted = (q_pair >> 16) >> 3;    // Q1
+
+        // Saturate the result to the 12-bit range of int16_t
+        // q0_shifted = __SSAT(q0_shifted, 12);  // Saturate to 12-bit
+        // q1_shifted = __SSAT(q1_shifted, 12);  // Saturate to 12-bit
+
+        // Store the results into the output array
+        *__SIMD32(dst)++ = ((q1_shifted << 16) & 0xFFFF0000) | (q0_shifted & 0x0000FFFF);
+    }
+}
+
+void f32_to_s16(const float32_t *__restrict src, adc_type *__restrict dst, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        *(dst++) = *(src++);
+    }
+}
+
+void unzip_c16(const adc_type *__restrict src, adc_type *__restrict dst_i, adc_type *__restrict dst_q, size_t n_samples) {
+    // Extract the signal from the interleaved IQ buffer
+    for (uint16_t i = 0; i < n_samples; i += 2) {
+
+        // Load 4 interleaved samples (I0,Q0,I1,Q1)
+
+        int32_t in1 = *__SIMD32(src)++; // SIMD32 [Q0 | I0]
+        int32_t in2 = *__SIMD32(src)++; // SIMD32 [Q1 | I1]
+
+        // Extract I samples
+        int32_t i_pack = __PKHTB(in2, in1, 16); // [I1 | I0]
+        int32_t q_pack = __PKHBT(in1, in2, 16); // [Q1 | Q0]
+
+        *__SIMD32(dst_i)++ = i_pack;
+        *__SIMD32(dst_q)++ = q_pack;
+    }
+}
+
+void zip_c16(const adc_type *__restrict src_i, const adc_type *__restrict src_q, adc_type *__restrict dst, size_t n_samples) {
+    // Write to the final buffer in interleaved IQ format
+    for (uint16_t i = 0; i < n_samples; i += 2) {
+
+        // Load 2 I and 2 Q samples
+        int32_t i_pack = *__SIMD32(src_i)++; // [I1 | I0]
+        int32_t q_pack = *__SIMD32(src_q)++; // [Q1 | Q0]
+
+        int32_t out1 = __PKHBT(i_pack, q_pack, 16); // [Q0 | I0]
+        int32_t out2 = __PKHTB(q_pack, i_pack, 16); // [Q1 | I1]
+
+        // Store interleaved output
+        *__SIMD32(dst)++ = out1;
+        *__SIMD32(dst)++ = out2;
+    }
+}
+
+void unzip_f32(const float32_t *__restrict src, float32_t *__restrict dst_i, float32_t *__restrict dst_q, size_t n_samples) {
+    for (uint16_t i = 0; i < n_samples; i++) {
+        *(dst_i++) = *(src++);
+        *(dst_q++) = *(src++);
+    }
+}
+void zip_f32(const float32_t *__restrict src_i, float32_t *__restrict src_q, float32_t *__restrict dst, size_t n_samples) {
+    for (uint16_t i = 0; i < n_samples; i++) {
+        *(dst++) = *(src_i++);
+        *(dst++) = *(src_q++);
+    }
+}
+
+/*
+ * Sample frequency/4 rotation (frequency shift)
+ */
+void rotate_fs4_q15(const q15_t *__restrict src, const q15_t *__restrict dst, size_t n_samples) {
+    const uint32_t *src32 = (const uint32_t *)src;
+    uint32_t *dst32 = (uint32_t *)dst;
+
+    // Rotation state 0,1,2,3 pattern
+    uint32_t rot = 0;
+
+    for (uint32_t i = 0; i < n_samples; ++i) {
+        uint32_t in = *src32++; //  [Q | I]
+
+        adc_type i_val = (int16_t)(in & 0xFFFF);
+        adc_type q_val = (int16_t)(in >> 16);
+
+        int16_t i_rot, q_rot;
+
+        switch (rot) {
+            case 0: // z * 1
+                i_rot = i_val;
+                q_rot = q_val;
+                break;
+            case 1: // z * j => -Q + jI
+                i_rot = -q_val;
+                q_rot = i_val;
+                break;
+            case 2: // z * -1
+                i_rot = -i_val;
+                q_rot = -q_val;
+                break;
+            case 3: // z * -j => Q - jI
+                i_rot = q_val;
+                q_rot = -i_val;
+                break;
+        }
+
+        // Pack [Q | I]
+        *dst32++ = __PKHBT(i_rot, q_rot, 16);
+
+        // state
+        rot = (rot + 1) & 0x3;
+    }
 }
 
 } // namespace dsp

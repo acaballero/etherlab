@@ -42,7 +42,7 @@ struct st_freq_mem {
     // Default constructor
     st_freq_mem() : group(0), id(0), freq(0), mode(SSB_LSB), name{""} {};
 
-    st_freq_mem(uint16_t g, uint16_t id, unsigned long f, MODULATION_MODE m, const char *n) : group(g), id(id), freq(f), mode(m) {
+    st_freq_mem(uint16_t g, uint16_t id, uint64_t f, MODULATION_MODE m, const char *n) : group(g), id(id), freq(f), mode(m) {
         strncpy(name, n, FREQ_MEM_NAME_SIZE);
         name[FREQ_MEM_NAME_SIZE] = '\0'; // Ensure null-termination
     }
