@@ -68,7 +68,7 @@ void s16_to_q15(const adc_type *__restrict src, const adc_type *__restrict dst, 
     }
 }
 
-void s16_to_f32(const adc_type *__restrict src, float32_t *__restrict dst, size_t size) {
+void s16_to_f32(const adc_type *src, float32_t *dst, size_t size) {
     for (size_t i = 0; i < size; i++) {
         *(dst++) = *(src++);
     }
@@ -94,9 +94,9 @@ void q15_to_s16(const adc_type *__restrict src, adc_type *__restrict dst, size_t
     }
 }
 
-void f32_to_s16(const float32_t *__restrict src, adc_type *__restrict dst, size_t size) {
+void f32_to_s16(const float32_t *src, adc_type *dst, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        *(dst++) = *(src++);
+        *(dst++) = (adc_type) * (src++);
     }
 }
 
@@ -135,13 +135,13 @@ void zip_c16(const adc_type *__restrict src_i, const adc_type *__restrict src_q,
     }
 }
 
-void unzip_f32(const float32_t *__restrict src, float32_t *__restrict dst_i, float32_t *__restrict dst_q, size_t n_samples) {
+void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples) {
     for (uint16_t i = 0; i < n_samples; i++) {
         *(dst_i++) = *(src++);
         *(dst_q++) = *(src++);
     }
 }
-void zip_f32(const float32_t *__restrict src_i, float32_t *__restrict src_q, float32_t *__restrict dst, size_t n_samples) {
+void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_samples) {
     for (uint16_t i = 0; i < n_samples; i++) {
         *(dst++) = *(src_i++);
         *(dst++) = *(src_q++);
@@ -151,7 +151,7 @@ void zip_f32(const float32_t *__restrict src_i, float32_t *__restrict src_q, flo
 /*
  * Sample frequency/4 rotation (frequency shift)
  */
-void rotate_fs4_q15(const q15_t *__restrict src, const q15_t *__restrict dst, size_t n_samples) {
+void rotate_fs4_q15(const q15_t *__restrict src, q15_t *__restrict dst, size_t n_samples) {
     const uint32_t *src32 = (const uint32_t *)src;
     uint32_t *dst32 = (uint32_t *)dst;
 
@@ -187,6 +187,45 @@ void rotate_fs4_q15(const q15_t *__restrict src, const q15_t *__restrict dst, si
 
         // Pack [Q | I]
         *dst32++ = __PKHBT(i_rot, q_rot, 16);
+
+        // state
+        rot = (rot + 1) & 0x3;
+    }
+}
+
+void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples) {
+
+    // Rotation state 0,1,2,3 pattern
+    uint32_t rot = 0;
+
+    for (uint32_t i = 0; i < n_samples; ++i) {
+        float32_t i_val = *src++;
+        float32_t q_val = *src++;
+
+        float32_t i_rot, q_rot;
+
+        switch (rot) {
+            case 0: // z * 1
+                i_rot = i_val;
+                q_rot = q_val;
+                break;
+            case 1: // z * j => -Q + jI
+                i_rot = -q_val;
+                q_rot = i_val;
+                break;
+            case 2: // z * -1
+                i_rot = -i_val;
+                q_rot = -q_val;
+                break;
+            case 3: // z * -j => Q - jI
+                i_rot = q_val;
+                q_rot = -i_val;
+                break;
+        }
+
+        // Pack [Q | I]
+        *dst++ = i_rot;
+        *dst++ = q_rot;
 
         // state
         rot = (rot + 1) & 0x3;

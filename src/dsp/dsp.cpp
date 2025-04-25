@@ -5,6 +5,8 @@
 #include "diskio.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_config.h"
+#include "dsp/fft/fft.h"
+#include "radio.h"
 #include "status.h"
 #include "types.h"
 #include "ui/lcd.h"
@@ -58,6 +60,7 @@ void dsp_set_real_time(bool b) {
 }
 
 void dsp_init(dsp::st_dsp_config &config) {
+
     dsp::set_config(config);
     ADC_DMA_Start(&hadc1);
     dsp::set_max_sample_freq(false);
@@ -231,7 +234,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *) {
 void TIM8_TRG_COM_TIM14_IRQHandler(void) {
     // void TIM1_BRK_TIM15_IRQHandler(void) {
 
-    // Prevent interrupting the LCD drawing phase or the DMA will overrun the buffer
+    // Prevent interrupting the LCD drawing phase or the display DMA will overrun
     // TODO: Consider a different approach, as (also) lowering the refresh ratio while doing any critical DSP task, or
     // disabling EXECUTE_TASKS_ON_INTERRUPT
     if (!lcd.busy) {

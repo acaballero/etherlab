@@ -11,6 +11,7 @@
 #include "dsp_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft_types.h"
+#include "stm32f4xx_hal_sd.h"
 
 template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = complex_t> class DspFIRDecimatorQ15Base : public DspDecimator<T> {
 
@@ -31,7 +32,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = complex_t> class Dsp
 
     bool initialized = false;
     q15_t coeffs[TAPS];
-    q15_t state[TAPS + DSP_BLOCK - 1];
+    q15_t state[TAPS + DSP_BLOCK];
     q15_t tmp_buff_in[DSP_BLOCK];
     q15_t tmp_buff_out[DSP_BLOCK];
     arm_fir_decimate_instance_q15 dsp_fir_decimate_instance = {1, TAPS, coeffs, state};

@@ -21,8 +21,8 @@
 class ReceiveTask : public Task {
 
   public:
-    static constexpr uint32_t audio_bw_hz = 48000; // Audio bandwidth
-    static constexpr uint8_t max_decimators = 2;   // Max number of cascaded decimators
+    static constexpr uint32_t audio_bw_hz = 48000; // Final DAC sample rate
+    static constexpr uint8_t max_decimators = 3;   // Max number of cascaded decimators
 
     ReceiveTask(void (*onSucess)(), void (*onError)(DSP_ERROR));
 

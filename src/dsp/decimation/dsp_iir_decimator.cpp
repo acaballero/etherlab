@@ -9,12 +9,10 @@
 #include "../../../lib/DspFilters/include/State.h"
 #include "../../../lib/DspFilters/include/Cascade.h"
 
-
 void DspIIRDecimator::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) {
     this->decimate(src, dst, 0, 2, 2);
     this->decimate(src, dst, 1, 2, 2);
 }
-
 
 /*
  * Decimate a DSP_BLOCK size I/Q sample buffer (I/Q are interleaved)
@@ -25,9 +23,7 @@ void DspIIRDecimator::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) {
  * WARN: This function overwrites de original buffer
  */
 //__attribute__((section(".ccmram")))
-void DspIIRDecimator::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, uint8_t channel_n, uint8_t n_channels_in,
-                               uint8_t n_channels_out) {
-
+void DspIIRDecimator::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, uint8_t channel_n, uint8_t n_channels_in, uint8_t n_channels_out) {
 
     uint8_t n = src.count / n_channels_in;
 
@@ -43,7 +39,7 @@ void DspIIRDecimator::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, u
     // Extract the signal from the interleaved IQ buffer
 
     for (int i = start, j = 0; j < n; i += 2, j++) {
-        signalb[j] = (25) << 6; //buffer[i]<<3; //scale
+        signalb[j] = (25) << 6; // buffer[i]<<3; //scale
     }
 
     arm_biquad_cascade_df1_q15(&iir_instance_I, signalb, signalOut, n);
@@ -57,7 +53,6 @@ void DspIIRDecimator::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, u
     arm_biquad_cascade_df1_f32(&iir_instance, signalb, signalOut, n);
 #endif
 
-
 #if DSP_USE_IIR_Q15
     // Write to the final adc_buffer in interleaved IQ format
     for (int i = start, j = 0; j < n; i += 2, j += this->factor) {
@@ -69,21 +64,17 @@ void DspIIRDecimator::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, u
         dst.p[i] = signalOut[j];
     }
 #endif
-
-
-
 }
-
 
 void DspIIRDecimator::initFilter() {
 
     // Generate coefficients for the current DSP parameters
 
     Dsp::SimpleFilter<Dsp::ChebyshevI::LowPass<4>, 1, Dsp::DirectFormI> f;
-    f.setup(4,    // order
-            this->input_rate,// sample rate
-            ((double) this->output_rate / 2.0), // center frequency
-            0.01);  // ripple dB
+    f.setup(4,                               // order
+            this->input_rate,                // sample rate
+            ((double)this->bandwidth / 2.0), // center frequency
+            0.01);                           // ripple dB
 
     Dsp::Cascade::Storage st = f.getCascadeStorage();
     Dsp::Cascade::Stage *dg = st.stageArray;
@@ -114,14 +105,12 @@ void DspIIRDecimator::initFilter() {
 #else
     arm_biquad_cascade_df1_init_f32(&iir_instance, IIRFilterNumStages, IIRFilterCoefficients, IIRStateBuffer);
 #endif
-
 }
-
 
 void DspIIRDecimator::config(uint32_t input_rate, uint32_t output_rate, uint16_t factor) {
 
     this->input_rate = input_rate;
-    this->output_rate = output_rate;
+    this->bandwidth = output_rate;
     this->factor = factor;
     this->initFilter();
 }
@@ -148,6 +137,5 @@ void test_iir_decimator() {
         for (int j = 0; j < 16; j++) {
             printf("%d -> %d\n", b.p[j], bo.p[j]);
         }
-
     }
 }

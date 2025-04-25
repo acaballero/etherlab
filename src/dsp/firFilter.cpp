@@ -40,6 +40,7 @@
 #include "firFilter.h"
 #include "printf.h"
 #include "window.h"
+#include <algorithm>
 #include <arm_math.h>
 #include <iostream>
 #include <vector>
@@ -119,12 +120,15 @@ bool designFIRKaiserLowpass(float *taps, double cutoffHz, double sampleRate, dou
 
     int M = numTaps - 1;
 
+    printf("LPF Kaiser FIR: fx:%f,fs:%f,taps:%d\n", sampleRate, cutoffHz, numTaps);
+
     for (int n = 0; n < numTaps; ++n) {
         double x = n - M / 2.0;
         double win = besselI0(beta * sqrt(1 - pow(2.0 * x / M, 2))) / besselI0(beta);
         taps[n] = 2 * normCutoff * sinc(2 * normCutoff * x) * win;
+        printf_(",%f", taps[n]);
     }
-
+    printf_("\n");
     return true;
 }
 
@@ -134,15 +138,15 @@ void designLPF(float *m_taps, int m_num_taps, float fs, float fx) {
 
     double f = fx / fs;
 
-    printf("LPF: fx:%f,fs:%f,taps:%d\n", fx, fs, m_num_taps);
+    // printf("LPF: fx:%f,fs:%f,taps:%d\n", fx, fs, m_num_taps);
 
     for (n = 0; n < m_num_taps; n++) {
         int nn = n - m_num_taps / 2;
         m_taps[n] = 2.0 * f * sinc(2.0 * f * (double)nn);
-        printf_(",%f", m_taps[n]);
+        // printf_(",%f", m_taps[n]);
     }
 
-    printf_("\n");
+    // printf_("\n");
 }
 
 void designHPF(float *m_taps, int m_num_taps, float Fs, float Fx) {
@@ -191,7 +195,7 @@ bool generate_fir_filter_taps(filter_type filt_t, float32_t *m_taps, int m_num_t
         bool b = true;
 
         if (filt_t == LPF) {
-            b = designFIRKaiserLowpass(m_taps, fx, fs, 0, m_num_taps, 0.5, 40, true);
+            b = designFIRKaiserLowpass(m_taps, fx, fs, 0, m_num_taps, 1, 30, true);
         } else if (filt_t == HPF) {
             designHPF(m_taps, m_num_taps, fs, fx);
         } else {
@@ -217,5 +221,7 @@ bool generate_fir_filter_taps_q15(filter_type filt_t, q15_t *m_taps, int m_num_t
     float f_taps[m_num_taps];
     bool b = generate_fir_filter_taps(filt_t, f_taps, m_num_taps, fs, fx, fu);
     arm_float_to_q15(f_taps, m_taps, m_num_taps);
+    // Taps must be reversed to use cmsis decimators
+    std::reverse(m_taps, m_taps + m_num_taps);
     return b;
 }

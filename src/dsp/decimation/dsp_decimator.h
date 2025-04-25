@@ -15,7 +15,7 @@ template <typename T> class DspDecimator {
   public:
     DspDecimator(const uint16_t factor) : factor(factor){};
 
-    DspDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : input_rate(input_rate), output_rate(output_rate), factor(factor){};
+    DspDecimator(uint32_t input_rate, uint32_t bandwidth, uint16_t factor) : input_rate(input_rate), bandwidth(bandwidth), factor(factor){};
 
     virtual void decimate(buffer_t<T> &src, buffer_t<T> &dst) = 0;
 
@@ -27,13 +27,15 @@ template <typename T> class DspDecimator {
 
     void setInputRate(uint32_t inputRate);
 
-    uint32_t getOutputRate() const;
+    uint32_t getBandwidth() const;
 
-    void setOutputRate(uint32_t outputRate);
+    void setBandwidth(uint32_t outputRate);
 
   protected:
     uint32_t input_rate;
-    uint32_t output_rate;
+
+    // -3 dB frequency (not the output rate)
+    uint32_t bandwidth;
     uint16_t factor;
 };
 

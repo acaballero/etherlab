@@ -20,10 +20,10 @@ template <typename T> void DspDecimator<T>::setInputRate(uint32_t inputRate) {
     input_rate = inputRate;
 }
 
-template <typename T> uint32_t DspDecimator<T>::getOutputRate() const {
-    return output_rate;
+template <typename T> uint32_t DspDecimator<T>::getBandwidth() const {
+    return bandwidth;
 }
 
-template <typename T> void DspDecimator<T>::setOutputRate(uint32_t outputRate) {
-    output_rate = outputRate;
+template <typename T> void DspDecimator<T>::setBandwidth(uint32_t outputRate) {
+    bandwidth = outputRate;
 }

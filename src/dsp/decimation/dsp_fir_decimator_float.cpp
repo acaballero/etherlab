@@ -8,7 +8,9 @@
 #include "dsp/firFilter.h"
 #include "dsp_fir_decimator_float.h"
 #include "dsp/window.h"
+#include <algorithm>
 #include <exception>
+#include <sys/_stdint.h>
 
 template class DspFIRDecimatorFloatBase<FFT_LPF_FIR_FILTER_NTAPS, float>;
 template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, float>;
@@ -113,37 +115,42 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
     bool b = false;
 
     if (type == BPF) {
-        b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate, start_frequency, this->output_rate);
+        b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate, start_frequency, this->bandwidth);
     } else {
-        b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate, this->output_rate, 0);
+        b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate, this->bandwidth, 0);
     }
 
-    dsp_fir_decimate_instance.M = this->factor;
-    initialized = b;
+    // Taps must be reversed to use cmsis decimators
+    std::reverse(coeffs, coeffs + TAPS);
+
     clear_state();
+
+    arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance, TAPS, this->factor, coeffs, state, DSP_BLOCK);
+
+    b = b && status == arm_status::ARM_MATH_SUCCESS;
+
+    initialized = b;
+
     return initialized;
 }
 
 template <int TAPS> bool DspFIRDecimatorFloat<TAPS, complex_t_f32>::init() {
 
-    bool b = false;
+    bool ret = DspFIRDecimatorFloatBase<TAPS, complex_t_f32>::init();
 
-    if (this->type == BPF) {
-        b = generate_fir_filter_taps(this->type, this->coeffs, TAPS, this->input_rate, this->start_frequency, this->output_rate);
-    } else {
-        b = generate_fir_filter_taps(this->type, this->coeffs, TAPS, this->input_rate, this->output_rate, 0);
-    }
-    dsp_fir_decimate_instance.M = this->factor;
-    this->initialized = b;
-    clear_state();
-    return this->initialized;
+    memset(dsp_fir_decimate_instance_q.pState, 0, sizeof(state_q));
+    arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance_q, TAPS, this->factor, this->coeffs, state_q, DSP_BLOCK);
+
+    ret = ret && status == arm_status::ARM_MATH_SUCCESS;
+    return ret;
 }
 
-template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::config(uint32_t input_rate, uint32_t output_rate, uint16_t f, uint32_t start_freq) {
+template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq) {
 
     this->input_rate = input_rate;
-    this->output_rate = output_rate;
+    this->bandwidth = bandwidth;
     this->factor = f;
+
     if (start_freq) {
         type = BPF;
         start_frequency = start_freq;
@@ -151,6 +158,7 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::config(u
         type = LPF;
         start_frequency = 0;
     }
+
     return init();
 }
 

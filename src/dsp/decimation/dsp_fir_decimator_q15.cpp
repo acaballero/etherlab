@@ -3,6 +3,7 @@
 //
 
 #include "dsp/buffer.hpp"
+#include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/firFilter.h"
 #include "dsp_fir_decimator_q15.h"
@@ -84,10 +85,10 @@ template <int TAPS> void DspFIRDecimatorQ15<TAPS, complex_t>::decimate(adc_type 
 
 template <int TAPS, typename T> bool DspFIRDecimatorQ15Base<TAPS, T>::init() {
 
-    bool ret = generate_fir_filter_taps_q15(LPF, coeffs, TAPS, this->input_rate, this->output_rate, 0);
+    bool ret = generate_fir_filter_taps_q15(LPF, coeffs, TAPS, this->input_rate, this->bandwidth, 0);
 
-    dsp_fir_decimate_instance.M = this->factor;
     memset(dsp_fir_decimate_instance.pState, 0, sizeof(state));
+    arm_fir_decimate_init_q15(&dsp_fir_decimate_instance, TAPS, this->factor, this->coeffs, state, DSP_BLOCK);
 
     initialized = ret;
     return ret;
@@ -97,16 +98,16 @@ template <int TAPS> bool DspFIRDecimatorQ15<TAPS, complex_t>::init() {
 
     bool ret = DspFIRDecimatorQ15Base<TAPS, complex_t>::init();
 
-    dsp_fir_decimate_instance_q.M = this->factor;
     memset(dsp_fir_decimate_instance_q.pState, 0, sizeof(state_q));
+    arm_fir_decimate_init_q15(&dsp_fir_decimate_instance_q, TAPS, this->factor, this->coeffs, state_q, DSP_BLOCK);
 
     return ret;
 }
 
-template <int TAPS, typename T> bool DspFIRDecimatorQ15Base<TAPS, T>::config(uint32_t input_rate, uint32_t output_rate, uint16_t factor) {
+template <int TAPS, typename T> bool DspFIRDecimatorQ15Base<TAPS, T>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor) {
 
     this->input_rate = input_rate;
-    this->output_rate = output_rate;
+    this->bandwidth = bandwidth;
     this->factor = factor;
     return this->init();
 }

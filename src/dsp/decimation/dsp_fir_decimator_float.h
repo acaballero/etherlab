@@ -37,6 +37,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
     bool initialized = false;
 
     filter_type type = LPF;
+
     uint32_t start_frequency; // Start frequency for the band-pass case
     float coeffs[TAPS];
     float state[TAPS + DSP_BLOCK - 1];

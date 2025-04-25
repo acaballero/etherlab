@@ -69,9 +69,10 @@ Filter #5: 1  0  1  0    X         1  1  0      #3
 namespace radio {
 
 // Tapped IF frequency going into DSP
-unsigned long f_dsp_if = 0;
-unsigned long f_iq = 0;
-unsigned long f_last;
+uint64_t f_dsp_if = 0;
+int64_t dsp_frequency_shift;
+uint64_t f_iq = 0;
+uint64_t f_last;
 
 Signal freq_signal;
 
@@ -120,7 +121,9 @@ void task_loop();
 
 os::periodic_task task(50, task_loop);
 
-uint32_t get_bandwidth_hz() { return radio::if_filters[radio::if_filter].bandwidth; }
+uint32_t get_bandwidth_hz() {
+    return radio::if_filters[radio::if_filter].bandwidth;
+}
 
 void calculate_freqs() {
 
@@ -204,7 +207,9 @@ void calculate_freqs() {
     mixers[0].calcLo();
     mixers[1].calcLo();
 
-    // TAPPED IF center frequency going into DSP. In TX mode, it goes directly from the DSP to the 1st mixer
+    // TAPPED IF center frequency going into DSP.
+    // In TX mode, it goes directly from the DSP to the 1st mixer.
+
     f_dsp_if = config.mode == DIGITAL_TX ? mixers[0].getIf() : mixers[1].getIf();
 
     // char buf[20];
@@ -218,7 +223,9 @@ void calculate_freqs() {
     // }
 }
 
-bool is_freq_inverted() { return mixers[0].getLoInjection() != mixers[1].getLoInjection(); }
+bool is_freq_inverted() {
+    return mixers[0].getLoInjection() != mixers[1].getLoInjection();
+}
 
 void change_step(int amount) {
 
@@ -254,7 +261,9 @@ void set_vfo(uint8_t vfo_ix) {
     }
 }
 
-uint8_t get_vfo() { return config.vfo_ix; }
+uint8_t get_vfo() {
+    return config.vfo_ix;
+}
 
 void change_frequency(int amount) {
     set_frequency(config.vfo[config.vfo_ix].freq + amount * config.vfo[config.vfo_ix].step);
@@ -263,7 +272,9 @@ void change_frequency(int amount) {
 
 // This does not change the frequency immediatelly so it can be called from an IRQhandler.
 // Otherwise, SPI might clash
-void set_frequency(uint64_t f) { config.vfo[config.vfo_ix].freq = f; }
+void set_frequency(uint64_t f) {
+    config.vfo[config.vfo_ix].freq = f;
+}
 
 uint64_t get_vfo_frequency(uint8_t vfo_ix) {
 
@@ -284,11 +295,24 @@ uint64_t get_vfo_frequency(uint8_t vfo_ix) {
     return f;
 }
 
-uint64_t get_frequency() { return get_vfo_frequency(config.vfo_ix); }
+uint64_t get_frequency() {
+    return get_vfo_frequency(config.vfo_ix);
+}
 
-int32_t get_rit() { return config.vfo[config.vfo_ix].rit; }
+int32_t get_rit() {
+    return config.vfo[config.vfo_ix].rit;
+}
 
-void set_rit(int32_t v) { config.vfo[config.vfo_ix].rit = v; }
+void set_rit(int32_t v) {
+    config.vfo[config.vfo_ix].rit = v;
+}
+
+int64_t get_dsp_frequency_shift() {
+    return dsp_frequency_shift;
+}
+void set_dsp_frequency_shift(int64_t f) {
+    dsp_frequency_shift = f;
+}
 
 void update_freq() {
     config.vfo[config.vfo_ix].freq = constrain(config.vfo[config.vfo_ix].freq, config.f_min, config.f_max);
@@ -363,7 +387,9 @@ BAND find_band(unsigned long f) {
     return band;
 }
 
-BAND get_band() { return find_band(config.vfo[config.vfo_ix].freq); }
+BAND get_band() {
+    return find_band(config.vfo[config.vfo_ix].freq);
+}
 
 void set_band() {
     config.f_min = bands[config.band].freq_start;

@@ -166,7 +166,8 @@ void setGPIO() {
     // AGC (Automatic gain control) is Off in TX
     // In FM and AM the RSSI signal from the log amplifier is fed to the RSSI level adapter and then to the AGC board just before the
     // level detector mosfet
-    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_AGC, !ISTX && config.agc_enabled, false);
+    // Note: Only active in ANALOG mode.
+    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_AGC, !ISTX && config.agc_enabled && ISANALOG, false);
 
     changed = changed | setGPIOExpPin(&hmcp03, MCP23017_PORTA, GPIOEXP_FPANEL_TX_LED, ISTX, false);
 

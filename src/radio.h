@@ -10,6 +10,7 @@
 #include "Signal.h"
 #include "mixer.h"
 #include <cstdint>
+#include <sys/_stdint.h>
 
 namespace radio {
 
@@ -92,11 +93,11 @@ extern const st_band bands[];
 extern mixer mixers[];
 extern Signal freq_signal;
 // Current quadrature mixer LO frequency
-extern unsigned long f_iq;
+extern uint64_t f_iq;
 // IF frequency for the DSP board
-extern unsigned long f_dsp_if;
+extern uint64_t f_dsp_if;
 // Tuning frequency
-extern unsigned long f_last;
+extern uint64_t f_last;
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,6 +108,8 @@ void set_frequency(uint64_t f);
 void change_step(int amount);
 uint64_t get_frequency();
 uint64_t get_vfo_frequency(uint8_t);
+int64_t get_dsp_frequency_shift();
+void set_dsp_frequency_shift(int64_t);
 int32_t get_rit();
 void set_rit(int32_t v);
 void update_freq();

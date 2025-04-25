@@ -12,6 +12,7 @@
 #include "../../../lib/ADF4351/adf4351.h"
 #include "../../../lib/Si5351/si5351_I2C.h"
 #include "types.h"
+#include <sys/_stdint.h>
 
 namespace board {
 
@@ -126,7 +127,13 @@ void if_freq(RF_DIRECTION direction, uint64_t freq) {
         si5351.output_enable(clk, false);
     } else {
         si5351.output_enable(clk, true);
-        si5351.set_freq(freq * SI5351_FREQ_MULT * (div ? 2 : 4), clk);
+
+        // A shift is applied so the frequency of interest does not lie around DC to avoid DC leakage and flickr noise
+        freq += radio::get_dsp_frequency_shift();
+
+        uint64_t f = freq * SI5351_FREQ_MULT * (div ? 2 : 4);
+
+        si5351.set_freq(f, clk);
     }
 }
 
@@ -181,13 +188,17 @@ void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
     }
 }
 
-int get_max_input_dbm() { return cmx973_input_ip3; }
+int get_max_input_dbm() {
+    return cmx973_input_ip3;
+}
 
 /**
  * Returns the overall gain
  * @return
  */
-int board_gain() { return if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain) + 60; }
+int board_gain() {
+    return if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain) + 60;
+}
 
 void lo_enable(uint8_t stage, bool enabled) {
     switch (stage) {

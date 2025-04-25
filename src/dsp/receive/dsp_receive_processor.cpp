@@ -45,7 +45,7 @@ void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
             int16_t *out_p = (int16_t *)buffer->p;
 
             for (size_t i = 0; i < buffer->count * 2; i += 2) {
-                out_p[i] = ((uint16_t *)p)[i] + config.hw.dac_offset;
+                out_p[i] = (((uint16_t *)p)[i] + config.hw.dac_offset);
                 // out_p[i + 1] = ((uint16_t *)p)[i + 1] + config.hw.dac_offset;
             }
 

@@ -11,6 +11,7 @@
 #include <utility>
 #include "dsp/blocks/dc_block.h"
 #include "arm_common_tables.h"
+#include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft.h"
 #include "dsp/fft/fft_types.h"
 #include "hw/stm32f4xx/adc.h"
@@ -425,6 +426,9 @@ bool fft_config(uint32_t span) {
             decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
+
+            // radio::set_dsp_frequency_shift(-((int64_t)config.fft.sample_rate) / 4);
+
         } else {
             decimator_i.set_factor(fft_params.decimation_factor);
             decimator_q.set_factor(fft_params.decimation_factor);

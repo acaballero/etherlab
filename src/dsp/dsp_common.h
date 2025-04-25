@@ -80,7 +80,7 @@ enum DSP_ERROR {
 // Other way to try to use the same SPI bus is by executing DSP tasks (which should be less time critical than DSP processors) in the
 // main loop rather than within the timing interrupt. This may not work if we have too much load in our loop and we don't give enough
 // chances to the task to execute at decent pace
-#define EXECUTE_TASKS_ON_INTERRUPT true
+#define EXECUTE_TASKS_ON_INTERRUPT 1
 
 /*
  * Direction of the baseband flow
@@ -192,17 +192,18 @@ void set_max_sample_freq(uint32_t rate);
 void set_tx_gain_db(int8_t gain_db);
 
 void s16_to_q15(const adc_type *__restrict src, adc_type *__restrict dst, size_t size);
-void s16_to_f32(const adc_type *__restrict src, float32_t *__restrict dst, size_t size);
+void s16_to_f32(const adc_type *src, float32_t *dst, size_t size);
 
 void q15_to_s16(const adc_type *__restrict src, adc_type *__restrict dst, size_t size);
-void f32_to_s16(const float32_t *__restrict src, adc_type *__restrict dst, size_t size);
+void f32_to_s16(const float32_t *src, adc_type *dst, size_t size);
 
 void unzip_c16(const adc_type *__restrict src, adc_type *__restrict dst_i, adc_type *__restrict dst_q, size_t n_samples);
 void zip_c16(const adc_type *__restrict src_i, adc_type *__restrict src_q, adc_type *__restrict dst, size_t n_samples);
-void unzip_f32(const float32_t *__restrict src, float32_t *__restrict dst_i, float32_t *__restrict dst_q, size_t n_samples);
-void zip_f32(const float32_t *__restrict src_i, float32_t *__restrict src_q, float32_t *__restrict dst, size_t n_samples);
+void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples);
+void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_samples);
 
 void rotate_fs4_q15(const q15_t *__restrict src, q15_t *__restrict dst, size_t n_samples);
+void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples);
 
 void set_config(st_dsp_config &);
 st_dsp_config get_config();
