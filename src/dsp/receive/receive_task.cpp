@@ -107,9 +107,9 @@ void ReceiveTask::work() {
                 dsp::zip_f32(bi1_p, bq1_p, (float32_t *)bi2_p, block_size_out);
 
                 // DC block;
-                // buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
-                //   dc_block_i.filter(bb, 2, 0);
-                // dc_block_q.filter(bb, 2, 1);
+                buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
+                dc_block_i.filter(bb, 2, 0);
+                dc_block_q.filter(bb, 2, 1);
 
                 dsp::f32_to_s16(bi2_p, (adc_type *)out_p, block_size_out << 1);
 
@@ -117,7 +117,7 @@ void ReceiveTask::work() {
                 buffer_t<complex_t> buff_out = {(complex_t *)out_p, (size_t)block_size_out};
                 buffer_t<adc_type> dem_out = {(adc_type *)out_p, (size_t)block_size_out};
 
-                demodulator->work(buff_out, dem_out);
+                // demodulator->work(buff_out, dem_out);
 
                 out_p += status.decimated_block_size_bytes;
                 in_p += status.block_size_bytes;
@@ -174,8 +174,8 @@ bool ReceiveTask::init_decimators() {
             ret = signal_decimator.config(stage_fs, next_stage_fs, factor);
         } else {
             factor = 2;
-            next_stage_fs = (stage_fs / factor);
-            ret = decimators[n_decimators].config(stage_fs, next_stage_fs / 4, factor);
+            next_stage_fs = (stage_fs / (factor));
+            ret = decimators[n_decimators].config(stage_fs, next_stage_fs, factor);
         }
 
         if (!ret) {
@@ -198,7 +198,7 @@ bool ReceiveTask::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz && dec_factor < config.fft.max_decimation_factor) {
+    while (status.sample_rate > audio_bw_hz * 2 && dec_factor < config.fft.max_decimation_factor) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }

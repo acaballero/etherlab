@@ -123,8 +123,6 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
     // Taps must be reversed to use cmsis decimators
     std::reverse(coeffs, coeffs + TAPS);
 
-    clear_state();
-
     arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance, TAPS, this->factor, coeffs, state, DSP_BLOCK);
 
     b = b && status == arm_status::ARM_MATH_SUCCESS;
@@ -138,7 +136,6 @@ template <int TAPS> bool DspFIRDecimatorFloat<TAPS, complex_t_f32>::init() {
 
     bool ret = DspFIRDecimatorFloatBase<TAPS, complex_t_f32>::init();
 
-    memset(dsp_fir_decimate_instance_q.pState, 0, sizeof(state_q));
     arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance_q, TAPS, this->factor, this->coeffs, state_q, DSP_BLOCK);
 
     ret = ret && status == arm_status::ARM_MATH_SUCCESS;
