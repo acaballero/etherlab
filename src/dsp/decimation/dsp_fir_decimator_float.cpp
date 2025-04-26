@@ -176,3 +176,9 @@ template <int TAPS, typename T> void DspFIRDecimatorFloatBase<TAPS, T>::set_fact
     this->factor = factor;
     dsp_fir_decimate_instance.M = factor;
 }
+
+template <int TAPS> void DspFIRDecimatorFloat<TAPS, complex_t_f32>::set_factor(uint16_t f) {
+    this->factor = f;
+    dsp_fir_decimate_instance.M = f;
+    dsp_fir_decimate_instance_q.M = f;
+}

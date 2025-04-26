@@ -195,7 +195,8 @@ bool generate_fir_filter_taps(filter_type filt_t, float32_t *m_taps, int m_num_t
         bool b = true;
 
         if (filt_t == LPF) {
-            b = designFIRKaiserLowpass(m_taps, fx, fs, 0, m_num_taps, 1, 20, true);
+            b = designFIRKaiserLowpass(m_taps, fx, fs, 0, m_num_taps, 1, 40, true);
+            // designLPF(m_taps, m_num_taps, fs, fx);
         } else if (filt_t == HPF) {
             designHPF(m_taps, m_num_taps, fs, fx);
         } else {

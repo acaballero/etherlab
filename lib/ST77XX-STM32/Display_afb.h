@@ -183,26 +183,44 @@ class Display {
         return write((const uint8_t *)str, strlen(str));
     }
 
-    size_t write(const char *buffer, size_t size) { return write((const uint8_t *)buffer, size); }
+    size_t write(const char *buffer, size_t size) {
+        return write((const uint8_t *)buffer, size);
+    }
 
     // These handle ambiguity for write(0) case, because (0) can be a pointer or
     // an integer
-    inline size_t write(short t) { return write((uint8_t)t); }
+    inline size_t write(short t) {
+        return write((uint8_t)t);
+    }
 
-    inline size_t write(unsigned short t) { return write((uint8_t)t); }
+    inline size_t write(unsigned short t) {
+        return write((uint8_t)t);
+    }
 
-    inline size_t write(int t) { return write((uint8_t)t); }
+    inline size_t write(int t) {
+        return write((uint8_t)t);
+    }
 
-    inline size_t write(unsigned int t) { return write((uint8_t)t); }
+    inline size_t write(unsigned int t) {
+        return write((uint8_t)t);
+    }
 
-    inline size_t write(long t) { return write((uint8_t)t); }
+    inline size_t write(long t) {
+        return write((uint8_t)t);
+    }
 
-    inline size_t write(unsigned long t) { return write((uint8_t)t); }
+    inline size_t write(unsigned long t) {
+        return write((uint8_t)t);
+    }
 
     // Enable write(char) to fall through to write(uint8_t)
-    inline size_t write(char c) { return write((uint8_t)c); }
+    inline size_t write(char c) {
+        return write((uint8_t)c);
+    }
 
-    inline size_t write(int8_t c) { return write((uint8_t)c); }
+    inline size_t write(int8_t c) {
+        return write((uint8_t)c);
+    }
 
     size_t print(const char[]);
 
@@ -261,7 +279,7 @@ class Display {
     uint16_t chunk_height = 0;
     uint16_t current_last_line = 0;
     volatile bool DMAHalfTransferCompleted = false;
-    bool busy = false;
+    volatile bool busy = false;
     bool drawing = false;
     bool use_dma = true;
     // Display buffer area

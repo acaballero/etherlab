@@ -29,9 +29,13 @@ void Display::convertPalette888to565(const uint32_t *orig, uint16_t *dest, uint8
     }
 }
 
-void Display::set_transparency(uint8_t v) { transparency = v; }
+void Display::set_transparency(uint8_t v) {
+    transparency = v;
+}
 
-uint8_t Display::get_transparency() { return transparency; }
+uint8_t Display::get_transparency() {
+    return transparency;
+}
 
 void Display::clear(uint16_t color) {
 
@@ -53,9 +57,13 @@ void Display::setOffset(Box r) {
     oh = r.height;
 }
 
-bool Display::hasOffset() { return ow; }
+bool Display::hasOffset() {
+    return ow;
+}
 
-Box Display::getOffset() { return {ox, oy, ow, oh}; }
+Box Display::getOffset() {
+    return {ox, oy, ow, oh};
+}
 
 void Display::clearOffset() {
     ox = 0;
@@ -64,11 +72,17 @@ void Display::clearOffset() {
     oh = 0;
 }
 
-void Display::setEnabled(bool b) { this->enabled = b; }
+void Display::setEnabled(bool b) {
+    this->enabled = b;
+}
 
-bool Display::getEnabled() { return this->enabled; }
+bool Display::getEnabled() {
+    return this->enabled;
+}
 
-void Display::drawArea(Area *area, Painter *painter) { drawArea(area, painter, true); }
+void Display::drawArea(Area *area, Painter *painter) {
+    drawArea(area, painter, true);
+}
 
 void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
@@ -146,8 +160,8 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
             this->current_last_line = min2(this->current_line + this->chunk_height, area->box.height) - 1;
 
             // Prevent any interruption of the paint callback
-            // NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn); // Disabled, since I'm checking the 'busy' flag from aoutside
-            this->busy = true;
+            // NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn); // Disabled, since I'm checking the 'busy' flag from outside
+            this->busy = true; // Not fully atomic. Disable interrupt for proper atomic behavior
 
             painter->paint_callback();
 
@@ -345,9 +359,12 @@ void Display::DMATxHalfCpltCallback(void) {
     // GPIOB->BSRR= GPIO_PIN_5 << 16;
 }
 
-void Display::DMATxCpltCallback(void) {}
+void Display::DMATxCpltCallback(void) {
+}
 
-uint16_t Display::getColor() { return this->color; }
+uint16_t Display::getColor() {
+    return this->color;
+}
 
 void Display::fillBuffer(uint16_t c) {
 
@@ -415,7 +432,9 @@ void Display::setPixel(int16_t x, int16_t y, uint16_t c) {
     }
 }
 
-void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2) { writeLine(x1, y1, x2, y2, this->color); }
+void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
+    writeLine(x1, y1, x2, y2, this->color);
+}
 
 void Display::writeVertLine(int16_t x, int16_t y1, int16_t y2, uint16_t color) {
 
@@ -451,7 +470,9 @@ void Display::writeVertLine(int16_t x, int16_t y1, int16_t y2, uint16_t color) {
     }
 }
 
-void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) { this->writeLine(x1, y1, x2, y2, color, 1); }
+void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
+    this->writeLine(x1, y1, x2, y2, color, 1);
+}
 
 void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, uint8_t) {
 
@@ -816,9 +837,13 @@ void Display::writeString(int16_t x, int16_t y, const char *str, const FontDef *
     // Unselect();
 }
 
-void Display::set_trim_enabled(bool b) { trim_enabled = b; }
+void Display::set_trim_enabled(bool b) {
+    trim_enabled = b;
+}
 
-uint16_t *Display::getBuffer() { return this->curr_buffer; }
+uint16_t *Display::getBuffer() {
+    return this->curr_buffer;
+}
 
 void Display::gotoXY(int16_t x, int16_t y) {
     px = x;
@@ -830,16 +855,22 @@ void Display::gotoCharXY(int16_t x, int16_t y) {
     py = this->verticalSpacing + (y * (font->height + (this->verticalSpacing * 2)));
 }
 
-uint8_t Display::getVerticalLineSpacing() { return this->verticalSpacing; }
+uint8_t Display::getVerticalLineSpacing() {
+    return this->verticalSpacing;
+}
 
 void Display::setVerticalLineSpacing(uint8_t pixels) {
     py = (int)py - ((int)this->verticalSpacing - (int)pixels);
     this->verticalSpacing = pixels;
 }
 
-void Display::setColor(uint16_t c) { this->color = c; }
+void Display::setColor(uint16_t c) {
+    this->color = c;
+}
 
-void Display::setBgColor(uint16_t c) { this->bgColor = c; }
+void Display::setBgColor(uint16_t c) {
+    this->bgColor = c;
+}
 
 size_t Display::write(const uint8_t *buffer, size_t) {
     writeString(px, py, (const char *)buffer, font, color, bgColor);
@@ -851,13 +882,20 @@ size_t Display::write(uint8_t c) {
     return 0;
 }
 
-void Display::setFont(const FontDef *f) { this->font = f; }
+void Display::setFont(const FontDef *f) {
+    this->font = f;
+}
 
-const FontDef *Display::getFont(void) { return this->font; }
+const FontDef *Display::getFont(void) {
+    return this->font;
+}
 
-void Display::test(void) {}
+void Display::test(void) {
+}
 
-size_t Display::print(const char str[]) { return write(str); }
+size_t Display::print(const char str[]) {
+    return write(str);
+}
 
 size_t Display::print(const char str[], const char *value, const char units[]) {
 
@@ -883,17 +921,29 @@ void Display::setPadding(uint16_t x, uint16_t y) {
     padding_y = y;
 }
 
-uint16_t Display::get_padding_x() { return padding_x; }
+uint16_t Display::get_padding_x() {
+    return padding_x;
+}
 
-uint16_t Display::get_padding_y() { return padding_y; }
+uint16_t Display::get_padding_y() {
+    return padding_y;
+}
 
-size_t Display::print(char c) { return write(c); }
+size_t Display::print(char c) {
+    return write(c);
+}
 
-size_t Display::print(unsigned char b, int base) { return print((unsigned long)b, base); }
+size_t Display::print(unsigned char b, int base) {
+    return print((unsigned long)b, base);
+}
 
-size_t Display::print(int n, int base) { return print((long)n, base); }
+size_t Display::print(int n, int base) {
+    return print((long)n, base);
+}
 
-size_t Display::print(unsigned int n, int base) { return print((unsigned long)n, base); }
+size_t Display::print(unsigned int n, int base) {
+    return print((unsigned long)n, base);
+}
 
 size_t Display::print(long n, int base) {
     if (base == 0) {
@@ -918,7 +968,9 @@ size_t Display::print(unsigned long n, int base) {
     }
 }
 
-size_t Display::print(double n, int digits) { return printFloat(n, digits); }
+size_t Display::print(double n, int digits) {
+    return printFloat(n, digits);
+}
 
 size_t Display::printNumber(unsigned long n, uint8_t base) {
     char buf[8 * sizeof(long) + 1]; // Assumes 8-bit chars plus zero byte.
@@ -992,9 +1044,13 @@ size_t Display::printFloat(double number, uint8_t digits) {
     return n;
 }
 
-bool Display::getWrapText() const { return wrap_text; }
+bool Display::getWrapText() const {
+    return wrap_text;
+}
 
-void Display::setWrapText(bool wrap_text) { Display::wrap_text = wrap_text; }
+void Display::setWrapText(bool wrap_text) {
+    Display::wrap_text = wrap_text;
+}
 
 // Helper function to extract RGB components from RGB565 format
 static inline void extract_rgb565(uint16_t pixel, uint8_t *r, uint8_t *g, uint8_t *b) {
@@ -1004,7 +1060,9 @@ static inline void extract_rgb565(uint16_t pixel, uint8_t *r, uint8_t *g, uint8_
 }
 
 // Helper function to combine RGB components into RGB565 format
-static inline uint16_t combine_rgb565(uint8_t r, uint8_t g, uint8_t b) { return ((r & 0x1F) << 11) | ((g & 0x3F) << 5) | (b & 0x1F); }
+static inline uint16_t combine_rgb565(uint8_t r, uint8_t g, uint8_t b) {
+    return ((r & 0x1F) << 11) | ((g & 0x3F) << 5) | (b & 0x1F);
+}
 
 // Function to blend two RGB565 pixels with a given alpha value (0-255)
 static inline uint16_t blend_pixel(uint16_t fg_pixel, uint16_t bg_pixel, uint8_t alpha) {

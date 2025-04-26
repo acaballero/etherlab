@@ -427,6 +427,7 @@ bool fft_config(uint32_t span) {
             decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
 
+            // Won't do frequency shift for the moment being
             // radio::set_dsp_frequency_shift(-((int64_t)config.fft.sample_rate) / 4);
 
         } else {

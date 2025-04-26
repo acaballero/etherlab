@@ -37,8 +37,8 @@ class ReceiveTask : public Task {
     DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, complex_t_f32> decimators[max_decimators];
     // Signal decimator. The last narrowband signal decimator
     DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, complex_t_f32> signal_decimator;
-    DCBlock dc_block_i{0.98};
-    DCBlock dc_block_q{0.98};
+    DCBlock dc_block_i{0.999};
+    DCBlock dc_block_q{0.999};
     std::unique_ptr<dsp::demodulator> demodulator;
     std::unique_ptr<dsp::demodulator> get_modulator();
 

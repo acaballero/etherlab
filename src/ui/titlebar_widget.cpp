@@ -259,9 +259,9 @@ void TitleBarWidget::before_paint() {
             float starve_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->starve_rate() : 0;
 
             bool error = true;
-            if (!dsp::dsp_status || dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 2 || starve_freq * 100 > 2) {
+            if (!dsp::dsp_status || dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
                 color = C565_RED;
-            } else if (drop_freq * 100 > 1 || starve_freq * 100 > 1) {
+            } else if (drop_freq * 100 > 0.1 || starve_freq * 100 > 0.1) {
                 color = C565_YELLOW;
             } else {
                 error = false;

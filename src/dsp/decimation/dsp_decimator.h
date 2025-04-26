@@ -19,9 +19,9 @@ template <typename T> class DspDecimator {
 
     virtual void decimate(buffer_t<T> &src, buffer_t<T> &dst) = 0;
 
-    uint16_t getFactor() const;
+    uint16_t get_factor() const;
 
-    void setFactor(uint16_t factor);
+    virtual void set_factor(uint16_t factor);
 
     uint32_t getInputRate() const;
 

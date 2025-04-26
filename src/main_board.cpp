@@ -218,6 +218,8 @@ void toggle_dsp() {
 
 bool _setMode(MODE mode, bool force) {
 
+    bool changed = false;
+
     if (force || mode != config.mode) {
 
         if (TXMODE(mode) && !radio::tx_enabled()) {
@@ -230,6 +232,7 @@ bool _setMode(MODE mode, bool force) {
             dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, on_dsp_event);
         }
 
+        changed = config.mode != mode;
         config.mode = mode;
 
         // TODO: DSP squelch not implemented yet, so we disable mute in DSP mode
@@ -367,7 +370,9 @@ bool _setMode(MODE mode, bool force) {
 
         setMute(muteState);
 
-        mode_signal.emit(nullptr);
+        if (changed) {
+            mode_signal.emit(nullptr);
+        }
     }
 
     return true;

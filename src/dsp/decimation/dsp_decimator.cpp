@@ -4,11 +4,11 @@
 template class DspDecimator<uint16_t>;
 template class DspDecimator<short>;
 
-template <typename T> uint16_t DspDecimator<T>::getFactor() const {
+template <typename T> uint16_t DspDecimator<T>::get_factor() const {
     return factor;
 }
 
-template <typename T> void DspDecimator<T>::setFactor(uint16_t factor) {
+template <typename T> void DspDecimator<T>::set_factor(uint16_t factor) {
     DspDecimator::factor = factor;
 }
 

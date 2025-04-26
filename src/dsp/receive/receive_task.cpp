@@ -84,6 +84,7 @@ void ReceiveTask::work() {
                 // De-tune by -fs/4 in hardware, then shift +fs/4 in the first decimation/filter phase
                 //
                 // Improvement: Do this work also for the FFT so the DC blockers can be removed there?
+                // Edit: DC BLOCKERS ARE ALWAYS REQUIRED (at least for AM)
                 // Improvement: The FS/4 can be done in the decimation loop. This makes the decimator kind of 'impure', but may eventually be necessary
 
                 // dsp::rotate_fs4_f32(bi2_p, bi2_p, block_size_in);
@@ -94,10 +95,10 @@ void ReceiveTask::work() {
                     if (i < n_decimators - 1) {
                         // Half-band decimators
                         decimators[i].decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
+                        block_size_in /= 2; // decimators[i].get_factor();
                     } else {
                         // Output decimator. This is the final nawrrowband singal decimator
                         signal_decimator.decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
-                        block_size_in >>= 1;
                     }
 
                     SWAP_PTR(bi1_p, bi2_p);
@@ -111,13 +112,13 @@ void ReceiveTask::work() {
                 dc_block_i.filter(bb, 2, 0);
                 dc_block_q.filter(bb, 2, 1);
 
-                dsp::f32_to_s16(bi2_p, (adc_type *)out_p, block_size_out << 1);
-
                 // Wrap the destination buffer
-                buffer_t<complex_t> buff_out = {(complex_t *)out_p, (size_t)block_size_out};
+                buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)bi2_p, (size_t)block_size_out};
                 buffer_t<adc_type> dem_out = {(adc_type *)out_p, (size_t)block_size_out};
 
-                // demodulator->work(buff_out, dem_out);
+                demodulator->work(buff_out, dem_out);
+
+                // dsp::f32_to_s16(bi2_p, (adc_type *)out_p, block_size_out << 1);
 
                 out_p += status.decimated_block_size_bytes;
                 in_p += status.block_size_bytes;
@@ -141,6 +142,7 @@ void ReceiveTask::work() {
 
 std::unique_ptr<dsp::demodulator> ReceiveTask::get_modulator() {
 
+    std::unique_ptr<dsp::demodulator> demod;
     switch (main_board::getModulationMode()) {
         case AM:
             return std::make_unique<dsp::am_demodulator>();
@@ -149,7 +151,9 @@ std::unique_ptr<dsp::demodulator> ReceiveTask::get_modulator() {
         case SSB_USB:
             return std::make_unique<dsp::ssb_demodulator>();
         case FM:
-            return std::make_unique<dsp::fm_demodulator>();
+            demod = std::make_unique<dsp::fm_demodulator>();
+            ((dsp::fm_demodulator *)demod.get())->configure(status.sample_rate, 3000);
+            return demod;
         default:
             return std::make_unique<dsp::ssb_demodulator>();
     }
@@ -159,23 +163,22 @@ bool ReceiveTask::init_decimators() {
     // First staes are half-band filters (https://en.wikipedia.org/wiki/Half-band_filter)
     uint8_t factor;
     uint8_t dec = status.decimation_factor;
-    uint32_t stage_fs;
-    uint32_t next_stage_fs = config.fft.sample_rate;
 
+    uint32_t next_stage_bandwidth;
+    uint32_t stage_fs = config.fft.sample_rate;
     n_decimators = 0;
 
     bool ret;
     while (dec > 1) {
-        stage_fs = next_stage_fs;
 
-        if (n_decimators == max_decimators - 1 || dec == 2) {
+        if (n_decimators == max_decimators - 1 || dec == 2) { // || (stage_fs / factor) > (status.bandwidth / 2)) {
             factor = dec;
-            next_stage_fs = status.bandwidth;
-            ret = signal_decimator.config(stage_fs, next_stage_fs, factor);
+            next_stage_bandwidth = status.bandwidth;
+            ret = signal_decimator.config(stage_fs, next_stage_bandwidth, factor);
         } else {
             factor = 2;
-            next_stage_fs = (stage_fs / (factor));
-            ret = decimators[n_decimators].config(stage_fs, next_stage_fs, factor);
+            next_stage_bandwidth = (stage_fs / (factor * 2));
+            ret = decimators[n_decimators].config(stage_fs, next_stage_bandwidth, factor);
         }
 
         if (!ret) {
@@ -183,8 +186,8 @@ bool ReceiveTask::init_decimators() {
         }
 
         dec /= factor;
-
         n_decimators++;
+        stage_fs = stage_fs / factor;
     }
 
     dec = dec / factor;
@@ -198,7 +201,7 @@ bool ReceiveTask::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz * 2 && dec_factor < config.fft.max_decimation_factor) {
+    while (status.sample_rate > audio_bw_hz && dec_factor < config.fft.max_decimation_factor) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }

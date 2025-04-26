@@ -21,9 +21,7 @@ class demodulator {
 
 class am_demodulator : public demodulator {
   public:
-    void work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dsc) override{
-        // Not implemented
-    };
+    void work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dsc) override;
     void work(buffer_t<complex_t> &src, buffer_t<adc_type> &dsc) override;
 };
 
@@ -49,7 +47,8 @@ class fm_demodulator : public demodulator {
     void configure(const float sampling_rate, const float deviation_hz);
 
   private:
-    uint32_t z_{0}; // Used in comple_t version. Stores a complex packed IQ sample between iterations to help unrolling the loop
+    uint32_t z_{0};             //  Stores a complex packed IQ sample between iterations to help unrolling the loop
+    complex_t_f32 zcf32_{0, 0}; // Same, but for float version
     float kf{0};
     float ks16{0};
 };

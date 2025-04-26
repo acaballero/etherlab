@@ -64,6 +64,9 @@ void dsp_init(dsp::st_dsp_config &config) {
     dsp::set_config(config);
     ADC_DMA_Start(&hadc1);
     dsp::set_max_sample_freq(false);
+    main_board::mode_signal.add(nullptr, [](void *, void *) {
+        dsp_restart();
+    });
 }
 
 void dsp_stop_tasks() {

@@ -31,7 +31,7 @@ static inline complex_t_f32 multiply_conjugate_cs16_cf32(const complex_t a, cons
     /* a = i, b = q
      * c = iz1, d = qz1
      */
-    const complex_t_f32 result = {(float32_t)a.i * b.i + a.r * b.r, (float32_t)a.r * b.i - a.i * b.r};
+    const complex_t_f32 result = {(float32_t)a.i * b.r - a.r * b.i, (float32_t)a.i * b.i + a.r * b.r};
     return result;
 }
 
@@ -40,7 +40,8 @@ static inline complex_t_f32 multiply_conjugate_cf32_cf32(const complex_t_f32 a, 
     /* a = i, b = q
      * c = iz1, d = qz1
      */
-    const complex_t_f32 result = {a.i * b.i + a.r * b.r, a.r * b.i - a.i * b.r};
+
+    const complex_t_f32 result = {a.i * b.r - a.r * b.i, a.i * b.i + a.r * b.r};
     return result;
 }
 
@@ -87,6 +88,17 @@ void am_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
     }
 }
 
+void am_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst) {
+    const complex_t_f32 *src_p = src.p;
+    const auto src_end = &src.p[src.count];
+    auto dst_p = dst.p;
+    while (src_p < src_end) {
+        auto sample = src_p++;
+        *(dst_p) = __builtin_sqrtf(sample->i * sample->i + sample->r * sample->r);
+        dst_p += 2;
+    }
+}
+
 void ssb_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
     const complex_t *src_p = src.p;
     const auto src_end = &src.p[src.count];
@@ -107,13 +119,7 @@ void ssb_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst
     const complex_t_f32 *src_p = src.p;
     const auto src_end = &src.p[src.count];
     auto dst_p = dst.p;
-    while (src_p < src_end) { // Loop unrolled for pipeline optimization
-        *(dst_p) = (src_p++)->r;
-        dst_p += 2;
-        *(dst_p) = (src_p++)->r;
-        dst_p += 2;
-        *(dst_p) = (src_p++)->r;
-        dst_p += 2;
+    while (src_p < src_end) {
         *(dst_p) = (src_p++)->r;
         dst_p += 2;
     }
@@ -144,10 +150,10 @@ void ssb_fm_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst)
 }
 
 void ssb_fm_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst) {
-    complex_t_f32 *src_p = src.p;
-    const auto src_end = &src.p[src.count];
-    auto dst_p = dst.p;
-    float mag_sq_lpf_norm;
+    // complex_t_f32 *src_p = src.p;
+    // const auto src_end = &src.p[src.count];
+    // auto dst_p = dst.p;
+    // float mag_sq_lpf_norm;
 
     status::handleError(status::ST_ERROR, "Not implemented: SOS filters still not implemented");
 
@@ -180,22 +186,39 @@ void fm_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
         const auto t0 = multiply_conjugate_cs16_cf32((complex_t){._rep = (uint32_t)s0}, (complex_t){._rep = (uint32_t)z});
         const auto t1 = multiply_conjugate_cs16_cf32((complex_t){._rep = (uint32_t)s1}, (complex_t){._rep = (uint32_t)s0});
         z = s1;
-        *(dst_p++) = angle_precise(t0) * kf;
-        *(dst_p++) = angle_precise(t1) * kf;
+        *(dst_p) = angle_precise(t0) * kf;
+        dst_p += 2;
+        *(dst_p) = angle_precise(t1) * kf;
+        dst_p += 2;
     }
     z_ = z;
 }
 
 void fm_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst) {
 
+    auto prev = zcf32_;
     const complex_t_f32 *src_p = src.p;
     const auto src_end = &src.p[src.count];
     auto dst_p = dst.p;
     while (src_p < src_end) {
-        const auto t0 = multiply_conjugate_cf32_cf32(*(src_p + 1), *src_p);
-        *(dst_p++) = angle_precise(t0) * kf;
+        const auto current = *(src_p);
+        const auto t0 = multiply_conjugate_cf32_cf32(current, prev);
+
+        prev = current;
+
+        // kf is an improvement for scaling (might be omitted)
+        // the angle_precise is slow but necessary for wideband FM. For narrowband, a good aproximation is: Phase difference ~ (i0*q1 - q0*i1) / (i0^2 + q0^2)
+        *(dst_p) = angle_precise(t0) * kf * 10.0;
+
+        // Destination assumed to be interleaved complex.
+        // Not required if the target stream is an audio DAC. It'd prevent proper loop unrolling in 16 bit types but with f32 my bet (not measured) is it does
+        // not make such a difference other than memory prefetch is not feasible if memory is not linearly accessed. To speed this up, a pointer to 32 bit can
+        // be used where only half word is written. However, whatever is gained with the prefetch can be lost in bitwise operations which, by the way, are
+        // probably already optimized by the compiler
+        dst_p += 2;
         src_p++;
     }
+    zcf32_ = prev;
 }
 
 // void fm_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {

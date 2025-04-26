@@ -12,6 +12,7 @@
 #include "dsp_fir_decimator_q15.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft_types.h"
+#include <sys/_stdint.h>
 
 template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRDecimatorFloatBase : public DspDecimator<T> {
 
@@ -29,7 +30,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
     virtual bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0);
     virtual void clear_state();
     bool get_initialized() const;
-    void set_factor(uint16_t factor);
+    void set_factor(uint16_t factor) override;
 
   protected:
     virtual bool init();
@@ -61,6 +62,8 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
  */
 template <int TAPS> class DspFIRDecimatorFloat<TAPS, complex_t_f32> : public DspFIRDecimatorFloatBase<TAPS, complex_t_f32> {
   public:
+    void set_factor(uint16_t factor) override;
+
     void decimate(buffer_t<complex_t_f32> &src, buffer_t<complex_t_f32> &dst) override;
     void decimate(buffer_t<complex_t_f32> &src, float *dst_i, float *dst_q);
     void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples);

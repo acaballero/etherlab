@@ -9,7 +9,7 @@
 #include "buffer.hpp"
 
 // DSP processing block size. Defines the number of samples adquired in each DMA cycle
-#define DSP_BLOCK 32
+#define DSP_BLOCK 64
 
 // Must be a multiple of any chunk that a stream processor taks will try to read
 // For example, if the capture task needs to write 1024 bytes per block and the receive task 64 bytes, that's ok.

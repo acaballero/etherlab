@@ -137,14 +137,14 @@ struct st_dspStatus {
         return ((stop_ms ? stop_ms : HAL_GetTick()) - start_ms);
     }
     float drop_rate() {
-        return processed_blocks ? (((float)(fifo_overruns) / (float)processed_blocks) * 100.0) : 0;
+        return processed_blocks ? (((float)(fifo_overruns) / (float)processed_blocks)) : 0;
     }
     float drop_freq() {
         volatile uint32_t elapsed = elapsed_ms();
         return ((float)(fifo_overruns)) / ((float)elapsed / 1000.0f);
     }
     float starve_rate() {
-        return processed_blocks ? (((float)(fifo_underruns) / (float)processed_blocks) * 100.0) : 0;
+        return processed_blocks ? (((float)(fifo_underruns) / (float)processed_blocks)) : 0;
     }
     float starve_freq() {
         volatile uint32_t elapsed = elapsed_ms();
