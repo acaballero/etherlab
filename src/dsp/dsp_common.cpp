@@ -49,7 +49,7 @@ void set_tx_gain_db(int8_t gain_db) {
     dsp_common_params_signal.emit(&dsp_status);
 }
 
-void s16_to_q15(const adc_type *__restrict src, const adc_type *__restrict dst, size_t size) {
+void s16_to_q15(const adc_type *src, q15_t *dst, size_t size) {
 
     for (size_t i = 0; i < size; i += 2) {
         int32_t packed = *__SIMD32(src)++;
@@ -74,7 +74,7 @@ void s16_to_f32(const adc_type *src, float32_t *dst, size_t size) {
     }
 }
 
-void q15_to_s16(const adc_type *__restrict src, adc_type *__restrict dst, size_t size) {
+void q15_to_s16(const q15_t *src, adc_type *dst, size_t size) {
 
     for (size_t i = 0; i < size; i += 2) {
 
@@ -82,8 +82,8 @@ void q15_to_s16(const adc_type *__restrict src, adc_type *__restrict dst, size_t
         int32_t q_pair = *__SIMD32(src)++; // [Q1 | Q0]
 
         // Shift down by 3 bits to scale from Q15 to 12-bit range
-        int32_t q0_shifted = (q_pair & 0xFFFF) >> 3; // Q0
-        int32_t q1_shifted = (q_pair >> 16) >> 3;    // Q1
+        int32_t q0_shifted = (q_pair & 0xFFFF) >> 3;         // Q0
+        int32_t q1_shifted = ((q_pair >> 16) >> 3) & 0xFFFF; // Q1
 
         // Saturate the result to the 12-bit range of int16_t
         // q0_shifted = __SSAT(q0_shifted, 12);  // Saturate to 12-bit
@@ -151,7 +151,7 @@ void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_
 /*
  * Sample frequency/4 rotation (frequency shift)
  */
-void rotate_fs4_q15(const q15_t *__restrict src, q15_t *__restrict dst, size_t n_samples) {
+void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
     const uint32_t *src32 = (const uint32_t *)src;
     uint32_t *dst32 = (uint32_t *)dst;
 
@@ -161,10 +161,10 @@ void rotate_fs4_q15(const q15_t *__restrict src, q15_t *__restrict dst, size_t n
     for (uint32_t i = 0; i < n_samples; ++i) {
         uint32_t in = *src32++; //  [Q | I]
 
-        adc_type i_val = (int16_t)(in & 0xFFFF);
-        adc_type q_val = (int16_t)(in >> 16);
+        q15_t i_val = (q15_t)(in & 0xFFFF);
+        q15_t q_val = (q15_t)(in >> 16);
 
-        int16_t i_rot, q_rot;
+        q15_t i_rot, q_rot;
 
         switch (rot) {
             case 0: // z * 1

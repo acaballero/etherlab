@@ -9,10 +9,17 @@
 #include "dsp/firFilter.h"
 #include "stdio.h"
 #include "dsp_decimator.h"
-#include "dsp_fir_decimator_q15.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft_types.h"
 #include <sys/_stdint.h>
+
+class IDspDecimatorFloat {
+  public:
+    virtual void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples) = 0;
+    virtual bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0) = 0;
+
+    virtual ~IDspDecimatorFloat() = default;
+};
 
 template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRDecimatorFloatBase : public DspDecimator<T> {
 
@@ -27,10 +34,11 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
         this->init();
     };
 
-    virtual bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0);
-    virtual void clear_state();
     bool get_initialized() const;
+
     void set_factor(uint16_t factor) override;
+
+    virtual void clear_state();
 
   protected:
     virtual bool init();
@@ -50,24 +58,25 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
 template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRDecimatorFloat : public DspFIRDecimatorFloatBase<TAPS, T> {
 
   public:
-    using DspFIRDecimatorFloatBase<TAPS, T>::config;
-
     void decimate(buffer_t<T> &src, buffer_t<T> &dst) override;
-    // Specialization for decimating interleaved buffers
     void decimate(buffer_t<T> &src, buffer_t<T> &dst, uint8_t start, uint8_t n_channels);
+
+    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0);
 };
 
 /**
  * Specialization for complex float_32 buffers
  */
-template <int TAPS> class DspFIRDecimatorFloat<TAPS, complex_t_f32> : public DspFIRDecimatorFloatBase<TAPS, complex_t_f32> {
+template <int TAPS> class DspFIRDecimatorFloat<TAPS, complex_t_f32> : public DspFIRDecimatorFloatBase<TAPS, complex_t_f32>, public IDspDecimatorFloat {
   public:
     void set_factor(uint16_t factor) override;
-
     void decimate(buffer_t<complex_t_f32> &src, buffer_t<complex_t_f32> &dst) override;
+    void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples) override;
+
     void decimate(buffer_t<complex_t_f32> &src, float *dst_i, float *dst_q);
-    void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples);
     void decimate(float *src_i, float *src_q, buffer_t<complex_t_f32> &dst, size_t n_samples);
+
+    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0) override;
 
   protected:
     using DspFIRDecimatorFloatBase<TAPS, complex_t_f32>::state;

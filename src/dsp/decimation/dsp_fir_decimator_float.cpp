@@ -142,26 +142,42 @@ template <int TAPS> bool DspFIRDecimatorFloat<TAPS, complex_t_f32>::init() {
     return ret;
 }
 
-template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq) {
+template <int TAPS, typename T> bool DspFIRDecimatorFloat<TAPS, T>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq) {
 
     this->input_rate = input_rate;
     this->bandwidth = bandwidth;
     this->factor = f;
 
     if (start_freq) {
-        type = BPF;
-        start_frequency = start_freq;
+        this->type = BPF;
+        this->start_frequency = start_freq;
     } else {
-        type = LPF;
-        start_frequency = 0;
+        this->type = LPF;
+        this->start_frequency = 0;
     }
 
-    return init();
+    return this->init();
 }
 
 template <int TAPS> void DspFIRDecimatorFloat<TAPS, complex_t_f32>::clear_state() {
     memset(dsp_fir_decimate_instance.pState, 0, sizeof(state));
     memset(dsp_fir_decimate_instance_q.pState, 0, sizeof(state_q));
+}
+
+template <int TAPS> bool DspFIRDecimatorFloat<TAPS, complex_t_f32>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq) {
+    this->input_rate = input_rate;
+    this->bandwidth = bandwidth;
+    this->factor = f;
+
+    if (start_freq) {
+        this->type = BPF;
+        this->start_frequency = start_freq;
+    } else {
+        this->type = LPF;
+        this->start_frequency = 0;
+    }
+
+    return this->init();
 }
 
 template <int TAPS, typename T> void DspFIRDecimatorFloatBase<TAPS, T>::clear_state() {

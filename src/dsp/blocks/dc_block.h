@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include "dsp/buffer.hpp"
+#include "dsp/dsp_common.h"
 
 /*
  * A DC blocker IIR filter

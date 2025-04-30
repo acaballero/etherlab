@@ -15,6 +15,45 @@
 #define DSP_MIN_TX_GAIN_DB -20
 #define DSP_MAX_TX_GAIN_DB 20
 
+// FS/4 frequency shift
+// Goals:
+// - Avoid hardware DC issues (flickr noise, DC leakage)
+// - Relax digital DC-blockers requirements, which inevitabily attenuate some band around DC
+//
+// 1st Attemp (Don't even try. I put it here just to remember why it does not work)
+// --------------------------
+// After the first decimation, samples are frequency shifted by fs/4
+// Then, another decimation by 4 finds the signal of interest at fs, which
+// aliases it at DC. This 'trick' to
+// Cons:
+// This method requires that at least one decimator in the chain finds the signal
+// of interest at fs/<decimation factor>
+//
+// It does not avoid hardware DC leakage or noise, just moves it around (!!!)
+//
+// Implemented method:
+// ------------------
+// De-tune by -fs/4 in hardware, then shift +fs/4 in the first decimation/filter phase
+//
+// Improvement: Do this work also for the FFT so the DC blockers can be removed there?
+//
+// Note: DC REMOVAL IS ALWAYS REQUIRED for proper demodulatoin
+// Improvement: The FS/4 can be done in the decimation loop. This makes the decimator kind of 'impure', but may eventually be necessary
+//
+// FS/4 limiting requirements:
+//
+// If we de-tune by FS/4, oversampling is necessary in order to
+// - Use the full ADC filter bandwidth
+// - Remove the tone that's created after shifting the DC
+//
+// If we don't decimate, after the hardware shift, the signal of interest will lie at FS/4 from DC. Then, if we center it by re-shifting, some
+// band that was filtered before the ADC will be brought into the captured passband.
+// If we decimate by at least 4, FS/4 will lie outside the final decimated band, and even after re-shifting to DC, since we have decimated (thus, reducing
+// bandwidth) no filtered-out band will appear in the band of interest. However, there are scenarios where we can't affort oversampling while capturing a wide
+// bandwidth
+
+#define DSP_FS4_SHIFT 1
+
 // Manual PKHBT: pack halfword bottom
 #if !defined(__PKHBT)
 #define __PKHBT(a, b) (((b)&0xFFFF) | ((a & 0xFFFF) << 16))
@@ -34,11 +73,11 @@ typedef int16_t adc_type;
 typedef uint32_t adc_type_complex_union;
 
 union complex_t {
-    adc_type_complex_union _rep;
     struct {
         adc_type r;
         adc_type i;
     };
+    adc_type_complex_union _rep;
 };
 
 typedef struct {
@@ -69,7 +108,7 @@ enum DSP_ERROR {
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
 #define FIR_DECIMATOR_1ST_HALFBAND_TAPS 23
-#define FIR_DECIMATOR_SIGNAL_TAPS 35
+#define FIR_DECIMATOR_SIGNAL_TAPS 51
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
 // A LCD SPI DMA transfer and cause problems
@@ -191,10 +230,10 @@ void set_max_sample_freq(uint32_t rate);
 /* Sets the digital domain TX direction gain */
 void set_tx_gain_db(int8_t gain_db);
 
-void s16_to_q15(const adc_type *__restrict src, adc_type *__restrict dst, size_t size);
+void s16_to_q15(const adc_type *src, q15_t *dst, size_t size);
 void s16_to_f32(const adc_type *src, float32_t *dst, size_t size);
 
-void q15_to_s16(const adc_type *__restrict src, adc_type *__restrict dst, size_t size);
+void q15_to_s16(const q15_t *src, adc_type *dst, size_t size);
 void f32_to_s16(const float32_t *src, adc_type *dst, size_t size);
 
 void unzip_c16(const adc_type *__restrict src, adc_type *__restrict dst_i, adc_type *__restrict dst_q, size_t n_samples);
@@ -202,7 +241,7 @@ void zip_c16(const adc_type *__restrict src_i, adc_type *__restrict src_q, adc_t
 void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples);
 void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_samples);
 
-void rotate_fs4_q15(const q15_t *__restrict src, q15_t *__restrict dst, size_t n_samples);
+void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples);
 void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples);
 
 void set_config(st_dsp_config &);

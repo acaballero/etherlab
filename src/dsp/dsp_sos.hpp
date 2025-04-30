@@ -14,8 +14,7 @@ template <size_t N> class SOSFilter {
     // }
 
     float execute(float value) {
-        for (auto &filter : filters) {
-            // value = filter.execute(value);
+        for (auto &filter : filters) { // value = filter.execute(value);
         }
         return value;
     }

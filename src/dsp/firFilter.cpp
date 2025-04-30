@@ -84,8 +84,8 @@ double estimateAttenuation(int numTaps, double transitionWidth, double fs) {
     return 2.285 * (numTaps - 1) * 2 * PI * deltaF + 8.0;
 }
 
-bool designFIRKaiserLowpass(float *taps, double cutoffHz, double sampleRate, double transitionWidth = 0.0, int numTaps = 0, double rippleDb = -1.0,
-                            double attenuationDb = -1.0, bool validateConstraints = true) {
+bool design_fir_kaiser_lpf(float *taps, double cutoffHz, double sampleRate, double transitionWidth = 0.0, int numTaps = 0, double rippleDb = -1.0,
+                           double attenuationDb = -1.0, bool validateConstraints = true) {
     if (numTaps <= 0 && transitionWidth <= 0.0) {
         //   std::cerr << "Error: You must specify either numTaps or transitionWidth.\n";
     }
@@ -129,6 +129,28 @@ bool designFIRKaiserLowpass(float *taps, double cutoffHz, double sampleRate, dou
         printf_(",%f", taps[n]);
     }
     printf_("\n");
+    return true;
+}
+
+bool design_complex_bandpass(float *taps, int num_taps, double fs, float center_freq, float bandwidth) {
+
+    std::vector<float> real_taps(num_taps);
+
+    // First, we generate a lowpass prototype with a moderate transition widht
+    double transition_width = 0; // bandwidth / 2.0;
+
+    bool ok = design_fir_kaiser_lpf(real_taps.data(), bandwidth, fs, transition_width, num_taps, 1.0, 40.0, true);
+    if (!ok) {
+        return false;
+    }
+
+    // Then we shift it to the desired centrer frequency and make it complex by modulating with e^{j2πf₀n/fs}
+    for (int n = 0; n < num_taps; ++n) {
+        float phase = 2 * M_PI * center_freq * (n - num_taps / 2) / fs;
+        taps[2 * n + 0] = real_taps[n] * cos(phase); // real part
+        taps[2 * n + 1] = real_taps[n] * sin(phase); // imag part
+    }
+
     return true;
 }
 
@@ -187,7 +209,7 @@ void designBPF(float *m_taps, int m_num_taps, float Fs, float Fx, float Fu) {
     return;
 }
 
-// Handles LPF and HPF case
+// For BPF case, it generates an interleaved (i0,q0,i1,q1...) complex set of taps
 bool generate_fir_filter_taps(filter_type filt_t, float32_t *m_taps, int m_num_taps, float fs, float fx, float fu) {
 
     if ((fs >= 0) && (fx >= 0 && fx <= fs / 2) && (m_num_taps >= 0 && m_num_taps <= MAX_FILTER_TAPS)) {
@@ -195,16 +217,16 @@ bool generate_fir_filter_taps(filter_type filt_t, float32_t *m_taps, int m_num_t
         bool b = true;
 
         if (filt_t == LPF) {
-            b = designFIRKaiserLowpass(m_taps, fx, fs, 0, m_num_taps, 1, 40, true);
+            b = design_fir_kaiser_lpf(m_taps, fx, fs, 0, m_num_taps, 1, 40, true);
             // designLPF(m_taps, m_num_taps, fs, fx);
         } else if (filt_t == HPF) {
             designHPF(m_taps, m_num_taps, fs, fx);
         } else {
-            designBPF(m_taps, m_num_taps, fs, fx, fu);
+            b = design_complex_bandpass(m_taps, m_num_taps, fs, fx, fu);
         }
 
-        if (filt_t == BPF) {
-            // Apply window (temporarily until BPF generation includes it
+        if (filt_t == HPF) {
+            // Apply window (remove when HPF incorporates it)
 
             float fir_filter_window[m_num_taps];
             generate_window(1, fir_filter_window, m_num_taps);

@@ -8,6 +8,7 @@
 #include "../../../lib/DspFilters/include/ChebyshevI.h"
 #include "../../../lib/DspFilters/include/State.h"
 #include "../../../lib/DspFilters/include/Cascade.h"
+#include <sys/_stdint.h>
 
 void DspIIRDecimator::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) {
     this->decimate(src, dst, 0, 2, 2);
@@ -107,12 +108,14 @@ void DspIIRDecimator::initFilter() {
 #endif
 }
 
-void DspIIRDecimator::config(uint32_t input_rate, uint32_t output_rate, uint16_t factor) {
+bool DspIIRDecimator::config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_Freq) {
 
     this->input_rate = input_rate;
     this->bandwidth = output_rate;
     this->factor = factor;
     this->initFilter();
+
+    return true;
 }
 
 void test_iir_decimator() {

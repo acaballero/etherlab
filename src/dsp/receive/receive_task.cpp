@@ -5,6 +5,8 @@
 #include "receive_task.h"
 #include "arm_math.h"
 #include "dsp/blocks/dc_block.h"
+#include "dsp/decimation/dsp_fir_decimator_float.h"
+#include "dsp/decimation/dsp_fir_decimator_float_complex.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft.h"
 #include "dsp/fft/fft_types.h"
@@ -62,32 +64,9 @@ void ReceiveTask::work() {
 
                 dsp::s16_to_f32((const adc_type *)in_p, bi2_p, block_size_in << 1);
 
-                // DC issues strategies:
-                // Goals:
-                // - Avoid hardware DC issues (flickr noise, DC leakage)
-                // - Elude digital DC-blockers which inevitabily attenuate some band around DC
-                //
-                // 1st Attemp (does not meet goals)
-                // --------------------------
-                // After the first decimation, samples are frequency shifted by fs/4
-                // Then, another decimation by 4 finds the signal of interest at fs, which
-                // aliases it at DC. This 'trick' to
-
-                // Cons:
-                // This method requires that at least one decimator in the chain finds the signal
-                // of interest at fs/<decimation factor>
-                //
-                // It does not avoid hardware DC leakage or noise, just moves it around
-                //
-                // Implemented method:
-                // ------------------
-                // De-tune by -fs/4 in hardware, then shift +fs/4 in the first decimation/filter phase
-                //
-                // Improvement: Do this work also for the FFT so the DC blockers can be removed there?
-                // Edit: DC BLOCKERS ARE ALWAYS REQUIRED (at least for AM)
-                // Improvement: The FS/4 can be done in the decimation loop. This makes the decimator kind of 'impure', but may eventually be necessary
-
-                // dsp::rotate_fs4_f32(bi2_p, bi2_p, block_size_in);
+#if DSP_FS4_SHIFT
+                dsp::rotate_fs4_f32(bi2_p, bi2_p, block_size_in);
+#endif
                 dsp::unzip_f32((const float32_t *)bi2_p, bi1_p, bq1_p, block_size_in);
 
                 for (int i = 0; i < n_decimators; i++) {
@@ -95,10 +74,10 @@ void ReceiveTask::work() {
                     if (i < n_decimators - 1) {
                         // Half-band decimators
                         decimators[i].decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
-                        block_size_in /= 2; // decimators[i].get_factor();
+                        block_size_in /= decimators[i].get_factor();
                     } else {
-                        // Output decimator. This is the final nawrrowband singal decimator
-                        signal_decimator.decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
+                        // Output decimator. This is the final nawrrowband decimator
+                        signal_decimator->decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
                     }
 
                     SWAP_PTR(bi1_p, bi2_p);
@@ -107,18 +86,24 @@ void ReceiveTask::work() {
 
                 dsp::zip_f32(bi1_p, bq1_p, (float32_t *)bi2_p, block_size_out);
 
-                // DC block;
+                // DC block
                 buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
                 dc_block_i.filter(bb, 2, 0);
                 dc_block_q.filter(bb, 2, 1);
 
                 // Wrap the destination buffer
                 buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)bi2_p, (size_t)block_size_out};
-                buffer_t<adc_type> dem_out = {(adc_type *)out_p, (size_t)block_size_out};
+                buffer_t<float32_t> buff_out_f32 = {(float32_t *)bi1_p, (size_t)block_size_out};
 
-                demodulator->work(buff_out, dem_out);
+                demodulator->work(buff_out, (float32_t *)buff_out_f32.p);
 
-                // dsp::f32_to_s16(bi2_p, (adc_type *)out_p, block_size_out << 1);
+                if (compressor_enabled) {
+                    //        compressor.work(buff_out_f32);
+                }
+
+                // TODO: Apply deemphasis IIR filter for FM (-6db slope lowpass from 300 to 5000 khz)
+
+                dsp::f32_to_s16((const float32_t *)bi1_p, (adc_type *)out_p, block_size_out << 1);
 
                 out_p += status.decimated_block_size_bytes;
                 in_p += status.block_size_bytes;
@@ -174,9 +159,26 @@ bool ReceiveTask::init_decimators() {
         if (n_decimators == max_decimators - 1 || dec == 2) { // || (stage_fs / factor) > (status.bandwidth / 2)) {
             factor = dec;
             next_stage_bandwidth = status.bandwidth;
-            ret = signal_decimator.config(stage_fs, next_stage_bandwidth, factor);
+            MODULATION_MODE mod = main_board::getModulationMode();
+
+            switch (mod) {
+                case SSB_USB:
+                case SSB_LSB:
+                    signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
+                    ret = signal_decimator->config(stage_fs, next_stage_bandwidth, factor);
+                    break;
+                case CW:
+                    signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
+                    ret = signal_decimator->config(stage_fs, next_stage_bandwidth, factor, 500);
+                    break;
+                default:
+                    signal_decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, complex_t_f32>>();
+                    ret = signal_decimator->config(stage_fs, next_stage_bandwidth / 2, factor);
+                    break;
+            }
+
         } else {
-            factor = 2;
+            factor = dec > 8 ? 4 : 2;
             next_stage_bandwidth = (stage_fs / (factor * 2));
             ret = decimators[n_decimators].config(stage_fs, next_stage_bandwidth, factor);
         }
@@ -201,7 +203,7 @@ bool ReceiveTask::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz && dec_factor < config.fft.max_decimation_factor) {
+    while (status.sample_rate > audio_bw_hz && dec_factor < 16) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }
@@ -210,11 +212,8 @@ bool ReceiveTask::start() {
 
     MODULATION_MODE mod = main_board::getModulationMode();
 
-    if (mod == SSB_LSB || mod == SSB_USB) {
-        status.bandwidth = radio::get_bandwidth_hz();
-    } else {
-        status.bandwidth = radio::get_bandwidth_hz() / 2; // Desired filter bandwidth based on current modulation and user selected filter
-    }
+    status.bandwidth = radio::get_bandwidth_hz();
+
     status.decimation_factor = dec_factor;
     status.bits_per_sample = sizeof(adc_type) * 8;
     status.n_channels = 2;
@@ -234,7 +233,7 @@ bool ReceiveTask::start() {
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
     // Se the fifo processing frequency
-    update_timer(TASKS_TIMER_TYPEDEF, 3, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000);
+    update_timer(TASKS_TIMER_TYPEDEF, 2, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000);
 
     ret = radio_config({.direction = RF_DIRECTION_RX,
                         .sample_freq = status.sample_rate,
@@ -244,6 +243,8 @@ bool ReceiveTask::start() {
     status.status = DSP_STATUS_RUNNING;
 
     demodulator = get_modulator();
+
+    compressor_enabled = mod == AM || mod == SSB_USB || mod == SSB_LSB;
 
     if (!ret) {
         halt(DSP_ERR);

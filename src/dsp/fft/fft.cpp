@@ -1,5 +1,4 @@
 //
-//
 // Created by Angel Dust on 16/10/2019.
 //
 
@@ -219,7 +218,7 @@ void st_fft_params::calc() {
         span = sample_freq / (decimation_factor / n_slices / USABLE_BW_FACTOR);
     }
 
-    sample_freq = sample_freq & ~1023; // Floor to nearet 1024 factor
+    sample_freq = sample_freq & ~1023; // Floor to nearest 1024 factor
 
     // Resolution bandwidth (per FFT bin)
     rbw = sample_freq / size / decimation_factor;
@@ -369,7 +368,7 @@ uint32_t fft_max_span() {
 bool fft_config(uint32_t span) {
 
     uint8_t current_dec_factor = fft_params.decimation_factor;
-    uint32_t fft_sf = config.fft.sample_rate;
+    uint32_t current_sample_rate = config.fft.sample_rate;
 
     // Max span check
     uint32_t max_span = fft_max_span();
@@ -405,7 +404,7 @@ bool fft_config(uint32_t span) {
         params.n_slices = 1;
         params.size = FFT_N;
         params.sample_freq = config.fft.min_sample_rate;
-        // Floor to nearet 1024 factor
+
         params.calc();
         best = params;
 
@@ -421,19 +420,24 @@ bool fft_config(uint32_t span) {
         // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
         // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
 
-        if (fft_sf != config.fft.sample_rate || !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
+        if (current_sample_rate != config.fft.sample_rate || !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
 
             decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
 
-            // Won't do frequency shift for the moment being
-            // radio::set_dsp_frequency_shift(-((int64_t)config.fft.sample_rate) / 4);
-
         } else {
             decimator_i.set_factor(fft_params.decimation_factor);
             decimator_q.set_factor(fft_params.decimation_factor);
         }
+
+#if DSP_FS4_SHIFT
+        if (fft_params.n_slices == 1) {
+            // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
+            // move to the adjacent slice. Not done yet.
+            radio::set_dsp_frequency_shift(-(int64_t)(config.fft.sample_rate / 4));
+        }
+#endif
 
         if (current_dec_factor != fft_params.decimation_factor) {
             // If decimation factor has changed, reset the fifo and make sure its size is a multiple
@@ -823,9 +827,6 @@ void processFFT(float32_t *v) {
 /* Decimate a complex_t buffer into the fft_slice_buff buffer */
 void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
 
-    // We need to clear the state of the decimator (do we?)
-    // decimator.clear_state();
-
     uint16_t decimated_block_size = DSP_BLOCK / fft_params.decimation_factor;
 
     // We decimate in DSP_BLOCK block sizes to save memory, at the expense of speed, since we need two buffers
@@ -839,7 +840,7 @@ void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
 
         // Transform to float
         for (int i = 0, j = ix; i < DSP_BLOCK; j++, i++) {
-            // printf("%d;%d\n",f_buff[j].i,f_buff[j].r);
+
             signal[i].i = f_buff[j].i;
             signal[i].r = f_buff[j].r;
 
@@ -852,17 +853,7 @@ void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
         dst.decimated_size_bytes = decimated_block_size;
 
         decimator_i.decimate(src, dst, 0, 2);
-        /*for (int i=0; i < DSP_BLOCK*2; i+=2) {
-            printf("%f\n",src.p[i]);
-            HAL_Delay(2);
-        }
-        printf("------\n");
-        HAL_Delay(2);
-        for (int i=0; i < (DSP_BLOCK/fft_decimation_factor)*2; i+=2) {
-            printf("%f\n",dst.p[i]);
-            HAL_Delay(2);
-        }
-        printf("------\n");*/
+
         decimator_q.decimate(src, dst, 1, 2);
 
         // Skip the first blocks to account for the delay group of the filter
@@ -872,20 +863,6 @@ void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
 
         ix += DSP_BLOCK;
     }
-
-    /*
-    printf("--------------------\n");
-    for (int i=0; i < size; i++) {
-        printf("%d\n",f_buff[i].i);
-        HAL_Delay(2);
-    }
-    printf("--------------------\n");
-    for (int i=0; i < FFT_N; i++) {
-        printf("%f\n",fft_slice_buff[i].i);
-        HAL_Delay(2);
-    }
-    printf("--------------------\n");
-     */
 }
 
 // ADC Acquisition
@@ -919,12 +896,6 @@ void adquireFFTAsync() {
 
     if (true) { // av >= chunk_size) {
 
-        // Uncomment to create a pure sinusoid for testing
-        //    double rads = 2.0 * PI * (((int64_t)config.vfo[config.vfo_ix].freq - (int64_t)5005000) / (double) (config.fft.sampling)) * (double) i;
-
-        //  adc_buff_f[fft_buff_acq_ix].r  = ((int16_t) (0 + (config.fft.maxAmpl>>4) * cos(rads)));
-        //  adc_buff_f[fft_buff_acq_ix].i = ((int16_t) (0 + (config.fft.maxAmpl>>4) * sin(rads)));
-
         if (fft_params.decimation_factor > 1) {
 
             // Decimate the complex buffer (I and Q channels interleaved, so odd and even indexes) into fft_slice_buff
@@ -942,14 +913,13 @@ void adquireFFTAsync() {
         }
 
         fft_fifo.consume(chunk_size, &data.c);
-
-        // LOGGING
-        // GPIOA->BSRR= GPIO_PIN_12 << 16;
     }
 
+    //#if !DSP_FS4_SHIFT
     if (config.fft.removeDC) {
         fft_dcremoval(fft_slice_buffer);
     }
+    //#endif
 }
 
 complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b) {

@@ -15,26 +15,26 @@ class demodulator {
     // The destination buffer is suposed to be an interleaved complex type even if the output is real. That's to accomodate for the widely used interleaved
     // format going in and out ADCs and DACs
 
-    virtual void work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dsc) = 0;
-    virtual void work(buffer_t<complex_t> &src, buffer_t<adc_type> &dsc) = 0;
+    virtual void work(buffer_t<complex_t_f32> &src, float32_t *dsc) = 0;
+    virtual void work(buffer_t<complex_t> &src, adc_type *dsc) = 0;
 };
 
 class am_demodulator : public demodulator {
   public:
-    void work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dsc) override;
-    void work(buffer_t<complex_t> &src, buffer_t<adc_type> &dsc) override;
+    void work(buffer_t<complex_t_f32> &src, float32_t *dsc) override;
+    void work(buffer_t<complex_t> &src, adc_type *dsc) override;
 };
 
 class ssb_demodulator : public demodulator {
   public:
-    void work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dsc) override;
-    void work(buffer_t<complex_t> &src, buffer_t<adc_type> &dsc) override;
+    void work(buffer_t<complex_t_f32> &src, float32_t *dsc) override;
+    void work(buffer_t<complex_t> &src, adc_type *dsc) override;
 };
 
 class ssb_fm_demodulator : public demodulator {
   public:
-    void work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dsc) override;
-    void work(buffer_t<complex_t> &src, buffer_t<adc_type> &dsc) override;
+    void work(buffer_t<complex_t_f32> &src, float32_t *dsc) override;
+    void work(buffer_t<complex_t> &src, adc_type *dsc) override;
 
   private:
     dsp::Real_to_Complex real_to_complex{};
@@ -42,8 +42,8 @@ class ssb_fm_demodulator : public demodulator {
 
 class fm_demodulator : public demodulator {
   public:
-    void work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dsc) override;
-    void work(buffer_t<complex_t> &src, buffer_t<adc_type> &dsc) override;
+    void work(buffer_t<complex_t_f32> &src, float32_t *dsc) override;
+    void work(buffer_t<complex_t> &src, adc_type *dsc) override;
     void configure(const float sampling_rate, const float deviation_hz);
 
   private:

@@ -69,10 +69,9 @@ static inline void rotate_fs4(int16_t &i, int16_t &q) {
     }
 }
 
-void am_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
+void am_demodulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
     const complex_t *src_p = src.p;
     const auto src_end = &src.p[src.count];
-    adc_type *dst_p = dst.p;
 
     while (src_p < src_end) {
 
@@ -88,10 +87,10 @@ void am_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
     }
 }
 
-void am_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst) {
+void am_demodulator::work(buffer_t<complex_t_f32> &src, float32_t *dst_p) {
     const complex_t_f32 *src_p = src.p;
     const auto src_end = &src.p[src.count];
-    auto dst_p = dst.p;
+
     while (src_p < src_end) {
         auto sample = src_p++;
         *(dst_p) = __builtin_sqrtf(sample->i * sample->i + sample->r * sample->r);
@@ -99,10 +98,10 @@ void am_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst)
     }
 }
 
-void ssb_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
+void ssb_demodulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
     const complex_t *src_p = src.p;
     const auto src_end = &src.p[src.count];
-    auto dst_p = dst.p;
+
     while (src_p < src_end) { // Loop unrolled for pipeline optimization
         *(dst_p) = (src_p++)->r;
         dst_p += 2;
@@ -115,20 +114,19 @@ void ssb_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
     }
 }
 
-void ssb_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst) {
+void ssb_demodulator::work(buffer_t<complex_t_f32> &src, float32_t *dst_p) {
     const complex_t_f32 *src_p = src.p;
     const auto src_end = &src.p[src.count];
-    auto dst_p = dst.p;
+
     while (src_p < src_end) {
         *(dst_p) = (src_p++)->r;
         dst_p += 2;
     }
 }
 
-void ssb_fm_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
+void ssb_fm_demodulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
     complex_t *src_p = src.p;
     const auto src_end = &src.p[src.count];
-    auto dst_p = dst.p;
     float mag_sq_lpf_norm;
 
     status::handleError(status::ST_ERROR, "Not implemented: SOS filters still not implemented");
@@ -149,7 +147,7 @@ void ssb_fm_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst)
     }
 }
 
-void ssb_fm_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst) {
+void ssb_fm_demodulator::work(buffer_t<complex_t_f32> &src, float32_t *dst) {
     // complex_t_f32 *src_p = src.p;
     // const auto src_end = &src.p[src.count];
     // auto dst_p = dst.p;
@@ -173,12 +171,12 @@ void ssb_fm_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &
     // }
 }
 
-void fm_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
+void fm_demodulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
     auto z = z_;
 
     const void *src_p = src.p;
     const auto src_end = &src.p[src.count];
-    auto dst_p = dst.p;
+
     while (src_p < src_end) {
         const auto s0 = *__SIMD32(src_p)++;
         const auto s1 = *__SIMD32(src_p)++;
@@ -194,12 +192,12 @@ void fm_demodulator::work(buffer_t<complex_t> &src, buffer_t<adc_type> &dst) {
     z_ = z;
 }
 
-void fm_demodulator::work(buffer_t<complex_t_f32> &src, buffer_t<adc_type> &dst) {
+void fm_demodulator::work(buffer_t<complex_t_f32> &src, float32_t *dst_p) {
 
     auto prev = zcf32_;
     const complex_t_f32 *src_p = src.p;
     const auto src_end = &src.p[src.count];
-    auto dst_p = dst.p;
+
     while (src_p < src_end) {
         const auto current = *(src_p);
         const auto t0 = multiply_conjugate_cf32_cf32(current, prev);

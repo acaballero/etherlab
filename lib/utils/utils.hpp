@@ -77,6 +77,8 @@ void extract_file_and_path(const char *fileandpath, char *path, char *file, size
 
 float fasterlog(float);
 
+float fastpow2(const float val);
+
 void trim(char *);
 
 int endsWith(const char *str, const char *suffix);

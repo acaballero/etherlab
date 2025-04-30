@@ -2,6 +2,8 @@
 // Created by Angel Dust on 04/04/2021.
 //
 #include "dsp.h"
+#include "arm_math.h"
+#include "blocks/dc_block.h"
 #include "diskio.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_config.h"
@@ -11,6 +13,7 @@
 #include "types.h"
 #include "ui/lcd.h"
 #include "hw/stm32f4xx/timers.h"
+#include <sys/_stdint.h>
 
 #if ENABLE_SD_CARD
 
@@ -173,6 +176,7 @@ inline void dac_work() {
     }
 
     if (dsp::dsp_status && dsp::dsp_status->direction == DSP_DIRECTION_OUT) {
+        // DSP TX direction: The FFT is fed from the produced data stream
         FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
         UNUSED(err);
     }
@@ -180,11 +184,25 @@ inline void dac_work() {
     // GPIOD->BSRR |= GPIO_PIN_5 << 16;
 }
 
+DCBlock dc_block_i{0.999};
+DCBlock dc_block_q{0.999};
+
 inline void adc_work() {
     // GPIOD->BSRR |= GPIO_PIN_5;
+    // GPIOD->BSRR |= GPIO_PIN_5 << 16;
+#if DSP_FS4_SHIFT
+
+    //if (fft_params.n_slices == 1) {
+    //    buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
+        // dc_block_i.filter(bb, 2, 0);
+        // dc_block_q.filter(bb, 2, 1);
+        // dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, current_buffer->count);
+    //}
+
+#endif
 
     if (!dsp::dsp_status || dsp::dsp_status->direction == DSP_DIRECTION_IN || dsp::dsp_status->direction == DSP_DIRECTION_INOUT) {
-        // If the IF chain direction is input, the
+        // If the direction is input or bidirectional...
 
         // Fill the FFT FIFO. Here we don't care if we overrun as the FFT doesn't need to be processed in real-time
         // TODO: write to the FFT FIFO in a separate DspProcessor
@@ -195,11 +213,6 @@ inline void adc_work() {
     if (current_processor && (current_processor->status.direction == DSP_DIRECTION_IN || current_processor->status.direction == DSP_DIRECTION_INOUT)) {
         current_processor->work(current_buffer);
     }
-
-    // if (dsp_status && dsp_status->direction == DSP_DIRECTION_OUT) {
-    //     FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
-    //     UNUSED(err);
-    // }
 
     // GPIOD->BSRR |= GPIO_PIN_5 << 16;
 }

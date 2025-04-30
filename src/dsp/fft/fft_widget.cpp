@@ -12,7 +12,8 @@
 #include "ips_font.h"
 #include <utility>
 
-FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {}
+FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {
+}
 
 void FFTWidget::draw_bandwidth() {
 
@@ -105,7 +106,7 @@ void FFTWidget::draw_h_labels() {
         n_divs--;
     }
 
-    uint32_t delta_khz = config.fft.span / n_divs / 1000;
+    uint32_t delta_khz = fft_params.span / n_divs / 1000;
     uint16_t delta_x = DISPLAY_X_PIXELS / n_divs;
 
     display->setFont((FontDef *)&Font_Fixed5x7);
@@ -248,9 +249,13 @@ void FFTWidget::before_paint() {
     }
 }
 
-void FFTWidget::set_style(FFT_SPECTRUM_STYLE v) { style = v; }
+void FFTWidget::set_style(FFT_SPECTRUM_STYLE v) {
+    style = v;
+}
 
-FFT_SPECTRUM_STYLE FFTWidget::get_style() { return style; }
+FFT_SPECTRUM_STYLE FFTWidget::get_style() {
+    return style;
+}
 
 void FFTWidget::set_colors(uint16_t line, uint16_t fill) {
     spectrum_line_color = line;

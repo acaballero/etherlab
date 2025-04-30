@@ -107,7 +107,9 @@ void logValue(const char *label, float value) {
 }
  */
 
-void logEvent(uint8_t type, float value) { logEvent(type, value, 0); }
+void logEvent(uint8_t type, float value) {
+    logEvent(type, value, 0);
+}
 
 void logEvent(uint8_t type, float value, uint8_t end = 0) {
 
@@ -316,9 +318,13 @@ void print_vector_complex_f32(float32_t *v, uint16_t len) {
     }
 }
 
-unsigned long millis() { return uwTick; }
+unsigned long millis() {
+    return uwTick;
+}
 
-unsigned long micros() { return uwTick * 1000 + (1000 - SysTick->VAL / 72); }
+unsigned long micros() {
+    return uwTick * 1000 + (1000 - SysTick->VAL / 72);
+}
 
 float fasterlog2(float x) {
     union {
@@ -338,7 +344,18 @@ float fasterlog(float x) {
     return 0.3010299f * fasterlog2(x); // Log10(x)
 }
 
-void min_max_f32(float *v, uint16_t size, float *min, float *max) { min_max_f32(v, size, min, max, (float)0xFFFFFFFF); }
+float fastpow2(const float val) {
+    union {
+        float f;
+        uint32_t n;
+    } u;
+    u.n = val * 8388608 + (0x3f800000 - 60801 * 8);
+    return u.f;
+}
+
+void min_max_f32(float *v, uint16_t size, float *min, float *max) {
+    min_max_f32(v, size, min, max, (float)0xFFFFFFFF);
+}
 
 void min_max_f32(float *v, uint16_t size, float *min, float *max, float discard) {
 
@@ -359,7 +376,9 @@ void min_max_f32(float *v, uint16_t size, float *min, float *max, float discard)
 
 char prefixes[] = "num kMGT";
 
-float format_eng(char *dest, float value, const char *units, char *new_units) { return format_eng(dest, value, units, new_units, 1, false); }
+float format_eng(char *dest, float value, const char *units, char *new_units) {
+    return format_eng(dest, value, units, new_units, 1, false);
+}
 
 float format_eng(char *dest, float value, const char *units, char *new_units, uint8_t dec_places, bool trailing_zero) {
 
@@ -500,7 +519,9 @@ int analogMedian(int pin, int n) {
 }
 */
 
-float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) { return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min; }
+float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 /*
 float roundDownToNearest(float d, float t) {
@@ -528,7 +549,9 @@ int mostSignificantDecimal(long i) {
     return (int)d;
 }
 
-float truncate_float(float v, int decimals) { return (float)((int)(v * POWSOF10[decimals - 1])) / (float)POWSOF10[decimals - 1]; }
+float truncate_float(float v, int decimals) {
+    return (float)((int)(v * POWSOF10[decimals - 1])) / (float)POWSOF10[decimals - 1];
+}
 /**
  * Double to ASCII
  */
@@ -748,6 +771,10 @@ char *ftoa(char *dest, size_t size, double val, int dec) {
     return dest;
 }
 
-float adc_to_mv(int adc_value, float adc_vref, int adc_max) { return ((float)adc_value / (float)adc_max) * adc_vref; }
+float adc_to_mv(int adc_value, float adc_vref, int adc_max) {
+    return ((float)adc_value / (float)adc_max) * adc_vref;
+}
 
-float mv_to_adc(int millivolts, float adc_vref, int adc_max) { return ((float)millivolts / adc_vref) * (float)adc_max; }
+float mv_to_adc(int millivolts, float adc_vref, int adc_max) {
+    return ((float)millivolts / adc_vref) * (float)adc_max;
+}
