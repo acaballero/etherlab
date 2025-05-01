@@ -2,6 +2,7 @@
 // Created by Angel Dust on 29/04/2025.
 //
 
+#include "MemoryFree.h"
 #include "config.h"
 #include "dsp/buffer.hpp"
 #include "dsp/dsp_common.h"
@@ -11,6 +12,7 @@
 #include "dsp/window.h"
 #include <algorithm>
 #include <exception>
+#include "printf.h"
 
 template class DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>;
 
@@ -41,7 +43,7 @@ template <int TAPS> bool DspFIRDecimatorFloatComplex<TAPS>::init() {
     float32_t coeffs[TAPS * 2];
 
     // This generates a complex vector with TAPS*2 length
-    b = generate_fir_filter_taps(BPF, coeffs, TAPS, this->input_rate, start_frequency, this->bandwidth);
+    b = generate_fir_filter_taps(BPF, coeffs, TAPS, this->input_rate, start_frequency + (this->bandwidth / 2), this->bandwidth / 2);
 
     // Unzip complex taps
     for (int i = 0; i < TAPS; i++) {

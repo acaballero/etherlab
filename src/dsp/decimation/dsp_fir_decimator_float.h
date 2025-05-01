@@ -16,7 +16,7 @@
 class IDspDecimatorFloat {
   public:
     virtual void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples) = 0;
-    virtual bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0) = 0;
+    virtual bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_frequency = 0) = 0;
 
     virtual ~IDspDecimatorFloat() = default;
 };

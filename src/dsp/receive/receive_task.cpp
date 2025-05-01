@@ -164,11 +164,13 @@ bool ReceiveTask::init_decimators() {
             switch (mod) {
                 case SSB_USB:
                 case SSB_LSB:
+
                     signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
                     ret = signal_decimator->config(stage_fs, next_stage_bandwidth, factor);
                     break;
                 case CW:
                     signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
+                    // TODO: Select pitch (offset center freq)
                     ret = signal_decimator->config(stage_fs, next_stage_bandwidth, factor, 500);
                     break;
                 default:
@@ -178,7 +180,7 @@ bool ReceiveTask::init_decimators() {
             }
 
         } else {
-            factor = dec > 8 ? 4 : 2;
+            factor = dec > 16 ? 8 : (dec > 8 ? 4 : 2);
             next_stage_bandwidth = (stage_fs / (factor * 2));
             ret = decimators[n_decimators].config(stage_fs, next_stage_bandwidth, factor);
         }
@@ -198,12 +200,15 @@ bool ReceiveTask::init_decimators() {
 
 bool ReceiveTask::start() {
 
+    // Stop task processing timer (in case this is a restart)
+    HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
+
     dsp_set_real_time(true);
 
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz && dec_factor < 16) {
+    while (status.sample_rate > audio_bw_hz && dec_factor < 32) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }

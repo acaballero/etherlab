@@ -46,6 +46,7 @@
 #include <vector>
 #include <cmath>
 #include <iomanip>
+#include "MemoryFree.h"
 
 static double sinc(const double x) {
     if (x == 0) {
@@ -120,7 +121,7 @@ bool design_fir_kaiser_lpf(float *taps, double cutoffHz, double sampleRate, doub
 
     int M = numTaps - 1;
 
-    printf("LPF Kaiser FIR: fx:%f,fs:%f,taps:%d\n", sampleRate, cutoffHz, numTaps);
+    printf_("LPF Kaiser FIR: fx:%f,fs:%f,taps:%d\n", sampleRate, cutoffHz, numTaps);
 
     for (int n = 0; n < numTaps; ++n) {
         double x = n - M / 2.0;
@@ -134,12 +135,13 @@ bool design_fir_kaiser_lpf(float *taps, double cutoffHz, double sampleRate, doub
 
 bool design_complex_bandpass(float *taps, int num_taps, double fs, float center_freq, float bandwidth) {
 
-    std::vector<float> real_taps(num_taps);
+    float real_taps[num_taps];
 
     // First, we generate a lowpass prototype with a moderate transition widht
     double transition_width = 0; // bandwidth / 2.0;
 
-    bool ok = design_fir_kaiser_lpf(real_taps.data(), bandwidth, fs, transition_width, num_taps, 1.0, 40.0, true);
+    bool ok = design_fir_kaiser_lpf(real_taps, bandwidth, fs, transition_width, num_taps, 1.0, 40.0, true);
+
     if (!ok) {
         return false;
     }
@@ -151,10 +153,17 @@ bool design_complex_bandpass(float *taps, int num_taps, double fs, float center_
         taps[2 * n + 1] = real_taps[n] * sin(phase); // imag part
     }
 
+    printf_("BPF complex FIR: fs:%f,center:%f,bw:%f,taps:%d\n", fs, center_freq, bandwidth, num_taps);
+
+    for (int n = 0; n < num_taps * 2; ++n) {
+        printf_(",%f", taps[n]);
+    }
+    printf_("\n");
+
     return true;
 }
 
-void designLPF(float *m_taps, int m_num_taps, float fs, float fx) {
+void design_lpf(float *m_taps, int m_num_taps, float fs, float fx) {
 
     int n;
 
@@ -171,7 +180,7 @@ void designLPF(float *m_taps, int m_num_taps, float fs, float fx) {
     // printf_("\n");
 }
 
-void designHPF(float *m_taps, int m_num_taps, float Fs, float Fx) {
+void design_hpf(float *m_taps, int m_num_taps, float Fs, float Fx) {
 
     int n;
     double mm;
@@ -188,7 +197,7 @@ void designHPF(float *m_taps, int m_num_taps, float Fs, float Fx) {
     }
 }
 
-void designBPF(float *m_taps, int m_num_taps, float Fs, float Fx, float Fu) {
+void design_bpf(float *m_taps, int m_num_taps, float Fs, float Fx, float Fu) {
     int n;
     double mm;
 
@@ -220,8 +229,9 @@ bool generate_fir_filter_taps(filter_type filt_t, float32_t *m_taps, int m_num_t
             b = design_fir_kaiser_lpf(m_taps, fx, fs, 0, m_num_taps, 1, 40, true);
             // designLPF(m_taps, m_num_taps, fs, fx);
         } else if (filt_t == HPF) {
-            designHPF(m_taps, m_num_taps, fs, fx);
+            design_hpf(m_taps, m_num_taps, fs, fx);
         } else {
+            // m_taps length must be m_num_taps * 2
             b = design_complex_bandpass(m_taps, m_num_taps, fs, fx, fu);
         }
 
