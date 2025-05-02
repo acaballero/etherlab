@@ -5,6 +5,7 @@
 #include "hw/stm32.h"
 #include "timers.h"
 #include "config.h"
+#include <sys/_stdint.h>
 
 TIM_HandleTypeDef htim3;  // Led blink
 TIM_HandleTypeDef htim2;  // ADC DMA
@@ -103,7 +104,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
  * @param htim_oc: TIM_OC handle pointer
  * @retval None
  */
-void HAL_TIM_OC_MspInit(TIM_HandleTypeDef *htim_oc) {}
+void HAL_TIM_OC_MspInit(TIM_HandleTypeDef *htim_oc) {
+}
 
 /**
  * @brief TIM_Base MSP De-Initialization
@@ -173,10 +175,12 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim_base) {
  * @param htim_oc: TIM_OC handle pointer
  * @retval None
  */
-void HAL_TIM_OC_MspDeInit(TIM_HandleTypeDef *htim_oc) {}
+void HAL_TIM_OC_MspDeInit(TIM_HandleTypeDef *htim_oc) {
+}
 
 /* Timers associated pins initialization */
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim) {}
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim) {
+}
 
 /**
  * @brief TIM3 Initialization Function
@@ -456,11 +460,10 @@ void update_timer(TIM_TypeDef *timer, uint32_t period, uint32_t prescaler) {
     timer->EGR = TIM_EGR_UG;
 }
 
-void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
+void set_timer_sample_rate_NOT_INTEGER_PHASE_MATCH(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
 
     // Prescaler and period (ARR) formula
     // (PSC+1)*(ARR+1) = TIMclk/SampleFrequency
-
     uint32_t prescaler = 1;
     uint32_t period = clk_freq / hz;
 
@@ -493,6 +496,40 @@ void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
 
     /* Generate an update event to reload the Prescaler
      and the repetition counter (only for TIM1 and TIM8) value immediatly */
+    timer->EGR = TIM_EGR_UG;
+}
+
+void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
+    uint32_t target_div = clk_freq / hz;
+
+    uint32_t best_psc = 0;
+    uint32_t best_arr = 0;
+    uint32_t min_error = 0xFFFFFFFF;
+
+    for (uint32_t psc = 0; psc <= 0xFFFF; ++psc) {
+        uint32_t denom = psc + 1;
+
+        uint32_t arr = target_div / denom;
+
+        if (arr == 0 || arr > 0x10000) {
+            continue;
+        }
+
+        uint32_t actual_freq = clk_freq / (denom * arr);
+        uint32_t error = (actual_freq > hz) ? (actual_freq - hz) : (hz - actual_freq);
+
+        if (error < min_error) {
+            min_error = error;
+            best_psc = psc;
+            best_arr = arr - 1;
+            if (error == 0) {
+                break; // perfect match found
+            }
+        }
+    }
+
+    timer->PSC = best_psc;
+    timer->ARR = best_arr;
     timer->EGR = TIM_EGR_UG;
 }
 

@@ -96,7 +96,7 @@ extern float fft_noise_floor_db; // Noise floor in dB
 extern float snr;                // Signal to noise in the baseband
 extern float dbm;                // Power in the baseband
 std::pair<int, int> get_bandwidth_bin_limits();
-
+extern Signal signal;
 } // namespace fft
 
 complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b);

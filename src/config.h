@@ -24,7 +24,7 @@
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ANALOGMODE(mode) (mode == ANALOG_TX || mode == ANALOG_RX)
 #define ISANALOG (ANALOGMODE(config.mode))
-#define CONFIG_VERSION "330"
+#define CONFIG_VERSION "331"
 
 namespace configuration {
 extern os::periodic_task task;
@@ -66,8 +66,8 @@ typedef struct st_config //__attribute__ ((packed))
     radio::BAND filter = radio::BAND_AUTO;
     radio::IF_FILTER if_filter = radio::IF_FILTER_AUTO;
     radio::FRONTEND_PATH frontend_path = radio::FRONTEND_PATH_LNA; // LNA enabled
-    MODULATION_MODE modulation = FM;
-    MODE mode;
+    MODULATION_MODE modulation = AM;
+    MODE mode = DIGITAL_RX;
     radio::BAND band = radio::BAND_AUTO;
     bool hpa_enabled = true;
     uint8_t max_power_dbm = 36;

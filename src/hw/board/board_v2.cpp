@@ -2,6 +2,8 @@
 // Created by Angel Dust on 29/05/2021.
 //
 
+#include "dsp/fft/fft.h"
+#include "hw/stm32f4xx/timers.h"
 #include "stdio.h"
 #include "board_v2.h"
 #include "../stm32.h"
@@ -422,7 +424,14 @@ bool radio_config(st_radio_config radioConfig) {
 
             // Enable DAC for audio output
             MX_DAC_Init();
-            set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq);
+
+            // Instead of calculating the DAC timer period from the audio output sample rate, which would generate
+            // a phase mismatch between them when not integer prescaler and period can be found for the target frequencies,
+            // the sample rate (period and prescaler) are derived from those of the ADC timer.
+
+            int ratio = (float)(fft_params.sample_freq / radioConfig.sample_freq) * ((float)ADC_DMA_TIMER_CLOCK_HZ / (float)DAC_TIMER_CLOCK_HZ);
+            uint32_t adc_timer_real_freq = ADC_DMA_TIMER_CLOCK_HZ / ((ADC_DMA_TIMER->PSC + 1) * (ADC_DMA_TIMER->ARR + 1));
+            set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, adc_timer_real_freq / ratio);
 
             // TODO: Use only one DAC instead of two in quadrature
             DAC_DMA_Start(&hdac1);

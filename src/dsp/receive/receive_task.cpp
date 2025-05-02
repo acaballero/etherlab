@@ -20,6 +20,7 @@
 #include "config.h"
 #include "FIFO.h"
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
@@ -64,9 +65,6 @@ void ReceiveTask::work() {
 
                 dsp::s16_to_f32((const adc_type *)in_p, bi2_p, block_size_in << 1);
 
-#if DSP_FS4_SHIFT
-                dsp::rotate_fs4_f32(bi2_p, bi2_p, block_size_in);
-#endif
                 dsp::unzip_f32((const float32_t *)bi2_p, bi1_p, bq1_p, block_size_in);
 
                 for (int i = 0; i < n_decimators; i++) {
@@ -86,10 +84,12 @@ void ReceiveTask::work() {
 
                 dsp::zip_f32(bi1_p, bq1_p, (float32_t *)bi2_p, block_size_out);
 
+#if !DSP_FS4_SHIFT
                 // DC block
                 buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
                 dc_block_i.filter(bb, 2, 0);
                 dc_block_q.filter(bb, 2, 1);
+#endif
 
                 // Wrap the destination buffer
                 buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)bi2_p, (size_t)block_size_out};
@@ -98,7 +98,8 @@ void ReceiveTask::work() {
                 demodulator->work(buff_out, (float32_t *)buff_out_f32.p);
 
                 if (compressor_enabled) {
-                    //        compressor.work(buff_out_f32);
+
+                    compressor.work(buff_out_f32);
                 }
 
                 // TODO: Apply deemphasis IIR filter for FM (-6db slope lowpass from 300 to 5000 khz)
@@ -200,6 +201,8 @@ bool ReceiveTask::init_decimators() {
 
 bool ReceiveTask::start() {
 
+    main_board::setMute(GPIO_PIN_SET);
+
     // Stop task processing timer (in case this is a restart)
     HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
 
@@ -208,7 +211,7 @@ bool ReceiveTask::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz && dec_factor < 32) {
+    while (status.sample_rate > audio_bw_hz * 2 && dec_factor < 32) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }
@@ -233,12 +236,21 @@ bool ReceiveTask::start() {
         return false;
     }
 
+    demodulator = get_modulator();
+
+    if (dsp::dsp_config.audio_compressor_enabled && (mod == AM || mod == SSB_USB || mod == SSB_LSB)) {
+        compressor_enabled = true;
+        compressor.config(status.sample_rate, dsp::dsp_config.audio_compressor_threshold);
+    } else {
+        compressor_enabled = false;
+    }
+
     // Start task processing timer
     // TODO: This should be done by the caller of this method and be generic for all tasks
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
     // Se the fifo processing frequency
-    update_timer(TASKS_TIMER_TYPEDEF, 2, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000);
+    update_timer(TASKS_TIMER_TYPEDEF, 80, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
 
     ret = radio_config({.direction = RF_DIRECTION_RX,
                         .sample_freq = status.sample_rate,
@@ -247,15 +259,12 @@ bool ReceiveTask::start() {
 
     status.status = DSP_STATUS_RUNNING;
 
-    demodulator = get_modulator();
-
-    compressor_enabled = mod == AM || mod == SSB_USB || mod == SSB_LSB;
-
     if (!ret) {
         halt(DSP_ERR);
         return false;
     }
 
+    main_board::setMute(GPIO_PIN_RESET);
     return true;
 }
 

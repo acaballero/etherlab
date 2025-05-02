@@ -9,6 +9,7 @@
 #include "dsp/dsp_common.h"
 
 #include <cmath>
+#include <sys/_stdint.h>
 
 /* Code based on article in Journal of the Audio Engineering Society
  * Vol. 60, No. 6, 2012 June, by Dimitrios Giannoulis, Michael Massberg,
@@ -18,15 +19,15 @@
 
 class GainComputer {
   public:
-    constexpr GainComputer(float ratio, float threshold) : ratio{ratio}, slope{1.0f / ratio - 1.0f}, threshold_db{threshold} {
+    constexpr GainComputer(float ratio, float threshold) : slope{1.0f / ratio - 1.0f}, ratio{ratio}, threshold_db{threshold} {
     }
 
     float operator()(const float x) const;
 
   private:
-    const float ratio;
-    const float slope;
-    const float threshold_db;
+    float slope;
+    float ratio;
+    float threshold_db;
 
     static constexpr float knee_width_db = 0.0f;
 
@@ -48,19 +49,29 @@ class PeakDetectorBranchingSmooth {
 
   private:
     float state{0.0f};
-    const float att_a;
-    const float rel_a;
+    float att_a;
+    float rel_a;
 };
 
 class FeedForwardCompressor {
   public:
+    FeedForwardCompressor() {
+        config(12000, -30);
+    };
     void work(const buffer_t<float32_t> &buffer);
+    void config(uint32_t sample_rate, int32_t threshold) {
+        fs = sample_rate;
+        peak_detector = {tau_alpha(0.010f, fs), tau_alpha(0.300f, fs)};
+        gain_computer = {ratio, static_cast<float>(threshold)};
+        makeup_gain = std::pow(10.0f, (threshold - (threshold / ratio)) / -20.0f);
+    }
 
   private:
-    static constexpr float fs = 12000.0f;
     static constexpr float ratio = 10.0f;
-    static constexpr float threshold = -30.0f;
-    static constexpr float makeup_gain = 0.04466835921; // std::pow(10.0f, (threshold - (threshold / ratio)) / -20.0f);
+
+    float makeup_gain;
+    float fs = 12000.0f;
+    float threshold = -30.0f;
 
     GainComputer gain_computer{ratio, threshold};
     PeakDetectorBranchingSmooth peak_detector{tau_alpha(0.010f, fs), tau_alpha(0.300f, fs)};

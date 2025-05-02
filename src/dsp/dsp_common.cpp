@@ -3,6 +3,7 @@
 //
 
 #include "dsp_common.h"
+#include "dsp/fft/fft.h"
 #include "dsp_config.h"
 #include "config.h"
 #include "arm_math.h"
@@ -47,6 +48,14 @@ void set_tx_gain_db(int8_t gain_db) {
     dsp_tx_gain = constrain(gain_db, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB);
     dsp_status->gain = pow(10.0, (float)dsp_tx_gain / 20.0);
     dsp_common_params_signal.emit(&dsp_status);
+}
+
+int32_t get_frequency_shift(uint32_t sample_rate) {
+#if DSP_FS4_SHIFT
+    return (int64_t)(sample_rate ? (sample_rate / 4) : (fft_params.sample_freq / 4));
+#else
+    return 0;
+#endif
 }
 
 void s16_to_q15(const adc_type *src, q15_t *dst, size_t size) {
@@ -192,7 +201,41 @@ void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
         rot = (rot + 1) & 0x3;
     }
 }
+/* THIS ROTATION FUNCTION LOSES LOT OF PRECISSION
+#define __SMULBB(x, y) ((int32_t)(((int16_t)((x)&0xFFFF)) * ((int16_t)((y)&0xFFFF))))
+#define __SMULBT(x, y) ((int32_t)(((int16_t)((x)&0xFFFF)) * ((int16_t)((y) >> 16))))
+#define __SMULTB(x, y) ((int32_t)(((int16_t)((x) >> 16)) * ((int16_t)((y)&0xFFFF))))
+#define __SMULTT(x, y) ((int32_t)(((int16_t)((x) >> 16)) * ((int16_t)((y) >> 16))))
 
+void rotate_fs8_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
+const uint32_t *src32 = (const uint32_t *)src;
+uint32_t *dst32 = (uint32_t *)dst;
+
+static const uint32_t twiddle_fs8_q15[8] = {0x00007FFF, 0x5A825A82, 0x7FFF0000, 0x5A82A57E, 0x80000000, 0xA57EA57E, 0x00008000, 0x5A82A57E};
+
+for (size_t i = 0; i < n_samples; ++i) {
+    uint32_t in = *src32++;
+    q15_t i_val = (q15_t)(in & 0xFFFF);
+    q15_t q_val = (q15_t)(in >> 16);
+
+    uint32_t tw = twiddle_fs8_q15[i & 0x7];
+    q15_t tw_re = (q15_t)(tw & 0xFFFF);
+    q15_t tw_im = (q15_t)(tw >> 16);
+
+    int32_t out_i = __SMULBB(i_val, tw_re) - __SMULBB(q_val, tw_im);
+    int32_t out_q = __SMULBB(i_val, tw_im) + __SMULBB(q_val, tw_re);
+
+    // Rounding and saturation
+    q15_t i_rot = (q15_t)__SSAT((out_i + (1 << 14)) >> 15, 16);
+    q15_t q_rot = (q15_t)__SSAT((out_q + (1 << 14)) >> 15, 16);
+
+    i_rot = __SSAT(i_rot << 2, 16);
+    q_rot = __SSAT(q_rot << 2, 16);
+
+    *dst32++ = __PKHBT(i_rot, q_rot, 16);
+}
+}
+*/
 void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples) {
 
     // Rotation state 0,1,2,3 pattern

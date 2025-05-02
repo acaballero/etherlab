@@ -62,14 +62,17 @@ void dsp_set_real_time(bool b) {
     fft_config(config.fft.span);
 }
 
+void restart_callback(void *, void *) {
+    dsp_restart();
+}
+
 void dsp_init(dsp::st_dsp_config &config) {
 
     dsp::set_config(config);
     ADC_DMA_Start(&hadc1);
     dsp::set_max_sample_freq(false);
-    main_board::mode_signal.add(nullptr, [](void *, void *) {
-        dsp_restart();
-    });
+    main_board::mode_signal.add(nullptr, restart_callback); // modulation or mode changed
+    fft::signal.add(nullptr, restart_callback);             // fft params changed
 }
 
 void dsp_stop_tasks() {
@@ -188,16 +191,17 @@ DCBlock dc_block_i{0.999};
 DCBlock dc_block_q{0.999};
 
 inline void adc_work() {
-    // GPIOD->BSRR |= GPIO_PIN_5;
+    // GPIOD->BSRR |= GPIO_PIN_9;
     // GPIOD->BSRR |= GPIO_PIN_5 << 16;
 #if DSP_FS4_SHIFT
 
-    //if (fft_params.n_slices == 1) {
-    //    buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
-        // dc_block_i.filter(bb, 2, 0);
-        // dc_block_q.filter(bb, 2, 1);
-        // dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, current_buffer->count);
-    //}
+    if (fft_params.n_slices == 1) {
+
+        buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
+        dc_block_i.filter(bb, 2, 0);
+        dc_block_q.filter(bb, 2, 1);
+        dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, current_buffer->count);
+    }
 
 #endif
 
@@ -214,7 +218,7 @@ inline void adc_work() {
         current_processor->work(current_buffer);
     }
 
-    // GPIOD->BSRR |= GPIO_PIN_5 << 16;
+    // GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }
 
 void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *) {

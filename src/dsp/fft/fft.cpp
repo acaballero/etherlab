@@ -6,6 +6,7 @@
 #include "config.h"
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
+#include <sys/_stdint.h>
 #include <sys/types.h>
 #include <utility>
 #include "dsp/blocks/dc_block.h"
@@ -203,6 +204,8 @@ os::periodic_task waterfall_task(0, []() {
     view_manager::mainView.Waterfall()->set_visible(true);
     view_manager::mainView.Waterfall()->set_dirty();
 });
+
+Signal signal;
 } // namespace fft
 
 uint64_t last_iqbalance_estimate_ms = 0;
@@ -248,7 +251,22 @@ void st_fft_params::calc() {
 
 bool st_fft_params::valid() {
 
-    bool b = (bw) <= FFT_BANDWIDTH && sample_freq >= config.fft.min_sample_rate && sample_freq <= dsp::dsp_max_sample_rate;
+    bool b = sample_freq >= config.fft.min_sample_rate && sample_freq <= dsp::dsp_max_sample_rate;
+
+    // In digital mode, if near-zero tuning is active (tuning to -sample_freq/4), the available bandwidth gets reduced.
+    // After shifting up again +SF/4 in software, the lower cutoff of the pre-ADC low-pass filter is brought up by
+    // the same amount
+    // (_______X____|___________)
+    //         ^----FS/4
+    //
+    // .....(_______X____|______)
+    //    ^-----lost
+    //
+    // With decimation, the bandwidht of interest is smaller and we can afford losing some phisical bandwidht, which
+    // is also taken into account here
+    // In the end, we need to assure that the distance from the (shifted) baseband center frequency to the lower cutoff
+    // frequency of the filter is at least the bandowidth of interest (after decimation)
+    b = b && ((int32_t)config.fft.bw - abs(dsp::get_frequency_shift(sample_freq))) >= (int32_t)bw;
 
     return b;
 }
@@ -369,6 +387,7 @@ bool fft_config(uint32_t span) {
 
     uint8_t current_dec_factor = fft_params.decimation_factor;
     uint32_t current_sample_rate = config.fft.sample_rate;
+    uint32_t current_bw = fft_params.bw;
 
     // Max span check
     uint32_t max_span = fft_max_span();
@@ -420,12 +439,14 @@ bool fft_config(uint32_t span) {
         // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
         // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
 
-        if (current_sample_rate != config.fft.sample_rate || !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
+        if (current_sample_rate != config.fft.sample_rate || current_bw != fft_params.bw ||
+            !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
 
             decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
 
+            signal.emit(nullptr);
         } else {
             decimator_i.set_factor(fft_params.decimation_factor);
             decimator_q.set_factor(fft_params.decimation_factor);
@@ -435,7 +456,7 @@ bool fft_config(uint32_t span) {
         if (fft_params.n_slices == 1) {
             // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
             // move to the adjacent slice. Not done yet.
-            radio::set_dsp_frequency_shift(-(int64_t)(config.fft.sample_rate / 4));
+            radio::set_dsp_frequency_shift(-dsp::get_frequency_shift());
         }
 #endif
 
@@ -915,11 +936,16 @@ void adquireFFTAsync() {
         fft_fifo.consume(chunk_size, &data.c);
     }
 
-    //#if !DSP_FS4_SHIFT
+#if !DSP_FS4_SHIFT
     if (config.fft.removeDC) {
         fft_dcremoval(fft_slice_buffer);
     }
-    //#endif
+#else
+    if (config.fft.removeDC && ISANALOG) {
+        // In digital mode, the DC is removed in the DSP processor
+        fft_dcremoval(fft_slice_buffer);
+    }
+#endif
 }
 
 complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b) {

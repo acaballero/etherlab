@@ -208,6 +208,8 @@ struct st_test_signal_params {
 
 struct st_dsp_config {
     int8_t gain = DSP_MIN_TX_GAIN_DB;
+    bool audio_compressor_enabled = true;
+    int32_t audio_compressor_threshold = -30;
     st_test_signal_params test_signal;
 };
 
@@ -227,6 +229,8 @@ void set_max_sample_freq(bool dsp);
 /* Set a specific maximum for the sample rate */
 void set_max_sample_freq(uint32_t rate);
 
+int32_t get_frequency_shift(uint32_t sample_rate = 0);
+
 /* Sets the digital domain TX direction gain */
 void set_tx_gain_db(int8_t gain_db);
 
@@ -242,6 +246,7 @@ void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t 
 void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_samples);
 
 void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples);
+// void rotate_fs8_q15(const q15_t *src, q15_t *dst, size_t n_samples);
 void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples);
 
 void set_config(st_dsp_config &);

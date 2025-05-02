@@ -229,7 +229,7 @@ void TitleBarWidget::init() {
     set_name("tit_w");
 
     for (Widget *btn : View::children()) {
-        btn->set_font((FontDef *)&Font_Fixed5x7);
+        btn->set_font((FontDef *)&Font_7x10);
         btn->set_aling(ALIGN_CENTER);
         ((Button *)btn)->set_style(ButtonStyle::BUTTON_STYLE_FLAT);
         ((Button *)btn)->set_bg(C565_VIOLET);
@@ -257,7 +257,6 @@ void TitleBarWidget::before_paint() {
 
             float drop_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->drop_rate() : 0;
             float starve_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->starve_rate() : 0;
-
             bool error = true;
             if (!dsp::dsp_status || dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
                 color = C565_RED;
@@ -268,7 +267,8 @@ void TitleBarWidget::before_paint() {
             }
             dsp::dsp_status->reset();
             char buf[20];
-            sprintf(buf, "%s%s %s %s", "DSP", error ? "!" : "", drop_freq > 0 ? "D" : "", starve_freq > 0 ? "S" : "");
+            sprintf(buf, "%s%s%s%s", "DSP", dsp::dsp_config.audio_compressor_enabled ? " C" : "", error && drop_freq > 0 ? " D" : "",
+                    error && starve_freq > 0 ? " S" : "");
             trim(buf);
             btnDSP.set_text(buf);
         }

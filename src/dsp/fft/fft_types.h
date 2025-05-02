@@ -31,7 +31,7 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 // the transition band of the low pass filter
 #define FFT_MIN_SAMPLE_RATE (FFT_BANDWIDTH * 2 * USABLE_BW_FACTOR)
 // Minimum allowed span for the FTT
-#define FFT_MIN_SPAN 50000
+#define FFT_MIN_SPAN 10000
 // Maximum allowed span for the FTT
 #define FFT_MAX_SPAN 1000000
 #define MAX_DECIMATION_FACTOR 8
@@ -119,10 +119,10 @@ typedef struct {
     // Max sample frequency in DSP mode. When doing DSP, we have to do more
     // processing to the ADC buffer in real time, so the sample frequency is even
     // more constrained. If we'd have enough processing power, ideally,
-    // dsp_sampling_max and sampling_khz_max would be the same. Otherwise the FFT
-    // will have to change it's parameters when doing real time DSP (see
+    // dsp_max_sample_rate and max_sample_rate would be the same. Currently, the FFT
+    // has to be reconfigured when doing real time DSP (see
     // dsp_set_real_time function)
-    uint32_t dsp_max_sample_rate = ADC_MAX_SAMPLE_RATE / 2;
+    uint32_t dsp_max_sample_rate = (ADC_MAX_SAMPLE_RATE * 3) / 4;
 
     // Min sample frequency, determined by the bandwidth of the ADC's low pass
     // filters Must be twice the bandwidth of interest plus the length of the

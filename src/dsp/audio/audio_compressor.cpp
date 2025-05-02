@@ -25,7 +25,9 @@ float GainComputer::operator()(const float x) const {
 
 void FeedForwardCompressor::work(const buffer_t<float32_t> &buffer) {
 
-    for (size_t i = 0; i < buffer.count; i++) {
+    // Expects interleaved i,q samples
+    // TODO: Currently, on receive, the DAC processor expects complex signals (TX mode heritage) Make it work with real signals for RX.
+    for (size_t i = 0; i < buffer.count * 2; i += 2) {
         buffer.p[i] = work(buffer.p[i]) * makeup_gain;
     }
 }

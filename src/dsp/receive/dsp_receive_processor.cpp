@@ -17,27 +17,24 @@ void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
     // TODO: Find some other way of making this processor know whether is reading or writing
     if (buffer->p == adc_buffer_1.p || buffer->p == adc_buffer_2.p) {
 
+        // GPIOD->BSRR |= GPIO_PIN_9;
         uint32_t free = input_stream.free((char **)&p);
 
         if (free >= block_size_bytes) {
 
             status.processed_blocks++;
 
-            uint16_t *in_p = (uint16_t *)buffer->p;
-
-            for (size_t i = 0; i < buffer->count * 2; i += 2) {
-                // TODO: Gain should be a generic and stackable block
-                p[i] = ((uint16_t *)in_p)[i];
-                p[i + 1] = ((uint16_t *)in_p)[i + 1];
-            }
-
-            input_stream.feed(block_size_bytes);
+            input_stream.writeBlock((char *)buffer->p, buffer->size_bytes);
 
         } else {
+
             status.fifo_overruns++;
         }
+
+        // GPIOD->BSRR |= GPIO_PIN_9 << 16;
     } else {
 
+        //  GPIOD->BSRR |= GPIO_PIN_9;
         uint32_t av = output_stream.available((char **)&p);
 
         if (av >= block_size_bytes) {
@@ -55,6 +52,7 @@ void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
             // Underruns will surely happen at the start of the process
             status.fifo_underruns++;
         }
+        // GPIOD->BSRR |= GPIO_PIN_9 << 16;
     }
 
     // Error rate

@@ -129,7 +129,7 @@ TOGGLE(fft_min_db_auto, autoMinDbToggle, "Auto dB scale ", doNothing, noEvent, n
        ,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
-menu_option_st<uint8_t> decimation_options[] = {{"1", 1}, {"2", 2}, {"4", 4}, {"8", 8}};
+menu_option_st<uint8_t> decimation_options[] = {{"1", 1}, {"2", 2}, {"4", 4}, {"8", 8}, {"16", 16}}; // TODO: Dynamically match to MAX_DECIMATION_FACTOR
 
 optionsPrompt<uint8_t> decimationMenu((const char *)"Max decimation", decimation_options, config.fft.max_decimation_factor,
                                       sizeof(decimation_options) / sizeof(decimation_options[0]));

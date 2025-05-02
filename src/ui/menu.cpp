@@ -1,5 +1,7 @@
 
 #include "menu.h"
+#include "dsp/dsp.h"
+#include "dsp/dsp_common.h"
 #include "frequency_memory_ui.h"
 #include "Display_afb.h"
 #include "config.h"
@@ -47,11 +49,13 @@ menu_option_st<radio::RPT_MODE> rpt_mode_options[] = {{radio::repeaterNames[radi
 
 MODULATION_MODE modulation;
 optionsPrompt<MODULATION_MODE> modulationMenu((const char *)"Modulation", modulation_options, modulation,
-                                              sizeof(modulation_options) / sizeof(modulation_options[0]),
-                                              [](MODULATION_MODE v) { main_board::setModulationMode(v, true); });
+                                              sizeof(modulation_options) / sizeof(modulation_options[0]), [](MODULATION_MODE v) {
+                                                  main_board::setModulationMode(v, true);
+                                              });
 
-optionsPrompt<radio::BAND> bandMenu((const char *)"Band", band_options, config.band, sizeof(band_options) / sizeof(band_options[0]),
-                                    [](radio::BAND) { radio::set_band(); });
+optionsPrompt<radio::BAND> bandMenu((const char *)"Band", band_options, config.band, sizeof(band_options) / sizeof(band_options[0]), [](radio::BAND) {
+    radio::set_band();
+});
 
 optionsPrompt<radio::BAND> filterMenu((const char *)"Frontend filter", band_options, config.filter, sizeof(band_options) / sizeof(band_options[0]),
                                       [](radio::BAND) {
@@ -69,7 +73,9 @@ optionsPrompt<radio::IF_FILTER> IFFilterMenu((const char *)"IF filter", if_filte
                                              });
 
 optionsPrompt<radio::RPT_MODE> repeaterMenu((const char *)"Repeater mode", rpt_mode_options, config.repeater_mode,
-                                            sizeof(rpt_mode_options) / sizeof(rpt_mode_options[0]), [](radio::RPT_MODE) { radio::update_freq(); });
+                                            sizeof(rpt_mode_options) / sizeof(rpt_mode_options[0]), [](radio::RPT_MODE) {
+                                                radio::update_freq();
+                                            });
 
 void open_gain() {
     menu_exit();
@@ -92,7 +98,10 @@ optionsPrompt<radio::FRONTEND_PATH> frontendPathMenu((const char *)"Frontend", f
                                                      });
 
 Menu::numberPrompt<float> squelchEditMenu((const char *)"Squelch", &config.squelch_level, 2, ' ', '.', nullptr,
-                                          [](float) { sstrength::set_squelch(config.squelch_level); }, 0, 9);
+                                          [](float) {
+                                              sstrength::set_squelch(config.squelch_level);
+                                          },
+                                          0, 9);
 } // namespace Menu
 
 using namespace Menu;
@@ -137,10 +146,14 @@ menu_option_st<LO_POWER> lo_power_options[] = {{"Low (-4 dBm)", LO_POWER_LOW}, {
 };
 
 optionsPrompt<LO_POWER> driveStrength1stLOMenu((const char *)"1st LO drive", lo_power_options, config.lo_drive_strength_0,
-                                               sizeof(lo_power_options) / sizeof(lo_power_options[0]), [](LO_POWER) { board::change_drive_strength = true; });
+                                               sizeof(lo_power_options) / sizeof(lo_power_options[0]), [](LO_POWER) {
+                                                   board::change_drive_strength = true;
+                                               });
 
 optionsPrompt<LO_POWER> driveStrength2ndLOMenu((const char *)"2nd LO drive", lo_power_options, config.lo_drive_strength_1,
-                                               sizeof(lo_power_options) / sizeof(lo_power_options[0]), [](LO_POWER) { board::change_drive_strength = true; });
+                                               sizeof(lo_power_options) / sizeof(lo_power_options[0]), [](LO_POWER) {
+                                                   board::change_drive_strength = true;
+                                               });
 
 menu_option_st<LO_INJECTION> lo_injection_options[] = {{"LO", LOW_SIDE}, {"HIGH", HIGH_SIDE}};
 
@@ -153,8 +166,9 @@ TOGGLE(config.debug, debugToggleMenu, "Debug: ", doNothing, noEvent, noStyle //,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent))
 
 optionsPrompt<LO_INJECTION> loSideInjectionMenu((const char *)"Preferred LO inj. side", lo_injection_options, config.lo_injection,
-                                                sizeof(lo_injection_options) / sizeof(lo_injection_options[0]),
-                                                [](LO_INJECTION) { board::change_drive_strength = true; });
+                                                sizeof(lo_injection_options) / sizeof(lo_injection_options[0]), [](LO_INJECTION) {
+                                                    board::change_drive_strength = true;
+                                                });
 
 #if ENABLE_RTC
 
@@ -181,15 +195,30 @@ PADMENU(timeMenu, "Time", setTime, updateEvent, noStyle, FIELD(time.Hours, "", "
 
 Menu::numberPrompt<uint8_t> hpaPowerMenu((const char *)"Max HPA pow", &config.max_power_dbm, 0, ' ', '.', "dBm", nullptr, 0, 50, 1, 5);
 Menu::numberPrompt<uint16_t> couplerOffsetMenu((const char *)"Coupler 0 dB offset", &config.coupler_0db_mv, 0, ' ', '.', "mV",
-                                               [](uint16_t v) { rf_coupler::set_offset(v); }, 0, 5000, 5, 100);
+                                               [](uint16_t v) {
+                                                   rf_coupler::set_offset(v);
+                                               },
+                                               0, 5000, 5, 100);
 Menu::numberPrompt<int32_t> loRefCorrectionMenu((const char *)"LO Ref. Correction", &config.f_correction, 0, ' ', '.', "Hz",
-                                                [](int32_t) { board::change_calibration = true; }, -1000000, 1000000, 1, 10);
+                                                [](int32_t) {
+                                                    board::change_calibration = true;
+                                                },
+                                                -1000000, 1000000, 1, 10);
 Menu::numberPrompt<int32_t> ifCorrectionMenu((const char *)"IF Correction", &config.if_correction, 0, ' ', '.', "Hz",
-                                             [](int32_t) { board::change_calibration = true; }, -1000000, 1000000, 1, 10);
+                                             [](int32_t) {
+                                                 board::change_calibration = true;
+                                             },
+                                             -1000000, 1000000, 1, 10);
 Menu::numberPrompt<uint32_t> if1stFreqMenu((const char *)"1st. IF Frequency", &config.f_1st_if, 0, ' ', '.', "Hz",
-                                           [](uint32_t) { board::change_calibration = true; }, 10000, 100000000, 1000, 10000);
+                                           [](uint32_t) {
+                                               board::change_calibration = true;
+                                           },
+                                           10000, 100000000, 1000, 10000);
 Menu::numberPrompt<uint32_t> ifFMTXFreqMenu((const char *)"FM IF TX Frequency", &config.f_if_fm_tx, 0, ' ', '.', "Hz",
-                                            [](uint32_t) { board::change_calibration = true; }, 10000, 100000000, 1000, 10000);
+                                            [](uint32_t) {
+                                                board::change_calibration = true;
+                                            },
+                                            10000, 100000000, 1000, 10000);
 
 MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu),
      OBJ(Menu::frontendPathMenu), OBJ(couplerOffsetMenu), OBJ(driveStrength1stLOMenu), OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu),
@@ -205,6 +234,33 @@ MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggle
 
 bool dsp_enabled = !ISANALOG;
 
+result toggle_dsp(eventMask) {
+    main_board::toggle_dsp();
+    return proceed;
+}
+
+TOGGLE(dsp_enabled, toggleDSP, "DSP receiver: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
+       VALUE("On", true, toggle_dsp, noEvent), VALUE("Off", false, toggle_dsp, noEvent));
+
+Menu::numberPrompt<int32_t> compressorThresholdMenu((const char *)"Compressor threshold", &dsp::dsp_config.audio_compressor_threshold, 0, ' ', '.', "dB",
+                                                    [](int32_t) {
+                                                        dsp_restart();
+                                                    },
+                                                    -30, 30, 1, 10);
+
+result dsp_compressor_set(eventMask = noEvent) {
+    if (dsp::dsp_config.audio_compressor_enabled) {
+        compressorThresholdMenu.enable();
+    } else {
+        compressorThresholdMenu.disable();
+    }
+    dsp_restart();
+    return proceed;
+}
+
+TOGGLE(dsp::dsp_config.audio_compressor_enabled, toggleDSPCompressor, "Audio compressor: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
+       VALUE("On", true, dsp_compressor_set, noEvent), VALUE("Off", false, dsp_compressor_set, noEvent));
+
 void update_options() {
     dsp_enabled = !ISANALOG;
     modulation = config.modulation;
@@ -215,21 +271,17 @@ void update_options() {
             option.enabled = radio::if_filters[option.value].analog_available || !ISANALOG;
         }
     }
+
+    dsp_compressor_set();
 }
 
-void mode_signal_handler(void *, void *) { update_options(); }
-
-result toggle_dsp(eventMask) {
-    main_board::toggle_dsp();
-    return proceed;
+void mode_signal_handler(void *, void *) {
+    update_options();
 }
-
-TOGGLE(dsp_enabled, toggleDSP, "DSP receiver: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
-       VALUE("On", true, toggle_dsp, noEvent), VALUE("Off", false, toggle_dsp, noEvent));
 
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), SUBMENU(toggleDSP));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), SUBMENU(toggleDSP), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu));
 
 MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED
