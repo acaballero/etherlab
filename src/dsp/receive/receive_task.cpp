@@ -205,6 +205,7 @@ bool ReceiveTask::start() {
 
     // Stop task processing timer (in case this is a restart)
     HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
+    //  ADC_DMA_Stop(&hadc1);
 
     dsp_set_real_time(true);
 

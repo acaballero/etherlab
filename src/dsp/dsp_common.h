@@ -106,6 +106,14 @@ enum DSP_ERROR {
     DSP_ERR_FIFO_UNDERRUN
 };
 
+// Max bandwidth of the DSP. This is the cutoff frequency of the low pass filters before the ADCs.
+// Note the complex bandwidth is twice since we're sampling quadrature signals
+#define DSP_BANDWIDTH 250000
+// The usable percentage of the DSP bandwidth. We discard frequencies on the
+// transition band of the low pass filter
+#define USABLE_BW_FACTOR 0.75
+#define MAX_DECIMATION_FACTOR 8
+
 #define DSP_MAX_CAPTURE_SIZE 50000000
 #define FIR_DECIMATOR_1ST_HALFBAND_TAPS 23
 #define FIR_DECIMATOR_SIGNAL_TAPS 51

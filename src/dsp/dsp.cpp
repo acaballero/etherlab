@@ -192,7 +192,7 @@ DCBlock dc_block_q{0.999};
 
 inline void adc_work() {
     // GPIOD->BSRR |= GPIO_PIN_9;
-    // GPIOD->BSRR |= GPIO_PIN_5 << 16;
+
 #if DSP_FS4_SHIFT
 
     if (fft_params.n_slices == 1) {
@@ -200,16 +200,22 @@ inline void adc_work() {
         buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
         dc_block_i.filter(bb, 2, 0);
         dc_block_q.filter(bb, 2, 1);
+
+        if (fft_params.decimation_factor > 1) {
+        }
+
         dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, current_buffer->count);
     }
 
 #endif
 
     if (!dsp::dsp_status || dsp::dsp_status->direction == DSP_DIRECTION_IN || dsp::dsp_status->direction == DSP_DIRECTION_INOUT) {
+
         // If the direction is input or bidirectional...
 
         // Fill the FFT FIFO. Here we don't care if we overrun as the FFT doesn't need to be processed in real-time
         // TODO: write to the FFT FIFO in a separate DspProcessor
+
         FIFO_ERROR err = fft_fifo.writeBlock((char *)current_buffer->p, current_buffer->size_bytes);
         UNUSED(err);
     }
@@ -232,9 +238,6 @@ void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *) {
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *) {
-    /* This is called after half the conversion is completed */
-
-    // TODO: Check ADC buffer overruns
     current_buffer = &adc_buffer_2;
     adc_work(); // Process the 2nd half of the buffer
 }
@@ -243,12 +246,6 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *) {
 
     current_buffer = &adc_buffer_1;
     adc_work(); // Process the 1st half of the buffer
-
-    // If DMAContinuousConversion is disabled, the adc buffer will be written only once, and HAL_ADC_Start_DMA
-    // should be called in order to start again after this callback
-    // If DMAContinuousConversion is enabled, there's no need to restart the ADC and DMA by calling HAL_ADC_Start_DMA,
-    // the ADC will remain active and triggered by the timer (or by software, whichever method is used) after this callback.
-    // HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&adc_buffer, 8);
 }
 
 void TIM8_TRG_COM_TIM14_IRQHandler(void) {
@@ -268,11 +265,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
         }
     }
 
-    /* USER CODE END TIM1_BRK_TIM15_IRQn 0 */
     HAL_TIM_IRQHandler(&TASKS_TIMER_HANDLE);
-    /* USER CODE BEGIN TIM1_BRK_TIM15_IRQn 1 */
-
-    /* USER CODE END TIM1_BRK_TIM15_IRQn 1 */
 }
 
 void dsp_test_cb(st_dspStatus *) {
@@ -292,14 +285,6 @@ void dspStop() {
 
     if (current_task) {
         current_task->stop();
-    }
-
-    if (current_processor && current_task) {
-        //        if (current_processor->status.direction == DSP_DIRECTION_IN) {
-        //            current_task->status.fifo_overruns = current_processor->status.fifo_overruns;
-        //        } else {
-        //            current_task->status.fifo_underruns = current_processor->status.fifo_underruns;
-        //        }
     }
 
     current_task = NULL;
@@ -325,45 +310,29 @@ void dspError(DSP_ERROR err) {
     switch (err) {
 
         case DSP_ERR_FILEOPEN:
-
             handleError(status::ST_ERROR, "Wave file open error");
             break;
-
         case DSP_ERR_FILECLOSE:
-
             handleError(status::ST_ERROR, "Wave file close error");
             break;
-
         case DSP_ERR_FILEWRITE:
-
             handleError(status::ST_ERROR, "Wave write error");
             break;
-
         case DSP_ERR_FILEREAD:
-
             handleError(status::ST_ERROR, "Wave read error");
             break;
-
         case DSP_ERR:
-
             handleError(status::ST_ERROR, "DSP error");
             break;
-
         case DSP_ERR_DMAOVERRUN:
-
             handleError(status::ST_ERROR, "DMA overrun");
             break;
-
         case DSP_ERR_FIFO_OVERRUN:
-
             handleError(status::ST_ERROR, "FIFO overrun");
             break;
-
         case DSP_ERR_FIFO_UNDERRUN:
-
             handleError(status::ST_ERROR, "FIFO underrun");
             break;
-
         default:
             break;
     }

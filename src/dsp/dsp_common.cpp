@@ -52,7 +52,16 @@ void set_tx_gain_db(int8_t gain_db) {
 
 int32_t get_frequency_shift(uint32_t sample_rate) {
 #if DSP_FS4_SHIFT
-    return (int64_t)(sample_rate ? (sample_rate / 4) : (fft_params.sample_freq / 4));
+
+    int factor = 1;
+    if (fft_params.decimation_factor > 1) {
+        // Shifting the frequency in hardware helps with some Zero-IF issues, but wastes our LPF bandwidth.
+        // To minimise the shift (but still match it with FS/4), we can apply it at a particular decimation
+        // state where the sample frequency has already been reduced
+        // factor = 2;
+    }
+
+    return ((sample_rate ? sample_rate : fft_params.sample_freq) / 4) / factor;
 #else
     return 0;
 #endif
@@ -62,8 +71,6 @@ void s16_to_q15(const adc_type *src, q15_t *dst, size_t size) {
 
     for (size_t i = 0; i < size; i += 2) {
         int32_t packed = *__SIMD32(src)++;
-
-        // Subtract 2048 from each halfword
 
         int16_t s0 = (int16_t)(packed & 0xFFFF);
         int16_t s1 = (int16_t)((packed >> 16) & 0xFFFF);
@@ -201,7 +208,8 @@ void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
         rot = (rot + 1) & 0x3;
     }
 }
-/* THIS ROTATION FUNCTION LOSES LOT OF PRECISSION
+
+/* THIS ROTATION FUNCTION LOSES A LOT OF PRECISSION
 #define __SMULBB(x, y) ((int32_t)(((int16_t)((x)&0xFFFF)) * ((int16_t)((y)&0xFFFF))))
 #define __SMULBT(x, y) ((int32_t)(((int16_t)((x)&0xFFFF)) * ((int16_t)((y) >> 16))))
 #define __SMULTB(x, y) ((int32_t)(((int16_t)((x) >> 16)) * ((int16_t)((y)&0xFFFF))))
@@ -236,6 +244,7 @@ for (size_t i = 0; i < n_samples; ++i) {
 }
 }
 */
+
 void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples) {
 
     // Rotation state 0,1,2,3 pattern

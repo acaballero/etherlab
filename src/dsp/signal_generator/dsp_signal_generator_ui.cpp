@@ -139,13 +139,13 @@ Menu::numberPrompt<uint32_t> basebandFrequencyMenu((const char *)"Baseband freq:
                                                    [](uint32_t) {
                                                        set_signal_params();
                                                    },
-                                                   10, FFT_BANDWIDTH, 10, 100);
+                                                   10, DSP_BANDWIDTH, 10, 100);
 
 Menu::numberPrompt<uint32_t> modulationFrequencyMenu((const char *)"Modulation freq:", &dsp::dsp_config.test_signal.modulation_frequency, 0, ' ', '.', "Hz",
                                                      [](uint32_t) {
                                                          set_signal_params();
                                                      },
-                                                     10, FFT_BANDWIDTH, 10, 100);
+                                                     10, DSP_BANDWIDTH, 10, 100);
 
 Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::dsp_config.test_signal.pulse_duty, 0, ' ', '.', "%",
                                          [](int8_t) {

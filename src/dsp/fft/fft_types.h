@@ -21,20 +21,14 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 
 // Length (number of bins) of a single fourier transform
 #define FFT_N 256
-// Max bandwidth of the FFT. This is the cutoff frequency of the low pass filters before the ADCs.
-// Note the complex bandwidth is twice since we're sampling quadrature signals
-#define FFT_BANDWIDTH 130000
-// The usable percentage of the FTT bandwidth. We discard frequencies on the
-// transition band of the low pass filter
-#define USABLE_BW_FACTOR 0.75
+
 // Needs to be >= FFT_BANDWIDTH*2 by a safe margin, depending on the width of
 // the transition band of the low pass filter
-#define FFT_MIN_SAMPLE_RATE (FFT_BANDWIDTH * 2 * USABLE_BW_FACTOR)
+#define FFT_MIN_SAMPLE_RATE (DSP_BANDWIDTH * 2 * USABLE_BW_FACTOR)
 // Minimum allowed span for the FTT
-#define FFT_MIN_SPAN 10000
+#define FFT_MIN_SPAN 8192
 // Maximum allowed span for the FTT
-#define FFT_MAX_SPAN 1000000
-#define MAX_DECIMATION_FACTOR 8
+#define FFT_MAX_SPAN 1048576
 
 // If the desired span is higher than the maximum bandwidth that can be computed
 // using a single FFT, we use multiple slices. Max number of slices (FFTs)
@@ -75,7 +69,7 @@ typedef struct {
 
     uint8_t max_slices = FFT_MAX_SLICES;
     uint32_t span = 750000;
-    uint32_t bw = FFT_BANDWIDTH; // Bandwidth of interest of the FFT. Usable bandwidth.
+    uint32_t bw = DSP_BANDWIDTH; // Bandwidth of interest of the FFT. Usable bandwidth.
     int16_t min_db = -130;
     int16_t max_db = -75;
     // bool min_db_auto = false;
@@ -122,7 +116,7 @@ typedef struct {
     // dsp_max_sample_rate and max_sample_rate would be the same. Currently, the FFT
     // has to be reconfigured when doing real time DSP (see
     // dsp_set_real_time function)
-    uint32_t dsp_max_sample_rate = (ADC_MAX_SAMPLE_RATE * 3) / 4;
+    uint32_t dsp_max_sample_rate = (ADC_MAX_SAMPLE_RATE / 2);
 
     // Min sample frequency, determined by the bandwidth of the ADC's low pass
     // filters Must be twice the bandwidth of interest plus the length of the

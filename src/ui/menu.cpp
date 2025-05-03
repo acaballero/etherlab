@@ -248,6 +248,12 @@ Menu::numberPrompt<int32_t> compressorThresholdMenu((const char *)"Compressor th
                                                     },
                                                     -30, 30, 1, 10);
 
+Menu::numberPrompt<uint32_t> dspBandwidthMenu((const char *)"DSP Bandwidth", &config.fft.bw, 0, ' ', '.', "Hz",
+                                              [](uint32_t) {
+                                                  dsp_restart();
+                                              },
+                                              DSP_BANDWIDTH / 2, DSP_BANDWIDTH * 2, 1000, 10000);
+
 result dsp_compressor_set(eventMask = noEvent) {
     if (dsp::dsp_config.audio_compressor_enabled) {
         compressorThresholdMenu.enable();
@@ -281,7 +287,7 @@ void mode_signal_handler(void *, void *) {
 
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), SUBMENU(toggleDSP), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), SUBMENU(toggleDSP), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu));
 
 MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED

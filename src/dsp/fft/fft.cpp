@@ -365,7 +365,7 @@ void resetIQBalancer() {
 }
 
 uint32_t fft_max_span() {
-    return current_max_slices * FFT_BANDWIDTH * 2;
+    return current_max_slices * DSP_BANDWIDTH * 2;
 }
 
 /* Finds the optimal FFT parameters based on the current selected span
@@ -409,8 +409,10 @@ bool fft_config(uint32_t span) {
             params.calc();
 
             if (params.valid()) {
-                // Our cost function is just the bind_width_px nearest to one so the bins doesn't have to be stretched nor shrink
-                if (abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px)) {
+                // Cost function is:
+                // - Bin width in screen pixels: nearest to one so the bins doesn't have to be stretched nor shrink
+                // - Decimation factor: the larger, the better SNR (preferred in digital RX), but also slower rates of FFT update
+                if (abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px) || (!ISANALOG && (params.decimation_factor > best.decimation_factor))) {
                     best = params;
                     found = true;
                 }
@@ -439,19 +441,6 @@ bool fft_config(uint32_t span) {
         // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
         // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
 
-        if (current_sample_rate != config.fft.sample_rate || current_bw != fft_params.bw ||
-            !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
-
-            decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
-            decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
-            set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
-
-            signal.emit(nullptr);
-        } else {
-            decimator_i.set_factor(fft_params.decimation_factor);
-            decimator_q.set_factor(fft_params.decimation_factor);
-        }
-
 #if DSP_FS4_SHIFT
         if (fft_params.n_slices == 1) {
             // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
@@ -466,36 +455,24 @@ bool fft_config(uint32_t span) {
             fft_fifo.setSize((FFT_N + (fft_params.decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) * MAX_DECIMATION_FACTOR *
                              sizeof(complex_t));
             fft_fifo.reset();
-            // current_dec_factor = fft_decimation_factor;
+        }
+
+        if (current_sample_rate != config.fft.sample_rate || current_bw != fft_params.bw ||
+            !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
+
+            decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
+            decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
+            set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
+
+            signal.emit(nullptr);
+        } else {
+            decimator_i.set_factor(fft_params.decimation_factor);
+            decimator_q.set_factor(fft_params.decimation_factor);
         }
     }
 
     return found;
 }
-
-/*
-void calibrateFFT() {
-
-
-    for (int i = 0; i < FFT_N; i++) {
-
-        double rads = 2.0f * PI * (90000.0f / (double) (config.fft.sampling * 1000)) * (double) i;
-
-        adc_buff_f[i].r = ((float) (0.0f + (10.0f) * cos(rads)));
-        adc_buff_f[i].i = ((float) (0.0f + (10.0f) * sin(rads)));
-    }
-
-//    // apply window
-//    arm_cmplx_mult_real_f32((float32_t *) adc_buff_f, window, (float32_t *) adc_buff_f, FFT_N);
-//
-//    (*arm_cfft)(&S_cfft, (float32_t *) adc_buff_f, 0, 1);
-//
-//    reorderBins(adc_buff_f);
-//
-//    arm_cmplx_mag_f32((float32_t *) adc_buff_f, (float32_t *) fft_output, FFT_N);
-
-
-}*/
 
 /*
  * Performance with -Og optimizations for FFT_N=128: 5ms
