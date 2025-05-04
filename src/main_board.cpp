@@ -653,34 +653,8 @@ void set_if_filter(radio::IF_FILTER fil) {
 
     radio::IF_FILTER new_filter;
 
-    if (fil == radio::IF_FILTER_AUTO) {
-        switch (config.modulation) {
-            case SSB_USB:
-            case SSB_LSB:
-                new_filter = radio::IF_FILTER_3KHZ;
-                break;
-            case CW:
-                new_filter = radio::IF_FILTER_500HZ;
-                break;
-            case FM:
-            case WFM:
-                if (radio::get_band() == radio::BAND_FM) {
-                    new_filter = radio::IF_FILTER_150KHZ;
-                } else {
-                    new_filter = radio::IF_FILTER_15KHZ;
-                }
-                break;
-            case AM:
-
-                if (ISANALOG) {
-                    new_filter = radio::IF_FILTER_15KHZ;
-                } else {
-                    new_filter = radio::IF_FILTER_9KHZ;
-                }
-                break;
-            default:
-                new_filter = radio::IF_FILTER_15KHZ;
-        }
+    if (fil == radio::IF_FILTER_AUTO || !radio::is_filter_allowed(fil)) {
+        new_filter = radio::band_if_filter();
     } else {
         new_filter = fil;
     }

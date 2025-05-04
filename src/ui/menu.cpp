@@ -246,7 +246,7 @@ Menu::numberPrompt<int32_t> compressorThresholdMenu((const char *)"Compressor th
                                                     [](int32_t) {
                                                         dsp_restart();
                                                     },
-                                                    -30, 30, 1, 10);
+                                                    -50, 30, 1, 10);
 
 Menu::numberPrompt<uint32_t> dspBandwidthMenu((const char *)"DSP Bandwidth", &config.fft.bw, 0, ' ', '.', "Hz",
                                               [](uint32_t) {
@@ -274,7 +274,7 @@ void update_options() {
     // Set enabled options for current mode
     for (auto &option : if_filter_options) {
         if (option.value != radio::IF_FILTER_AUTO) {
-            option.enabled = radio::if_filters[option.value].analog_available || !ISANALOG;
+            option.enabled = radio::is_filter_allowed(option.value);
         }
     }
 

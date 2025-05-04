@@ -107,6 +107,7 @@ uint8_t dsp_command(st_dspCommand command, void (*cb)(st_dspStatus *)) {
 bool dsp_restart() {
     if (current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
         current_task->start();
+        dsp::dsp_status->reset();
         return true;
     }
 

@@ -73,7 +73,7 @@ enum BAND {
     BAND_NONE
 };
 
-enum IF_FILTER { IF_FILTER_500HZ, IF_FILTER_3KHZ, IF_FILTER_9KHZ, IF_FILTER_15KHZ, IF_FILTER_150KHZ, IF_FILTER_AUTO, IF_FILTER_NONE };
+enum IF_FILTER { IF_FILTER_500HZ, IF_FILTER_3KHZ, IF_FILTER_6KHZ, IF_FILTER_9KHZ, IF_FILTER_15KHZ, IF_FILTER_150KHZ, IF_FILTER_AUTO, IF_FILTER_NONE };
 
 enum IF_FILTER_2 { IF_FILTER_2_AUTO, IF_FILTER_2_AUTO_THRU, IF_FILTER_2_NONE };
 
@@ -84,11 +84,12 @@ enum FRONTEND_PATH { FRONTEND_PATH_ATT, FRONTEND_PATH_THRU, FRONTEND_PATH_LNA };
 
 extern const char *bandNames[];
 extern const char *IFFilterNames[];
-extern const char *modulationNames[];
+extern const char *modulation_names[];
+extern const uint32_t modulation_min_bandwidths[];
 extern const char *repeaterNames[];
 extern BAND filter;
 extern IF_FILTER if_filter;
-extern const st_filter if_filters[5];
+extern const st_filter if_filters[6];
 extern const st_band bands[];
 extern mixer mixers[];
 extern Signal freq_signal;
@@ -120,8 +121,10 @@ void set_vfo(uint8_t);
 uint8_t toggle_vfo();
 uint8_t get_vfo();
 BAND get_band();
+IF_FILTER band_if_filter();
 extern os::periodic_task task;
 bool is_freq_inverted();
+bool is_filter_allowed(IF_FILTER);
 uint32_t get_bandwidth_hz();
 
 #ifdef __cplusplus

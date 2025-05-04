@@ -98,11 +98,15 @@ void ReceiveTask::work() {
                 demodulator->work(buff_out, (float32_t *)buff_out_f32.p);
 
                 if (compressor_enabled) {
-
                     compressor.work(buff_out_f32);
                 }
-
-                // TODO: Apply deemphasis IIR filter for FM (-6db slope lowpass from 300 to 5000 khz)
+                if (deemph_enabled) {
+                    deemph_filter.decimate(buff_out_f32, buff_out_f32, 0, 2, 2);
+                } else {
+                    // Disabled. Minimal to negligible improvement
+                    //  buffer_t<float32_t> b = {(float32_t *)bi1_p, (size_t)block_size_out * 2};
+                    // audio_lpf.decimate(b, b, 0, 2, 2);
+                }
 
                 dsp::f32_to_s16((const float32_t *)bi1_p, (adc_type *)out_p, block_size_out << 1);
 
@@ -231,6 +235,17 @@ bool ReceiveTask::start() {
     status.decimated_block_size_bytes = status.decimated_block_size * sizeof(complex_t);
 
     bool ret = init_decimators();
+
+    // Init audio low-pass filter
+    // audio_lpf.config(status.sample_rate, 3000, 1);
+
+    if (mod == FM || mod == WFM) {
+        // Init de-emphasis FM filter
+        deemph_filter.config(status.sample_rate, 1500, 1);
+        deemph_enabled = true;
+    } else {
+        deemph_enabled = false;
+    }
 
     if (!ret) {
         halt(DSP_ERR);

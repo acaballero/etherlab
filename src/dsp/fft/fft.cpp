@@ -446,6 +446,8 @@ bool fft_config(uint32_t span) {
             // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
             // move to the adjacent slice. Not done yet.
             radio::set_dsp_frequency_shift(-dsp::get_frequency_shift());
+        } else {
+            radio::set_dsp_frequency_shift(0);
         }
 #endif
 

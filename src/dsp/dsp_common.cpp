@@ -62,6 +62,7 @@ int32_t get_frequency_shift(uint32_t sample_rate) {
     }
 
     return ((sample_rate ? sample_rate : fft_params.sample_freq) / 4) / factor;
+
 #else
     return 0;
 #endif

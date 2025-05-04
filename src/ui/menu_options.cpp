@@ -4,9 +4,9 @@
 #include "types.h"
 
 namespace Menu {
-menu_option_st<MODULATION_MODE> modulation_options[] = {{radio::modulationNames[AM], AM},           {radio::modulationNames[FM], FM},
-                                                        {radio::modulationNames[WFM], WFM},         {radio::modulationNames[CW], CW},
-                                                        {radio::modulationNames[SSB_LSB], SSB_LSB}, {radio::modulationNames[SSB_USB], SSB_USB}};
+menu_option_st<MODULATION_MODE> modulation_options[] = {{radio::modulation_names[AM], AM},           {radio::modulation_names[FM], FM},
+                                                        {radio::modulation_names[WFM], WFM},         {radio::modulation_names[CW], CW},
+                                                        {radio::modulation_names[SSB_LSB], SSB_LSB}, {radio::modulation_names[SSB_USB], SSB_USB}};
 
 menu_option_st<radio::BAND> band_options[] = {{radio::bandNames[radio::BAND_AUTO], radio::BAND_AUTO}, {radio::bandNames[radio::BAND_70cm], radio::BAND_70cm},
                                               {radio::bandNames[radio::BAND_1m], radio::BAND_1m},     {radio::bandNames[radio::BAND_2m], radio::BAND_2m},
@@ -19,9 +19,10 @@ menu_option_st<radio::BAND> band_options[] = {{radio::bandNames[radio::BAND_AUTO
                                               {radio::bandNames[radio::BAND_160m], radio::BAND_160m}, {radio::bandNames[radio::BAND_ALL], radio::BAND_ALL}};
 
 menu_option_st<radio::IF_FILTER> if_filter_options[] = {
-    {radio::IFFilterNames[radio::IF_FILTER_AUTO], radio::IF_FILTER_AUTO},   {radio::IFFilterNames[radio::IF_FILTER_500HZ], radio::IF_FILTER_500HZ},
-    {radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::IF_FILTER_3KHZ},   {radio::IFFilterNames[radio::IF_FILTER_9KHZ], radio::IF_FILTER_9KHZ},
-    {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::IF_FILTER_15KHZ}, {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::IF_FILTER_150KHZ},
+    {radio::IFFilterNames[radio::IF_FILTER_AUTO], radio::IF_FILTER_AUTO},     {radio::IFFilterNames[radio::IF_FILTER_500HZ], radio::IF_FILTER_500HZ},
+    {radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::IF_FILTER_3KHZ},     {radio::IFFilterNames[radio::IF_FILTER_6KHZ], radio::IF_FILTER_6KHZ},
+    {radio::IFFilterNames[radio::IF_FILTER_9KHZ], radio::IF_FILTER_9KHZ},     {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::IF_FILTER_15KHZ},
+    {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::IF_FILTER_150KHZ},
 };
 
 const char *colorNames[] = {"Black",        "Grey darker", "Grey dark", "Grey ligh", "White",  "Navy",     "Green dark", "Cyan dark",

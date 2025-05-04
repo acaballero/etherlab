@@ -99,18 +99,20 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
                          {7000000, 500000000, FLT_5_CODE, ANY_SIDE, false},
                          {7000000, 500000000, FLT_5_CODE, ANY_SIDE, false}};
 
-const st_filter if_filters[5] = {
-    {10000000, 500, false, 0},                          // 500 Hz (digital only)
+const st_filter if_filters[6] = {
+    {10700000, 500, false, 0},                          // 500 Hz (digital only)
     {9998500, 3000, true, GPIOEXP_IF_FILTER_3KHZ},      // 3 Khz
+    {10700000, 6000, false, 0},                         // 6 Khz (digital only)
     {10700000, 9000, false, 0},                         // 9 Khz (digital only)
     {10698000, 15000, true, GPIOEXP_IF_FILTER_15KHZ},   // 15 Kh
-    {10700000, 150000, true, GPIOEXP_IF_FILTER_150KHZ}, // 150 Khz
+    {10000000, 150000, true, GPIOEXP_IF_FILTER_150KHZ}, // 150 Khz
 
 };
 const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "10 m",  "11 m", "12 m", "15 m",
                            "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "None"};
-const char *modulationNames[] = {"LSB", "USB", "FM", "WFM", "AM", "CW"};
-const char *IFFilterNames[] = {"500 Hz", "3 k", "9 K", "15 k", "150 k", "Auto"};
+const char *modulation_names[] = {"LSB", "USB", "FM", "WFM", "AM", "CW"};
+const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 150000, 6000, 0};
+const char *IFFilterNames[] = {"500 Hz", "3 k", "6 K", "9 K", "15 k", "150 k", "Auto"};
 const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
 BAND filter = BAND_NONE;
@@ -120,6 +122,10 @@ IF_FILTER_2 if_filter_2 = IF_FILTER_2_AUTO;
 void task_loop();
 
 os::periodic_task task(50, task_loop);
+
+bool is_filter_allowed(IF_FILTER filter) {
+    return (if_filters[filter].analog_available || !ISANALOG) && (if_filters[filter].bandwidth >= modulation_min_bandwidths[config.modulation]);
+}
 
 uint32_t get_bandwidth_hz() {
     return radio::if_filters[radio::if_filter].bandwidth;
@@ -396,6 +402,39 @@ void set_band() {
     config.f_max = bands[config.band].freq_end;
 
     set_frequency(constrain(get_frequency(), config.f_min, config.f_max));
+}
+
+IF_FILTER band_if_filter() {
+
+    IF_FILTER filter;
+    switch (config.modulation) {
+        case SSB_USB:
+        case SSB_LSB:
+            filter = IF_FILTER_3KHZ;
+            break;
+        case CW:
+            filter = IF_FILTER_500HZ;
+            break;
+        case FM:
+        case WFM:
+            if (get_band() == BAND_FM) {
+                filter = IF_FILTER_150KHZ;
+            } else {
+                filter = IF_FILTER_15KHZ;
+            }
+            break;
+        case AM:
+            if (ISANALOG) {
+                filter = IF_FILTER_15KHZ;
+            } else {
+                filter = IF_FILTER_6KHZ;
+            }
+            break;
+        default:
+            filter = IF_FILTER_15KHZ;
+    }
+
+    return filter;
 }
 
 bool tx_enabled() {

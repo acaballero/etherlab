@@ -7,6 +7,7 @@
 
 #include <memory>
 #include "dsp/buffer.hpp"
+#include "dsp/decimation/dsp_iir_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/task.h"
@@ -39,6 +40,12 @@ class ReceiveTask : public Task {
     // Signal decimators. Last narrowband signal decimators
     // Either complex for assymmetric band-pass filters or real, for symmetric low-pass
     std::unique_ptr<IDspDecimatorFloat> signal_decimator;
+
+    // De-empth filter
+    DspIIRDecimator<1> deemph_filter;
+    bool deemph_enabled = false;
+    // Audio low-pass filter
+    DspIIRDecimator<1> audio_lpf;
 
     DCBlock dc_block_i{0.999};
     DCBlock dc_block_q{0.999};

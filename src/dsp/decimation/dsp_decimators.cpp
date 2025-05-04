@@ -5,5 +5,5 @@
 #include "dsp_iir_decimator.h"
 #include "dsp_fir_decimator_float.h"
 
-DspIIRDecimator IIRDecimator_I{};
-DspIIRDecimator IIRDecimator_Q{};
+DspIIRDecimator<4> IIRDecimator_I{};
+DspIIRDecimator<4> IIRDecimator_Q{};

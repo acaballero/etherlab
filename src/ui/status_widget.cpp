@@ -73,14 +73,20 @@ void StatusWidget::set_defaults() {
 
 void StatusWidget::set_action(uint8_t index, Menu::menu_action_st &menu_action) {
     Button *button = &buttons[index];
-    button->action = [menu_action](Button &, st_inputEvent) { menu_action.action(); };
+    button->action = [menu_action](Button &, st_inputEvent) {
+        menu_action.action();
+    };
     button->set_text(menu_action.name);
     button->set_visible(true);
 }
 
-void StatusWidget::mode() { sprintf(buf, ISTX ? "TX" : "RX"); }
+void StatusWidget::mode() {
+    sprintf(buf, ISTX ? "TX" : "RX");
+}
 
-const char *StatusWidget::modulation() { return radio::modulationNames[config.modulation]; }
+const char *StatusWidget::modulation() {
+    return radio::modulation_names[config.modulation];
+}
 
 char *StatusWidget::frontend() {
     if (!ISTX) {
@@ -128,11 +134,9 @@ void StatusWidget::filter1(Widget *) {
 }
 
 void StatusWidget::filter2(Widget *) {
-    if (config.if_filter != radio::IF_FILTER_AUTO) {
-        sprintf(buf, "%s", radio::IFFilterNames[config.if_filter]);
-    } else {
-        sprintf(buf, "%s", radio::IFFilterNames[this->_status.if_filter]);
-    }
+
+    sprintf(buf, "%s", radio::IFFilterNames[radio::if_filter]);
+
     display->print("~:", buf, "", dimm_color, config.if_filter != radio::IF_FILTER_AUTO ? fg_color : fg_color_auto, dimm_color);
 }
 

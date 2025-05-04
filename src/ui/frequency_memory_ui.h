@@ -52,7 +52,7 @@ struct FreqMemoryMenu : Menu::UserMenu {
                 sprintf(buf, "[%2d]", idx);
             } else {
                 format_long(fm.freq, sf);
-                snprintf(buf, buf_size, "[%2d] %-4s %14s  %*s", idx, radio::modulationNames[fm.mode], sf, FREQ_MEM_NAME_SIZE, fm.name);
+                snprintf(buf, buf_size, "[%2d] %-4s %14s  %*s", idx, radio::modulation_names[fm.mode], sf, FREQ_MEM_NAME_SIZE, fm.name);
             }
 
             return out.printText(buf, buf_size);

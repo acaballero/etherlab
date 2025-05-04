@@ -9,7 +9,7 @@
 #include "dsp/fft/fft_types.h"
 #include "dsp_iir_decimator.h"
 
-extern DspIIRDecimator IIRDecimator_I;
-extern DspIIRDecimator IIRDecimator_Q;
+extern DspIIRDecimator<4> IIRDecimator_I;
+extern DspIIRDecimator<4> IIRDecimator_Q;
 
 #endif // TRX_FRONTEND_DSP_DECIMATORS_H
