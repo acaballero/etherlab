@@ -13,9 +13,12 @@
 #include <memory>
 
 namespace os {
-void TaskManager::add(periodic_task *t) { tasks.push_back(std::unique_ptr<periodic_task>(t)); }
+void TaskManager::add(periodic_task *t) {
 
-void TaskManager::remove(periodic_task *t) {
+    tasks.push_back(std::unique_ptr<periodic_task>(t));
+}
+
+bool TaskManager::remove(periodic_task *t) {
 
     auto it = std::remove_if(tasks.begin(), tasks.end(), [t](const std::unique_ptr<periodic_task> &item) {
         return item.get() == t; // Compare raw pointers
@@ -23,7 +26,11 @@ void TaskManager::remove(periodic_task *t) {
 
     if (it != tasks.end()) {
         tasks.erase(it, tasks.end()); // Erase the matching unique_ptr
+
+        return true;
     }
+
+    return false;
 }
 
 periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
@@ -42,7 +49,7 @@ void TaskManager::run() {
         tasks[i]->run();
 
         if (tasks[i]->finished()) {
-            tasks.erase(tasks.begin() + i);
+            remove(tasks[i].get());
         } else {
             i++;
         }

@@ -19,14 +19,12 @@ class TaskManager {
     TaskManager(){};
 
     void add(periodic_task *t);
-    void remove(periodic_task *t);
+    bool remove(periodic_task *t);
     void run();
     periodic_task *set_timeout(uint32_t delay, callback_t c);
 
   private:
     std::vector<std::unique_ptr<periodic_task>> tasks{};
-    uint32_t count{0};
-    uint8_t index{0};
 };
 
 extern TaskManager task_manager;

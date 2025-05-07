@@ -3,55 +3,91 @@
 //
 
 #include "standby.h"
+#include "config.h"
+#include "os/periodic_task.h"
+#include "os/task_manager.h"
 #include "ui/lcd.h"
 #include "hw/stm32.h"
 #include "main_board.h"
 #include "ui/main_view.h"
 #include "status.h"
 #include "ui/view_manager.h"
+#include <cstddef>
 
 //#include "hw/stm32.h"
 
 namespace standby {
 
-    Signal signal;
-    POWER_MODE power_mode = POWER_MODE_ON;
+Signal signal;
+POWER_MODE power_mode = POWER_MODE_ON;
 
+os::periodic_task *power_save_timeout;
 
-    int sleep() {
+void init() {
+    power_save(config.power_save_period_seconds);
+}
 
-        int ret=0;
+int sleep() {
 
-        if (power_mode == POWER_MODE_ON && !ISTX) {
-            main_board::sleep();
-            ret = power_down_lo_clocks();
-            lcd_sleep();
-            hal_sleep();
-            power_mode = POWER_MODE_SLEEP;
-            signal.emit(NULL);
-        }
+    int ret = 0;
 
-        if (ret<0) {
-            status::handleError(status::ST_ERROR,"Error powering down devide");
-        }
-
-        return ret;
+    if (power_mode == POWER_MODE_ON && !ISTX) {
+        main_board::sleep();
+        ret = power_down_lo_clocks();
+        lcd_sleep();
+        hal_sleep();
+        power_mode = POWER_MODE_SLEEP;
+        signal.emit(NULL);
     }
 
-    int wakeup() {
+    if (ret < 0) {
+        status::handleError(status::ST_ERROR, "Error powering down devide");
+    }
 
-        int ret=0;
+    return ret;
+}
 
+int power_save(int timeout_seconds) {
+
+    if (power_save_timeout) {
+        if (os::task_manager.remove(power_save_timeout)) {
+            delete power_save_timeout;
+        }
+    }
+
+    if (timeout_seconds) {
+        power_save_timeout = os::task_manager.set_timeout(timeout_seconds * 1000, []() {
+            lcd_sleep();
+            power_mode = POWER_MODE_SAVE;
+            signal.emit(NULL);
+        });
+    } else {
+        power_mode = POWER_MODE_ON;
+    }
+
+    return 0;
+}
+
+int wakeup() {
+
+    int ret = 0;
+
+    if (power_mode != POWER_MODE_ON) {
         if (power_mode == POWER_MODE_SLEEP) {
             hal_wakeup();
             lcd_init();
             ret = power_up_lo_clocks();
             main_board::wakeup();
-            view_manager::mainView.set_dirty();
-            power_mode = POWER_MODE_ON;
-            signal.emit(NULL);
+        } else if (power_mode == POWER_MODE_SAVE) {
+            lcd_init();
+            power_save(config.power_save_period_seconds);
         }
 
-        return ret;
+        view_manager::mainView.set_dirty();
+        power_mode = POWER_MODE_ON;
+        signal.emit(NULL);
     }
+
+    return ret;
 }
+} // namespace standby

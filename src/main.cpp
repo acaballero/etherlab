@@ -1,6 +1,8 @@
 #include "main.h"
 #include "agc.h"
 #include "battery.h"
+#include "dsp/fft/fft.h"
+#include "dsp/fft/fft_ui.h"
 #include "io/cat_protocol.h"
 #include "input/input_controller.h"
 #include "main_board.h"
@@ -62,7 +64,7 @@ GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
 MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB, &hmcp03, GPIO_MODE_OUTPUT_PP);
 
 os::periodic_task view_task(250, view_loop);
-os::periodic_task blink_task(100, []() {
+os::periodic_task blink_task(1000, []() {
     ledPin.toggle();
     powPin.toggle();
 });
@@ -73,16 +75,15 @@ os::periodic_task *tasks[] = {
     &agc::task,
 #if LCD_ENABLED
 #if ENABLE_FFT && DSP_ENABLED
+    &fft::waterfall_task,
     &fft::fft_task,
     &fft::iqbalance_task,
-    &fft::waterfall_task,
 #endif
 #if ENABLE_SD_CARD
     &sdcard::task,
 #endif
     &view_task,
 #endif
-
     &scanner::task,
     &sstrength::task,
     &battery::task,
@@ -117,27 +118,32 @@ os::periodic_task *tasks[] = {
  */
 void blink(uint32_t period_ms) {
     blink_task.set_period(period_ms);
-    os::task_manager.add(&blink_task);
+    blink_task.set_enabled(true);
 }
 
 void stop_blink() {
     ledPin.set(GPIO_PIN_RESET);
     powPin.set(GPIO_PIN_SET);
-    os::task_manager.remove(&blink_task);
+    blink_task.set_enabled(false);
 }
 
 void standby_signal_callback(void *, void *) {
 
     bool sleep = standby::power_mode == standby::POWER_MODE_SLEEP;
-    if (sleep) {
-        blink(100000000);
+    bool power_save = standby::power_mode == standby::POWER_MODE_SAVE;
 
+    if (power_save || sleep) {
+        blink(2000);
     } else {
         stop_blink();
     }
 
-    for (auto task : tasks) {
-        task->set_enabled(!sleep);
+    if (!power_save) {
+        for (auto task : tasks) {
+            task->set_enabled(!sleep);
+        }
+
+        fft::waterfall_task.set_period(fftUI::get_waterfall_period());
     }
 }
 
@@ -206,6 +212,11 @@ int main() {
         os::task_manager.add(task);
     }
 
+    os::task_manager.add(&blink_task);
+    blink_task.set_enabled(false);
+
+    standby::init();
+
     while (1) {
 
         os::task_manager.run();
@@ -247,6 +258,8 @@ int _write(int, char *ptr, int len) {
     return len;
 }
 
-void _putchar(char c) { ITM_SendChar(c); }
+void _putchar(char c) {
+    ITM_SendChar(c);
+}
 
 #endif

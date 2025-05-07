@@ -32,6 +32,7 @@
 #include "settings.h"
 #include "menu_options.h"
 #include "menu_prompts.h"
+#include "standby.h"
 
 namespace Menu {
 
@@ -193,6 +194,12 @@ PADMENU(timeMenu, "Time", setTime, updateEvent, noStyle, FIELD(time.Hours, "", "
 
 #endif
 
+Menu::numberPrompt<uint8_t> powerSavePeriod((const char *)"Power save period", &config.power_save_period_seconds, 0, ' ', '.', "s",
+                                            [](uint16_t v) {
+                                                standby::power_save(v);
+                                            },
+                                            0, 120, 10, 10);
+
 Menu::numberPrompt<uint8_t> hpaPowerMenu((const char *)"Max HPA pow", &config.max_power_dbm, 0, ' ', '.', "dBm", nullptr, 0, 50, 1, 5);
 Menu::numberPrompt<uint16_t> couplerOffsetMenu((const char *)"Coupler 0 dB offset", &config.coupler_0db_mv, 0, ' ', '.', "mV",
                                                [](uint16_t v) {
@@ -220,7 +227,7 @@ Menu::numberPrompt<uint32_t> ifFMTXFreqMenu((const char *)"FM IF TX Frequency", 
                                             },
                                             10000, 100000000, 1000, 10000);
 
-MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu),
+MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), OBJ(powerSavePeriod), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu),
      OBJ(Menu::frontendPathMenu), OBJ(couplerOffsetMenu), OBJ(driveStrength1stLOMenu), OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu),
      OBJ(if1stFreqMenu), OBJ(ifFMTXFreqMenu), OBJ(loRefCorrectionMenu), OBJ(ifCorrectionMenu),
 #if ENABLE_RTC

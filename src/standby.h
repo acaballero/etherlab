@@ -9,12 +9,14 @@
 
 namespace standby {
 
-enum POWER_MODE { POWER_MODE_ON, POWER_MODE_SLEEP };
+enum POWER_MODE { POWER_MODE_ON, POWER_MODE_SLEEP, POWER_MODE_SAVE };
 
 extern POWER_MODE power_mode;
 extern Signal signal;
 
+void init();
 int sleep();
+int power_save(int timeout);
 int wakeup();
 } // namespace standby
 

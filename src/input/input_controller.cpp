@@ -98,8 +98,15 @@ Widget *processTouch(Widget *w, st_inputEvent *e) {
 
 void processEvent(st_inputEvent *e) {
 
-    if (standby::power_mode == standby::POWER_MODE_SLEEP) {
-        standby::wakeup();
+    if (e->type == INPUT_EVENT_TYPE_BUTTON_RELEASE) {
+        if (standby::power_mode != standby::POWER_MODE_ON) {
+            standby::wakeup();
+            return;
+        } else if (config.power_save_period_seconds) {
+            // resets timeout
+            standby::power_save(config.power_save_period_seconds);
+        }
+    } else if (standby::power_mode != standby::POWER_MODE_ON) {
         return;
     }
 
@@ -227,6 +234,8 @@ void TIM8_UP_TIM13_IRQHandler(void) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     // TODO: Receiving all callbacks in this handler is ambiguous since the port is missing
     // GPIOE->BSRR |= GPIO_PIN_13;
+
     PinController.handlePinEXTI(GPIO_Pin);
+
     // GPIOE->BSRR |= GPIO_PIN_13 << 16;
 }

@@ -64,7 +64,6 @@ Filter #5: 1  0  1  0    X         1  1  0      #3
 #define FLT_3_CODE (1 << FLT_V3_IO_BIT)
 #define FLT_2_CODE (1 << FLT_V2_IO_BIT) + (1 << FLT_V3_IO_BIT)
 #define FLT_1_CODE (1 << FLT_V1_IO_BIT) + (1 << FLT_V3_IO_BIT)
-#define FILTER_1_CODE
 
 namespace radio {
 
@@ -96,8 +95,8 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
                          {5351500, 5366500, FLT_5_CODE, HIGH_SIDE, false},
                          {3500000, 3800000, FLT_5_CODE, HIGH_SIDE, false},
                          {1810000, 1850000, FLT_5_CODE, HIGH_SIDE, false},
-                         {7000000, 500000000, FLT_5_CODE, ANY_SIDE, false},
-                         {7000000, 500000000, FLT_5_CODE, ANY_SIDE, false}};
+                         {7000000, 500000000, FLT_3_CODE, ANY_SIDE, false},
+                         {7000000, 500000000, FLT_3_CODE, ANY_SIDE, false}};
 
 const st_filter if_filters[6] = {
     {10700000, 500, false, 0},                          // 500 Hz (digital only)

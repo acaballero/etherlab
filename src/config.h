@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <cstdint>
+#include <sys/_stdint.h>
 
 #include "hw/stm32_hal.h"
 #include "hw/hw_config.h"
@@ -24,7 +25,7 @@
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ANALOGMODE(mode) (mode == ANALOG_TX || mode == ANALOG_RX)
 #define ISANALOG (ANALOGMODE(config.mode))
-#define CONFIG_VERSION "331"
+#define CONFIG_VERSION "332"
 
 namespace configuration {
 extern os::periodic_task task;
@@ -74,6 +75,9 @@ typedef struct st_config //__attribute__ ((packed))
 
     // Preferred Local oscillator injection side
     LO_INJECTION lo_injection = HIGH_SIDE;
+
+    // Seconds to enter power save mode. 0=OFF
+    uint8_t power_save_period_seconds = 0;
 
     uint32_t f_1st_if = 73000000L;
     uint32_t f_if_fm_tx = 73320000L; // FM modulator IF frequency
