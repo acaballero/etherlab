@@ -1055,5 +1055,8 @@ void updateFFT() {
 void fft_loop() {
     updateFFT();
     view_manager::mainView.paint();
+
     snr_task.run();
+    waterfall_task.run();
+    iqbalance_task.run();
 }

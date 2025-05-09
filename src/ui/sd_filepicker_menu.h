@@ -34,7 +34,9 @@ class FSO {
         fileinfo.lfsize = FN_SIZE;
     }
 
-    virtual ~FSO() { f_closedir(&dir); }
+    virtual ~FSO() {
+        f_closedir(&dir);
+    }
 
     FRESULT openFolder(const char *path) {
         FRESULT fres = f_opendir(&dir, path);
@@ -141,20 +143,31 @@ class SDMenuT : public Menu::menuNode, public FSO {
     bool canSelect = true;
     bool canDelete = true;
 
-    void enable_selection() { this->canSelect = true; }
+    void enable_selection() {
+        this->canSelect = true;
+    }
 
-    void disable_selection() { this->canSelect = false; }
+    void disable_selection() {
+        this->canSelect = false;
+    }
 
-    void enable_deletion() { this->canDelete = true; }
+    void enable_deletion() {
+        this->canDelete = true;
+    }
 
-    void disable_deletion() { this->canDelete = false; }
+    void disable_deletion() {
+        this->canDelete = false;
+    }
 
     // Using menuNode::menuNode
     // do not use default constructors as we wont allocate for data
     SDMenuT(constText *title, const char *at, Menu::action act = Menu::doNothing, Menu::eventMask mask = Menu::noEvent)
-        : menuNode(title, 0, NULL, act, mask, Menu::noStyle, (Menu::systemStyles)(Menu::_menuData | Menu::_canNav)) {}
+        : menuNode(title, 0, NULL, act, mask, Menu::noStyle, (Menu::systemStyles)(Menu::_menuData | Menu::_canNav)) {
+    }
 
-    FRESULT begin() { return this->begin(folderName); }
+    FRESULT begin() {
+        return this->begin(folderName);
+    }
 
     void refresh() {
         curr_folder_count = -1;
@@ -180,10 +193,14 @@ class SDMenuT : public Menu::menuNode, public FSO {
         }
     }
 
-    static void end() { unlock_sd_card(); }
+    static void end() {
+        unlock_sd_card();
+    }
 
     // this requires latest menu version to virtualize data tables
-    Menu::prompt &operator[](Menu::idx_t i) const override { return *(Menu::prompt *)this; } // this will serve both as menu and as its own prompt
+    Menu::prompt &operator[](Menu::idx_t i) const override {
+        return *(Menu::prompt *)this;
+    } // this will serve both as menu and as its own prompt
 
     Menu::result sysHandler(SYS_FUNC_PARAMS) override {
         switch (event) {

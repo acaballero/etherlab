@@ -175,10 +175,8 @@ Menu::result on_freq_updated() {
 
 MENU(replayMenu, "Replay", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle,
 
-#if ENABLE_SDCARD
-     SUBMENU(replayToggle), SUBMENU(filePicker),
-#endif
-     SUBMENU(loopToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle),
+     SUBMENU(replayToggle), SUBMENU(filePicker), SUBMENU(loopToggle),
+     FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle),
      FIELD(gain, "Gain:", " dB", DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 0, change_gain, exitEvent, noStyle),
      // FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle),
      OBJ(freqEdit)

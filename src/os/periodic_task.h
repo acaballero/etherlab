@@ -27,6 +27,7 @@ class periodic_task {
     };
     void set_period(uint64_t period) {
         _period_ms = period;
+        _next_ms = HAL_GetTick() + _period_ms;
     }
     uint64_t get_period() {
         return _period_ms;

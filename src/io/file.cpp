@@ -17,8 +17,8 @@ FRESULT File::open(WaveInfo &wi) {
 
     FRESULT fres = FR_OK;
     wi = get_info_from_file_path(path);
-    wi.n_channels=2;
-    wi.bits_sample=16;
+    wi.n_channels = 2;
+    wi.bits_sample = 16;
 
     if (get_file_type_from_extension(path) == FTYPE_CS16) {
 

@@ -75,9 +75,7 @@ os::periodic_task *tasks[] = {
     &agc::task,
 #if LCD_ENABLED
 #if ENABLE_FFT && DSP_ENABLED
-    &fft::waterfall_task,
     &fft::fft_task,
-    &fft::iqbalance_task,
 #endif
 #if ENABLE_SD_CARD
     &sdcard::task,
@@ -142,8 +140,6 @@ void standby_signal_callback(void *, void *) {
         for (auto task : tasks) {
             task->set_enabled(!sleep);
         }
-
-        fft::waterfall_task.set_period(fftUI::get_waterfall_period());
     }
 }
 

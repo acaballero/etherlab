@@ -94,6 +94,7 @@ void TitleBarWidgetInner::paint_callback() {
     display->setFont((FontDef *)&Font_Icons9x8);
 
 #if ENABLE_SD_CARD
+
     switch (sdcard_info.status) {
         case sdcard_STATUS::MountError:
             color = C565_YELLOW;
@@ -159,28 +160,6 @@ void TitleBarWidgetInner::paint_callback() {
         display->setColor(C565_WHITE);
     }
 
-    // if (ISTX) {
-    //     if (rf_coupler::info.swr > 0) {
-
-    //         if (rf_coupler::info.swr >= rf_coupler::HIGH_SWR) {
-    //             display->setColor(C565_RED);
-    //         }
-
-    //         if (rf_coupler::info.swr >= rf_coupler::MAX_SWR) {
-    //             sprintf(buff, " S:MAX");
-    //         } else if (rf_coupler::info.swr > 0) {
-    //             sprintf(buff, " S:%.1f", rf_coupler::info.swr);
-    //         } else {
-    //             sprintf(buff, " S:?", rf_coupler::info.swr);
-    //         }
-    //     } else {
-    //         display->setColor(C565_GREY_LIGHT);
-    //         sprintf(buff, " S:?");
-    //     }
-    //     display->print(buff);
-    //     display->setColor(C565_WHITE);
-    // }
-
     // TODO: GPSDO lock. Meanwhile, warmup time has passed
     uint32_t uptime = rtc_uptime();
     if (uptime > 8 * 60) {
@@ -245,6 +224,7 @@ void TitleBarWidget::init() {
 void TitleBarWidget::before_paint() {
 
     if (dirty()) {
+
         uint16_t color = C565_BLACK;
 
         color = C565_GREY_LIGHT;
@@ -258,6 +238,7 @@ void TitleBarWidget::before_paint() {
             float drop_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->drop_rate() : 0;
             float starve_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->starve_rate() : 0;
             bool error = true;
+
             if (!dsp::dsp_status || dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
                 color = C565_RED;
             } else if (drop_freq * 100 > 0.1 || starve_freq * 100 > 0.1) {
@@ -265,10 +246,10 @@ void TitleBarWidget::before_paint() {
             } else {
                 error = false;
             }
+
             dsp::dsp_status->reset();
             char buf[20];
-            sprintf(buf, "%s%s%s%s", "DSP", dsp::dsp_config.audio_compressor_enabled ? " C" : "", error && drop_freq > 0 ? " D" : "",
-                    error && starve_freq > 0 ? " S" : "");
+            sprintf(buf, "%s%s%s", "DSP", dsp::dsp_config.audio_compressor_enabled ? " C" : "", error ? " !" : "");
             trim(buf);
             btnDSP.set_text(buf);
         }
