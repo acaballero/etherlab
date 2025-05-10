@@ -123,6 +123,10 @@ std::pair<int, int> get_bandwidth_bin_limits() {
     if (config.modulation == SSB_USB) {
         bm_s = bm_m + 1;
         bm_e = bm_m + (px_if_width << 1) - 1;
+    } else if (config.modulation == CW) {
+        int16_t px_pitch_offset = (int16_t)(CW_PITCH_HZ / fft_params.display_rbw);
+        bm_s = bm_m + px_pitch_offset - px_if_width;
+        bm_e = bm_m + px_pitch_offset + px_if_width;
     } else if (config.modulation == SSB_LSB) {
         bm_s = bm_m - (px_if_width << 1) + 1;
         bm_e = bm_m - 1;

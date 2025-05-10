@@ -90,7 +90,7 @@ uint8_t settings_read(Config *settings) {
 
         return status;
     } else {
-        return 0;
+        return true;
     }
 }
 
@@ -111,16 +111,16 @@ uint8_t settings_write(Config *settings) {
         ok = config_file.save("config.cfg", *settings);
 
         if (!ok) {
-            status::handleError(status::ST_ERROR, "Error saving config in SD card");
+            status::handleError(status::ST_ERROR, "Error saving config in SD card. Fallback to Flash");
         }
     }
 
 #endif
 
-    if (ok) {
+    if (!ok) {
         return flash_write((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
     } else {
-        return 1;
+        return 0;
     }
 }
 

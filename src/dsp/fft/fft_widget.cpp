@@ -98,7 +98,7 @@ void FFTWidget::draw_span_marks() {
 
 void FFTWidget::draw_h_labels() {
 
-    char buf[6];
+    char buf[8];
     int max_label_width = 5 * 5;
     int n_divs = DISPLAY_X_PIXELS / (max_label_width << 1);
     // Must be even to have one tick at the center
@@ -121,8 +121,10 @@ void FFTWidget::draw_h_labels() {
         float f_mhz = (float)f_khz / 1000.0f;
         if (delta_khz > 200) {
             sprintf(buf, "%.1f", f_mhz);
-        } else {
+        } else if (delta_khz > 10) {
             sprintf(buf, "%.2f", f_mhz);
+        } else {
+            sprintf(buf, "%.3f", f_mhz);
         }
         display->gotoXY(x - (((int)strlen(buf)) * 2), FFT_HEIGHT + 3);
         display->print(buf);

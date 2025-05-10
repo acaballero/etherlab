@@ -196,7 +196,7 @@ st_modulation_mode *find_modulation_info(MODULATION_MODE modulation) {
 bool allow_modulation_in_mode(MODE mode, MODULATION_MODE modulation) {
     st_modulation_mode *mode_info = find_modulation_info(modulation);
     if (!mode_info || mode_info->analog_allowed ||
-        ANALOGMODE(mode)) { // Not all modes are worth storing in the extended info struct. Just being lazy as hell, right?
+        !ANALOGMODE(mode)) { // Not all modes are worth storing in the extended info struct. Just being lazy as hell, right?
         return true;
     }
     return false;
@@ -364,7 +364,9 @@ bool _setMode(MODE mode, bool force) {
             set_if_filter(config.if_filter);
         } else {
             lo_enable(1, 1);
-            // lo_enable(2, 1);
+            if ((config.modulation == SSB_LSB || config.modulation == SSB_USB)) {
+                lo_enable(2, 1);
+            }
             set_if_filter(config.if_filter);
         }
 

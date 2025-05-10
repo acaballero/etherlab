@@ -99,7 +99,7 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
                          {7000000, 500000000, FLT_3_CODE, ANY_SIDE, false}};
 
 const st_filter if_filters[6] = {
-    {10700000, 500, false, 0},                          // 500 Hz (digital only)
+    {10700000, 300, false, 0},                          // 500 Hz (digital only)
     {9998500, 3000, true, GPIOEXP_IF_FILTER_3KHZ},      // 3 Khz
     {10700000, 6000, false, 0},                         // 6 Khz (digital only)
     {10700000, 9000, false, 0},                         // 9 Khz (digital only)
@@ -111,7 +111,7 @@ const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "
                            "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "None"};
 const char *modulation_names[] = {"LSB", "USB", "FM", "WFM", "AM", "CW"};
 const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 150000, 6000, 0};
-const char *IFFilterNames[] = {"500 Hz", "3 k", "6 K", "9 K", "15 k", "150 k", "Auto"};
+const char *IFFilterNames[] = {"300 Hz", "3 k", "6 K", "9 K", "15 k", "150 k", "Auto"};
 const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
 BAND filter = BAND_NONE;
@@ -159,14 +159,14 @@ void calculate_freqs() {
 
             // Set the injection sides at each IF as required by the wanted sideband
             if (band.lo_injection == ANY_SIDE) {
-                mixers[0].setLoInjection(config.modulation == SSB_USB ? HIGH_SIDE : LOW_SIDE);
+                mixers[0].setLoInjection(config.modulation != SSB_LSB ? HIGH_SIDE : LOW_SIDE);
             } else {
                 // We must use a particular injection side in the current band, so we're swapping the 2nd IF LO to select the wanted sideband
                 mixers[0].setLoInjection(band.lo_injection);
             }
 
             // If we need to invert the spectrum, the opposite injection side needs to be used for the 2nd conversion
-            mixers[1].setLoInjection(config.modulation == SSB_USB ? (LO_INJECTION)(mixers[0].getLoInjection() * -1) : mixers[0].getLoInjection());
+            mixers[1].setLoInjection(config.modulation != SSB_LSB ? (LO_INJECTION)(mixers[0].getLoInjection() * -1) : mixers[0].getLoInjection());
             mixers[1].setRf(config.f_1st_if);
 
             // Apply an offset to put the left sideband onto the filter passband
@@ -412,7 +412,7 @@ IF_FILTER band_if_filter() {
             filter = IF_FILTER_3KHZ;
             break;
         case CW:
-            filter = IF_FILTER_500HZ;
+            filter = IF_FILTER_300HZ;
             break;
         case FM:
         case WFM:

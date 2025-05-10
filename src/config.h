@@ -32,8 +32,8 @@ extern os::periodic_task task;
 }
 
 struct st_vfo_config {
-    unsigned long freq = 118500000UL;
-    unsigned long step = 10000;
+    uint32_t freq = 118500000UL;
+    uint32_t step = 10000;
     int32_t rit = 0; // Receive incremental tuning offset
 
     // Copy
@@ -87,10 +87,10 @@ typedef struct st_config //__attribute__ ((packed))
     st_vfo_config vfo[2];
     bool memory_mode = false;
 
-    unsigned long f_carrier = 106700000UL;
-    unsigned long f_step = 1000;
-    unsigned long f_max = 155000000UL;
-    unsigned long f_min = 1000UL;
+    uint32_t f_carrier = 106700000UL;
+    uint32_t f_step = 1000;
+    uint32_t f_max = 155000000UL;
+    uint32_t f_min = 1000UL;
 
     // Repeater settings
     uint32_t repeater_offset = 125000;

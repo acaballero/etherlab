@@ -19,7 +19,7 @@ menu_option_st<radio::BAND> band_options[] = {{radio::bandNames[radio::BAND_AUTO
                                               {radio::bandNames[radio::BAND_160m], radio::BAND_160m}, {radio::bandNames[radio::BAND_ALL], radio::BAND_ALL}};
 
 menu_option_st<radio::IF_FILTER> if_filter_options[] = {
-    {radio::IFFilterNames[radio::IF_FILTER_AUTO], radio::IF_FILTER_AUTO},     {radio::IFFilterNames[radio::IF_FILTER_500HZ], radio::IF_FILTER_500HZ},
+    {radio::IFFilterNames[radio::IF_FILTER_AUTO], radio::IF_FILTER_AUTO},     {radio::IFFilterNames[radio::IF_FILTER_300HZ], radio::IF_FILTER_300HZ},
     {radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::IF_FILTER_3KHZ},     {radio::IFFilterNames[radio::IF_FILTER_6KHZ], radio::IF_FILTER_6KHZ},
     {radio::IFFilterNames[radio::IF_FILTER_9KHZ], radio::IF_FILTER_9KHZ},     {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::IF_FILTER_15KHZ},
     {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::IF_FILTER_150KHZ},

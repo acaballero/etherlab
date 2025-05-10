@@ -154,7 +154,7 @@ bool ReceiveTask::init_decimators() {
     uint8_t factor;
     uint8_t dec = status.decimation_factor;
 
-    uint32_t next_stage_bandwidth;
+    int32_t next_stage_bandwidth;
     uint32_t stage_fs = config.fft.sample_rate;
     n_decimators = 0;
 
@@ -176,7 +176,7 @@ bool ReceiveTask::init_decimators() {
                 case CW:
                     signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
                     // TODO: Select pitch (offset center freq)
-                    ret = signal_decimator->config(stage_fs, next_stage_bandwidth, factor, 500);
+                    ret = signal_decimator->config(stage_fs, next_stage_bandwidth, factor, max2(CW_PITCH_HZ - (next_stage_bandwidth / 2), 0));
                     break;
                 default:
                     signal_decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, complex_t_f32>>();

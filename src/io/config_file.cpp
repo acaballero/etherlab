@@ -4,14 +4,15 @@
 #include "config_file.h"
 #include "fatfs/fatfs.h"
 #include "config.h"
+#include "ff.h"
 #include "printf.h"
 #include "types.h"
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <sys/_stdint.h>
 
 bool ConfigFile::save(const char *filename, const st_config &cfg) {
-
-    FIL *file = &FatFSFileHandle;
 
     if (!lock_sd_card()) {
         return false;
@@ -21,7 +22,6 @@ bool ConfigFile::save(const char *filename, const st_config &cfg) {
         return false;
     }
 
-    char buf[256];
     UINT bw;
 
 #define WRITE_FIELD(fmt, ...)                                                                                                                                  \
@@ -88,6 +88,9 @@ bool ConfigFile::save(const char *filename, const st_config &cfg) {
     WRITE_FIELD("fft.spectrum_line_color=%d", cfg.fft.spectrum_line_color);
     WRITE_FIELD("fft.spectrum_fill_color=%d", cfg.fft.spectrum_fill_color);
 
+    write_bin("fft.iq_balance_meanZ=", (uint8_t *)cfg.fft.iq_balance_meanZ, sizeof(cfg.fft.iq_balance_meanZ));
+    write_bin("fft.iq_balance_precZ=", reinterpret_cast<const uint8_t *>(cfg.fft.iq_balance_precZ), sizeof(cfg.fft.iq_balance_precZ));
+
     WRITE_FIELD("dsp.gain=%d", cfg.dsp.gain);
     WRITE_FIELD("dsp.audio_compressor_enabled=%d", cfg.dsp.audio_compressor_enabled);
     WRITE_FIELD("dsp.audio_compressor_threshold=%d", cfg.dsp.audio_compressor_threshold);
@@ -103,6 +106,11 @@ bool ConfigFile::save(const char *filename, const st_config &cfg) {
         WRITE_FIELD("freq_mem[%d].name=%s", i, cfg.freqs[i].name);
     }
 
+    WRITE_FIELD("hw.cmx973_vga=%d", cfg.hw.cmx973_vga);
+    WRITE_FIELD("hw.cmx973_vgb=%d", cfg.hw.cmx973_vgb);
+    WRITE_FIELD("hw.sd_write_max_kbps=%u", cfg.hw.sd_write_max_kbps);
+    WRITE_FIELD("hw.offset=%d", cfg.hw.dac_offset);
+
     WRITE_FIELD("coupler_0db_mv=%d", cfg.coupler_0db_mv);
     WRITE_FIELD("f_correction=%d", cfg.f_correction);
     WRITE_FIELD("if_correction=%d", cfg.if_correction);
@@ -117,8 +125,155 @@ bool ConfigFile::save(const char *filename, const st_config &cfg) {
     return true;
 }
 
+bool ConfigFile::read_line(const char *fmt) {
+    f_gets(buf, sizeof(buf), file);
+    return (std::strncmp(buf, fmt, strlen(fmt)) == 0);
+}
+
+bool ConfigFile::read_int64(const char *fmt, int64_t *v) {
+    if (read_line(fmt)) {
+        *v = strtoll(buf + strlen(fmt), nullptr, 10);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ConfigFile::read_uint64(const char *fmt, uint64_t *v) {
+    if (read_line(fmt)) {
+        *v = strtoull(buf + strlen(fmt), nullptr, 10);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ConfigFile::read_int16(const char *fmt, int16_t *v) {
+    if (read_line(fmt)) {
+        *v = (int16_t)atoi(buf + strlen(fmt));
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ConfigFile::read_uint16(const char *fmt, uint16_t *v) {
+    if (read_line(fmt)) {
+        *v = (uint16_t)atoi(buf + strlen(fmt));
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ConfigFile::read_int8(const char *fmt, int8_t *v) {
+    if (read_line(fmt)) {
+        *v = (int8_t)atoi(buf + strlen(fmt));
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ConfigFile::read_uint8(const char *fmt, uint8_t *v) {
+    if (read_line(fmt)) {
+        *v = (uint8_t)atoi(buf + strlen(fmt));
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ConfigFile::read_int(const char *fmt, int32_t *v) {
+    int64_t tmp;
+    if (read_int64(fmt, &tmp)) {
+        *v = (int32_t)tmp;
+        return true;
+    }
+    return false;
+}
+
+bool ConfigFile::read_uint(const char *fmt, uint32_t *v) {
+    uint64_t tmp;
+    if (read_uint64(fmt, &tmp)) {
+        *v = (uint32_t)tmp;
+        return true;
+    }
+    return false;
+}
+
+bool ConfigFile::read_float(const char *fmt, float *v) {
+    if (read_line(fmt)) {
+        *v = strtof(buf + strlen(fmt), nullptr);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ConfigFile::read_bool(const char *fmt, bool *v) {
+    if (read_line(fmt)) {
+        *v = strtof(buf + strlen(fmt), nullptr);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ConfigFile::read_string(const char *fmt, char *v) {
+    if (read_line(fmt)) {
+        std::strcpy(v, buf + strlen(fmt) - 1);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void ConfigFile::write_bin(const char *fmt, const uint8_t *data, size_t length) {
+
+    snprintf(buf, sizeof(buf), fmt);
+    sprintf(buf + strlen(buf), "\n");
+
+    UINT bw;
+    f_write(file, buf, strlen(buf), &bw);
+
+    for (size_t i = 0; i < length; ++i) {
+        snprintf(buf, 3, "%02X", data[i]); // 2 digits per byte, 3 for null terminator
+        f_write(file, buf, 2, &bw);
+    }
+
+    f_write(file, "\n", strlen("\n"), &bw);
+}
+
+bool ConfigFile::read_bin(const char *fmt, uint8_t *data, size_t length) {
+
+    if (!read_line(fmt)) {
+
+        return false;
+    }
+
+    UINT br;
+    FRESULT res;
+
+    for (size_t i = 0; i < length; ++i) {
+        res = f_read(file, buf, 2, &br);
+        if (res == FR_OK && buf[0] != '\n' and buf[1] != '\n') {
+            char byte_str[3] = {buf[0], buf[1], '\0'};
+            data[i] = static_cast<uint8_t>(strtol(byte_str, nullptr, 16)); // Convert hex pair to byte
+        } else {
+            return false;
+        }
+    }
+
+    res = f_read(file, buf, 1, &br);
+    if (res == FR_OK && buf[0] == '\n') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool ConfigFile::load(const char *filename, st_config &cfg) {
-    FIL *file = &FatFSFileHandle;
 
     if (!lock_sd_card()) {
         return false;
@@ -128,124 +283,108 @@ bool ConfigFile::load(const char *filename, st_config &cfg) {
         return false;
     }
 
-    char buf[256];
     char fmt[50];
 
-#define READ_FIELD(fmt, ...)                                                                                                                                   \
-    {                                                                                                                                                          \
-        f_gets(buf, sizeof(buf), file);                                                                                                                        \
-        if (sscanf(buf, fmt, __VA_ARGS__) != 1)                                                                                                                \
-            return false;                                                                                                                                      \
-    }
-
-#define READ_U(fmt, ...)                                                                                                                                       \
-    {                                                                                                                                                          \
-        unsigned int tmp;                                                                                                                                      \
-        READ_FIELD(fmt, &tmp)                                                                                                                                  \
-        __VA_ARGS__ = tmp;                                                                                                                                     \
-    }
-
-#define READ_UL(fmt, ...)                                                                                                                                      \
-    {                                                                                                                                                          \
-        f_gets(buf, sizeof(buf), file);                                                                                                                        \
-        uint64_t val = strtoull(buf + strlen(fmt), nullptr, 10);                                                                                               \
-        __VA_ARGS__ = val;                                                                                                                                     \
-        \     
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  \
-    }
-
-    READ_FIELD("version=%s", cfg.version);
-    READ_FIELD("debug=%d", cfg.debug);
-    READ_FIELD("power_ctrl=%d", cfg.power_ctrl);
-    READ_FIELD("filter=%d", cfg.filter);
-    READ_FIELD("if_filter=%d", cfg.if_filter);
-    READ_FIELD("frontend_path=%d", cfg.frontend_path);
-    READ_FIELD("modulation=%d", cfg.modulation);
-    READ_FIELD("mode=%d", cfg.mode);
-    READ_FIELD("band=%d", cfg.band);
-    READ_FIELD("hpa_enabled=%d", cfg.hpa_enabled);
-    READ_FIELD("max_power_dbm=%d", cfg.max_power_dbm);
-    READ_FIELD("lo_injection=%d", cfg.lo_injection);
-    READ_FIELD("power_save_period_seconds=%d", cfg.power_save_period_seconds);
-    READ_U("f_1st_if=%u", cfg.f_1st_if);
-    READ_U("f_if_fm_tx=%u", cfg.f_if_fm_tx);
-    READ_U("vfo_ix=%u", cfg.vfo_ix);
+    read_string("version=", cfg.version);
+    read_bool("debug=", &cfg.debug);
+    read_uint8("power_ctrl=", &cfg.power_ctrl);
+    read_int("filter=", (int32_t *)&cfg.filter);
+    read_int("if_filter=", (int32_t *)&cfg.if_filter);
+    read_int("frontend_path=", (int32_t *)&cfg.frontend_path);
+    read_int("modulation=", (int32_t *)&cfg.modulation);
+    read_int("mode=", (int32_t *)&cfg.mode);
+    read_int("band=", (int32_t *)&cfg.band);
+    read_bool("hpa_enabled=", &cfg.hpa_enabled);
+    read_uint8("max_power_dbm=", &cfg.max_power_dbm);
+    read_int("lo_injection=", (int32_t *)&cfg.lo_injection);
+    read_uint8("power_save_period_seconds=", &cfg.power_save_period_seconds);
+    read_uint("f_1st_if=", &cfg.f_1st_if);
+    read_uint("f_if_fm_tx=", &cfg.f_if_fm_tx);
+    read_uint8("vfo_ix=", &cfg.vfo_ix);
 
     for (int i = 0; i < 2; ++i) {
-
-        READ_UL("vfo[x].freq=", cfg.vfo[i].freq);
-        sprintf(fmt, "vfo[%d].step=%%u", i);
-        READ_U(fmt, cfg.vfo[i].step);
-        sprintf(fmt, "vfo[%d].rit=%%d", i);
-        READ_FIELD(fmt, &cfg.vfo[i].rit);
+        sprintf(fmt, "vfo[%d].freq=", i);
+        read_uint(fmt, &cfg.vfo[i].freq);
+        sprintf(fmt, "vfo[%d].step=", i);
+        read_uint(fmt, &cfg.vfo[i].step);
+        sprintf(fmt, "vfo[%d].rit=", i);
+        read_int(fmt, &cfg.vfo[i].rit);
     }
 
-    READ_FIELD("memory_mode=%d", cfg.memory_mode);
-    READ_UL("f_carrier=", cfg.f_carrier);
-    READ_U("f_step=%u", cfg.f_step);
-    READ_UL("f_max=", cfg.f_max);
-    READ_UL("f_min=", cfg.f_min);
+    read_bool("memory_mode=", &cfg.memory_mode);
+    read_uint("f_carrier=", &cfg.f_carrier);
+    read_uint("f_step=", &cfg.f_step);
+    read_uint("f_max=", &cfg.f_max);
+    read_uint("f_min=", &cfg.f_min);
 
-    READ_U("repeater_offset=%u", cfg.repeater_offset);
-    READ_FIELD("repeater_mode=%d", cfg.repeater_mode);
+    read_uint("repeater_offset=", &cfg.repeater_offset);
+    read_int("repeater_mode=", (int32_t *)&cfg.repeater_mode);
 
-    READ_U("fft.span=%u", cfg.fft.span);
-    READ_U("fft.bw=%u", cfg.fft.bw);
-    READ_FIELD("fft.min_db=%d", cfg.fft.min_db);
-    READ_FIELD("fft.max_db=%d", cfg.fft.max_db);
-    READ_FIELD("fft.view_mode=%d", cfg.fft.view_mode);
-    READ_FIELD("fft.smooth_factor=%f", cfg.fft.smooth_factor);
-    READ_FIELD("fft.enabled=%d", cfg.fft.enabled);
-    READ_FIELD("fft.refresh_period_ms=%d", cfg.fft.refresh_period_ms);
-    READ_FIELD("fft.max_slices=%d", cfg.fft.max_slices);
-    READ_FIELD("fft.maxAmpl=%d", cfg.fft.maxAmpl);
-    READ_FIELD("fft.view_IQBalance=%d", cfg.fft.view_IQBalance);
-    READ_FIELD("fft.enable_iq_balance=%d", cfg.fft.enable_iq_balance);
-    READ_FIELD("fft.conversion_time_us=%d", cfg.fft.conversion_time_us);
-    READ_FIELD("fft.waterfall_pixels_per_second=%d", cfg.fft.waterfall_pixels_per_second);
-    READ_FIELD("fft.DCOffset_I=%d", cfg.fft.DCOffset_I);
-    READ_FIELD("fft.DCOffset_Q=%d", cfg.fft.DCOffset_Q);
-    READ_FIELD("fft.iq_balance_estimate_period_ms=%d", cfg.fft.iq_balance_estimate_period_ms);
-    READ_FIELD("fft.removeDC=%d", cfg.fft.removeDC);
-    READ_FIELD("fft.window=%d", cfg.fft.window);
-    READ_U("fft.sample_rate=%u", cfg.fft.sample_rate);
-    READ_U("fft.max_sample_rate=%u", cfg.fft.max_sample_rate);
-    READ_U("fft.dsp_max_sample_rate=%u", cfg.fft.dsp_max_sample_rate);
-    READ_U("fft.min_sample_rate=%u", cfg.fft.min_sample_rate);
-    READ_FIELD("fft.max_decimation_factor=%d", cfg.fft.max_decimation_factor);
-    READ_FIELD("fft.spectrum_style=%d", cfg.fft.spectrum_style);
-    READ_FIELD("fft.spectrum_line_color=%d", cfg.fft.spectrum_line_color);
-    READ_FIELD("fft.spectrum_fill_color=%d", cfg.fft.spectrum_fill_color);
+    read_uint("fft.span=", &cfg.fft.span);
+    read_uint("fft.bw=", &cfg.fft.bw);
+    read_int16("fft.min_db=", &cfg.fft.min_db);
+    read_int16("fft.max_db=", &cfg.fft.max_db);
+    read_uint8("fft.view_mode=", &cfg.fft.view_mode);
+    read_float("fft.smooth_factor=", &cfg.fft.smooth_factor);
+    read_bool("fft.enabled=", &cfg.fft.enabled);
+    read_uint8("fft.refresh_period_ms=", &cfg.fft.refresh_period_ms);
+    read_uint8("fft.max_slices=", &cfg.fft.max_slices);
+    read_int("fft.maxAmpl=", &cfg.fft.maxAmpl);
+    read_bool("fft.view_IQBalance=", &cfg.fft.view_IQBalance);
+    read_bool("fft.enable_iq_balance=", &cfg.fft.enable_iq_balance);
+    read_uint8("fft.conversion_time_us=", &cfg.fft.conversion_time_us);
+    read_uint16("fft.waterfall_pixels_per_second=", &cfg.fft.waterfall_pixels_per_second);
+    read_int16("fft.DCOffset_I=", &cfg.fft.DCOffset_I);
+    read_int16("fft.DCOffset_Q=", &cfg.fft.DCOffset_Q);
+    read_uint8("fft.iq_balance_estimate_period_ms=", &cfg.fft.iq_balance_estimate_period_ms);
+    read_bool("fft.removeDC=", &cfg.fft.removeDC);
+    read_uint8("fft.window=", &cfg.fft.window);
+    read_uint("fft.sample_rate=", &cfg.fft.sample_rate);
+    read_uint("fft.max_sample_rate=", &cfg.fft.max_sample_rate);
+    read_uint("fft.dsp_max_sample_rate=", &cfg.fft.dsp_max_sample_rate);
+    read_uint("fft.min_sample_rate=", &cfg.fft.min_sample_rate);
+    read_uint8("fft.max_decimation_factor=", &cfg.fft.max_decimation_factor);
+    read_int("fft.spectrum_style=", (int32_t *)&cfg.fft.spectrum_style);
+    read_uint16("fft.spectrum_line_color=", &cfg.fft.spectrum_line_color);
+    read_uint16("fft.spectrum_fill_color=", &cfg.fft.spectrum_fill_color);
 
-    READ_FIELD("dsp.gain=%d", cfg.dsp.gain);
-    READ_FIELD("dsp.audio_compressor_enabled=%d", cfg.dsp.audio_compressor_enabled);
-    READ_FIELD("dsp.audio_compressor_threshold=%d", cfg.dsp.audio_compressor_threshold);
-    READ_FIELD("dsp.test_signal.pulse_duty=%d", cfg.dsp.test_signal.pulse_duty);
-    READ_U("dsp.test_signal.baseband_frequency=%u", cfg.dsp.test_signal.baseband_frequency);
-    READ_U("dsp.test_signal.modulation_frequency=%u", cfg.dsp.test_signal.modulation_frequency);
+    read_bin("fft.iq_balance_meanZ=", reinterpret_cast<uint8_t *>(cfg.fft.iq_balance_meanZ), sizeof(cfg.fft.iq_balance_meanZ));
+    read_bin("fft.iq_balance_precZ=", reinterpret_cast<uint8_t *>(cfg.fft.iq_balance_precZ), sizeof(cfg.fft.iq_balance_precZ));
+
+    read_int8("dsp.gain=", &cfg.dsp.gain);
+    read_bool("dsp.audio_compressor_enabled=", &cfg.dsp.audio_compressor_enabled);
+    read_int("dsp.audio_compressor_threshold=", &cfg.dsp.audio_compressor_threshold);
+    read_int8("dsp.test_signal.pulse_duty=", &cfg.dsp.test_signal.pulse_duty);
+    read_uint("dsp.test_signal.baseband_frequency=", &cfg.dsp.test_signal.baseband_frequency);
+    read_uint("dsp.test_signal.modulation_frequency=", &cfg.dsp.test_signal.modulation_frequency);
 
     // Read frequency memory array
 
     for (int i = 0; i < FREQ_MEM_SIZE; ++i) {
-        sprintf(fmt, "freq_mem[%d].group=%%u", i);
-        READ_U(fmt, cfg.freqs[i].group);
-        sprintf(fmt, "freq_mem[%d].id=%%d", i);
-        READ_FIELD(fmt, cfg.freqs[i].id);
+        sprintf(fmt, "freq_mem[%d].group=", i);
+        read_uint16(fmt, &cfg.freqs[i].group);
+        sprintf(fmt, "freq_mem[%d].id=", i);
+        read_int(fmt, &cfg.freqs[i].id);
         sprintf(fmt, "freq_mem[%d].freq=", i);
-        READ_UL(fmt, cfg.freqs[i].freq);
-        sprintf(fmt, "freq_mem[%d].mode=%%d", i);
-        READ_FIELD(fmt, cfg.freqs[i].mode);
-        sprintf(fmt, "freq_mem[%d].name=%%s", i);
-        READ_FIELD(fmt, cfg.freqs[i].name);
+        read_uint64(fmt, &cfg.freqs[i].freq);
+        sprintf(fmt, "freq_mem[%d].mode=", i);
+        read_int(fmt, (int32_t *)&cfg.freqs[i].mode);
+        sprintf(fmt, "freq_mem[%d].name=", i);
+        read_string(fmt, cfg.freqs[i].name);
     }
 
-    READ_FIELD("coupler_0db_mv=%d", cfg.coupler_0db_mv);
-    READ_FIELD("f_correction=%d", cfg.f_correction);
-    READ_FIELD("if_correction=%d", cfg.if_correction);
-    READ_FIELD("squelch_auto=%d", cfg.squelch_auto);
-    READ_FIELD("squelch_level=%f", cfg.squelch_level);
-    READ_FIELD("agc_enabled=%d", cfg.agc_enabled);
-    READ_FIELD("enable_quadrature=%d", cfg.enable_quadrature);
+    read_int("hw.cmx973_vga=", (int32_t *)&cfg.hw.cmx973_vga);
+    read_int("hw.cmx973_vgb=", (int32_t *)&cfg.hw.cmx973_vgb);
+    read_uint("hw.sd_write_max_kbps=", &cfg.hw.sd_write_max_kbps);
+    read_uint16("hw.offset=", &cfg.hw.dac_offset);
+
+    read_uint16("coupler_0db_mv=", &cfg.coupler_0db_mv);
+    read_int("f_correction=", &cfg.f_correction);
+    read_int("if_correction=", &cfg.if_correction);
+    read_bool("squelch_auto=", &cfg.squelch_auto);
+    read_float("squelch_level=", &cfg.squelch_level);
+    read_bool("agc_enabled=", &cfg.agc_enabled);
+    read_bool("enable_quadrature=", &cfg.enable_quadrature);
 
     f_close(file);
 

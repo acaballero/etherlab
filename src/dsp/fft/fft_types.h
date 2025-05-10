@@ -75,8 +75,8 @@ typedef struct {
     // bool min_db_auto = false;
     // bool show_noise_floor = true;
     // int resolution_bits = 16;
-    int maxAmpl = (2 / 3.3) * MAX_ADC_VALUE; // 2V peak to peak considering inputs to
-                                             // filters are biased at 1.1V
+    int32_t maxAmpl = (2 / 3.3) * MAX_ADC_VALUE; // 2V peak to peak considering inputs to
+                                                 // filters are biased at 1.1V
     uint8_t view_mode = FFT_VIEW_SPECTRUM;
     bool view_IQBalance = false;
     // When using CMX397 IC as quadrature demodulator, IQ balance is very good.

@@ -165,11 +165,11 @@ Menu::numberPrompt<int16_t> maxDbMenu((const char *)"DB Max", &config.fft.max_db
 Menu::numberPrompt<uint16_t> fftCalcNoisePeriodMenu((const char *)"Noise floor calc period", &fft_calc_noise_floor_period_ms, 0, ' ', '.', "ms", nullptr, 0,
                                                     1000, 10, 100);
 
-Menu::numberPrompt<int> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "",
-                                      [](float) {
-                                          fftInit();
-                                      },
-                                      0x00FF, 0xFFFF, 10, 100);
+Menu::numberPrompt<int32_t> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "",
+                                          [](int32_t) {
+                                              fftInit();
+                                          },
+                                          0x00FF, 0xFFFF, 10, 100);
 
 Menu::numberPrompt<uint8_t> slicesMenu((const char *)"MAx slices", &config.fft.max_slices, 0, ' ', '.', "",
                                        [](uint8_t) {
