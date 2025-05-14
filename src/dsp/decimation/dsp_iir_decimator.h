@@ -9,7 +9,6 @@
 #include "dsp_iir_decimator.h"
 #include "stdio.h"
 #include "stddef.h"
-#include <sys/_stdint.h>
 
 template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
 

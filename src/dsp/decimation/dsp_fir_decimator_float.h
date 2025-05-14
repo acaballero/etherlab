@@ -12,7 +12,6 @@
 #include "dsp_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft_types.h"
-#include <sys/_stdint.h>
 
 class IDspDecimatorFloat {
   public:

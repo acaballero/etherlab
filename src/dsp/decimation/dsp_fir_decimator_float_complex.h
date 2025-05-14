@@ -7,7 +7,7 @@
 
 #include "dsp/decimation/dsp_fir_decimator_float.h"
 #include "dsp/dsp_common.h"
-#include "dsp/firFilter.h"
+#include "dsp/fir_filter.h"
 #include "stdio.h"
 #include "dsp_decimator.h"
 #include "dsp/dsp_buffers.h"

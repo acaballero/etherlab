@@ -10,7 +10,6 @@
 #include "Signal.h"
 #include "mixer.h"
 #include <cstdint>
-#include <sys/_stdint.h>
 
 namespace radio {
 

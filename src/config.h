@@ -7,7 +7,6 @@
 
 #include <stdio.h>
 #include <cstdint>
-#include <sys/_stdint.h>
 
 #include "hw/stm32_hal.h"
 #include "hw/hw_config.h"

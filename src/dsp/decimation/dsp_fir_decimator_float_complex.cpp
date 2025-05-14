@@ -7,7 +7,7 @@
 #include "dsp/buffer.hpp"
 #include "dsp/dsp_common.h"
 #include "dsp/fft/fft_types.h"
-#include "dsp/firFilter.h"
+#include "dsp/fir_filter.h"
 #include "dsp_fir_decimator_float_complex.h"
 #include "dsp/window.h"
 #include <algorithm>

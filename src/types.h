@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <cstring>
 #include <cstdint>
-
 #include "radio.h"
 #include "dsp/dsp_common.h"
 

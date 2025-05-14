@@ -10,7 +10,7 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft.h"
 #include "dsp/fft/fft_types.h"
-#include "dsp/firFilter.h"
+#include "dsp/fir_filter.h"
 #include "dsp/dsp_common.h"
 #include "dsp/modulation/dsp_demodulate.h"
 #include "main_board.h"

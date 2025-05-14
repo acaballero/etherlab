@@ -5,7 +5,7 @@
 #include "dsp/buffer.hpp"
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
-#include "dsp/firFilter.h"
+#include "dsp/fir_filter.h"
 #include "dsp_fir_decimator_q15.h"
 #include "dsp/window.h"
 #include <cstddef>
