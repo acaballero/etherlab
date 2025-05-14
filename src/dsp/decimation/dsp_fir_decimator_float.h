@@ -5,8 +5,9 @@
 #ifndef TRX_FRONTEND_DSP_FIR_DECIMATOR_FLOAT_H
 #define TRX_FRONTEND_DSP_FIR_DECIMATOR_FLOAT_H
 
+#include "arm_math.h"
 #include "dsp/dsp_common.h"
-#include "dsp/firFilter.h"
+#include "dsp/fir_filter.h"
 #include "stdio.h"
 #include "dsp_decimator.h"
 #include "dsp/dsp_buffers.h"
@@ -52,6 +53,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
     float state[TAPS + DSP_BLOCK - 1];
     float tmp_buff_in[DSP_BLOCK];
     float tmp_buff_out[DSP_BLOCK];
+
     arm_fir_decimate_instance_f32 dsp_fir_decimate_instance = {1, TAPS, coeffs, state};
 };
 

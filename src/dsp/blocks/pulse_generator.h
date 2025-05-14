@@ -5,18 +5,22 @@
 #ifndef TRX_FRONTEND_PULSE_GENERATOR_H
 #define TRX_FRONTEND_PULSE_GENERATOR_H
 
+#include "dsp/dsp_common.h"
 #include "stdio.h"
 #include "dsp/buffer.hpp"
 #include "output.h"
 #include "blocks_common.h"
 
-class PulseGenerator : public Output {
+class PulseGenerator : public Output<complex_t> {
 
-public:
+  public:
+    PulseGenerator() {
+        PulseGenerator(1000, 1000);
+    };
 
-    PulseGenerator() { PulseGenerator(1000, 1000); };
-
-    PulseGenerator(uint32_t f, uint32_t sr) : frequency{f}, sample_rate(sr) { init(); };
+    PulseGenerator(uint32_t f, uint32_t sr) : frequency{f}, sample_rate(sr) {
+        init();
+    };
 
     void set_config(uint32_t frequency, uint32_t sample_rate);
 
@@ -28,8 +32,7 @@ public:
 
     void get_sample(adc_type &sample) override;
 
-protected:
-
+  protected:
     adc_type get_sample(uint32_t phase);
 
     void init();
@@ -38,8 +41,8 @@ protected:
 
     uint32_t tone_delta{0};
 
-    //uint32_t sample_count{0};
-    //bool auto_off{};
+    // uint32_t sample_count{0};
+    // bool auto_off{};
 
     uint32_t frequency{0};
     uint32_t sample_rate{0};
@@ -47,11 +50,9 @@ protected:
 
     uint8_t duty{50};
     uint8_t crossover_phase;
-    //uint32_t phase{0};
-    //uint32_t delta{0};
-    //uint32_t sphase{0};
-
+    // uint32_t phase{0};
+    // uint32_t delta{0};
+    // uint32_t sphase{0};
 };
 
-
-#endif //TRX_FRONTEND_PULSE_GENERATOR_H
+#endif // TRX_FRONTEND_PULSE_GENERATOR_H

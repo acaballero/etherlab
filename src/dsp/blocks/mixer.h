@@ -7,19 +7,17 @@
 
 #include "signal_generator.h"
 
-class Mixer : Output {
+class Mixer : Output<complex_t> {
 
-public:
-
+  public:
     Mixer(Output *lo, Output *rf) : lo{lo}, rf{rf} {};
 
     void get_block(buffer_t<complex_t> &buff) override;
     void get_complex_sample(complex_t &sample) override;
 
-protected:
+  protected:
     Output *lo;
     Output *rf;
 };
 
-
-#endif //TRX_FRONTEND_DSP_MIXER_H
+#endif // TRX_FRONTEND_DSP_MIXER_H

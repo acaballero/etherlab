@@ -162,6 +162,8 @@ bool ReceiveTask::init_decimators() {
     while (dec > 1) {
 
         if (n_decimators == max_decimators - 1 || dec == 2) { // || (stage_fs / factor) > (status.bandwidth / 2)) {
+
+            // Final narrowband signal decimator
             factor = dec;
             next_stage_bandwidth = status.bandwidth;
             MODULATION_MODE mod = main_board::getModulationMode();
