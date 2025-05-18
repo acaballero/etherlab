@@ -5,7 +5,6 @@
 #ifndef TRX_FRONTEND_DSP_COMMON_H
 #define TRX_FRONTEND_DSP_COMMON_H
 
-#include "dsp/buffer.hpp"
 #include "dsp_config.h"
 #include "stm32f4xx_hal.h"
 #define __FPU_PRESENT 1U
@@ -138,16 +137,16 @@ enum DSP_DIRECTION {
     DSP_DIRECTION_INOUT // BOTH
 };
 
-struct st_dspCommand {
+struct st_dsp_command {
     DSP_COMMAND command;
     uint8_t id = 0;
 
-    bool operator==(const st_dspCommand &st) const {
+    bool operator==(const st_dsp_command &st) const {
         return command == st.command && id == st.id;
     }
 };
 
-struct st_dspStatus {
+struct st_dsp_status {
 
     uint8_t id;
     volatile DSP_STATUS status = DSP_STATUS_STOPPED;
@@ -173,7 +172,7 @@ struct st_dspStatus {
     uint64_t stop_ms;
     uint64_t last_error_ms;
 
-    bool operator==(const st_dspStatus &st) const {
+    bool operator==(const st_dsp_status &st) const {
         return status == st.status && error == st.error && fifo_underruns == st.fifo_underruns && fifo_overruns == st.fifo_overruns &&
                sample_rate == st.sample_rate && processed_blocks == st.processed_blocks && block_size_bytes == st.block_size_bytes &&
                bits_per_sample == st.bits_per_sample && n_channels == st.n_channels && id == st.id && gain == st.gain &&
@@ -221,11 +220,16 @@ struct st_dsp_config {
     st_test_signal_params test_signal;
 };
 
+struct st_timestamp {
+    uint32_t date{0};
+    uint32_t time{0};
+};
+
 extern st_dsp_config dsp_config;
 
 extern Signal dsp_common_params_signal;
 
-extern st_dspStatus *dsp_status;
+extern st_dsp_status *dsp_status;
 
 // Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
 extern uint32_t dsp_max_sample_rate;
@@ -259,7 +263,10 @@ void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples);
 
 void set_config(st_dsp_config &);
 st_dsp_config get_config();
+
 } // namespace dsp
+
+extern uint32_t guard1, guard2, guard3;
 #ifdef __cplusplus
 extern "C" {
 #endif

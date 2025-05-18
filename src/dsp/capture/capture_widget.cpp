@@ -92,10 +92,10 @@ void CaptureWidget::before_paint() {
     }
 }
 
-void CaptureWidget::setTaskStatus(st_dspStatus *status) {
+void CaptureWidget::setTaskStatus(st_dsp_status *status) {
     CaptureWidget::task_status = status;
 }
 
-void CaptureWidget::setProcessorStatus(st_dspStatus *status) {
+void CaptureWidget::setProcessorStatus(st_dsp_status *status) {
     CaptureWidget::processor_status = status;
 }

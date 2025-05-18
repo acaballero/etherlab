@@ -36,7 +36,7 @@ void on_freq_signal(void *thisptr, void *args) {
     }
 }
 
-void on_event(st_dspStatus *status) {
+void on_event(st_dsp_status *status) {
 
     switch (status->status) {
 

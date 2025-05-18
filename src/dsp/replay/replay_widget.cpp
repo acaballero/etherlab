@@ -126,9 +126,13 @@ void ReplayWidget::before_paint() {
     }
 }
 
-void ReplayWidget::setTaskStatus(st_dspStatus *status) { ReplayWidget::task_status = status; }
+void ReplayWidget::setTaskStatus(st_dsp_status *status) {
+    ReplayWidget::task_status = status;
+}
 
-void ReplayWidget::setProcessorStatus(st_dspStatus *status) { ReplayWidget::processor_status = status; }
+void ReplayWidget::setProcessorStatus(st_dsp_status *status) {
+    ReplayWidget::processor_status = status;
+}
 
 void ReplayWidget::setWaveInfo(WaveInfo wi) {
     ReplayWidget::wi = wi;

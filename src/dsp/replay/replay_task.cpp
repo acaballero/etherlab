@@ -169,8 +169,8 @@ bool ReplayTask::start() {
         this->status.decimation_factor = decimation_factor;
         this->status.bits_per_sample = wi.bits_sample;
         this->status.n_channels = wi.n_channels; // I/Q
-        this->status.block_size_bytes = dsp_temp_buf.size_bytes;
-        this->status.decimated_block_size = dsp_temp_buf.count / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+        this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
+        this->status.decimated_block_size = DSP_BLOCK * 2 / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
         this->status.decimated_block_size_bytes = this->status.block_size_bytes / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
         // Start media read processing timer

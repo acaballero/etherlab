@@ -13,18 +13,6 @@
 
 namespace dsp {
 
-class APRSLogger {
-  public:
-    Optional<File::Error> append(const std::filesystem::path &filename) {
-        return log_file.append(filename);
-    }
-
-    void log_raw_data(const std::string &data);
-
-  private:
-    LogFile log_file{};
-};
-
 struct APRSRecentEntry {
     using Key = uint64_t;
 
@@ -83,15 +71,7 @@ struct APRSRecentEntry {
 
 class APRSDetailsView : public View {
   public:
-    APRSDetailsView(NavigationView &);
-    ~APRSDetailsView();
-
-    APRSDetailsView(const APRSDetailsView &) = delete;
-    APRSDetailsView(APRSDetailsView &&) = delete;
-    APRSDetailsView &operator=(const APRSDetailsView &) = delete;
-    APRSDetailsView &operator=(APRSDetailsView &&) = delete;
-
-    void focus() override;
+    void on_focus() override;
 
     void update();
     void set_entry(const APRSRecentEntry &entry);
@@ -100,33 +80,27 @@ class APRSDetailsView : public View {
         return entry_copy;
     };
 
-    std::string title() const override {
-        return "Details";
-    };
     std::function<void(void)> on_close{};
 
   private:
     APRSRecentEntry entry_copy{0};
-    GeoMapView *geomap_view{nullptr};
+
     bool send_updates{false};
 
     Console console{{0, 0 * 16, 240, 224}};
 
     Button button_done{{160, 14 * 16, 8 * 8, 3 * 16}, "Close"};
 
-    Button button_see_map{{80, 14 * 16, 8 * 8, 3 * 16}, "Map"};
+    // Button button_see_map{{80, 14 * 16, 8 * 8, 3 * 16}, "Map"};
 };
 
 using APRSRecentEntries = RecentEntries<APRSRecentEntry>;
 
 class APRSTableView : public View {
   public:
-    APRSTableView(NavigationView &nav, Rect parent_rec);
-    ~APRSTableView();
-
     void on_show() override;
     void on_hide() override;
-    void focus() override;
+    void on_focus() override;
     void on_pkt(const APRSPacketMessage *message);
 
     std::string title() const override {
@@ -134,7 +108,6 @@ class APRSTableView : public View {
     };
 
   private:
-    NavigationView &nav_;
     const RecentEntriesColumns columns{{{"Source", 9}, {"Loc", 6}, {"Hits", 4}, {"Time", 8}}};
     APRSRecentEntries recent{};
     RecentEntriesView<RecentEntries<APRSRecentEntry>> recent_entries_view{columns, recent};
@@ -148,9 +121,6 @@ class APRSTableView : public View {
 
 class APRSRxView : public View {
   public:
-    APRSRxView(NavigationView &nav, Rect parent_rect);
-    ~APRSRxView();
-
     void on_show() override;
     void focus() override;
 
@@ -166,10 +136,6 @@ class APRSRxView : public View {
     uint8_t options_region_id = 1;         // default to North America
     rf::Frequency aprs_rx_freq{144390000}; // default to North America frequency
 
-    NavigationView &nav_;
-    RxRadioState radio_state_{
-        144390000 /* frequency */, 1750000 /* bandwidth */, 3072000 /* sampling rate */
-    };
     app_settings::SettingsManager settings_{
         "rx_aprs", app_settings::Mode::RX, {{"options_region_id"sv, &options_region_id}, {"aprs_rx_freq"sv, &aprs_rx_freq}}};
 
@@ -199,17 +165,9 @@ class APRSRxView : public View {
 
 class APRSRXView : public View {
   public:
-    APRSRXView(NavigationView &nav);
-    ~APRSRXView();
-
-    void focus() override;
-
-    std::string title() const override {
-        return "APRS RX";
-    };
+    void on_focus() override;
 
   private:
-    NavigationView &nav_;
     Rect view_rect = {0, 3 * 8, 240, 280};
 
     APRSRxView view_stream{nav_, view_rect};

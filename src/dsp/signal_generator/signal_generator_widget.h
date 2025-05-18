@@ -16,15 +16,15 @@ class SignalGeneratorWidget : public Widget {
 
     void paint_callback() override;
 
-    void setProcessorStatus(st_dspStatus *status);
+    void setProcessorStatus(st_dsp_status *status);
 
-    void setTaskStatus(st_dspStatus *status);
+    void setTaskStatus(st_dsp_status *status);
 
   protected:
     void before_paint() override;
 
-    st_dspStatus *processor_status;
-    st_dspStatus *task_status;
+    st_dsp_status *processor_status;
+    st_dsp_status *task_status;
 };
 
 #endif // TRX_FRONTEND_SIGNAL_GENERATOR_WIDGET_H

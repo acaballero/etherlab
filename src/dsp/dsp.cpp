@@ -40,13 +40,13 @@ os::periodic_task task(50, dsp_loop);
 Task *current_task;
 DspProcessor *current_processor;
 buffer_t<complex_t> *current_buffer;
-st_dspCommand pending_command{DSP_COMMAND_NONE};
+st_dsp_command pending_command{DSP_COMMAND_NONE};
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
 volatile bool execute_task = false;
 #endif
 
-void (*on_event)(st_dspStatus *);
+void (*on_event)(st_dsp_status *);
 
 /** Sets or unsets the real-time DSP mode, for which only one slice of FFT can be used **/
 void dsp_set_real_time(bool b) {
@@ -83,7 +83,7 @@ void dsp_stop_tasks() {
     }
 }
 
-uint8_t dsp_command(st_dspCommand command, void (*cb)(st_dspStatus *)) {
+uint8_t dsp_command(st_dsp_command command, void (*cb)(st_dsp_status *)) {
 
     Task *task = dsp::tasks[command.id];
     if (current_task == task) {
@@ -146,7 +146,7 @@ void dsp_start_task() {
 
 void dsp_loop() {
 
-    st_dspCommand command = pending_command;
+    st_dsp_command command = pending_command;
 
     if (command.command != DSP_COMMAND_NONE) {
         switch (command.command) {
@@ -279,7 +279,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
     HAL_TIM_IRQHandler(&TASKS_TIMER_HANDLE);
 }
 
-void dsp_test_cb(st_dspStatus *) {
+void dsp_test_cb(st_dsp_status *) {
 
     if (dsp::dsp_status->error == DSP_ERR_NONE && dsp::dsp_status->id != dsp::DSP_TASK_REPLAY) {
         dsp_command({DSP_COMMAND_START, dsp::DSP_TASK_REPLAY}, dsp_test_cb);

@@ -16,7 +16,7 @@ class Task {
     virtual void work() = 0;
     void reset();
     void halt(DSP_ERROR);
-    st_dspStatus status;
+    st_dsp_status status;
 
   protected:
     void (*on_success)();

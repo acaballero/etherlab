@@ -1,6 +1,7 @@
 #include "main.h"
 #include "agc.h"
 #include "battery.h"
+#include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft.h"
 #include "dsp/fft/fft_ui.h"
 #include "io/cat_protocol.h"
@@ -176,6 +177,18 @@ void test() {
     //   view_manager::mainView.NumberEdit()->set_focus(true);
 }
 
+void watchdog() {
+    static int i = 0;
+    if (i++ % 100 == 0) {
+        void *heap_end = sbrk(0);
+        printf_("Heap end: %p\n", heap_end);
+    }
+
+    if (guard1 != 0xAEADBEEF || guard2 != 0xBEADBEEF || guard3 != 0xCEADBEEF) {
+        printf_("Corruption!\n");
+    }
+}
+
 bool dsptested = false;
 
 int main() {
@@ -196,16 +209,11 @@ int main() {
 
     standby::init();
 
-    int i = 0;
-
     while (1) {
 
         os::task_manager.run();
 
-        if (i++ % 100 == 0) {
-            void *heap_end = sbrk(0);
-            printf_("Heap end: %p\n", heap_end);
-        }
+        watchdog();
 
         if (!dsptested) {
 #if DEBUG_SD_CARD

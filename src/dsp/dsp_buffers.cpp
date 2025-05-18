@@ -11,14 +11,12 @@ complex_t adc_buff[DSP_BLOCK * 2];
 // DAC DMA buffer
 complex_t dac_buff[DSP_BLOCK * 2];
 
-__attribute__((section(".fccmram"))) adc_type dsp_temp_buf_data[DSP_BLOCK * 2]; // complex_t is twice the size of adc_type (I/Q samples), so a temp buffer
-                                                                                // to store only one half of the adc_buff is DSP_BLOCK*2 adc_type items
-buffer_t<adc_type> dsp_temp_buf = {(adc_type *const)dsp_temp_buf_data, DSP_BLOCK * 2, 0};
-
+uint32_t guard1 = 0xAEADBEEF;
 //__attribute__((section(".fccmram"))) // Can't be in CCM RAM if DMA is used
 uint8_t dsp_output_fifo_buff[DSP_FIFO_SIZE];
+uint32_t guard2 = 0xBEADBEEF;
 uint8_t dsp_input_fifo_buff[DSP_FIFO_SIZE];
-
+uint32_t guard3 = 0xCEADBEEF;
 FIFO output_stream((char *)dsp_output_fifo_buff, DSP_FIFO_SIZE);
 FIFO input_stream((char *)dsp_input_fifo_buff, DSP_FIFO_SIZE);
 

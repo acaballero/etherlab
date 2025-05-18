@@ -36,8 +36,8 @@ bool SignalGeneratorTask::start() {
     this->status.decimation_factor = fft_params.decimation_factor;
     this->status.bits_per_sample = 16;
     this->status.n_channels = 2;
-    this->status.block_size_bytes = dsp_temp_buf.size_bytes;
-    this->status.decimated_block_size = dsp_temp_buf.count / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
+    this->status.decimated_block_size = DSP_BLOCK * 2 / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
     this->status.decimated_block_size_bytes = this->status.block_size_bytes / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
     bool ret =

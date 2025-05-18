@@ -11,7 +11,7 @@
 #include "io/wav.h"
 
 class ReplayWidget : public Widget {
-public:
+  public:
     using Widget::Widget;
 
     void paint_callback() override;
@@ -20,23 +20,26 @@ public:
 
     void setFileInfo(FILINFO finfo);
 
-    void setProcessorStatus(st_dspStatus *status);
+    void setProcessorStatus(st_dsp_status *status);
 
-    void setTaskStatus(st_dspStatus *status);
+    void setTaskStatus(st_dsp_status *status);
 
-    void setShowActions(bool b) { show_actions = b; }
+    void setShowActions(bool b) {
+        show_actions = b;
+    }
 
-    bool getShowActions() { return show_actions; }
+    bool getShowActions() {
+        return show_actions;
+    }
 
-protected:
-
+  protected:
     void before_paint() override;
 
     bool show_actions = false;
-    st_dspStatus *processor_status;
-    st_dspStatus *task_status;
+    st_dsp_status *processor_status;
+    st_dsp_status *task_status;
     WaveInfo wi;
     FILINFO finfo;
 };
 
-#endif //TRX_FRONTEND_REPLAY_WIDGET_H
+#endif // TRX_FRONTEND_REPLAY_WIDGET_H

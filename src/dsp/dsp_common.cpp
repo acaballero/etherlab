@@ -22,7 +22,7 @@ Signal dsp_common_params_signal;
 
 const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
 
-st_dspStatus *dsp_status;
+st_dsp_status *dsp_status;
 
 st_dsp_config dsp_config;
 void set_config(dsp::st_dsp_config &c) {

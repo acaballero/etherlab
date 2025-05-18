@@ -58,7 +58,7 @@ void s_level_callback(void *, void *args) {
     }
 }
 
-void on_dsp_event(st_dspStatus *status) {
+void on_dsp_event(st_dsp_status *status) {
     switch (status->status) {
 
         case DSP_STATUS_RUNNING:

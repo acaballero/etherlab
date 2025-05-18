@@ -124,9 +124,9 @@ bool CaptureTask::start() {
     this->status.sample_rate = config.fft.sample_rate;
     // this->status.delta_phase = (1000.0 / ((float) config.fft.sample_rate / (float) fft_params.decimation_factor)) * FAST_MATH_TABLE_SIZE;
     this->status.decimation_factor = fft_params.decimation_factor;
-    this->status.decimated_block_size = dsp_temp_buf.count / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->status.decimated_block_size = DSP_BLOCK * 2 / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
     this->status.bits_per_sample = 16;
-    this->status.block_size_bytes = dsp_temp_buf.size_bytes;
+    this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
     this->status.decimated_block_size_bytes = this->status.block_size_bytes / this->status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
     while (!lock_sd_card()) {
