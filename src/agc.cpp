@@ -55,7 +55,7 @@ int frontend_gain() {
 }
 
 int get_analog_gain() {
-    int if_gain = 24; // TODO: Calculate from agc_voltage (note this will require interpolating and lookup tables of gain vs frequency vs agc)
+    int if_gain = 25; // TODO: Calculate from agc_voltage (note this will require interpolating and lookup tables of gain vs frequency vs agc)
     return if_gain + frontend_gain();
 }
 
@@ -68,7 +68,7 @@ void check_agc() {
 
     signal.emit(&agc_voltage);
 
-    // TODO: This class shouldn't be coupled to board_v2.h and it's gain-specific details
+    // TODO: This class shouldn't be coupled to board_v2.h and it's gain-specific details (VGA and VGB)
     fft_type max_power_at_dsp = fft_peak + get_analog_gain();
 
     int max_input_dbm = get_max_input_dbm();
@@ -95,7 +95,7 @@ void check_agc() {
 
             overload = false;
 
-            if (!fft_mag_overload && max_power_at_dsp < max_input_dbm - 50) { // Increase gain when there's at least 50 dbm headroom
+            if (!fft_mag_overload && max_power_at_dsp < max_input_dbm - 30) { // Increase gain when there's at least 30 dbm headroom
                 if (vga_gain > config.hw.cmx973_vga) {
                     vga = (IF_GAIN)(vga - 1);
                 } else if (vgb_gain > config.hw.cmx973_vgb) {
@@ -123,6 +123,8 @@ int get_gain() {
     return gain + get_analog_gain();
 }
 
-bool is_overload() { return overload; }
+bool is_overload() {
+    return overload;
+}
 
 } // namespace agc

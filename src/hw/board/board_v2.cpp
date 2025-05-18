@@ -13,6 +13,7 @@
 #include "../../../lib/CMX973/cmx973.h"
 #include "../../../lib/ADF4351/adf4351.h"
 #include "../../../lib/Si5351/si5351_I2C.h"
+#include "stm32f4xx_hal_def.h"
 #include "types.h"
 #include <sys/_stdint.h>
 
@@ -120,13 +121,14 @@ void lo_strength(uint8_t stage, LO_POWER power) {
     radio::update_freq();
 }
 
-void if_freq(RF_DIRECTION direction, uint64_t freq) {
+bool if_freq(RF_DIRECTION direction, uint64_t freq) {
 
     si5351_clock clk = (direction == RF_DIRECTION_TX) ? SI5351_TX_CLK : SI5351_RX_CLK;
     uint8_t div = (direction == RF_DIRECTION_TX) ? cmx973State.lo_tx_div : cmx973State.lo_rx_div;
+    HAL_StatusTypeDef ret = HAL_OK;
 
     if (freq == 0) {
-        si5351.output_enable(clk, false);
+        ret = si5351.output_enable(clk, false);
     } else {
         si5351.output_enable(clk, true);
 
@@ -135,8 +137,10 @@ void if_freq(RF_DIRECTION direction, uint64_t freq) {
 
         uint64_t f = freq * SI5351_FREQ_MULT * (div ? 2 : 4);
 
-        si5351.set_freq(f, clk);
+        ret = si5351.set_freq(f, clk);
     }
+
+    return ret == HAL_OK;
 }
 
 int16_t if_gain_to_db(IF_GAIN if_gain) {
@@ -166,7 +170,7 @@ int calc_max_input_dbm() {
     } else if (vga_gain <= IF_GAIN_MINUS18 && vgb_gain == IF_GAIN_0) {
         return -36 + if_gain_to_db(vga_gain) / 2;
     } else {
-        return -42 - (if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain)) / 2;
+        return -46 - (if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain)) / 2;
     }
 }
 
@@ -199,7 +203,8 @@ int get_max_input_dbm() {
  * @return
  */
 int board_gain() {
-    return if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain) + 60;
+    return if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain) +
+           59; // 60 is the total approximate gain of the CMX937 given current settings, minus 1 to account for the filter loss
 }
 
 void lo_enable(uint8_t stage, bool enabled) {
@@ -308,7 +313,7 @@ void if_setup() {
     // The variable gain before and after the mixer are left to their
     // default value, which is 0 (max gain)
 
-    bool b = si5351.init(Si5351_I2C_HANDLE, SI5351_CRYSTAL_LOAD_10PF, SI5351_XTAL_FREQ, config.f_correction, 0);
+    bool b = si5351.init(Si5351_I2C_HANDLE, SI5351_CRYSTAL_LOAD_10PF, SI5351_XTAL_FREQ, config.f_correction);
 
     if (!b) {
         // DEBUGPRINT("Error initalizing Si5351\n", 0);
@@ -406,7 +411,9 @@ bool radio_config(st_radio_config radioConfig) {
 
             if_direction(RF_DIRECTION_RX);
 
-            if_freq(RF_DIRECTION_TX, 0); // Stop TX quadrature clocks
+            if_freq(RF_DIRECTION_TX, 0);
+
+            // Stop TX quadrature clocks
             if_freq(RF_DIRECTION_RX, radio::f_dsp_if);
 
             // Disable DAC audio output
@@ -436,7 +443,6 @@ bool radio_config(st_radio_config radioConfig) {
             // TODO: Use only one DAC instead of two in quadrature
             DAC_DMA_Start(&hdac1);
         }
-
         ADC_DMA_Start(&hadc1);
     }
 

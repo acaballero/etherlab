@@ -82,15 +82,15 @@ bool design_fir_kaiser_lpf(float *taps, double cutoffHz, double sampleRate, doub
 
     int M = numTaps - 1;
 
-    printf_("LPF Kaiser FIR: fx:%f,fs:%f,taps:%d\n", sampleRate, cutoffHz, numTaps);
+    // printf_("LPF Kaiser FIR: fx:%f,fs:%f,taps:%d\n", sampleRate, cutoffHz, numTaps);
 
     for (int n = 0; n < numTaps; ++n) {
         double x = n - M / 2.0;
         double win = besselI0(beta * sqrt(1 - pow(2.0 * x / M, 2))) / besselI0(beta);
         taps[n] = 2 * normCutoff * sinc(2 * normCutoff * x) * win;
-        printf_(",%f", taps[n]);
+        //    printf_(",%f", taps[n]);
     }
-    printf_("\n");
+    //  printf_("\n");
     return true;
 }
 
@@ -114,12 +114,12 @@ bool design_complex_bandpass(float *taps, int num_taps, double fs, float center_
         taps[2 * n + 1] = real_taps[n] * sin(phase); // imag part
     }
 
-    printf_("BPF complex FIR: fs:%f,center:%f,bw:%f,taps:%d\n", fs, center_freq, bandwidth, num_taps);
+    // printf_("BPF complex FIR: fs:%f,center:%f,bw:%f,taps:%d\n", fs, center_freq, bandwidth, num_taps);
 
     for (int n = 0; n < num_taps * 2; ++n) {
-        printf_(",%f", taps[n]);
+        //     printf_(",%f", taps[n]);
     }
-    printf_("\n");
+    // printf_("\n");
 
     return true;
 }

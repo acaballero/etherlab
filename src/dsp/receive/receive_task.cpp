@@ -211,7 +211,6 @@ bool ReceiveTask::start() {
 
     // Stop task processing timer (in case this is a restart)
     HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
-    //  ADC_DMA_Stop(&hadc1);
 
     dsp_set_real_time(true);
 
@@ -263,19 +262,10 @@ bool ReceiveTask::start() {
         compressor_enabled = false;
     }
 
-    // Start task processing timer
-    // TODO: This should be done by the caller of this method and be generic for all tasks
-    HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
-
-    // Se the fifo processing frequency
-    update_timer(TASKS_TIMER_TYPEDEF, 80, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
-
     ret = radio_config({.direction = RF_DIRECTION_RX,
                         .sample_freq = status.sample_rate,
                         .freq = 0,
                         .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
-
-    status.status = DSP_STATUS_RUNNING;
 
     if (!ret) {
         halt(DSP_ERR);
@@ -283,6 +273,14 @@ bool ReceiveTask::start() {
     }
 
     main_board::setMute(GPIO_PIN_RESET);
+
+    // Start task processing timer
+    // TODO: This should be done by the caller of this method and be generic for all tasks
+    HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
+
+    // Se the fifo processing frequency
+    update_timer(TASKS_TIMER_TYPEDEF, 80, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
+    status.status = DSP_STATUS_RUNNING;
     return true;
 }
 

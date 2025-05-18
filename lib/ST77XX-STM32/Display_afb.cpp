@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "ILI9341_fb.h"
 #include "Painter.hpp"
+#include "stm32f4xx_hal_def.h"
 #include "ui/ui_types.h"
 
 #define min2(a, b) ((a) < (b) ? (a) : (b))
@@ -80,11 +81,11 @@ bool Display::getEnabled() {
     return this->enabled;
 }
 
-void Display::drawArea(Area *area, Painter *painter) {
-    drawArea(area, painter, true);
+bool Display::drawArea(Area *area, Painter *painter) {
+    return drawArea(area, painter, true);
 }
 
-void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
+bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
     if (this->enabled) {
 
@@ -135,7 +136,11 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
         uint16_t dma_transfer_length = dma_buffer_size * 2; // 2 bytes per pixel
 
-        setAddressWindow(x, y, x + area->box.width - 1, y + area->box.height - 1);
+        HAL_StatusTypeDef ret = setAddressWindow(x, y, x + area->box.width - 1, y + area->box.height - 1);
+
+        if (ret != HAL_OK) {
+            return false;
+        }
 
         if (this->use_dma) {
             InitDisplayDataTransfer();
@@ -249,12 +254,15 @@ void Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                 ;
             }
             EndDisplayDataTransfer();
+
         } else {
             DISP_DC_PORT->BSRR |= DISP_DC_PIN << 16; // DC PIN UNSET
         }
 
         this->drawing = false;
     }
+
+    return true;
 }
 
 // Function to draw a single corner using midpoint circle algorithm

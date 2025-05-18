@@ -7,7 +7,8 @@
 
 uint16_t BACK_COLOR = 0x0000;
 
-ST7789::ST7789(SPI_HandleTypeDef *spi_port) : Display(spi_port) {}
+ST7789::ST7789(SPI_HandleTypeDef *spi_port) : Display(spi_port) {
+}
 
 int16_t ST7789::begin(void) {
 
@@ -141,9 +142,13 @@ int16_t ST7789::stop() {
     return HAL_OK;
 }
 
-void ST7789::select() { HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_RESET); }
+void ST7789::select() {
+    HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_RESET);
+}
 
-void ST7789::unselect() { HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_SET); }
+void ST7789::unselect() {
+    HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_SET);
+}
 
 void ST7789::reset() {
     HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_RESET);
@@ -151,47 +156,57 @@ void ST7789::reset() {
     HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_SET);
 }
 
-void ST7789::InitDisplayDataTransfer() { HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_SET); }
+HAL_StatusTypeDef ST7789::InitDisplayDataTransfer() {
+    HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_SET);
+    return HAL_OK;
+}
 
-void ST7789::EndDisplayDataTransfer() { HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_RESET); }
+HAL_StatusTypeDef ST7789::EndDisplayDataTransfer() {
+    HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_RESET);
+    return HAL_OK;
+}
 
-void ST7789::writeCommand(uint8_t cmd) {
+HAL_StatusTypeDef ST7789::writeCommand(uint8_t cmd) {
     HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_RESET);
     select();
-    HAL_SPI_Transmit(spi_port, &cmd, sizeof(cmd), HAL_MAX_DELAY);
+    return HAL_SPI_Transmit(spi_port, &cmd, sizeof(cmd), HAL_MAX_DELAY);
     // unselect();
 }
 
-void ST7789::writeData(uint8_t *buff, size_t buff_size) {
+HAL_StatusTypeDef ST7789::writeData(uint8_t *buff, size_t buff_size) {
 
+    HAL_StatusTypeDef ret = HAL_OK;
     HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_SET);
     select();
     // split data in small chunks because HAL can't send more then 64K at once
-    while (buff_size > 0) {
+    while (buff_size > 0 && ret == HAL_OK) {
 
         uint16_t chunk_size = buff_size > 32768 ? 32768 : buff_size;
-        HAL_SPI_Transmit(spi_port, buff, chunk_size, HAL_MAX_DELAY);
+        ret = HAL_SPI_Transmit(spi_port, buff, chunk_size, HAL_MAX_DELAY);
         buff += chunk_size;
         buff_size -= chunk_size;
     }
     unselect();
+    return ret;
 }
 
-void ST7789::setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
+HAL_StatusTypeDef ST7789::setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
 
-    writeCommand(ST7796S_CASET);
+    HAL_StatusTypeDef ret = writeCommand(ST7796S_CASET);
     { // CASET
         uint8_t data[] = {static_cast<uint8_t>(((x0 + 0) >> 8) & 0xFF), static_cast<uint8_t>((x0 + 0) & 0xFF), static_cast<uint8_t>(((x1 + 0) >> 8) & 0xFF),
                           static_cast<uint8_t>((x1 + 0) & 0xFF)};
         writeData(data, sizeof(data));
     }
     // row address set
-    writeCommand(ST7796S_PASET);
+    ret = writeCommand(ST7796S_PASET);
     { // RASET
         uint8_t data[] = {static_cast<uint8_t>(((y0 + 0) >> 8) & 0xFF), static_cast<uint8_t>((y0 + 0) & 0xFF), static_cast<uint8_t>(((y1 + 0) >> 8) & 0xFF),
                           static_cast<uint8_t>((y1 + 0) & 0xFF)};
         writeData(data, sizeof(data));
     }
     // write to RAM
-    writeCommand(ST7796S_RAMWR); // RAMWR
+    ret = writeCommand(ST7796S_RAMWR); // RAMWR
+
+    return ret;
 }

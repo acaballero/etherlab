@@ -1,6 +1,7 @@
 #ifndef __ST77XX_AFB_H
 #define __ST77XX_AFB_H
 
+#include "stm32f4xx.h"
 #include "string.h"
 #include <stdint.h>
 
@@ -107,9 +108,9 @@ class Display {
 
     virtual void reset() = 0;
 
-    void drawArea(Area *area, Painter *painter);
+    bool drawArea(Area *area, Painter *painter);
 
-    void drawArea(Area *, Painter *, bool pad_display);
+    bool drawArea(Area *, Painter *, bool pad_display);
 
     uint8_t renderString(int8_t x, int8_t y, uint16_t length);
 
@@ -311,15 +312,15 @@ class Display {
     // Clipping rectangle
     Box clip_box;
 
-    virtual void writeCommand(uint8_t data) = 0;
+    virtual HAL_StatusTypeDef writeCommand(uint8_t data) = 0;
 
-    virtual void writeData(uint8_t *buff, size_t buff_size) = 0;
+    virtual HAL_StatusTypeDef writeData(uint8_t *buff, size_t buff_size) = 0;
 
-    virtual void InitDisplayDataTransfer() = 0;
+    virtual HAL_StatusTypeDef InitDisplayDataTransfer() = 0;
 
-    virtual void EndDisplayDataTransfer() = 0;
+    virtual HAL_StatusTypeDef EndDisplayDataTransfer() = 0;
 
-    virtual void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) = 0;
+    virtual HAL_StatusTypeDef setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) = 0;
 
     size_t printNumber(unsigned long, uint8_t);
 

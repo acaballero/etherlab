@@ -134,8 +134,11 @@ menu_option_st<uint8_t> decimation_options[] = {{"1", 1}, {"2", 2}, {"4", 4}, {"
 optionsPrompt<uint8_t> decimationMenu((const char *)"Max decimation", decimation_options, config.fft.max_decimation_factor,
                                       sizeof(decimation_options) / sizeof(decimation_options[0]));
 
-Menu::numberPrompt<uint32_t> maxSampleRateMenu((const char *)"Max sample rate", &config.fft.max_sample_rate, 0, ' ', '.', "Hz", nullptr, FFT_MIN_SAMPLE_RATE,
-                                               ADC_MAX_SAMPLE_RATE, 10000, 25000);
+Menu::numberPrompt<uint32_t> minSampleRateMenu((const char *)"Min sample rate", &config.fft.min_sample_rate, 0, ' ', '.', "Hz", nullptr, FFT_MIN_SAMPLE_RATE,
+                                               config.fft.max_sample_rate, 10000, 25000);
+
+Menu::numberPrompt<uint32_t> maxSampleRateMenu((const char *)"Max sample rate", &config.fft.max_sample_rate, 0, ' ', '.', "Hz", nullptr,
+                                               config.fft.min_sample_rate, ADC_MAX_SAMPLE_RATE, 10000, 25000);
 Menu::numberPrompt<uint32_t> maxDSPSampleRateMenu((const char *)"DSP max sample rate", &config.fft.dsp_max_sample_rate, 0, ' ', '.', "Hz",
                                                   [](uint32_t v) {
                                                       fft_config(v);
@@ -148,13 +151,13 @@ Menu::numberPrompt<uint32_t> spanMenu((const char *)"Span", &config.fft.span, 0,
                                       FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 25000);
 Menu::numberPrompt<float> smoothMenu((const char *)"Smooth", &config.fft.smooth_factor, 1, ' ', '.', "",
                                      [](float) {
-                                         fftInit();
+                                         fft_init();
                                      },
                                      0, 1, 0.1, 1);
 
 Menu::numberPrompt<uint16_t> waterfallSpeedMenu((const char *)"Waterfall speed", &config.fft.waterfall_pixels_per_second, 0, ' ', '.', "pps",
                                                 [](uint16_t) {
-                                                    fftInit();
+                                                    fft_init();
                                                 },
                                                 2, (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 5);
 
@@ -167,7 +170,7 @@ Menu::numberPrompt<uint16_t> fftCalcNoisePeriodMenu((const char *)"Noise floor c
 
 Menu::numberPrompt<int32_t> amplitudeMenu((const char *)"Amplitude", &config.fft.maxAmpl, 0, ' ', '.', "",
                                           [](int32_t) {
-                                              fftInit();
+                                              fft_init();
                                           },
                                           0x00FF, 0xFFFF, 10, 100);
 
@@ -179,7 +182,7 @@ Menu::numberPrompt<uint8_t> slicesMenu((const char *)"MAx slices", &config.fft.m
 
 Menu::numberPrompt<int32_t> fCorrectionMenu((const char *)"Freq. correction", &config.f_correction, 0, ' ', '.', "kHz", nullptr, 0, 100000, 10, 100);
 
-MENU(fftSamplingMenu, "Sampling", doNothing, anyEvent, noStyle, OBJ(maxSampleRateMenu), OBJ(maxDSPSampleRateMenu), OBJ(spanMenu))
+MENU(fftSamplingMenu, "Sampling", doNothing, anyEvent, noStyle, OBJ(minSampleRateMenu), OBJ(maxSampleRateMenu), OBJ(maxDSPSampleRateMenu), OBJ(spanMenu))
 
 MENU(fftUIMenu, "Style", doNothing, anyEvent, noStyle, OBJ(fftStyleMenu), OBJ(lineColorMenu), OBJ(fillColorMenu), OBJ(waterfallSpeedMenu));
 

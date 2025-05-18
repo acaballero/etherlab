@@ -8,6 +8,7 @@
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_config.h"
 #include "dsp/fft/fft.h"
+#include "handlers.h"
 #include "radio.h"
 #include "status.h"
 #include "types.h"
@@ -29,6 +30,7 @@
 #include "buffer.hpp"
 #include "dsp_buffers.h"
 #include "main_board.h"
+#include "printf.h"
 
 void dsp_loop();
 namespace dsp {
@@ -106,6 +108,11 @@ uint8_t dsp_command(st_dspCommand command, void (*cb)(st_dspStatus *)) {
 
 bool dsp_restart() {
     if (current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
+        printf_("dsp_restart: Restarting task\n");
+        DAC_DMA_Stop(&hdac1);
+        ADC_DMA_Stop(&hadc1);
+        input_stream.reset();
+        output_stream.reset();
         current_task->start();
         dsp::dsp_status->reset();
         return true;
@@ -194,9 +201,12 @@ DCBlock dc_block_q{0.999};
 inline void adc_work() {
     // GPIOD->BSRR |= GPIO_PIN_9;
 
+    if (current_buffer->count > 1000) {
+        HardFault_Handler();
+    }
 #if DSP_FS4_SHIFT
 
-    if (fft_params.n_slices == 1) {
+    if (fft_params.n_slices == 1 && !ISANALOG) {
 
         buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
         dc_block_i.filter(bb, 2, 0);

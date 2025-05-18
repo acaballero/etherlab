@@ -1,11 +1,13 @@
 #include "ILI9341_fb.h"
+#include "stm32f4xx_hal_def.h"
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
 
 uint16_t BACK_COLOR = 0x0000;
 
-ILI9341::ILI9341(SPI_HandleTypeDef *spi_port) : Display(spi_port) {}
+ILI9341::ILI9341(SPI_HandleTypeDef *spi_port) : Display(spi_port) {
+}
 
 int16_t ILI9341::begin(void) {
 
@@ -175,9 +177,13 @@ int16_t ILI9341::stop() {
     return 0;
 }
 
-void ILI9341::select() { HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_RESET); }
+void ILI9341::select() {
+    HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_RESET);
+}
 
-void ILI9341::unselect() { HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_SET); }
+void ILI9341::unselect() {
+    HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_SET);
+}
 
 void ILI9341::reset() {
     HAL_GPIO_WritePin(ILI9341_RST_PORT, ILI9341_RST_PIN, GPIO_PIN_RESET);
@@ -185,14 +191,16 @@ void ILI9341::reset() {
     HAL_GPIO_WritePin(ILI9341_RST_PORT, ILI9341_RST_PIN, GPIO_PIN_SET);
 }
 
-void ILI9341::InitDisplayDataTransfer() {
+HAL_StatusTypeDef ILI9341::InitDisplayDataTransfer() {
     HAL_GPIO_WritePin(ILI9341_DC_PORT, ILI9341_DC_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_RESET);
+    return HAL_OK;
 }
 
-void ILI9341::EndDisplayDataTransfer() {
+HAL_StatusTypeDef ILI9341::EndDisplayDataTransfer() {
     HAL_GPIO_WritePin(ILI9341_CS_PORT, ILI9341_CS_PIN, GPIO_PIN_SET);
     HAL_GPIO_WritePin(ILI9341_DC_PORT, ILI9341_DC_PIN, GPIO_PIN_RESET);
+    return HAL_OK;
 }
 
 uint16_t ILI9341::getPixel(uint16_t x, uint16_t y) {
@@ -233,48 +241,55 @@ uint16_t ILI9341::getPixel(uint16_t x, uint16_t y) {
     return ret;
 }
 
-void ILI9341::writeCommand(uint8_t cmd) {
+HAL_StatusTypeDef ILI9341::writeCommand(uint8_t cmd) {
 
     HAL_GPIO_WritePin(ILI9341_DC_PORT, ILI9341_DC_PIN, GPIO_PIN_RESET);
     select();
-    HAL_SPI_Transmit(spi_port, &cmd, sizeof(cmd), HAL_MAX_DELAY);
+    HAL_StatusTypeDef ret = HAL_SPI_Transmit(spi_port, &cmd, sizeof(cmd), HAL_MAX_DELAY);
     unselect();
+
+    return ret;
 }
 
-void ILI9341::writeData(uint8_t *buff, size_t buff_size) {
+HAL_StatusTypeDef ILI9341::writeData(uint8_t *buff, size_t buff_size) {
 
     HAL_GPIO_WritePin(ILI9341_DC_PORT, ILI9341_DC_PIN, GPIO_PIN_SET);
 
+    HAL_StatusTypeDef ret = HAL_OK;
     select();
     // split data in small chunks because HAL can't send more then 64K at once
-    while (buff_size > 0) {
+    while (buff_size > 0 && ret == HAL_OK) {
 
         uint16_t chunk_size = buff_size > 32768 ? 32768 : buff_size;
-        HAL_SPI_Transmit(spi_port, buff, chunk_size, HAL_MAX_DELAY);
+        ret = HAL_SPI_Transmit(spi_port, buff, chunk_size, HAL_MAX_DELAY);
         buff += chunk_size;
         buff_size -= chunk_size;
     }
     unselect();
+
+    return ret;
 }
 
-void ILI9341::setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
+HAL_StatusTypeDef ILI9341::setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
 
     // column address set
-    writeCommand(0x2A); // CASET
+    HAL_StatusTypeDef ret = writeCommand(0x2A); // CASET
     {
         uint8_t data[] = {static_cast<uint8_t>((x0 >> 8) & 0xFF), static_cast<uint8_t>(x0 & 0xFF), static_cast<uint8_t>((x1 >> 8) & 0xFF),
                           static_cast<uint8_t>(x1 & 0xFF)};
-        writeData(data, sizeof(data));
+        ret = writeData(data, sizeof(data));
     }
 
     // row address set
-    writeCommand(0x2B); // RASET
+    ret = writeCommand(0x2B); // RASET
     {
         uint8_t data[] = {static_cast<uint8_t>((y0 >> 8) & 0xFF), static_cast<uint8_t>(y0 & 0xFF), static_cast<uint8_t>((y1 >> 8) & 0xFF),
                           static_cast<uint8_t>(y1 & 0xFF)};
-        writeData(data, sizeof(data));
+        ret = writeData(data, sizeof(data));
     }
 
     // write to RAM
-    writeCommand(0x2C); // RAMWR
+    ret = writeCommand(0x2C); // RAMWR
+
+    return ret;
 }

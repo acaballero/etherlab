@@ -11,6 +11,7 @@
 */
 // rotate right
 
+#include "stm32f4xx.h"
 #define ILI9341_CMD 0
 #define ILI9341_DATA 1
 
@@ -75,29 +76,29 @@ class ILI9341 : public Display {
   public:
     ILI9341(SPI_HandleTypeDef *);
 
-    int16_t begin();
+    int16_t begin() override;
 
-    int16_t stop();
+    int16_t stop() override;
 
-    void select();
+    void select() override;
 
-    void unselect();
+    void unselect() override;
 
-    void reset();
+    void reset() override;
 
     uint16_t getPixel(uint16_t x, uint16_t y);
 
   private:
     // void init(void);
-    void writeCommand(uint8_t data);
+    HAL_StatusTypeDef writeCommand(uint8_t data) override;
 
-    void writeData(uint8_t *buff, size_t buff_size);
+    HAL_StatusTypeDef writeData(uint8_t *buff, size_t buff_size) override;
 
-    void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+    HAL_StatusTypeDef setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) override;
 
-    virtual void InitDisplayDataTransfer();
+    HAL_StatusTypeDef InitDisplayDataTransfer() override;
 
-    virtual void EndDisplayDataTransfer();
+    HAL_StatusTypeDef EndDisplayDataTransfer() override;
 };
 
 #endif

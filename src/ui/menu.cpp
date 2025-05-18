@@ -227,9 +227,16 @@ Menu::numberPrompt<uint32_t> ifFMTXFreqMenu((const char *)"FM IF TX Frequency", 
                                             },
                                             10000, 100000000, 1000, 10000);
 
-MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), OBJ(powerSavePeriod), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu),
-     OBJ(Menu::frontendPathMenu), OBJ(couplerOffsetMenu), OBJ(driveStrength1stLOMenu), OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu),
-     OBJ(if1stFreqMenu), OBJ(ifFMTXFreqMenu), OBJ(loRefCorrectionMenu), OBJ(ifCorrectionMenu),
+result settings_reset(eventMask) {
+    config = Config();
+    settings_write(&config);
+    return proceed;
+}
+
+MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), OBJ(powerSavePeriod),
+     OP("Reset to defaults", settings_reset, enterEvent), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu), OBJ(Menu::frontendPathMenu), OBJ(couplerOffsetMenu),
+     OBJ(driveStrength1stLOMenu), OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu), OBJ(if1stFreqMenu), OBJ(ifFMTXFreqMenu), OBJ(loRefCorrectionMenu),
+     OBJ(ifCorrectionMenu),
 #if ENABLE_RTC
      SUBMENU(dateMenu), SUBMENU(timeMenu)
 #endif

@@ -17,7 +17,7 @@
 class DCBlock {
 
   public:
-    explicit DCBlock() : pole_radius{0.985} {
+    explicit DCBlock() : pole_radius{0.999} {
     }
     explicit DCBlock(float pole_radius) : pole_radius{pole_radius} {
     }

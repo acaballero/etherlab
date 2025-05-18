@@ -90,7 +90,7 @@ uint8_t settings_read(Config *settings) {
 
         return status;
     } else {
-        return true;
+        return EE_OK;
     }
 }
 

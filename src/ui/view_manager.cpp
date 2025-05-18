@@ -26,6 +26,9 @@ View *breadcrumb[MAX_VIEWS];
 View *currentView;
 int view_index = -1;
 
+void view_loop();
+os::periodic_task task(250, view_loop);
+
 void push(View *view) {
     if (view_index < MAX_VIEWS) {
         if (currentView) {
@@ -60,7 +63,9 @@ void main_view_warning_callback(void *, void *args) {
     } else {
         w->set_visible(true);
         w->set_focus(true);
-        os::task_manager.set_timeout(4000, []() { view_manager::mainView.Message()->set_visible(false); });
+        os::task_manager.set_timeout(4000, []() {
+            view_manager::mainView.Message()->set_visible(false);
+        });
     }
 
     w->set_title(st->code == status::ST_ERROR ? "WARNING" : "INFO", st->code == status::ST_ERROR ? C565_RED : C565_YELLOW);
@@ -79,4 +84,16 @@ void init() {
     // optionButtonsView.on_hide_fn = pop;
     // numberEditView.on_hide_fn = pop;
 }
+
+void view_loop() {
+    // TODO: Delegate dirty state manaegnment to the widget itself based on
+    // information change messages and refresh rate
+
+    mainView.TuneInfo()->set_dirty();
+    mainView.FFTInfo()->set_dirty();
+    mainView.Menu()->set_dirty();
+
+    currentView->paint();
+}
+
 } // namespace view_manager

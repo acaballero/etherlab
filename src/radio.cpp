@@ -104,7 +104,7 @@ const st_filter if_filters[6] = {
     {10700000, 6000, false, 0},                         // 6 Khz (digital only)
     {10700000, 9000, false, 0},                         // 9 Khz (digital only)
     {10698000, 15000, true, GPIOEXP_IF_FILTER_15KHZ},   // 15 Kh
-    {10000000, 150000, true, GPIOEXP_IF_FILTER_150KHZ}, // 150 Khz
+    {10700000, 150000, true, GPIOEXP_IF_FILTER_150KHZ}, // 150 Khz
 
 };
 const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "10 m",  "11 m", "12 m", "15 m",

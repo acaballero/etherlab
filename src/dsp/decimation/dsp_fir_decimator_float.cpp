@@ -8,6 +8,7 @@
 #include "dsp/fir_filter.h"
 #include "dsp_fir_decimator_float.h"
 #include "dsp/window.h"
+#include "handlers.h"
 #include <algorithm>
 #include <exception>
 #include <sys/_stdint.h>
@@ -95,6 +96,9 @@ template <int TAPS> void DspFIRDecimatorFloat<TAPS, complex_t_f32>::decimate(buf
 
 template <int TAPS>
 void DspFIRDecimatorFloat<TAPS, complex_t_f32>::decimate(float32_t *src_i, float32_t *src_q, float32_t *dst_i, float32_t *dst_q, size_t n_samples) {
+    if (dsp_fir_decimate_instance.numTaps > 100 || dsp_fir_decimate_instance_q.numTaps > 100) {
+        HardFault_Handler();
+    }
     arm_fir_decimate_f32(&dsp_fir_decimate_instance, src_i, dst_i, n_samples);
     arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, src_q, dst_q, n_samples);
 }
@@ -117,6 +121,7 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
     if (type == BPF) {
         b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate, start_frequency, this->bandwidth);
     } else {
+
         b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate, this->bandwidth, 0);
     }
 

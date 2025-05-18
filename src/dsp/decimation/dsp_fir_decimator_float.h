@@ -5,7 +5,6 @@
 #ifndef TRX_FRONTEND_DSP_FIR_DECIMATOR_FLOAT_H
 #define TRX_FRONTEND_DSP_FIR_DECIMATOR_FLOAT_H
 
-#include "arm_math.h"
 #include "dsp/dsp_common.h"
 #include "dsp/fir_filter.h"
 #include "stdio.h"

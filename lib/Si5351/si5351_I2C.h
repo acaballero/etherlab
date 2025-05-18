@@ -29,6 +29,7 @@
 #ifndef SI5351_I2C_H_
 #define SI5351_I2C_H_
 
+#include "stm32f4xx.h"
 #include <stdint.h>
 #include <stm32f4xx.h>
 #include <string.h>
@@ -494,21 +495,21 @@ class Si5351 {
   public:
     Si5351(uint8_t i2c_addr = SI5351_BUS_BASE_ADDR);
 
-    bool init(I2C_HandleTypeDef, uint8_t, uint32_t, int32_t, uint8_t);
+    bool init(I2C_HandleTypeDef, uint8_t, uint32_t, int32_t);
 
     void reset(void);
 
-    uint8_t set_freq(uint64_t, enum si5351_clock);
+    HAL_StatusTypeDef set_freq(uint64_t, enum si5351_clock);
 
     uint8_t write_regs(si5351b_revb_register_t *regs, uint8_t nregs);
 
     uint8_t set_freq_manual(uint64_t, uint64_t, enum si5351_clock, bool vcxo);
 
-    uint8_t set_pll(uint64_t, enum si5351_pll);
+    HAL_StatusTypeDef set_pll(uint64_t, enum si5351_pll);
 
-    uint8_t set_ms(enum si5351_clock, struct Si5351RegSet, uint8_t, uint8_t, uint8_t);
+    HAL_StatusTypeDef set_ms(enum si5351_clock, struct Si5351RegSet, uint8_t, uint8_t, uint8_t);
 
-    uint8_t output_enable(enum si5351_clock, uint8_t);
+    HAL_StatusTypeDef output_enable(enum si5351_clock, uint8_t);
 
     void drive_strength(enum si5351_clock, enum si5351_drive);
 
@@ -520,7 +521,7 @@ class Si5351 {
 
     int32_t get_correction(enum si5351_pll_input);
 
-    uint8_t pll_reset(enum si5351_pll);
+    HAL_StatusTypeDef pll_reset(enum si5351_pll);
 
     void set_ms_source(enum si5351_clock, enum si5351_pll);
 
@@ -536,17 +537,17 @@ class Si5351 {
 
     void set_clock_fanout(enum si5351_clock_fanout, uint8_t);
 
-    void set_pll_input(enum si5351_pll, enum si5351_pll_input);
+    HAL_StatusTypeDef set_pll_input(enum si5351_pll, enum si5351_pll_input);
 
     uint8_t set_vcxo(uint64_t, uint8_t);
 
     void set_ref_freq(uint32_t, enum si5351_pll_input);
 
-    uint8_t si5351_write_bulk(uint8_t, uint8_t, uint8_t *);
+    HAL_StatusTypeDef si5351_write_bulk(uint8_t, uint8_t, uint8_t *);
 
-    uint8_t si5351_write(uint8_t, uint8_t);
+    HAL_StatusTypeDef si5351_write(uint8_t, uint8_t);
 
-    uint8_t si5351_read(uint8_t);
+    HAL_StatusTypeDef si5351_read(uint8_t, uint8_t *);
 
     uint8_t sleep();
 
@@ -575,7 +576,7 @@ class Si5351 {
 
     void update_int_status(struct Si5351IntStatus *);
 
-    uint8_t ms_div(enum si5351_clock, uint8_t, uint8_t);
+    HAL_StatusTypeDef ms_div(enum si5351_clock, uint8_t, uint8_t);
 
     uint8_t select_r_div(uint64_t *);
 
@@ -587,7 +588,7 @@ class Si5351 {
     bool clk_first_set[8];
     I2C_HandleTypeDef hi2c1;
 
-    uint8_t output_clk_power(si5351_clock clk, uint8_t enable);
+    HAL_StatusTypeDef output_clk_power(si5351_clock clk, uint8_t enable);
 };
 
 #endif /* SI5351_I2C_H_ */

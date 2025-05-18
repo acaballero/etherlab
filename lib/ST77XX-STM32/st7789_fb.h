@@ -6,6 +6,7 @@
 #include <string.h>
 #include "ips_font.h"
 #include "Display_afb.h"
+#include "stm32f4xx_hal_def.h"
 
 #define ST7789_RST_PORT DISP_RST_PORT
 #define ST7789_RST_PIN DISP_RST_PIN
@@ -129,29 +130,29 @@
 
 class ST7789 : public Display {
 
-      public:
-        ST7789(SPI_HandleTypeDef *);
+  public:
+    ST7789(SPI_HandleTypeDef *);
 
-        int16_t begin();
+    int16_t begin() override;
 
-        void select();
+    void select() override;
 
-        void unselect();
+    void unselect() override;
 
-        void reset();
+    void reset() override;
 
-        int16_t stop();
+    int16_t stop() override;
 
-      private:
-        void writeCommand(uint8_t data);
+  private:
+    HAL_StatusTypeDef writeCommand(uint8_t data) override;
 
-        void writeData(uint8_t *buff, size_t buff_size);
+    HAL_StatusTypeDef writeData(uint8_t *buff, size_t buff_size) override;
 
-        void setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+    HAL_StatusTypeDef setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) override;
 
-        virtual void InitDisplayDataTransfer();
+    HAL_StatusTypeDef InitDisplayDataTransfer() override;
 
-        virtual void EndDisplayDataTransfer();
+    HAL_StatusTypeDef EndDisplayDataTransfer() override;
 };
 
 #endif

@@ -108,7 +108,7 @@ void setup() {
 
     menu_setup();
 
-    fftInit();
+    fft_init();
 
 #if DSP_ENABLED
     dsp_init(config.dsp);

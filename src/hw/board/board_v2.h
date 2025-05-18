@@ -47,7 +47,7 @@ void lo_setup();
  * @param freq
  */
 void lo_enable(uint8_t stage, bool enabled);
-void if_freq(RF_DIRECTION direction, uint64_t freq);
+bool if_freq(RF_DIRECTION direction, uint64_t freq);
 void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb);
 void if_direction(RF_DIRECTION direction);
 bool lo_freq(uint8_t stage, uint64_t freq);

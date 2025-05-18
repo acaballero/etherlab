@@ -19,14 +19,18 @@ void FIFO::reset() {
     this->count = 0;
 }
 
-uint32_t FIFO::available() { return AVAILABLE(); };
+uint32_t FIFO::available() {
+    return AVAILABLE();
+};
 
 uint32_t FIFO::available(char **dest) {
     *dest = this->data + this->read_ix;
     return this->available();
 };
 
-uint32_t FIFO::free() { return FREE(); };
+uint32_t FIFO::free() {
+    return FREE();
+};
 
 uint32_t FIFO::free(char **start) {
     *start = this->data + this->write_ix;
@@ -116,6 +120,10 @@ FIFO_ERROR FIFO::consume(uint32_t n, char **dest) {
     // return n?FIFO_ERROR_UNDERRUN:FIFO_ERROR_NONE;
 }
 
-uint32_t FIFO::getSize() const { return size; }
+uint32_t FIFO::getSize() const {
+    return size;
+}
 
-void FIFO::setSize(uint32_t size) { FIFO::size = size; }
+void FIFO::setSize(uint32_t size) {
+    FIFO::size = size;
+}

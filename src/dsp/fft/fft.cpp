@@ -12,10 +12,12 @@
 #include "dsp/blocks/dc_block.h"
 #include "arm_common_tables.h"
 #include "dsp/dsp_buffers.h"
+#include "dsp/dsp_common.h"
 #include "dsp/fft/fft.h"
 #include "dsp/fft/fft_types.h"
 #include "hw/stm32f4xx/adc.h"
 #include "hw/stm32f4xx/timers.h"
+#include "itemsTemplates.hpp"
 #include "status.h"
 #include "ui/view.h"
 #include "fft_widget.h"
@@ -162,7 +164,7 @@ void calc_snr() {
     float noise = noise_floor_mag * (bin_limits.second - bin_limits.first + 1);
 
     // Remove noise from signal (avoiding negative powers)
-    float signal = max2(sigplusnoise - noise, 1e-45f);
+    float signal = max2(sigplusnoise - noise, 1e-14f);
 
     float curr_snr = 10.0f * fasterlog(signal / noise);
 
@@ -174,7 +176,7 @@ void calc_snr() {
 
 using namespace fft;
 
-fft_type fft_peak_v = config.fft.min_db;
+fft_type fft_peak_v = FFT_MIN_DB;
 
 /* ----------- */
 #define FFT_MAX_AMPL_FACTOR 0.9f;
@@ -217,24 +219,25 @@ uint64_t last_iqbalance_estimate_ms = 0;
 // Calculates FFT parameters from desired span, decimation factor and n_slices
 void st_fft_params::calc() {
 
+    // Number of usable bins in each slice
+
+    nbins = size * USABLE_BW_FACTOR;
+
     if (sample_freq == 0) {
         // Minimum sample frequency, taking into account the usable bandwidth of each slice
-        sample_freq = span * decimation_factor / n_slices / USABLE_BW_FACTOR;
+        sample_freq = span * ((float)decimation_factor / n_slices / USABLE_BW_FACTOR);
     } else {
         // Fixed sample_freq
-        span = sample_freq / (decimation_factor / n_slices / USABLE_BW_FACTOR);
+        span = sample_freq / ((float)decimation_factor / n_slices / USABLE_BW_FACTOR);
     }
 
-    sample_freq = sample_freq & ~1023; // Floor to nearest 1024 factor
+    sample_freq = (sample_freq + 1023) & ~1023; // Ceil to nearest 1024 factor
 
     // Resolution bandwidth (per FFT bin)
     rbw = sample_freq / size / decimation_factor;
 
     // Bandwidth per slice
     bw = span / 2 / n_slices;
-
-    // Number of usable bins in each slice
-    nbins = size * USABLE_BW_FACTOR;
 
     // Total bins
     total_bins = nbins * n_slices;
@@ -270,7 +273,7 @@ bool st_fft_params::valid() {
     // is also taken into account here
     // In the end, we need to assure that the distance from the (shifted) baseband center frequency to the lower cutoff
     // frequency of the filter is at least the bandowidth of interest (after decimation)
-    b = b && ((int32_t)config.fft.bw - abs(dsp::get_frequency_shift(sample_freq))) >= (int32_t)bw;
+    b = b && ((int32_t)config.fft.bw - (ISANALOG ? 0 : abs(dsp::get_frequency_shift(sample_freq)))) >= (int32_t)bw;
 
     return b;
 }
@@ -305,6 +308,16 @@ inline float get_window_ampl_corr_factor() {
     }
 }
 
+// Window ENRM (Equivalent noise resolution bandwidth)
+inline float get_window_enrb_factor() {
+    switch (config.fft.window) {
+        case FFT_WINDOW_HAMMING:
+            return 1.36f;
+        default:
+            return 1;
+    }
+}
+
 void calcFFTRange() {
 
     // Values in the fft_output array are not normalized, so they are v*FFT_N where v is the voltage magnitude
@@ -331,9 +344,14 @@ void generateSmoothingGainLUT() {
     }
 }
 
-void fftInit() {
+void fft_init() {
 
     float32_t minPrecZ, maxPrecZ;
+
+    // Make sure the sample rate is between hardware bounds (may have been saved before)
+    config.fft.min_sample_rate = max2(FFT_MIN_SAMPLE_RATE, config.fft.min_sample_rate);
+
+    set_max_slices(config.fft.max_slices);
 
     min_max_f32((float32_t *)config.fft.iq_balance_precZ, FFT_IQ_BALANCER_FILTER_SIZE, &minPrecZ, &maxPrecZ);
 
@@ -446,7 +464,7 @@ bool fft_config(uint32_t span) {
         // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
 
 #if DSP_FS4_SHIFT
-        if (fft_params.n_slices == 1) {
+        if (fft_params.n_slices == 1 && !ISANALOG) {
             // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
             // move to the adjacent slice. Not done yet.
             radio::set_dsp_frequency_shift(-dsp::get_frequency_shift());
@@ -466,8 +484,14 @@ bool fft_config(uint32_t span) {
         if (current_sample_rate != config.fft.sample_rate || current_bw != fft_params.bw ||
             !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
 
-            decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
+            bool b = decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
             decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
+
+            if (!b) {
+                // Failed decimator initialization. Should't happen but we could've mess with the fft params calculation
+                status::handleError(status::ST_ERROR, "Error initializing FFT decimator");
+            }
+
             set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
 
             signal.emit(nullptr);
@@ -528,20 +552,19 @@ void reorderBins(complex_t_f32 *v) {
     complex_t_f32 temp;
     uint16_t center_bin = FFT_N / 2;
     for (int i = 0; i < center_bin; i++) {
-
         temp = v[i];
         v[i] = v[center_bin + i];
         v[center_bin + i] = temp;
     }
 }
 
-uint8_t getPeak(uint8_t start_bin, uint8_t end_bin, fft_type &peak_v) {
+uint32_t getPeak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v) {
 
-    uint8_t max_ix = 0;
+    uint32_t max_ix = 0;
 
     fft_type max = -32000;
 
-    for (uint16_t i = start_bin; i < end_bin; i++) {
+    for (uint32_t i = start_bin; i < end_bin; i++) {
 
         if (fft_output[i] > max) {
             max_ix = i;
@@ -672,11 +695,13 @@ inline fft_type fft_output_db(fft_type v) {
 
     // Divide by the gain
     v /= fft_radio_gain_factor;
-    // dBm
-    db = 10.0f * fasterlog(1000.0f * (float)pow(v, 2.0) / 400.0);
 
-    // logEvent(110,4,0);
-    if (db < config.fft.min_db) {
+    // dBm (account for the ENRB of the applied window) I'm assuming peak-to-peak voltage values (so dividing 400 instead of 100 to get the power from RMS)
+    // because that's how I'm getting values close to what's expected, but I think this is wrong (FFT bins are voltage magnitudes)
+    //
+    db = 10.0f * fasterlog(1000.0f * (float)(v * v) / 400.0 / get_window_enrb_factor());
+
+    if (db < FFT_MIN_DB) {
         db = FFT_MIN_DB;
     }
     // else if (db > config.fft.max_db)
@@ -740,7 +765,7 @@ void processFFT(float32_t *v) {
                 last_bin_ix = bin_ix;
             }
 
-            db_constrained = fmin(db, config.fft.max_db);
+            db_constrained = constrain(db, config.fft.min_db, config.fft.max_db);
 
             // We will store fft_display in display units ('y' coordinates from the top) for the sake of speed
             // This way, we can calculate them here once instead of (like we used to do in previous versions), store it in db units and
@@ -785,7 +810,7 @@ void processFFT(float32_t *v) {
 
                 gain = first_frame ? 1 : getSmoothGain(db);
 
-                db_constrained = fmin(db, config.fft.max_db);
+                db_constrained = constrain(db, config.fft.min_db, config.fft.max_db);
 
                 start = FFT_HEIGHT - (uint8_t)(((float)(db_constrained - config.fft.min_db) / (float)db_amp) * (float)FFT_HEIGHT);
 
@@ -969,7 +994,7 @@ void fft_work() {
         // A (side) note of caution. When changing connections, be careful not to swap I/Q signals from
         // the quadrature mixer into the ADCs, or the frequency will be inverted again.
 
-        uint8_t peak_ix = getPeak(fft_params.start_bin, fft_params.start_bin + fft_params.nbins, fft_peak_v);
+        uint32_t peak_ix = getPeak(fft_params.start_bin, fft_params.start_bin + fft_params.nbins, fft_peak_v);
 
         // Only consider a peak value if it's above a threshold from the current noise floor
         if (fft_peak_v > FFT_SIGNAL_THRESHOLD_DB + fft_noise_floor_db && fft_peak < fft_peak_v) {
@@ -1010,8 +1035,8 @@ void updateFFT() {
 
     first_slice_center_f = fft_params.span_if_start + fft_params.bw;
 
-    fft_peak_v = config.fft.min_db;
-    fft_peak = config.fft.min_db;
+    fft_peak_v = FFT_MIN_DB;
+    fft_peak = FFT_MIN_DB;
     fft_peak_bin = 0;
 
     m = HAL_GetTick();
@@ -1041,7 +1066,12 @@ void updateFFT() {
             radio::f_iq = f;
 
             // TODO: update_freq() takes 4ms with a 400khz I2C, way too much. Should try to improve it's performance
-            if_freq(RF_DIRECTION_RX, f);
+            // TODO: Changing the frequency of PLLB (Quadrature mixer clock) causes a glich also in PLLA (2nd IF clock) which makes it into the passband
+            bool b = if_freq(RF_DIRECTION_RX, f);
+
+            if (!b) {
+                status::handleError(status::ST_ERROR, "updateFFT: Error setting IF freq");
+            }
 
             // Clear the FIFO since it will likely contain samples of the previous slice
             fft_fifo.reset();

@@ -44,10 +44,8 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 #define FFT_LPF_IIR_FILTER_NCOEFFS 8
 
 // Referred to the radio frontend
-#define FFT_MIN_DB -140
+#define FFT_MIN_DB -145
 #define FFT_MAX_DB -30
-
-#define FFT_NOISE_LEVEL -110
 
 // Threshold above noise floor to take a signal into account
 #define FFT_SIGNAL_THRESHOLD_DB 10

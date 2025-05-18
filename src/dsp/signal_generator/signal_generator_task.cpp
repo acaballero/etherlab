@@ -3,7 +3,7 @@
 //
 
 #include "signal_generator_task.h"
-#include "dsp/firFilter.h"
+#include "dsp/fir_filter.h"
 #include "dsp/dsp_common.h"
 #include "status.h"
 #include "hw/stm32f4xx/timers.h"

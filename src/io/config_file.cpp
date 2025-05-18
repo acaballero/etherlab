@@ -126,7 +126,9 @@ bool ConfigFile::save(const char *filename, const st_config &cfg) {
 }
 
 bool ConfigFile::read_line(const char *fmt) {
+    //  printf_("read_line: %s ", fmt);
     f_gets(buf, sizeof(buf), file);
+    // printf_(">> %s\n", buf);
     return (std::strncmp(buf, fmt, strlen(fmt)) == 0);
 }
 
@@ -221,10 +223,14 @@ bool ConfigFile::read_bool(const char *fmt, bool *v) {
 }
 
 bool ConfigFile::read_string(const char *fmt, char *v) {
+    // printf_("read_string: %s\n", fmt);
     if (read_line(fmt)) {
-        std::strcpy(v, buf + strlen(fmt) - 1);
+        //  printf_("line: %s\n", buf);
+        std::strcpy(v, buf + strlen(fmt));
+        v[strlen(v) - 1] = 0; // remove newline
         return true;
     } else {
+        //   printf_("Not found\n");
         return false;
     }
 }

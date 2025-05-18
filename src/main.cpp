@@ -22,6 +22,8 @@
 #include "types.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
+#include <sys/_stdint.h>
+#include <sys/unistd.h>
 
 #if ENABLE_FFT
 
@@ -63,16 +65,13 @@ void view_loop();
 GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
 MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB, &hmcp03, GPIO_MODE_OUTPUT_PP);
 
-os::periodic_task view_task(250, view_loop);
 os::periodic_task blink_task(1000, []() {
     ledPin.toggle();
     powPin.toggle();
 });
 
 os::periodic_task *tasks[] = {
-    &board::task,
-    &radio::task,
-    &agc::task,
+    &board::task,           &radio::task,     &agc::task,
 #if LCD_ENABLED
 #if ENABLE_FFT && DSP_ENABLED
     &fft::fft_task,
@@ -80,14 +79,9 @@ os::periodic_task *tasks[] = {
 #if ENABLE_SD_CARD
     &sdcard::task,
 #endif
-    &view_task,
+    &view_manager::task,
 #endif
-    &scanner::task,
-    &sstrength::task,
-    &battery::task,
-    &power_amp::task,
-    &dsp::task,
-    &rf_coupler::task,
+    &scanner::task,         &sstrength::task, &battery::task, &power_amp::task, &dsp::task, &rf_coupler::task,
 //  &touch::task) // Not required. Done by interrupts
 #if USB_ENABLED
     &cat_protocol::task,
@@ -184,17 +178,6 @@ void test() {
 
 bool dsptested = false;
 
-void view_loop() {
-    // TODO: Delegate dirty state manaegnment to the widget itself based on
-    // information change messages and refresh rate
-
-    view_manager::mainView.TuneInfo()->set_dirty();
-    view_manager::mainView.FFTInfo()->set_dirty();
-    view_manager::mainView.Menu()->set_dirty();
-
-    view_manager::currentView->paint();
-}
-
 int main() {
 
     setup();
@@ -213,9 +196,16 @@ int main() {
 
     standby::init();
 
+    int i = 0;
+
     while (1) {
 
         os::task_manager.run();
+
+        if (i++ % 100 == 0) {
+            void *heap_end = sbrk(0);
+            printf_("Heap end: %p\n", heap_end);
+        }
 
         if (!dsptested) {
 #if DEBUG_SD_CARD

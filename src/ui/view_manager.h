@@ -18,6 +18,7 @@ extern KeyboardView keyboardView;
 // extern OptionButtonsView optionButtonsView;
 extern MainView mainView;
 extern View *currentView;
+extern os::periodic_task task;
 void push(View *);
 void init();
 } // namespace view_manager

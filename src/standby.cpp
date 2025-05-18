@@ -4,6 +4,7 @@
 
 #include "standby.h"
 #include "config.h"
+#include "dsp/fft/fft.h"
 #include "os/periodic_task.h"
 #include "os/task_manager.h"
 #include "ui/lcd.h"
@@ -27,6 +28,19 @@ void init() {
     power_save(config.power_save_period_seconds);
 }
 
+void enable_display(bool b) {
+    if (b) {
+        lcd_init();
+        fft::fft_task.set_enabled(true);
+        view_manager::mainView.set_dirty();
+        view_manager::task.set_enabled(true);
+    } else {
+        lcd_sleep();
+        view_manager::task.set_enabled(false);
+        fft::fft_task.set_enabled(false);
+    }
+}
+
 int sleep() {
 
     int ret = 0;
@@ -34,7 +48,7 @@ int sleep() {
     if (power_mode == POWER_MODE_ON && !ISTX) {
         main_board::sleep();
         ret = power_down_lo_clocks();
-        lcd_sleep();
+        enable_display(false);
         hal_sleep();
         power_mode = POWER_MODE_SLEEP;
         signal.emit(NULL);
@@ -57,7 +71,7 @@ int power_save(int timeout_seconds) {
 
     if (timeout_seconds) {
         power_save_timeout = os::task_manager.set_timeout(timeout_seconds * 1000, []() {
-            lcd_sleep();
+            enable_display(false);
             power_mode = POWER_MODE_SAVE;
             signal.emit(NULL);
         });
@@ -75,15 +89,15 @@ int wakeup() {
     if (power_mode != POWER_MODE_ON) {
         if (power_mode == POWER_MODE_SLEEP) {
             hal_wakeup();
-            lcd_init();
+
             ret = power_up_lo_clocks();
             main_board::wakeup();
         } else if (power_mode == POWER_MODE_SAVE) {
-            lcd_init();
+
             power_save(config.power_save_period_seconds);
         }
 
-        view_manager::mainView.set_dirty();
+        enable_display(true);
         power_mode = POWER_MODE_ON;
         signal.emit(NULL);
     }

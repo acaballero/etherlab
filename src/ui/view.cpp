@@ -196,9 +196,13 @@ void View::set_area() {
     }
 }
 
-const std::vector<Widget *> &View::children() const { return children_; }
+const std::vector<Widget *> &View::children() const {
+    return children_;
+}
 
-bool View::on_input(const st_inputEvent event) { return Widget::on_input(event); }
+bool View::on_input(const st_inputEvent event) {
+    return Widget::on_input(event);
+}
 
 void View::on_hide() {
     if (on_hide_fn) {

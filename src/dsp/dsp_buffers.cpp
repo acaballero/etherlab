@@ -8,7 +8,7 @@
 // ACD DMA buffer
 complex_t adc_buff[DSP_BLOCK * 2];
 
-// ACD DAC buffer
+// DAC DMA buffer
 complex_t dac_buff[DSP_BLOCK * 2];
 
 __attribute__((section(".fccmram"))) adc_type dsp_temp_buf_data[DSP_BLOCK * 2]; // complex_t is twice the size of adc_type (I/Q samples), so a temp buffer
