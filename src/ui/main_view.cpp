@@ -13,6 +13,7 @@
 #include "ui/widget.h"
 #include "view_manager.h"
 #include "menu_options.h"
+#include <memory>
 
 MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPLAY_Y_PIXELS + DISPLAY_PADDING * 2}) {
 
@@ -89,25 +90,45 @@ void MainView::before_paint() {
     }
 }
 
-WaterfallWidget *MainView::Waterfall() { return &this->waterfall_w; }
+WaterfallWidget *MainView::Waterfall() {
+    return &this->waterfall_w;
+}
 
-Widget *MainView::Spectrum() { return &this->fft_w; }
+Widget *MainView::Spectrum() {
+    return &this->fft_w;
+}
 
-Widget *MainView::IQBalance() { return &this->iqbal_w; }
+Widget *MainView::IQBalance() {
+    return &this->iqbal_w;
+}
 
-Widget *MainView::TuneInfo() { return &this->tune_w; }
+Widget *MainView::TuneInfo() {
+    return &this->tune_w;
+}
 
-Widget *MainView::FFTInfo() { return &this->info_w; }
+Widget *MainView::FFTInfo() {
+    return &this->info_w;
+}
 
-Widget *MainView::FFT() { return &this->fft_w; }
+Widget *MainView::FFT() {
+    return &this->fft_w;
+}
 
-Widget *MainView::Menu() { return &this->menu_w; }
+Widget *MainView::Menu() {
+    return &this->menu_w;
+}
 
-Widget *MainView::Message() { return &this->msg_w; }
+Widget *MainView::Message() {
+    return &this->msg_w;
+}
 
-OptionButtonsView *MainView::OptionButtons() { return &this->optionButtonsView; }
+OptionButtonsView *MainView::OptionButtons() {
+    return &this->optionButtonsView;
+}
 
-NumberEditView *MainView::NumberEdit() { return &this->numberEditView; }
+NumberEditView *MainView::NumberEdit() {
+    return &this->numberEditView;
+}
 
 void MainView::on_child_update(Widget *w) {
 

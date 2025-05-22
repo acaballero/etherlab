@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_RTC_H
 
 #include <stm32f4xx.h>
+#include <sys/_stdint.h>
 #include "Signal.h"
 
 extern RTC_HandleTypeDef hrtc;
@@ -20,13 +21,10 @@ extern "C" {
 #endif
 
 void MX_RTC_Init(void);
-void HAL_RTC_MspDeInit(RTC_HandleTypeDef* hrtc);
-void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc);
+void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc);
+void HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc);
 void RTC_Alarm_IRQHandler(void);
-int RTC_Set(
-        uint8_t year, uint8_t month, uint8_t day,
-        uint8_t hour, uint8_t min, uint8_t sec,
-        uint8_t dow);
+int RTC_Set(uint8_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec, uint8_t dow);
 st_datetime rtc_get_date_time();
 uint32_t rtc_uptime();
 
@@ -35,5 +33,7 @@ uint32_t rtc_uptime();
 #endif
 
 extern Signal rtc_signal;
+std::string rtc_to_string(st_datetime dt, bool);
+uint32_t rtc_to_epoch(RTC_TimeTypeDef *time, RTC_DateTypeDef *date);
 
-#endif //TRX_FRONTEND_RTC_H
+#endif // TRX_FRONTEND_RTC_H

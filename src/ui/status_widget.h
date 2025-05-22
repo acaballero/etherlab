@@ -15,7 +15,11 @@
 
 class StatusWidget : public View {
   public:
-    StatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
+    StatusWidget(Rect parent_rect) : View(parent_rect) {
+        init();
+    }
+
+    StatusWidget(StatusWidget &&) = delete;
 
     bool on_input(const st_inputEvent e) override;
 

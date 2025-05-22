@@ -29,6 +29,7 @@
 #include "s_strength.h"
 #include <cstddef>
 #include <cstring>
+#include <memory>
 #include "settings.h"
 #include "menu_options.h"
 #include "menu_prompts.h"
@@ -299,9 +300,15 @@ void mode_signal_handler(void *, void *) {
     update_options();
 }
 
+result open_aprs(eventMask) {
+    view_manager::open_aprs();
+    return proceed;
+}
+
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), SUBMENU(toggleDSP), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleDSPCompressor),
+     OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu));
 
 MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED

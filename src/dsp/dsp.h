@@ -10,10 +10,21 @@
 #include "hw/hw_config.h"
 #include "dsp_common.h"
 #include "os/periodic_task.h"
+#include "task.h"
 
 namespace dsp {
+
+struct st_dsp_command {
+    DSP_COMMAND command;
+    uint8_t id = 0;
+    Task *task = nullptr;
+    bool operator==(const st_dsp_command &st) const {
+        return command == st.command && id == st.id;
+    }
+};
+
 extern os::periodic_task task;
-}
+} // namespace dsp
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +32,7 @@ extern "C" {
 
 void dsp_init(dsp::st_dsp_config &);
 void dsp_set_real_time(bool);
-uint8_t dsp_command(st_dsp_command command, void (*)(st_dsp_status *));
+uint8_t dsp_command(dsp::st_dsp_command command, void (*)(st_dsp_status *));
 bool dsp_restart();
 inline void dsp_work();
 

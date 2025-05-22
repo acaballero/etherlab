@@ -21,6 +21,8 @@ extern View *currentView;
 extern os::periodic_task task;
 void push(View *);
 void init();
+
+void open_aprs();
 } // namespace view_manager
 
 #endif // VIEW_MANAGER_H

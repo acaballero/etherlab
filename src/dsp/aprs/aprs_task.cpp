@@ -3,11 +3,17 @@
 //
 
 #include "aprs_task.hpp"
+#include "dsp/aprs/aprs_packet.h"
+#include "hw/stm32f4xx/adc.h"
 #include "stdio.h"
+#include "stm32f4xx_hal.h"
+#include <sys/_stdint.h>
 
 namespace dsp {
 
-MODULATION_MODE get_modulation_mode() {
+Signal aprs_signal;
+
+MODULATION_MODE APRSTask::get_modulation_mode() {
     return FM;
 }
 
@@ -50,7 +56,21 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
 
         phase += phase_inc;
 
-        if (phase >= 0x10000) {
+        if (phase >= 0x1000) {
+
+            // DEBUG
+            static uint32_t i = 0;
+            if (i++ % 30000 == 0) {
+                std::string str = std::string("EADB0") + "ABCDEFGHIJ"[HAL_GetTick() % 7];
+                if (HAL_GetTick() % 200 < 100) {
+                    aprs_packet.init_test_packet(str, "APRS", "INFO text containing several lines that has to be wrapped up");
+                } else {
+                    aprs_packet.init_test_packet(str, "APRS", "SHORT info text");
+                }
+                aprs_signal.emit(&aprs_packet);
+            }
+            // DEBUG
+
             phase &= 0xFFFF;
 
             if (true) {
@@ -76,7 +96,7 @@ void APRSTask::parse_packet() {
 
         for (size_t i = 0; i < packet_buffer_size; i++) {
             uint8_t byte = packet_buffer[i];
-            crc = ((crc >> 8) ^ crc_ccitt_tab[(crc ^ byte) & 0xFF]) & 0xFFFF;
+            crc = ((crc >> 8) ^ dsp::crc_ccitt_tab[(crc ^ byte) & 0xFF]) & 0xFFFF;
         }
 
         if (crc == 0xF0B8) {
@@ -93,8 +113,7 @@ void APRSTask::parse_ax25() {
         aprs_packet.set(i, packet_buffer[i]);
     }
 
-    //  APRSPacketMessage packet_message{aprs_packet};
-    // shared_memory.application_queue.push(packet_message);
+    aprs_signal.emit(&aprs_packet);
 }
 
 bool APRSTask::parse_bit(const uint8_t current_bit) {
@@ -178,6 +197,8 @@ bool APRSTask::init() {
     delay_line_index = 0;
 
     state = WAIT_FLAG;
+
+    return true;
 }
 
 } // namespace dsp

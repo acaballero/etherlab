@@ -14,15 +14,17 @@
 
 void StatusWidget::init() {
 
-    default_buttons[BAND].fn_writer = std::bind(&StatusWidget::band, this, &default_buttons[BAND]);
-    default_buttons[FILTER1].fn_writer = std::bind(&StatusWidget::filter1, this, &default_buttons[FILTER1]);
-    default_buttons[FILTER2].fn_writer = std::bind(&StatusWidget::filter2, this, &default_buttons[FILTER2]);
+    StatusWidget *self = this;
+
+    default_buttons[BAND].fn_writer = std::bind(&StatusWidget::band, self, &default_buttons[BAND]);
+    default_buttons[FILTER1].fn_writer = std::bind(&StatusWidget::filter1, self, &default_buttons[FILTER1]);
+    default_buttons[FILTER2].fn_writer = std::bind(&StatusWidget::filter2, self, &default_buttons[FILTER2]);
 
     for (Button &b : default_buttons) {
         add_child(&b);
     }
 
-    for (Button &b : buttons) {
+    for (auto &b : buttons) {
         add_child(&b);
         b.set_visible(false);
     }
@@ -73,7 +75,7 @@ void StatusWidget::set_defaults() {
 
 void StatusWidget::set_action(uint8_t index, Menu::menu_action_st &menu_action) {
     Button *button = &buttons[index];
-    button->action = [menu_action](Button &, st_inputEvent) {
+    button->action = [&menu_action](Button &, st_inputEvent) {
         menu_action.action();
     };
     button->set_text(menu_action.name);

@@ -10,9 +10,13 @@
 class View : public Widget {
 
   public:
-    View() : Widget({0, 0, DISPLAY_X_PIXELS, DISPLAY_Y_PIXELS}, &lcd) {}
+    View() : Widget({0, 0, DISPLAY_X_PIXELS, DISPLAY_Y_PIXELS}, &lcd) {
+    }
 
-    View(Rect parent_rect) : Widget(parent_rect, &lcd) {}
+    View(Rect parent_rect) : Widget(parent_rect, &lcd) {
+    }
+
+    View(View &&) = delete;
 
     void set_parent_rect(Rect) override;
 
@@ -28,7 +32,7 @@ class View : public Widget {
 
     void on_hide() override;
 
-    void (*on_hide_fn)(void){};
+    std::function<void()> on_hide_fn;
 
     void paint(Area *area = nullptr) final;
 

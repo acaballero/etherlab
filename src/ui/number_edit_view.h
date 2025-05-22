@@ -25,9 +25,13 @@ class NumberEditView : public View {
     static constexpr uint16_t WIDTH = DISPLAY_X_PIXELS;
     static constexpr int BUTTON_W = WIDTH / COLS;
 
-    NumberEditView() : View() { init(); }
+    NumberEditView() : View() {
+        init();
+    }
 
-    NumberEditView(Rect parent_rect) : View(parent_rect) { init(); }
+    NumberEditView(Rect parent_rect) : View(parent_rect) {
+        init();
+    }
 
     std::function<void(double)> on_changed{};
 
@@ -44,7 +48,9 @@ class NumberEditView : public View {
 
     void before_paint() override;
 
-    void set_update_on_changes(bool b) { update_on_changes = b; }
+    void set_update_on_changes(bool b) {
+        update_on_changes = b;
+    }
 
   private:
     uint16_t focused_button = 0;

@@ -4,6 +4,7 @@
 #include "dsp.h"
 #include "arm_math.h"
 #include "blocks/dc_block.h"
+#include "config.h"
 #include "diskio.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_config.h"
@@ -40,7 +41,7 @@ os::periodic_task task(50, dsp_loop);
 Task *current_task;
 DspProcessor *current_processor;
 buffer_t<complex_t> *current_buffer;
-st_dsp_command pending_command{DSP_COMMAND_NONE};
+dsp::st_dsp_command pending_command{DSP_COMMAND_NONE};
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
 volatile bool execute_task = false;
@@ -65,7 +66,13 @@ void dsp_set_real_time(bool b) {
 }
 
 void restart_callback(void *, void *) {
-    dsp_restart();
+    if (config.mode != DIGITAL_RX && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
+        dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, nullptr);
+    } else if (config.mode == DIGITAL_RX && !current_task) {
+        dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, nullptr);
+    } else {
+        dsp_restart();
+    }
 }
 
 void dsp_init(dsp::st_dsp_config &config) {
@@ -83,9 +90,9 @@ void dsp_stop_tasks() {
     }
 }
 
-uint8_t dsp_command(st_dsp_command command, void (*cb)(st_dsp_status *)) {
+uint8_t dsp_command(dsp::st_dsp_command command, void (*cb)(st_dsp_status *)) {
 
-    Task *task = dsp::tasks[command.id];
+    Task *task = command.task ? command.task : dsp::tasks[command.id];
     if (current_task == task) {
         DSP_STATUS s = current_task->status.status;
         if ((command.command == DSP_COMMAND_START && s == DSP_STATUS_RUNNING) || (command.command == DSP_COMMAND_STOP && s == DSP_STATUS_STOPPED) ||
@@ -108,7 +115,7 @@ uint8_t dsp_command(st_dsp_command command, void (*cb)(st_dsp_status *)) {
 
 bool dsp_restart() {
     if (current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
-        printf_("dsp_restart: Restarting task\n");
+
         DAC_DMA_Stop(&hdac1);
         ADC_DMA_Stop(&hadc1);
         input_stream.reset();
@@ -146,7 +153,7 @@ void dsp_start_task() {
 
 void dsp_loop() {
 
-    st_dsp_command command = pending_command;
+    dsp::st_dsp_command command = pending_command;
 
     if (command.command != DSP_COMMAND_NONE) {
         switch (command.command) {

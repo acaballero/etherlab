@@ -137,15 +137,6 @@ enum DSP_DIRECTION {
     DSP_DIRECTION_INOUT // BOTH
 };
 
-struct st_dsp_command {
-    DSP_COMMAND command;
-    uint8_t id = 0;
-
-    bool operator==(const st_dsp_command &st) const {
-        return command == st.command && id == st.id;
-    }
-};
-
 struct st_dsp_status {
 
     uint8_t id;

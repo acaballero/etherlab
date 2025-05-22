@@ -11,6 +11,8 @@
 #include "ui/option_buttons_view.h"
 #include "ui/splash_view.h"
 #include "os/task_manager.h"
+#include "dsp/aprs/aprs_ui.h"
+#include "ui/ui_types.h"
 
 namespace view_manager {
 
@@ -94,6 +96,19 @@ void view_loop() {
     mainView.Menu()->set_dirty();
 
     currentView->paint();
+}
+
+std::unique_ptr<dsp_ui::APRSView> view;
+void open_aprs() {
+    view = std::make_unique<dsp_ui::APRSView>(Rect{0, MENU_START_Y - 50, DISPLAY_X_PIXELS, METERS_HEIGHT + 80});
+    view->on_hide_fn = []() {
+        view_manager::mainView.remove_child(view.get());
+        view.reset();
+    };
+
+    view->set_visible(true);
+    view->set_z_index(200);
+    view_manager::mainView.add_child(view.get());
 }
 
 } // namespace view_manager

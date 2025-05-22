@@ -70,7 +70,8 @@ class labelPrompt : public Menu::prompt {
 
     labelPrompt(const char *text, char *value, action a = doNothing, eventMask e = noEvent, styles s = noStyle,
                 systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)))
-        : prompt(text, a, e, s, ss), value(value) {}
+        : prompt(text, a, e, s, ss), value(value) {
+    }
     Used printTo(navRoot &, bool sel, menuOut &out, idx_t, idx_t len, idx_t) override {
         len -= out.printRaw(shadow->text, len);
         len -= out.printRaw(": ", len);
@@ -106,7 +107,8 @@ template <typename T> class optionsPrompt : public Menu::prompt {
                      return proceed;
                  }),
                  e, s, ss),
-          value(value), options(options), size(size), on_select(on_select) {}
+          value(value), options(options), size(size), on_select(on_select) {
+    }
 
     Used printTo(navRoot &, bool sel, menuOut &out, idx_t, idx_t len, idx_t) override {
 
@@ -138,7 +140,7 @@ template <typename T> void open(numberPrompt<T> &prompt) {
     if (prompt.step > 0) {
         Menu::open_number_edit<T>(
             *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals,
-            [prompt](T v) {
+            [&prompt](T v) {
                 *prompt.value = v;
                 if (prompt.on_select) {
                     prompt.on_select(v);
@@ -148,7 +150,7 @@ template <typename T> void open(numberPrompt<T> &prompt) {
     } else {
         Menu::open_keypad<T>(
             *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals, false,
-            [prompt](T v) {
+            [&prompt](T v) {
                 *prompt.value = v;
                 if (prompt.on_select) {
                     prompt.on_select(v);
@@ -185,7 +187,8 @@ template <typename T> class numberPrompt : public Menu::prompt {
                  }),
                  e, s, ss),
           value(value), decimals(decimals), thow_separator(thow_separator), dec_separator(dec_separator), unit(unit), min(min), max(max), step(step),
-          step_big(step_big), on_select(on_select) {}
+          step_big(step_big), on_select(on_select) {
+    }
 
     idx_t printTo(navRoot &, bool sel, menuOut &out, idx_t, idx_t len, idx_t) override;
 };

@@ -14,9 +14,12 @@ enum Align { ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER };
 
 class Widget : public Painter {
   public:
-    Widget() : _parent_rect{}, display{(Display *)&lcd} {}
+    Widget() : _parent_rect{}, display{(Display *)&lcd} {
+    }
 
-    Widget(Rect parent_rect, Display *display) : _parent_rect{parent_rect}, display{display} { this->set_area(); }
+    Widget(Rect parent_rect, Display *display) : _parent_rect{parent_rect}, display{display} {
+        this->set_area();
+    }
 
     Widget(const Widget &) = delete;
 
@@ -46,7 +49,9 @@ class Widget : public Painter {
 
     virtual void set_parent(Widget *const widget);
 
-    bool hidden() const { return flags.hidden; }
+    bool hidden() const {
+        return flags.hidden;
+    }
 
     void hidden(bool hide);
 
@@ -63,7 +68,9 @@ class Widget : public Painter {
 
     virtual void on_blur(){};
 
-    virtual bool on_touch(const st_inputEvent) { return false; };
+    virtual bool on_touch(const st_inputEvent) {
+        return false;
+    };
 
     virtual bool on_input(const st_inputEvent event);
 
@@ -136,7 +143,7 @@ class Widget : public Painter {
 
     // FPS measurement
     float fps;
-    bool show_fps;
+    bool show_fps{false};
     uint64_t last_refresh_ms;
 
     struct flags_t {

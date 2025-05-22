@@ -171,6 +171,25 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
     return true;
 }
 
+std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
+
+    std::unique_ptr<dsp::demodulator> demod;
+    switch (get_modulation_mode()) {
+        case AM:
+            return std::make_unique<dsp::am_demodulator>();
+        case CW:
+        case SSB_LSB:
+        case SSB_USB:
+            return std::make_unique<dsp::ssb_demodulator>();
+        case FM:
+            demod = std::make_unique<dsp::fm_demodulator>();
+            ((dsp::fm_demodulator *)demod.get())->configure(status.sample_rate, 3000);
+            return demod;
+        default:
+            return std::make_unique<dsp::ssb_demodulator>();
+    }
+}
+
 bool ReceiveTaskBase::start() {
 
     main_board::setMute(GPIO_PIN_SET);

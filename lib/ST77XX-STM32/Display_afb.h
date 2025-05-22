@@ -75,6 +75,8 @@
 #define C565_BG_DISABLED C565_GREY_DARK
 #define C565_BG_FOCUS C565_WHITE
 
+extern uint16_t palette16[16];
+
 #define RGB888_TO_RGB565(rgb) ((((rgb >> 19) & 0x1f) << 11) | (((rgb >> 10) & 0x3f) << 5) | (((rgb >> 3) & 0x1f)))
 
 #define SWAP_BYTES(w) (uint16_t)(w >> 8 | w << 8)
@@ -155,6 +157,8 @@ class Display {
     void clear(uint16_t color = 0x0000);
 
     void gotoXY(int16_t x, int16_t y);
+
+    uint16_t getY();
 
     void gotoCharXY(int16_t x, int16_t y);
 
