@@ -15,7 +15,7 @@
 #define SETPIXEL(x, y, c) (*(this->curr_buffer + x + (y >> 16)) = c)
 
 /* RGB565 buffer for transferring pixels to the display using DMA */
-static const uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * 16;
+static const uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * 12;
 
 uint16_t b565_buffer[b565_buffer_size] __attribute__((aligned(4)));
 

@@ -11,12 +11,11 @@ complex_t adc_buff[DSP_BLOCK * 2];
 // DAC DMA buffer
 complex_t dac_buff[DSP_BLOCK * 2];
 
-uint32_t guard1 = 0xAEADBEEF;
 //__attribute__((section(".fccmram"))) // Can't be in CCM RAM if DMA is used
 uint8_t dsp_output_fifo_buff[DSP_FIFO_SIZE];
-uint32_t guard2 = 0xBEADBEEF;
+
 uint8_t dsp_input_fifo_buff[DSP_FIFO_SIZE];
-uint32_t guard3 = 0xCEADBEEF;
+
 FIFO output_stream((char *)dsp_output_fifo_buff, DSP_FIFO_SIZE);
 FIFO input_stream((char *)dsp_input_fifo_buff, DSP_FIFO_SIZE);
 

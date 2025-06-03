@@ -2,9 +2,13 @@
 // Created by Angel Dust on 18/05/2025.
 //
 
-#include "aprs_task.hpp"
+#include "aprs_task.h"
+#include "arm_math.h"
 #include "dsp/aprs/aprs_packet.h"
+#include "dsp/receive/receive_task_base.h"
 #include "hw/stm32f4xx/adc.h"
+#include "main_board.h"
+#include "printf.h"
 #include "stdio.h"
 #include "stm32f4xx_hal.h"
 #include <sys/_stdint.h>
@@ -20,17 +24,24 @@ MODULATION_MODE APRSTask::get_modulation_mode() {
 void APRSTask::process_audio(buffer_t<float32_t> &audio) {
 
     // Audio signal processing
+
+    if (deemph_enabled) {
+        deemph_filter.decimate(audio, audio, 0, 2, 2);
+    }
+
+    float32_t *audio_sample_p = audio.p;
+
     for (size_t c = 0; c < audio.count; c++) {
-        const int32_t sample_int = audio.p[c] * 32768.0f;
+        const int32_t sample_int = *audio_sample_p; //* 32768.0f;
         int32_t current_sample = __SSAT(sample_int, 16);
 
-        current_sample /= 128;
+        //   current_sample /= 128;
 
         // Delay line put
-        delay_line[delay_line_index & 0x3F] = current_sample;
+        delay_line[delay_line_index & delay_line_ix_mask] = current_sample;
 
         // Delay line get, and LPF
-        sample_mixed = (delay_line[(delay_line_index - (samples_per_bit / 2)) & 0x3F] * current_sample) / 4;
+        sample_mixed = (delay_line[(delay_line_index - (samples_per_bit / 2)) & delay_line_ix_mask] * current_sample) / 4;
         sample_filtered = prev_mixed + sample_mixed + (prev_filtered / 2);
 
         delay_line_index++;
@@ -42,6 +53,13 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         sample_bits <<= 1;
 
         uint8_t bit = (sample_filtered < -20) ? 1 : 0;
+
+        // DEBUG
+        // printf_("%d,", sample_filtered);
+        // if (delay_line_index % 100 == 0) {
+        //     printf_("\n");
+        // }
+
         sample_bits |= bit;
 
         // Check for "clean" transition: either 0011 or 1100
@@ -56,19 +74,25 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
 
         phase += phase_inc;
 
-        if (phase >= 0x1000) {
+        if (phase >= 0x10000) { // 65536
 
             // DEBUG
-            static uint32_t i = 0;
-            if (i++ % 30000 == 0) {
-                std::string str = std::string("EADB0") + "ABCDEFGHIJ"[HAL_GetTick() % 7];
-                if (HAL_GetTick() % 200 < 100) {
-                    aprs_packet.init_test_packet(str, "APRS", "INFO text containing several lines that has to be wrapped up");
-                } else {
-                    aprs_packet.init_test_packet(str, "APRS", "SHORT info text");
-                }
-                aprs_signal.emit(&aprs_packet);
-            }
+            // static uint32_t i = 0;
+            // if (i++ % 30000 == 0) {
+            //     std::string str = std::string("EADB0") + "ABCDEFGHIJ"[HAL_GetTick() % 7];
+            //     if (HAL_GetTick() % 200 > 100) {
+            //         aprs_packet.init_test_packet(str, "APRS", "INFO text containing several lines that has to be wrapped up");
+            //     } else {
+            //         aprs_packet.init_test_packet(str, "APRS", "SHORT info text");
+            //     }
+            //     aprs_signal.emit(&aprs_packet);
+            // }
+
+            // for (int j = 31; j >= 0; j--) {
+            //     printf_("%d", (sample_bits >> j) & 1);
+            // }
+
+            // printf_("\n");
             // DEBUG
 
             phase &= 0xFFFF;
@@ -86,6 +110,8 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
                 }
             }
         }
+
+        audio_sample_p += 2;
     }
 }
 
@@ -171,7 +197,8 @@ bool APRSTask::parse_bit(const uint8_t current_bit) {
         }
 
         if (state == IN_FRAME) {
-            if (packet_buffer_size + 1 >= 256) {
+            if (packet_buffer_size + 1 >= buffer_size) {
+
                 state = WAIT_FLAG;
                 current_byte = 0;
                 ones_count = 0;
@@ -182,6 +209,20 @@ bool APRSTask::parse_bit(const uint8_t current_bit) {
             packet_buffer[packet_buffer_size++] = current_byte;
         }
     }
+
+    // DEBUG
+
+    // if (packet_buffer_size == 20) {
+    //     for (size_t i = 0; i < packet_buffer_size; i++) {
+    //         for (int j = 7; j >= 0; j--) {
+    //             printf_("%d", (packet_buffer[i] >> j) & 1);
+    //         }
+
+    //         printf_("|");
+    //     }
+    //     printf_("\n");
+    // }
+    // Debug
 
     return false;
 }
@@ -197,6 +238,8 @@ bool APRSTask::init() {
     delay_line_index = 0;
 
     state = WAIT_FLAG;
+
+    deemph_filter.config(status.sample_rate, 1000, 1);
 
     return true;
 }

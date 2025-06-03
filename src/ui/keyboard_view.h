@@ -22,9 +22,13 @@ class KeyboardView : public View {
     static constexpr uint16_t HEIGHT = DISPLAY_Y_PIXELS - HEADER_HEIGHT;
     static constexpr uint16_t WIDTH = DISPLAY_X_PIXELS;
 
-    KeyboardView() : View() { init(); }
+    KeyboardView() : View() {
+        init();
+    }
 
-    KeyboardView(Rect parent_rect) : View(parent_rect) { init(); }
+    KeyboardView(Rect parent_rect) : View(parent_rect) {
+        init();
+    }
 
     void (*on_changed)(char *){};
 

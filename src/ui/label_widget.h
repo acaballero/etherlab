@@ -18,9 +18,13 @@ class Label : public Widget {
     static const size_t MAX_CHARS_VALUE = 8;
     static const size_t MAX_CHARS_UNIT = 5;
 
-    Label() { set_label(""); }
+    Label() {
+        set_label("");
+    }
 
-    Label(Rect parent_rect) : Widget{parent_rect, &lcd} { set_label(""); }
+    Label(Rect parent_rect) : Widget{parent_rect, &lcd} {
+        set_label("");
+    }
 
     Label(Rect parent_rect, uint16_t fg_color, uint16_t bg_color, ButtonStyle style = LABEL_STYLE_HOLLOW) : Widget{parent_rect, &lcd} {
         set_label("");
@@ -56,9 +60,9 @@ class Label : public Widget {
     std::function<void(Label &)> on_select;
 
   protected:
-    char label[MAX_CHARS];
-    char value[MAX_CHARS_VALUE];
-    char unit[MAX_CHARS_UNIT];
+    char label[MAX_CHARS] = {};
+    char value[MAX_CHARS_VALUE] = {};
+    char unit[MAX_CHARS_UNIT] = {};
     uint16_t fg_color = C565_WHITE;
     uint16_t fg_color_value = C565_MAGENTA;
     uint16_t fg_color_unit = C565_GREY_LIGHT;

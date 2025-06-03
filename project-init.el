@@ -114,10 +114,28 @@ for debug echo." (interactive)
 )
 
 
+(defun my-dap-reset-openocd () "Stop existing OpenOCD instance, run platformio\n \
+upload and start OpenOCD and the SWO parser\n \
+for debug echo." (interactive)
+  ;; Stop any running OpenOCD processes
+  (stop-openocd)
+
+   ;; Wait a bit for OpenOCD to release ports
+  (sleep-for 1)
+   (let ((swoparser-process (get-process "swoparser"))) 
+(when swoparser-process (message "Killing existing swoparser process...") 
+(delete-process swoparser-process)))
+(start-process "swoparser" "*swoparser*"  "python" (concat my-current-dir "swoparser.py")) 
+(display-buffer "*swoparser*")
+(goto-char (point-max))
+)
+
+
 ;;(global-set-key (kbd "C-c d") 'my-dap-restart-openocd-and-debug)
 (global-set-key (kbd "C-c d") 'my-start-dape)
 (global-set-key (kbd "C-c u") 'my-dap-kill-openocd-and-upload)
 (global-set-key (kbd "C-c o") 'my-dap-reset-openocd-and-upload)
+(global-set-key (kbd "C-c p") 'my-dap-reset-openocd)
 
 
 ;;;; DAPE (debugger) CONFiG ;;;;;

@@ -67,14 +67,14 @@ class APRSPacket {
         return source;
     }
 
-    std::string get_source_formatted() {
+    void get_source_formatted(char *buff) {
         parse_address(SOURCE_START, SOURCE);
-        return std::string(address_buffer);
+        snprintf(buff, 15, "%s", address_buffer);
     }
 
-    std::string get_destination_formatted() {
+    void get_destination_formatted(char *buff) {
         parse_address(DESTINATION_START, DESTINATION);
-        return std::string(address_buffer);
+        snprintf(buff, 15, "%s", address_buffer);
     }
 
     std::string get_digipeaters_formatted() {
@@ -114,19 +114,32 @@ class APRSPacket {
     }
 
     std::string get_information_text_formatted() {
-        std::string information_text = "";
-        for (uint8_t i = get_information_start_index(); i < payload_size - 2; i++) {
-            information_text += payload[i];
+        uint8_t start = get_information_start_index();
+        if (start >= payload_size - 2) {
+            return {};
         }
 
-        return information_text;
+        return std::string(reinterpret_cast<char *>(&payload[start]), payload_size - start - 2);
     }
 
-    std::string get_stream_text() {
-        std::string stream =
-            get_source_formatted() + ">" + get_destination_formatted() + ";" + get_digipeaters_formatted() + ";" + get_information_text_formatted();
+    void get_stream_text(std::string &stream) {
 
-        return stream;
+        std::string digis, info;
+
+        char source[15], destination[15];
+        get_source_formatted(source);
+        get_destination_formatted(destination);
+        digis = get_digipeaters_formatted();
+
+        stream.reserve(80); // Optional optimization
+        stream += source;
+        stream += " > ";
+        stream += destination;
+        stream += " ; ";
+        stream += digis;
+        stream += " ; ";
+        stream += get_information_text_formatted();
+        ;
     }
 
     char get_data_type_identifier() {
@@ -213,6 +226,8 @@ class APRSPacket {
     }
 
     void init_test_packet(const std::string &source, const std::string &destination, const std::string &info_text) {
+
+        clear();
 
         auto encode_callsign = [](const std::string &callsign, uint8_t ssid, uint8_t data[7]) {
             for (size_t i = 0; i < 6; i++) {

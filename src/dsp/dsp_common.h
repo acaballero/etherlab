@@ -6,7 +6,7 @@
 #define TRX_FRONTEND_DSP_COMMON_H
 
 #include "dsp_config.h"
-#include "stm32f4xx_hal.h"
+#include <hw/stm32.h>
 #define __FPU_PRESENT 1U
 //#define __FPU_USED 1U
 #define ARM_MATH_CM4 1
@@ -115,7 +115,7 @@ enum DSP_ERROR {
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
 #define FIR_DECIMATOR_1ST_HALFBAND_TAPS 23
-#define FIR_DECIMATOR_SIGNAL_TAPS 91
+#define FIR_DECIMATOR_SIGNAL_TAPS 37
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
 // A LCD SPI DMA transfer and cause problems
@@ -257,7 +257,6 @@ st_dsp_config get_config();
 
 } // namespace dsp
 
-extern uint32_t guard1, guard2, guard3;
 #ifdef __cplusplus
 extern "C" {
 #endif

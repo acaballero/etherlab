@@ -275,17 +275,29 @@ bool FFTIQBalancer::fitPolynomial() {
     return ret;
 }
 
-float32_t *FFTIQBalancer::getGainPoints() { return this->gainPoints; }
+float32_t *FFTIQBalancer::getGainPoints() {
+    return this->gainPoints;
+}
 
-float32_t *FFTIQBalancer::getPhasePoints() { return this->phasePoints; }
+float32_t *FFTIQBalancer::getPhasePoints() {
+    return this->phasePoints;
+}
 
-float32_t *FFTIQBalancer::getPrecisionPoints() { return this->precZ; }
+float32_t *FFTIQBalancer::getPrecisionPoints() {
+    return this->precZ;
+}
 
-complex_t_f32 *FFTIQBalancer::getMeanPoints() { return this->meanZ; }
+complex_t_f32 *FFTIQBalancer::getMeanPoints() {
+    return this->meanZ;
+}
 
-complex_t_f32 *FFTIQBalancer::getFilter() { return this->filter; }
+complex_t_f32 *FFTIQBalancer::getFilter() {
+    return this->filter;
+}
 
-void FFTIQBalancer::setFilter(complex_t_f32 *v) { memcpy(this->filter, v, FFT_IQ_BALANCER_FILTER_SIZE * sizeof(complex_t_f32)); }
+void FFTIQBalancer::setFilter(complex_t_f32 *v) {
+    memcpy(this->filter, v, FFT_IQ_BALANCER_FILTER_SIZE * sizeof(complex_t_f32));
+}
 
 void FFTIQBalancer::setPrecZ(float32_t *v) {
     memcpy(this->precZ, v, FFT_IQ_BALANCER_FILTER_SIZE * sizeof(float32_t));
@@ -336,6 +348,7 @@ void FFTIQBalancer::collectBalanceInfo(complex_t_f32 *data) {
     memcpy(copy, snrSqr, FFT_N * sizeof(*snrSqr));
 
     std::sort(copy, copy + FFT_N);
+
     this->noise_level = copy[FFT_N >> 1];
     // arm_mean_f32((float32_t *)snrSqr,FFT_N,&snrMedian); // Mean
 
@@ -434,22 +447,41 @@ float FFTIQBalancer::polyX(int) {
     return 0;
 }
 
-bool FFTIQBalancer::isEstimationEnabled() const { return estimationEnabled; }
+bool FFTIQBalancer::isEstimationEnabled() const {
+    return estimationEnabled;
+}
 
-void FFTIQBalancer::setEstimationEnabled(bool estimationEnabled) { FFTIQBalancer::estimationEnabled = estimationEnabled; }
+void FFTIQBalancer::setEstimationEnabled(bool estimationEnabled) {
+    FFTIQBalancer::estimationEnabled = estimationEnabled;
+}
 
-bool FFTIQBalancer::isCorrectionEnabled() const { return correctionEnabled; }
+bool FFTIQBalancer::isCorrectionEnabled() const {
+    return correctionEnabled;
+}
 
-void FFTIQBalancer::setCorrectionEnabled(bool correctionEnabled) { FFTIQBalancer::correctionEnabled = correctionEnabled; }
+void FFTIQBalancer::setCorrectionEnabled(bool correctionEnabled) {
+    FFTIQBalancer::correctionEnabled = correctionEnabled;
+}
 
-float FFTIQBalancer::getFilterRbw() const { return filter_rbw_hz; }
+float FFTIQBalancer::getFilterRbw() const {
+    return filter_rbw_hz;
+}
 
-void FFTIQBalancer::setFilterRbw(float filterRbw) { filter_rbw_hz = filterRbw; }
+void FFTIQBalancer::setFilterRbw(float filterRbw) {
+    filter_rbw_hz = filterRbw;
+}
 
-float FFTIQBalancer::getFftRbw() const { return fft_rbw; }
+float FFTIQBalancer::getFftRbw() const {
+    return fft_rbw;
+}
 
-void FFTIQBalancer::setFftRbw(float fftRbw) { fft_rbw = fftRbw; }
+void FFTIQBalancer::setFftRbw(float fftRbw) {
+    fft_rbw = fftRbw;
+}
 
-float FFTIQBalancer::getNoiseLevel() const { return noise_level; }
+float FFTIQBalancer::getNoiseLevel() const {
+    return noise_level;
+}
 
-void FFTIQBalancer::init() {}
+void FFTIQBalancer::init() {
+}

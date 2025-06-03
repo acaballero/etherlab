@@ -110,9 +110,9 @@ void View::add_child(Widget *const widget) {
 
 void View::on_child_update(Widget *w) {
     // Sort by z-index (ascending order)
-    std::sort(children_.begin(), children_.end(), [](const Widget *a, const Widget *b) {
-        return a->get_z_index() < b->get_z_index(); // Ascending order
-    });
+    // std::sort(children_.begin(), children_.end(), [](const Widget *a, const Widget *b) {
+    //     return a->get_z_index() < b->get_z_index(); // Ascending order
+    // });
 
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];

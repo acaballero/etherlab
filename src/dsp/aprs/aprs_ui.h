@@ -6,12 +6,18 @@
 #define __APRS_UI_H__
 
 #include "Display_afb.h"
+#include "Signal.h"
 #include "aprs_packet.h"
+#include <cstddef>
 #include <functional>
 #include <stdio.h>
 #include <string>
 #include <sys/_stdint.h>
-#include "dsp/aprs/aprs_task.hpp"
+#include "dsp/aprs/aprs_task.h"
+#include "main_board.h"
+#include "menuBase.h"
+#include "ring_buffer.hpp"
+#include "types.h"
 #include "ui/view.h"
 #include "ui/button_widget.h"
 #include "ui/console_widget.h"
@@ -25,45 +31,48 @@ using namespace dsp;
 struct APRSSource {
 
     static constexpr uint64_t invalid_key = 0xffffffffffffffff;
+    static constexpr uint8_t source_length = 15;
+    static constexpr uint8_t time_length = 8;
 
+    int id{-1};
     uint16_t hits{0};
     uint32_t age{0};
     uint64_t source{0};
-    std::string source_formatted{"        "};
-    std::string time_string{""};
-    std::string info_string{""};
+    char source_formatted[source_length + 1];
+    char time_string[time_length + 1];
 
     aprs_pos pos{0, 0, 0, 0};
     bool has_position = false;
-    APRSSource(uint64_t src) {
-        source = src;
-    }
 };
 
 class APRSTableWidget : public Widget {
   public:
-    APRSTableWidget(Rect parent_rect, int max_sources) : Widget(parent_rect, &lcd) {
-        this->max_sources = max_sources;
+    APRSTableWidget(Rect parent_rect, int max_rows) : Widget(parent_rect, &lcd) {
+        set_max_rows(max_rows);
         init();
     }
 
     void paint_callback() override;
-    uint8_t on_packet(APRSPacket *packet);
+    int on_packet(APRSPacket *packet);
     bool on_touch(const st_inputEvent) override;
-    void set_max_lines(int n) {
+    void set_max_rows(int n) {
+        assert(n <= MAX_ROWS);
         max_sources = n;
     }
 
-    std::function<void(APRSSource)> on_select;
+    std::function<void(APRSSource &)> on_select = nullptr;
 
   private:
-    std::vector<APRSSource> sources;
+    static constexpr int MAX_ROWS = 8;
 
-    uint8_t max_sources = 5;
+    RingBuffer<APRSSource, MAX_ROWS> sources;
+
+    uint8_t max_sources = 1;
 
     bool send_updates{false};
     void before_paint() override;
     void init();
+    int find_free_id();
 };
 
 class APRSView : public View {
@@ -77,18 +86,35 @@ class APRSView : public View {
   private:
     static constexpr int title_height = 20;
     static constexpr int panel_sep = 4;
-    static constexpr int max_sources = 6;
+    static constexpr int max_sources = 7;
+    static constexpr int table_width = DISPLAY_X_PIXELS / 2 - 60;
+    static constexpr int console_width = DISPLAY_X_PIXELS - table_width;
     void on_source_selected(APRSSource &source);
     bool reset_console = false;
 
     Label title_widget{{0, 0, DISPLAY_X_PIXELS, title_height}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
 
-    APRSTableWidget table_view{{0, title_height + panel_sep, DISPLAY_X_PIXELS / 2 - panel_sep / 2, 90 + title_height}, max_sources};
-    ConsoleWidget console{{DISPLAY_X_PIXELS / 2 + panel_sep / 2, title_height + panel_sep, DISPLAY_X_PIXELS / 2, 90 + title_height}, &lcd};
+    APRSTableWidget table_view{{0, title_height + panel_sep, table_width - panel_sep / 2, 90 + title_height}, max_sources};
+    ConsoleWidget console{{table_width + panel_sep / 2, title_height + panel_sep, console_width - panel_sep, 90 + title_height}, &lcd};
 
+    Menu::menu_action_st menu_actions[2] = {{"TX",
+                                             []() {
+
+                                             }},
+                                            {"Exit", [this]() {
+                                                 exit();
+                                             }}};
+
+    Menu::menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(Menu::menu_action_st)};
+
+    SignalToken aprs_signal_token;
     APRSTask receive_task{};
+
+    MODE previous_mode;
+
     void before_paint() override;
     void init();
+    void exit();
 };
 
 } // namespace dsp_ui

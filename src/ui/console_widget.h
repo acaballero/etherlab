@@ -14,12 +14,14 @@ class ConsoleWidget : public Widget {
     ConsoleWidget(Rect parent_rect, Display *display);
     void paint_callback() override;
 
-    void write(std::string message);
-    void writeln(std::string message);
+    void write(const std::string &message);
+    void writeln(const std::string &message);
+
+    static constexpr char color_mark = '\x1B';
 
   protected:
     uint32_t update_period_ms = 200;
-    static constexpr size_t max_lines = 16; // set to max possible rows (adjust if needed)
+    static constexpr size_t max_lines = 20; // set to max possible rows (adjust if needed)
 
     size_t rows = 0;
     size_t cols = 0;

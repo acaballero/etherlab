@@ -1,16 +1,9 @@
 #ifndef __MENU_H
 #define __MENU_H
 
-#include "Display_afb.h"
 #include "hw/stm32.h"
-#include <functional>
-#include <math.h>
-
-#include <type_traits>
-#include "../../lib/Menu/src/menu.h"
 #include "menuBase.h"
 #include "ui/menuILI9431Out.h"
-#include "utils.hpp"
 #include "menu_options.h"
 #include "menu_prompts.h"
 
@@ -29,6 +22,7 @@ extern const char *constMEM alphaNum MEMMODE;
 extern const char *constMEM alphaNumMask[1] MEMMODE;
 
 namespace Menu {
+void menu_exit();
 extern Menu::MenuStatus menuStatus;
 
 // Character validators for the frequency memories

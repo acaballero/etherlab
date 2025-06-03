@@ -26,26 +26,13 @@ void CaptureTask::work() {
 
     uint16_t av = input_stream.available(&p);
 
-    // GPIOD->BSRR |= GPIO_PIN_6;
     if (av >= DSP_FIFO_BLOCK_BYTES) {
         while (av >= DSP_FIFO_BLOCK_BYTES) {
             this->status.processed_blocks++;
 
             FRESULT fres = FR_OK;
 
-            // GPIOD->BSRR |= GPIO_PIN_7;
             fres = file->write(p, DSP_FIFO_BLOCK_BYTES);
-            // GPIOD->BSRR |= GPIO_PIN_7 << 16;
-
-            /* DEBUGPRINT("I:",0);
-             for (int i=0;i<bytesWrote/2;i+=2) {
-                 DEBUGPRINT("%d,",((uint16_t*)p)[i]);
-             }
-             DEBUGPRINT("\nQ:",0);
-             for (int i=1;i<bytesWrote/2;i+=2) {
-                 DEBUGPRINT("%d,",((uint16_t*)p)[i]);
-             }
-             DEBUGPRINT("\n",0);*/
 
             // Free the FIFO
             input_stream.consume(DSP_FIFO_BLOCK_BYTES, &p);
@@ -67,7 +54,6 @@ void CaptureTask::work() {
     } else {
         this->status.fifo_underruns++;
     }
-    // GPIOD->BSRR |= GPIO_PIN_6 << 16;
 }
 
 void CaptureTask::configureDsp() {
@@ -122,7 +108,6 @@ bool CaptureTask::start() {
     this->status.direction = DSP_DIRECTION_IN;
     this->status.bandwidth = config.fft.span;
     this->status.sample_rate = config.fft.sample_rate;
-    // this->status.delta_phase = (1000.0 / ((float) config.fft.sample_rate / (float) fft_params.decimation_factor)) * FAST_MATH_TABLE_SIZE;
     this->status.decimation_factor = fft_params.decimation_factor;
     this->status.decimated_block_size = DSP_BLOCK * 2 / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
     this->status.bits_per_sample = 16;
@@ -148,10 +133,6 @@ bool CaptureTask::start() {
         this->halt(DSP_ERR_FILEOPEN);
         return false;
     } else {
-
-        // DEBUGPRINT(
-        //         "Writing wav:\nChannels:%d\nBits per sample :%u\nByte Rate:%lu\nCarrier:%llu\nFormat:%u\nSample rate:%lu\n",
-        //         wi.n_channels, wi.bits_sample, wi.byte_rate, wi.carrier_freq, wi.format, wi.sample_rate);
 
         // Update FFT and sample rate parameters
         fft_config(config.fft.span);

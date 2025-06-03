@@ -168,9 +168,9 @@ void test() {
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 3));
-    //  nav.doNav(Menu::navCmd(Menu::enterCmd));
-    //  nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
-    //  nav.doNav(Menu::navCmd(Menu::enterCmd));
+    //   nav.doNav(Menu::navCmd(Menu::enterCmd));
+    //   nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
+    //   nav.doNav(Menu::navCmd(Menu::enterCmd));
 
     // status::handleError(status::ST_ERROR, "test error");
     //   Put focus over number editor
@@ -182,10 +182,6 @@ void watchdog() {
     if (i++ % 100 == 0) {
         void *heap_end = sbrk(0);
         printf_("Heap end: %p\n", heap_end);
-    }
-
-    if (guard1 != 0xAEADBEEF || guard2 != 0xBEADBEEF || guard3 != 0xCEADBEEF) {
-        printf_("Corruption!\n");
     }
 }
 

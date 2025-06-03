@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_RECEIVE_TASK_BASE_H
 
 #include <memory>
+#include <sys/_stdint.h>
 #include "dsp/buffer.hpp"
 #include "dsp/decimation/dsp_iir_decimator.h"
 #include "dsp/dsp_buffers.h"
@@ -23,8 +24,7 @@
 class ReceiveTaskBase : public Task {
 
   public:
-    static constexpr uint32_t audio_bw_hz = 12000; // Final DAC sample rate
-    static constexpr uint8_t max_decimators = 3;   // Max number of cascaded decimators
+    static constexpr uint8_t max_decimators = 3; // Max number of cascaded decimators
 
     void work() override;
 
@@ -62,6 +62,9 @@ class ReceiveTaskBase : public Task {
     virtual MODULATION_MODE get_modulation_mode() = 0;
     virtual bool init() = 0;
     virtual void process_audio(buffer_t<float32_t> &buff_out_f32) = 0;
+    virtual uint32_t get_audio_bw_hz() const {
+        return 12000;
+    };
 };
 
 #endif // TRX_FRONTEND_RECEIVE_TASK_BASE_H

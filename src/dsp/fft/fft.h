@@ -95,6 +95,7 @@ extern os::periodic_task waterfall_task;
 extern float fft_noise_floor_db; // Noise floor in dB
 extern float snr;                // Signal to noise in the baseband
 extern float dbm;                // Power in the baseband
+extern float dbm_raw;
 std::pair<int, int> get_bandwidth_bin_limits();
 extern Signal signal;
 } // namespace fft

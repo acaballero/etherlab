@@ -27,7 +27,7 @@ class DspProcessor : public Task {
     }
 
   private:
-    void work(){};
+    void work() override{};
 };
 
 #endif // TRX_FRONTEND_DSP_PROCESSOR_H

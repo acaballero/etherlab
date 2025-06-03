@@ -22,7 +22,7 @@ void SplashView::init() {
 
     lblText1.set_font((FontDef *)&Font_Tiny8x8);
     lblText1.set_color(C565_GREY_LIGHT);
-    lblText1.set_label("E4AERU");
+    lblText1.set_label(config.callsign);
     lblText1.set_aling(Align::ALIGN_CENTER);
     lblText1.set_has_border(false);
 
@@ -45,4 +45,5 @@ void SplashView::init() {
     add_child(&lblText3);
 }
 
-void SplashView::before_paint() {}
+void SplashView::before_paint() {
+}

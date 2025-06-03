@@ -5,8 +5,21 @@
 #ifndef TRX_FRONTEND_DSP_UI_H
 #define TRX_FRONTEND_DSP_UI_H
 
-#include "capture/dsp_capture_ui.h"
-#include "replay/dsp_replay_ui.h"
-#include "signal_generator/dsp_signal_generator_ui.h"
+#include "hw/stm32.h"
+#include <stdio.h>
+#include "items.h"
+#include "menu.h"
+#include "dsp/signal_generator/dsp_signal_generator_ui.h"
+#include "dsp/replay/dsp_replay_ui.h"
+#include "dsp/capture/dsp_capture_ui.h"
+#include "menuBase.h"
 
-#endif //TRX_FRONTEND_DSP_UI_H
+namespace dsp_ui {
+
+extern Menu::menu menuDSP;
+extern bool dsp_enabled;
+Menu::result dsp_compressor_set(Menu::eventMask = Menu::noEvent);
+
+} // namespace dsp_ui
+
+#endif // TRX_FRONTEND_DSP_UI_H

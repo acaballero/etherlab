@@ -104,6 +104,15 @@ Menu::numberPrompt<float> squelchEditMenu((const char *)"Squelch", &config.squel
                                               sstrength::set_squelch(config.squelch_level);
                                           },
                                           0, 9);
+
+void menu_exit() {
+    stringIn<1> strIn;
+    while (Menu::menuStatus == ACTIVE) {
+        strIn.write('/'); // press esc multiple times to exit from whatever depth we're in
+        nav.doInput(strIn);
+    }
+}
+
 } // namespace Menu
 
 using namespace Menu;
@@ -243,76 +252,9 @@ MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggle
 #endif
 );
 
-/*
- ****************** DSP MENU *****************
- */
-
-bool dsp_enabled = !ISANALOG;
-
-result toggle_dsp(eventMask) {
-    main_board::toggle_dsp();
-    return proceed;
-}
-
-TOGGLE(dsp_enabled, toggleDSP, "DSP receiver: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
-       VALUE("On", true, toggle_dsp, noEvent), VALUE("Off", false, toggle_dsp, noEvent));
-
-Menu::numberPrompt<int32_t> compressorThresholdMenu((const char *)"Compressor threshold", &dsp::dsp_config.audio_compressor_threshold, 0, ' ', '.', "dB",
-                                                    [](int32_t) {
-                                                        dsp_restart();
-                                                    },
-                                                    -50, 30, 1, 10);
-
-Menu::numberPrompt<uint32_t> dspBandwidthMenu((const char *)"DSP Bandwidth", &config.fft.bw, 0, ' ', '.', "Hz",
-                                              [](uint32_t) {
-                                                  dsp_restart();
-                                              },
-                                              DSP_BANDWIDTH / 2, DSP_BANDWIDTH * 2, 1000, 10000);
-
-result dsp_compressor_set(eventMask = noEvent) {
-    if (dsp::dsp_config.audio_compressor_enabled) {
-        compressorThresholdMenu.enable();
-    } else {
-        compressorThresholdMenu.disable();
-    }
-    dsp_restart();
-    return proceed;
-}
-
-TOGGLE(dsp::dsp_config.audio_compressor_enabled, toggleDSPCompressor, "Audio compressor: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
-       VALUE("On", true, dsp_compressor_set, noEvent), VALUE("Off", false, dsp_compressor_set, noEvent));
-
-void update_options() {
-    dsp_enabled = !ISANALOG;
-    modulation = config.modulation;
-
-    // Set enabled options for current mode
-    for (auto &option : if_filter_options) {
-        if (option.value != radio::IF_FILTER_AUTO) {
-            option.enabled = radio::is_filter_allowed(option.value);
-        }
-    }
-
-    dsp_compressor_set();
-}
-
-void mode_signal_handler(void *, void *) {
-    update_options();
-}
-
-result open_aprs(eventMask) {
-    view_manager::open_aprs();
-    return proceed;
-}
-
-/* TODO: Disable SD card related functionality if card is not enabled */
-MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleDSPCompressor),
-     OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu));
-
 MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED
-     SUBMENU(menuDSP),
+     SUBMENU(dsp_ui::menuDSP),
 #endif
      SUBMENU(scanner_ui::menuScan), SUBMENU(fftUI::fftMenu), SUBMENU(menuSettings), SUBMENU(boardUI::boardMenu), OBJ(freq_memory::freqMemMenu));
 
@@ -388,6 +330,24 @@ void menu_sdcard_callback(void *, void *args) {
     }
 }
 
+void update_options() {
+    dsp_ui::dsp_enabled = !ISANALOG;
+    modulation = config.modulation;
+
+    // Set enabled options for current mode
+    for (auto &option : if_filter_options) {
+        if (option.value != radio::IF_FILTER_AUTO) {
+            option.enabled = radio::is_filter_allowed(option.value);
+        }
+    }
+
+    dsp_ui::dsp_compressor_set();
+}
+
+void mode_signal_handler(void *, void *) {
+    update_options();
+}
+
 void menu_setup() {
 
     nav.idleTask = idle; // point a function to be used when menu is suspended
@@ -412,14 +372,6 @@ void menu_setup() {
     update_options();
 
     main_board::mode_signal.add(nullptr, mode_signal_handler);
-}
-
-void menu_exit() {
-    stringIn<1> strIn;
-    while (Menu::menuStatus == ACTIVE) {
-        strIn.write('/'); // press esc multiple times to exit from whatever depth we're in
-        nav.doInput(strIn);
-    }
 }
 
 void menu_size(int w, int h) {

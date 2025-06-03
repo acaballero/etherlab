@@ -4,6 +4,8 @@
 
 #include <cfloat>
 #include <stdint.h>
+#include <string>
+#include <algorithm>
 #include "Display_afb.h"
 #include "console_widget.h"
 #include "../config.h"
@@ -32,9 +34,10 @@ void ConsoleWidget::paint_callback() {
 
         for (char c : line) {
             if (escape) {
-                color = (c < 16) ? palette16[(uint8_t)c] : C565_WHITE;
+                // Color codes start at 1 but array indexes at 0
+                color = (c <= 16) ? palette16[((uint8_t)c) - 1] : C565_WHITE;
                 escape = false;
-            } else if (c == '\x1B') {
+            } else if (c == color_mark) {
                 escape = true;
             } else {
                 display->setColor(color);
@@ -56,9 +59,11 @@ void ConsoleWidget::before_paint() {
     }
 }
 
-void ConsoleWidget::write(std::string message) {
+void ConsoleWidget::write(const std::string &message) {
 
     size_t pos = 0;
+    int next_color = -1;
+
     while (pos < message.size()) {
         std::string line;
         size_t count = 0;
@@ -76,16 +81,34 @@ void ConsoleWidget::write(std::string message) {
             line.pop_back();
         }
 
+        // If color codes will be overwritten, move the last one to the end so the first visible lines keep their color
+
+        std::string curr_line = line_buffer[line_head];
+
+        size_t pos = curr_line.rfind(static_cast<char>(color_mark));
+        if (pos != std::string::npos && pos + 1 < curr_line.size()) {
+            next_color = curr_line[pos + 1];
+        }
+
+        // Trim
+        line.erase(line.begin(), std::find_if_not(line.begin(), line.end(), ::isspace));
+
         line_buffer[line_head] = line;
         line_head = (line_head + 1) % rows;
+
         if (line_count < rows) {
+            // Count until lines reach max available rows
             line_count++;
         }
+    }
+
+    if (next_color != -1) {
+        line_buffer[line_head] = color_mark + std::string(1, next_color) + line_buffer[line_head];
     }
 
     set_dirty();
 }
 
-void ConsoleWidget::writeln(std::string message) {
+void ConsoleWidget::writeln(const std::string &message) {
     write(message + "\n");
 }

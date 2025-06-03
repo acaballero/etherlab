@@ -105,7 +105,9 @@ unsigned long fft_last_noise_floor_calculation_ms;
 namespace fft {
 float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
 float snr = 1e-40f;
-float dbm = FFT_MIN_DB; // Power in the baseband
+float dbm = FFT_MIN_DB;     // Power in the baseband (low-pass filtered)
+float dbm_raw = FFT_MIN_DB; // Raw (unfiltered) power
+
 uint8_t current_max_slices = config.fft.max_slices;
 
 void set_max_slices(uint8_t n) {
@@ -169,7 +171,8 @@ void calc_snr() {
     float curr_snr = 10.0f * fasterlog(signal / noise);
 
     snr = (snr - (0.3f * (snr - curr_snr)));
-    dbm = (dbm - (0.3f * (dbm - 10.0f * fasterlog(sigplusnoise))));
+    dbm_raw = 10.0f * fasterlog(sigplusnoise);
+    dbm = (dbm - (0.3f * (dbm - dbm_raw)));
 }
 
 } // namespace fft
@@ -231,7 +234,9 @@ void st_fft_params::calc() {
         span = sample_freq / ((float)decimation_factor / n_slices / USABLE_BW_FACTOR);
     }
 
-    sample_freq = (sample_freq + 1023) & ~1023; // Ceil to nearest 1024 factor
+    // Ceil to nearest factor of 19200, which is 16*1200, so the sample frequency is decimable by 16
+    // and, after that, contain an integer number of bits at any multiple of 1200 bauds (for symbol synchronization in audio processing)
+    sample_freq = ((sample_freq + 19199) / 19200) * 19200;
 
     // Resolution bandwidth (per FFT bin)
     rbw = sample_freq / size / decimation_factor;

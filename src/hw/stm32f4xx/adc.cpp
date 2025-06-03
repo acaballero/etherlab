@@ -2,7 +2,6 @@
 // Created by Angel Dust on 31/10/2019.
 //
 #include "adc.h"
-#include "Legacy/stm32_hal_legacy.h"
 #include "hw/hw_config.h"
 #include "stm32f4xx_hal_adc.h"
 #include "ui/lcd.h"

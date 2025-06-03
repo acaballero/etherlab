@@ -5,7 +5,6 @@
 #include <stm32f4xx.h>
 #include "connectivity.h"
 
-
 SPI_HandleTypeDef hspi1;
 I2C_HandleTypeDef hi2c1;
 
@@ -15,31 +14,28 @@ I2C_HandleTypeDef hi2c1;
  * \param cpuCoreFreqHz CPU core clock frequency in Hz
  */
 void SWO_Init(uint32_t portBits, uint32_t cpuCoreFreqHz) {
-    uint32_t SWOSpeed = 64000; /* default 64k baud rate */
-    uint32_t SWOPrescaler = (cpuCoreFreqHz / SWOSpeed) -
-                            1; /* SWOSpeed in Hz, note that cpuCoreFreqHz is expected to be match the CPU core clock */
+    uint32_t SWOSpeed = 64000;                              /* default 64k baud rate */
+    uint32_t SWOPrescaler = (cpuCoreFreqHz / SWOSpeed) - 1; /* SWOSpeed in Hz, note that cpuCoreFreqHz is expected to be match the CPU core clock */
 
     CoreDebug->DEMCR = CoreDebug_DEMCR_TRCENA_Msk; /* enable trace in core debug */
-    *((volatile unsigned *) (ITM_BASE +
-                             0x400F0)) = 0x00000002; /* "Selected PIN Protocol Register": Select which protocol to use for trace output (2: SWO NRZ, 1: SWO Manchester encoding) */
-    *((volatile unsigned *) (ITM_BASE +
-                             0x40010)) = SWOPrescaler; /* "Async Clock Prescaler Register". Scale the baud rate of the asynchronous output */
-    *((volatile unsigned *) (ITM_BASE +
-                             0x00FB0)) = 0xC5ACCE55; /* ITM Lock Access Register, C5ACCE55 enables more write access to Control Register 0xE00 :: 0xFFC */
-    ITM->TCR = ITM_TCR_TraceBusID_Msk | ITM_TCR_SWOENA_Msk | ITM_TCR_SYNCENA_Msk |
-               ITM_TCR_ITMENA_Msk; /* ITM Trace Control Register */
-    ITM->TPR = ITM_TPR_PRIVMASK_Msk; /* ITM Trace Privilege Register */
-    ITM->TER = portBits; /* ITM Trace Enable Register. Enabled tracing on stimulus ports. One bit per stimulus port. */
-    *((volatile unsigned *) (ITM_BASE + 0x01000)) = 0x400003FE; /* DWT_CTRL */
-    *((volatile unsigned *) (ITM_BASE + 0x40304)) = 0x00000100; /* Formatter and Flush Control Register */
+    *((volatile unsigned *)(ITM_BASE + 0x400F0)) =
+        0x00000002; /* "Selected PIN Protocol Register": Select which protocol to use for trace output (2: SWO NRZ, 1: SWO Manchester encoding) */
+    *((volatile unsigned *)(ITM_BASE + 0x40010)) = SWOPrescaler; /* "Async Clock Prescaler Register". Scale the baud rate of the asynchronous output */
+    *((volatile unsigned *)(ITM_BASE + 0x00FB0)) =
+        0xC5ACCE55; /* ITM Lock Access Register, C5ACCE55 enables more write access to Control Register 0xE00 :: 0xFFC */
+    ITM->TCR = ITM_TCR_TraceBusID_Msk | ITM_TCR_SWOENA_Msk | ITM_TCR_SYNCENA_Msk | ITM_TCR_ITMENA_Msk; /* ITM Trace Control Register */
+    ITM->TPR = ITM_TPR_PRIVMASK_Msk;                                                                   /* ITM Trace Privilege Register */
+    ITM->TER = portBits;                                       /* ITM Trace Enable Register. Enabled tracing on stimulus ports. One bit per stimulus port. */
+    *((volatile unsigned *)(ITM_BASE + 0x01000)) = 0x400003FE; /* DWT_CTRL */
+    *((volatile unsigned *)(ITM_BASE + 0x40304)) = 0x00000100; /* Formatter and Flush Control Register */
 }
 
 /**
-* @brief I2C MSP Initialization
-* This function configures the hardware resources used in this example
-* @param hi2c: I2C handle pointer
-* @retval None
-*/
+ * @brief I2C MSP Initialization
+ * This function configures the hardware resources used in this example
+ * @param hi2c: I2C handle pointer
+ * @retval None
+ */
 void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     if (hi2c->Instance == I2C1) {
@@ -72,16 +68,14 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c) {
 
         /* USER CODE END I2C1_MspInit 1 */
     }
-
-
 }
 
 /**
-* @brief I2C MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param hi2c: I2C handle pointer
-* @retval None
-*/
+ * @brief I2C MSP De-Initialization
+ * This function freeze the hardware resources used in this example
+ * @param hi2c: I2C handle pointer
+ * @retval None
+ */
 void HAL_I2C_MspDeInit(I2C_HandleTypeDef *hi2c) {
     if (hi2c->Instance == I2C1) {
         /* USER CODE BEGIN I2C1_MspDeInit 0 */
@@ -100,16 +94,14 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef *hi2c) {
 
         /* USER CODE END I2C1_MspDeInit 1 */
     }
-
 }
 
-
 /**
-* @brief SPI MSP Initialization
-* This function configures the hardware resources used in this example
-* @param hspi: SPI handle pointer
-* @retval None
-*/
+ * @brief SPI MSP Initialization
+ * This function configures the hardware resources used in this example
+ * @param hspi: SPI handle pointer
+ * @retval None
+ */
 #if ENABLE_FFT
 
 void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
@@ -137,11 +129,10 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
 
         GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
         GPIO_InitStruct.Pull = GPIO_PULLUP;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; // GPIO_SPEED_FREQ_HIGH; // Set to low to reduce EMI from sharp rising edges (LCD ribbon connector radiates)
+        GPIO_InitStruct.Speed =
+            GPIO_SPEED_FREQ_LOW; // GPIO_SPEED_FREQ_HIGH; // Set to low to reduce EMI from sharp rising edges (LCD ribbon connector radiates)
         GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
         HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-
 
         /* SPI1 DMA Init */
         /* SPI1_TX Init */
@@ -166,17 +157,16 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
 
         /* USER CODE END SPI1_MspInit 1 */
     }
-
 }
 
 #endif
 
 /**
-* @brief SPI MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param hspi: SPI handle pointer
-* @retval None
-*/
+ * @brief SPI MSP De-Initialization
+ * This function freeze the hardware resources used in this example
+ * @param hspi: SPI handle pointer
+ * @retval None
+ */
 void HAL_SPI_MspDeInit(SPI_HandleTypeDef *hspi) {
     if (hspi->Instance == SPI1) {
         /* USER CODE BEGIN SPI1_MspDeInit 0 */
@@ -197,10 +187,7 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *hspi) {
 
         /* USER CODE END SPI1_MspDeInit 1 */
     }
-
 }
-
-
 
 static void MX_SPI1_Init(void) {
 
@@ -232,14 +219,13 @@ static void MX_SPI1_Init(void) {
     /* USER CODE BEGIN SPI1_Init 2 */
 
     /* USER CODE END SPI1_Init 2 */
-
 }
 
 /**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief I2C1 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_I2C1_Init(void) {
 
     /* USER CODE BEGIN I2C1_Init 0 */
@@ -262,27 +248,25 @@ static void MX_I2C1_Init(void) {
         Error_Handler();
     }
     /** Configure Analogue filter
-    */
+     */
     if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK) {
         Error_Handler();
     }
     /** Configure Digital filter
-    */
+     */
     if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK) {
         Error_Handler();
     }
     /* USER CODE BEGIN I2C1_Init 2 */
 
     /* USER CODE END I2C1_Init 2 */
-
 }
-
 
 void BitBangI2C_setup() {
 
     // Make sure the MCP23017 is powered
-    //config.power_ctrl |= POWCRL_P5;
-    //setPowerCtrl();
+    // config.power_ctrl |= POWCRL_P5;
+    // setPowerCtrl();
 
     i2cport01.setSpeed(SPEED_10k);
     i2cport02.setSpeed(SPEED_10k);
@@ -297,14 +281,14 @@ void BitBangI2C_setup() {
     mcp23017_iodir(&hmcp02, MCP23017_PORTA, MCP23017_IODIR_ALL_OUTPUT);
     mcp23017_iodir(&hmcp02, MCP23017_PORTB, MCP23017_IODIR_ALL_OUTPUT);
 
-    //mcp23017_iodir(&hmcp, MCP23017_PORTB, MCP23017_IODIR_ALL_INPUT);
+    // mcp23017_iodir(&hmcp, MCP23017_PORTB, MCP23017_IODIR_ALL_INPUT);
 
     // Configure interrupts
-    //mcp23017_writereg(&hmcp, REGISTER_IOCONA, 0b01100000);
+    // mcp23017_writereg(&hmcp, REGISTER_IOCONA, 0b01100000);
 
     // Read interrupt capture ports to clear them
-    //uint8_t d;
-    //mcp23017_read(&hmcp, REGISTER_INTCAPB, &d);
+    // uint8_t d;
+    // mcp23017_read(&hmcp, REGISTER_INTCAPB, &d);
 
     // TEST
     //    hmcp.gpio[MCP23017_PORTA]=0x0F;
@@ -317,13 +301,7 @@ void BitBangI2C_setup() {
     //    mcp23017_write_gpio(&hmcp,MCP23017_PORTB);
 }
 
-
 void setup_connectivity() {
-
-
     MX_SPI1_Init();
-
     MX_I2C1_Init();
-
-
 }

@@ -9,18 +9,25 @@
 
 // TODO: Link hardware specific handlers in their respective /hw/* file
 
-void EXTI0_IRQHandler(void) { HAL_GPIO_EXTI_IRQHandler(FRONT_PANEL_INTERRUPT_PIN_A); }
+void EXTI0_IRQHandler(void) {
+    HAL_GPIO_EXTI_IRQHandler(FRONT_PANEL_INTERRUPT_PIN_A);
+}
 
-void EXTI4_IRQHandler(void) { HAL_GPIO_EXTI_IRQHandler(ROT_BTN_PIN); }
+void EXTI4_IRQHandler(void) {
+    HAL_GPIO_EXTI_IRQHandler(ROT_BTN_PIN);
+}
 
 void EXTI9_5_IRQHandler(void) {
     HAL_GPIO_EXTI_IRQHandler(TOUCH_IRQ_PIN);
     HAL_GPIO_EXTI_IRQHandler(BACK_BTN_PIN);
 }
 
-void EXTI15_10_IRQHandler(void) { HAL_GPIO_EXTI_IRQHandler(ROT_A_PIN); }
+void EXTI15_10_IRQHandler(void) {
+    HAL_GPIO_EXTI_IRQHandler(ROT_A_PIN);
+}
 
-void NMI_Handler(void) {}
+void NMI_Handler(void) {
+}
 
 // void HardFault_Handler(void) {
 //
@@ -54,11 +61,16 @@ void UsageFault_Handler(void) {
     }
 }
 
-void SVC_Handler(void) {}
+void SVC_Handler(void) {
+}
 
-void DebugMon_Handler(void) { printf("DebugMon_Handler"); }
+void DebugMon_Handler(void) {
+    printf("DebugMon_Handler");
+}
 
-void PendSV_Handler(void) { printf("PendSV_Handler"); }
+void PendSV_Handler(void) {
+    printf("PendSV_Handler");
+}
 
 /**
  * @brief This function handles System tick timer.

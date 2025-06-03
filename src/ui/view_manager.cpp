@@ -104,6 +104,7 @@ void open_aprs() {
     view->on_hide_fn = []() {
         view_manager::mainView.remove_child(view.get());
         view.reset();
+        Menu::menu_exit();
     };
 
     view->set_visible(true);

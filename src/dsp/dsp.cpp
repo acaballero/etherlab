@@ -15,6 +15,8 @@
 #include "types.h"
 #include "ui/lcd.h"
 #include "hw/stm32f4xx/timers.h"
+#include <cstddef>
+#include <functional>
 #include <sys/_stdint.h>
 
 #if ENABLE_SD_CARD
@@ -47,7 +49,7 @@ dsp::st_dsp_command pending_command{DSP_COMMAND_NONE};
 volatile bool execute_task = false;
 #endif
 
-void (*on_event)(st_dsp_status *);
+std::function<void(st_dsp_status *)> on_event;
 
 /** Sets or unsets the real-time DSP mode, for which only one slice of FFT can be used **/
 void dsp_set_real_time(bool b) {
@@ -66,6 +68,8 @@ void dsp_set_real_time(bool b) {
 }
 
 void restart_callback(void *, void *) {
+
+    // TODO: This assumes the current task is 'receive'
     if (config.mode != DIGITAL_RX && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
         dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, nullptr);
     } else if (config.mode == DIGITAL_RX && !current_task) {
@@ -87,10 +91,14 @@ void dsp_init(dsp::st_dsp_config &config) {
 void dsp_stop_tasks() {
     if (current_task) {
         current_task->stop();
+        current_task = nullptr;
+        if (on_event) {
+            on_event(dsp::dsp_status);
+        }
     }
 }
 
-uint8_t dsp_command(dsp::st_dsp_command command, void (*cb)(st_dsp_status *)) {
+uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_status *)> cb) {
 
     Task *task = command.task ? command.task : dsp::tasks[command.id];
     if (current_task == task) {
@@ -114,7 +122,7 @@ uint8_t dsp_command(dsp::st_dsp_command command, void (*cb)(st_dsp_status *)) {
 }
 
 bool dsp_restart() {
-    if (current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
+    if (!ISANALOG && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
 
         DAC_DMA_Stop(&hdac1);
         ADC_DMA_Stop(&hadc1);
@@ -207,10 +215,6 @@ DCBlock dc_block_q{0.999};
 
 inline void adc_work() {
     // GPIOD->BSRR |= GPIO_PIN_9;
-
-    if (current_buffer->count > 1000) {
-        HardFault_Handler();
-    }
 #if DSP_FS4_SHIFT
 
     if (fft_params.n_slices == 1 && !ISANALOG) {

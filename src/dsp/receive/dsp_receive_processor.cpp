@@ -33,7 +33,6 @@ void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
 
         // GPIOD->BSRR |= GPIO_PIN_9 << 16;
     } else {
-
         //  GPIOD->BSRR |= GPIO_PIN_9;
         uint32_t av = output_stream.available((char **)&p);
 

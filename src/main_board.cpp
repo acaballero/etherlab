@@ -227,11 +227,6 @@ bool _setMode(MODE mode, bool force) {
             return false;
         }
 
-        // TODO: DSP commands shouldn't be fired here
-        // if (config.mode == DIGITAL_RX && mode != DIGITAL_RX) {
-        //     dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, on_dsp_event);
-        // }
-
         changed = config.mode != mode;
         config.mode = mode;
 
@@ -358,7 +353,6 @@ bool _setMode(MODE mode, bool force) {
 
         } else if (config.mode == DIGITAL_RX) {
 
-            //  dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, on_dsp_event);
             // Turn off 3rd mixer LO
             lo_enable(2, 0);
             set_if_filter(config.if_filter);

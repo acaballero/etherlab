@@ -19,8 +19,8 @@ class DspCaptureProcessor : public DspProcessor {
     void work(const buffer_t<complex_t> *buffer) override;
 
   private:
-    DCBlock dc_blocker_i{.995};
-    DCBlock dc_blocker_q{.995};
+    DCBlock dc_blocker_i{.999};
+    DCBlock dc_blocker_q{.999};
 };
 
 #endif // TRX_FRONTEND_DSP_CAPTURE_PROCESSOR_H

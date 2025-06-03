@@ -148,7 +148,7 @@ Menu::numberPrompt<uint32_t> spanMenu((const char *)"Span", &config.fft.span, 0,
                                       [](uint32_t v) {
                                           fft_config(v);
                                       },
-                                      FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 25000);
+                                      FFT_MIN_SPAN, FFT_MAX_SPAN, 6000, 36000);
 Menu::numberPrompt<float> smoothMenu((const char *)"Smooth", &config.fft.smooth_factor, 1, ' ', '.', "",
                                      [](float) {
                                          fft_init();

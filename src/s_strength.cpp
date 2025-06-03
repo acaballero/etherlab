@@ -30,7 +30,7 @@
 #define S_STRENGTH_S1_LOGAMP (S_STRENGTH_S9_LOGAMP - (8 * 6 * S_STRENGTH_V_DB_LOGAMP))
 
 // Minimum time to turn on squelch after the signal goes under the threshold
-#define SQUELCH_TIMEOUT_MS 500
+#define SQUELCH_TIMEOUT_MS 200
 
 namespace sstrength {
 
@@ -149,12 +149,10 @@ void check_signal_strength() {
             } else {
                 emit = true; // de-squelch immediately
             }
-
             last_squelch_test = in_squelch;
         } else if (last_activation_trigger_ms && HAL_GetTick() - last_activation_trigger_ms > SQUELCH_TIMEOUT_MS) {
-
+            // Squelch is fired after a SQUELCH_TIMEOUT_MS debounce period
             emit = true;
-
             last_activation_trigger_ms = 0;
         }
 
@@ -175,6 +173,8 @@ void set_squelch(float level) {
     squelch_signal.emit(&info);
 }
 
-float get_squelch() { return config.squelch_level; }
+float get_squelch() {
+    return config.squelch_level;
+}
 
 } // namespace sstrength

@@ -33,7 +33,7 @@ uint32_t rtc_uptime();
 #endif
 
 extern Signal rtc_signal;
-std::string rtc_to_string(st_datetime dt, bool);
+void rtc_to_string(st_datetime dt, bool, char *);
 uint32_t rtc_to_epoch(RTC_TimeTypeDef *time, RTC_DateTypeDef *date);
 
 #endif // TRX_FRONTEND_RTC_H

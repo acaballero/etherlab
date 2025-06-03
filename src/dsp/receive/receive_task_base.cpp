@@ -202,7 +202,7 @@ bool ReceiveTaskBase::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
     // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > audio_bw_hz * 2 && dec_factor < 32) {
+    while (status.sample_rate > get_audio_bw_hz() * 2 && dec_factor < 32) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }

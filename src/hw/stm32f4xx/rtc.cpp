@@ -263,16 +263,13 @@ st_datetime rtc_get_date_time() {
     return date_time;
 }
 
-std::string rtc_to_string(st_datetime dt, bool only_date) {
+void rtc_to_string(st_datetime dt, bool only_date, char *buffer) {
 
-    char buffer[20];
     if (only_date) {
         snprintf(buffer, 9, "%02d:%02d:%02d", dt.time.Hours, dt.time.Minutes, dt.time.Seconds);
     } else {
         snprintf(buffer, 17, "%02d-%02d-%02d %02d:%02d:%02d", dt.date.Year, dt.date.Month, dt.date.Date, dt.time.Hours, dt.time.Minutes, dt.time.Seconds);
     }
-
-    return std::string(buffer);
 }
 
 uint32_t rtc_uptime() {

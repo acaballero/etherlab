@@ -72,7 +72,7 @@ template <int order> void DspIIRDecimator<order>::init() {
     f.setup(order,                           // order
             this->input_rate,                // sample rate
             ((double)this->bandwidth / 2.0), // center frequency
-            0.01);                           // ripple dB
+            1);                              // ripple dB
 
     Dsp::Cascade::Storage st = f.getCascadeStorage();
 
