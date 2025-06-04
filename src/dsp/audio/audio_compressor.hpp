@@ -9,7 +9,6 @@
 #include "dsp/dsp_common.h"
 
 #include <cmath>
-#include <sys/_stdint.h>
 
 /* Code based on article in Journal of the Audio Engineering Society
  * Vol. 60, No. 6, 2012 June, by Dimitrios Giannoulis, Michael Massberg,

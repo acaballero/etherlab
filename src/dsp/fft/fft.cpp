@@ -6,7 +6,7 @@
 #include "config.h"
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
-#include <sys/_stdint.h>
+
 #include <sys/types.h>
 #include <utility>
 #include "dsp/blocks/dc_block.h"

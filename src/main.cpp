@@ -23,7 +23,7 @@
 #include "types.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
-#include <sys/_stdint.h>
+
 #include <sys/unistd.h>
 
 #if ENABLE_FFT

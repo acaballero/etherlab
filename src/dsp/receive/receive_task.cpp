@@ -28,7 +28,7 @@
 #include "dsp/decimation/dsp_decimators.h"
 #include <cstddef>
 #include <memory>
-#include <sys/_stdint.h>
+
 #include "printf.h"
 #include "utils.hpp"
 

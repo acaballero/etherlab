@@ -7,7 +7,6 @@
 
 #include "widget.h"
 #include "types.h"
-#include <sys/_stdint.h>
 
 class ConsoleWidget : public Widget {
   public:

@@ -6,7 +6,7 @@
 #define TRX_FRONTEND_RECEIVE_TASK_BASE_H
 
 #include <memory>
-#include <sys/_stdint.h>
+
 #include "dsp/buffer.hpp"
 #include "dsp/decimation/dsp_iir_decimator.h"
 #include "dsp/dsp_buffers.h"

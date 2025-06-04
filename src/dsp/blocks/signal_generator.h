@@ -9,6 +9,7 @@
 #include "stdio.h"
 #include "dsp/buffer.hpp"
 #include "output.h"
+#include "blocks_common.h"
 
 enum SIGNAL_SHAPE { SIGNAL_SHAPE_SIN, SIGNAL_SHAPE_SAW_UP, SIGNAL_SHAPE_SAW_DOWN, SIGNAL_SHAPE_TRI };
 
@@ -58,5 +59,7 @@ class SignalGenerator : public Output<complex_t> {
     // uint32_t delta{0};
     // uint32_t sphase{0};
 };
+
+extern int8_t sine_table_i8[LUT_SIZE];
 
 #endif // TRX_FRONTEND_SIGNAL_GENERATOR_H

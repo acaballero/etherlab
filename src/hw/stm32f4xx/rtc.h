@@ -6,7 +6,7 @@
 #define TRX_FRONTEND_RTC_H
 
 #include <stm32f4xx.h>
-#include <sys/_stdint.h>
+
 #include "Signal.h"
 
 extern RTC_HandleTypeDef hrtc;

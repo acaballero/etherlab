@@ -5,7 +5,6 @@
 #include "hw/stm32.h"
 #include "timers.h"
 #include "config.h"
-#include <sys/_stdint.h>
 
 TIM_HandleTypeDef htim3;  // Led blink
 TIM_HandleTypeDef htim2;  // ADC DMA

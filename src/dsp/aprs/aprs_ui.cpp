@@ -4,7 +4,7 @@
 #include "aprs_ui.h"
 #include "Display_afb.h"
 #include "dsp/aprs/aprs_packet.h"
-#include "dsp/aprs/aprs_task.h"
+#include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
 #include "hw/stm32f4xx/rtc.h"
@@ -19,8 +19,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
-#include <sys/_intsup.h>
-#include <sys/_stdint.h>
+#include "dsp/protocols/aprs.hpp"
 
 namespace dsp_ui {
 
@@ -78,6 +77,19 @@ void APRSView::on_source_selected(APRSSource &source) {
 void APRSView::before_paint(){
 
 };
+
+void APRSView::send_packet() {
+
+    std::string frame = aprs::build_frame(config.callsign, 0, "APRS", 0, "UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU");
+
+    tx_task.configure(1200, 2200, 1,
+                      10000, // APRS uses fixed 10k bandwidth
+                      8);
+
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &tx_task}, nullptr);
+    // To execute a task other than DSP_TASK_REPLAY, setMode has to be called so
+    main_board::setMode(DIGITAL_TX);
+}
 
 void APRSView::on_packet(APRSPacket *packet) {
 

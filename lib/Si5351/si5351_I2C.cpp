@@ -27,7 +27,6 @@
 #include <stdint-gcc.h>
 #include <cstdlib>
 #include <string.h>
-#include <sys/_stdint.h>
 
 #define I2C_7BITADDR 0x60
 #define SDA_PORT PORTC

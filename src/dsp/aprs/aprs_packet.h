@@ -8,7 +8,6 @@
 #include "dsp/dsp_common.h"
 #include "hw/stm32f4xx/rtc.h"
 #include <stdio.h>
-#include <sys/_stdint.h>
 
 namespace dsp {
 

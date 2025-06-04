@@ -4,7 +4,7 @@
 #include "dsp_digital_demodulate.h"
 #include <cstdint>
 #include <cstdio>
-#include <sys/_stdint.h>
+
 #include "arm_math.h"
 #include "dsp/dsp_common.h"
 

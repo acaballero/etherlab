@@ -12,8 +12,8 @@
 #include <functional>
 #include <stdio.h>
 #include <string>
-#include <sys/_stdint.h>
-#include "dsp/aprs/aprs_task.h"
+#include "dsp/aprs/aprs_rx_task.h"
+#include "dsp/afsk/afsk_tx_task.h"
 #include "main_board.h"
 #include "menuBase.h"
 #include "ring_buffer.hpp"
@@ -82,6 +82,7 @@ class APRSView : public View {
     }
 
     void on_packet(APRSPacket *packet);
+    void send_packet();
 
   private:
     static constexpr int title_height = 20;
@@ -109,6 +110,7 @@ class APRSView : public View {
 
     SignalToken aprs_signal_token;
     APRSTask receive_task{};
+    AFSKTXTask tx_task{};
 
     MODE previous_mode;
 

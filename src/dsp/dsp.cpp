@@ -17,7 +17,6 @@
 #include "hw/stm32f4xx/timers.h"
 #include <cstddef>
 #include <functional>
-#include <sys/_stdint.h>
 
 #if ENABLE_SD_CARD
 

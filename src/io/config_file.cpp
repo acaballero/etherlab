@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <sys/_stdint.h>
 
 bool ConfigFile::save(const char *filename, const st_config &cfg) {
 

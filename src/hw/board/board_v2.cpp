@@ -15,7 +15,6 @@
 #include "../../../lib/Si5351/si5351_I2C.h"
 #include "stm32f4xx_hal_def.h"
 #include "types.h"
-#include <sys/_stdint.h>
 
 namespace board {
 

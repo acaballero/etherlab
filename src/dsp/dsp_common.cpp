@@ -8,7 +8,6 @@
 #include "config.h"
 #include "arm_math.h"
 #include <cstddef>
-#include <sys/_stdint.h>
 
 namespace dsp {
 

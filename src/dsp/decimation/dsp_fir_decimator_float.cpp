@@ -11,7 +11,6 @@
 #include "handlers.h"
 #include <algorithm>
 #include <exception>
-#include <sys/_stdint.h>
 
 template class DspFIRDecimatorFloatBase<FFT_LPF_FIR_FILTER_NTAPS, float>;
 template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, float>;

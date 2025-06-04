@@ -9,7 +9,7 @@
 #include "fatfs/fatfs.h"
 #include <cstdio>
 #include <cstring>
-#include <sys/_stdint.h>
+
 #include <sys/types.h>
 
 class ConfigFile {
