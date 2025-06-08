@@ -1,5 +1,6 @@
 
 #include <cstdint>
+#include <sys/_stdint.h>
 
 #include "aprs.hpp"
 #include "ax25.hpp"
@@ -8,7 +9,8 @@ using namespace ax25;
 
 namespace aprs {
 
-void build_frame(const char *src_address, const uint32_t src_ssid, const char *dest_address, const uint32_t dest_ssid, const std::string &payload) {
+void build_frame(const char *src_address, const uint32_t src_ssid, const char *dest_address, const uint32_t dest_ssid, const std::string &payload,
+                 uint16_t *buffer) {
     AX25Frame frame;
 
     char address[14] = {0};
@@ -21,7 +23,7 @@ void build_frame(const char *src_address, const uint32_t src_ssid, const char *d
     address[6] = (dest_ssid | 48);
     address[13] = (src_ssid | 48);
 
-    frame.build(address, 0x03, protocol_id_t::NO_LAYER3, payload);
+    frame.build(address, 0x03, protocol_id_t::NO_LAYER3, payload, buffer);
 }
 
 } /* namespace aprs */

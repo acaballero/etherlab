@@ -24,7 +24,7 @@
 class ReceiveTask : public ReceiveTaskBase {
 
   public:
-    ReceiveTask(void (*onSucess)(), void (*onError)(DSP_ERROR));
+    using ReceiveTaskBase::ReceiveTaskBase;
 
   private:
     // De-empth filter

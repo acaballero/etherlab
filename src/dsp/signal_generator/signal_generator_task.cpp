@@ -17,11 +17,6 @@
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
-SignalGeneratorTask::SignalGeneratorTask(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
-    this->on_error = onError;
-    this->on_success = onSucess;
-}
-
 void SignalGeneratorTask::work() {
     // This tasks does not perform any work
     // The signal is generated in the dsp processor

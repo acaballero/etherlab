@@ -14,6 +14,7 @@
 #include <string>
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/afsk/afsk_tx_task.h"
+#include "dsp/dsp.h"
 #include "main_board.h"
 #include "menuBase.h"
 #include "ring_buffer.hpp"
@@ -99,8 +100,8 @@ class APRSView : public View {
     ConsoleWidget console{{table_width + panel_sep / 2, title_height + panel_sep, console_width - panel_sep, 90 + title_height}, &lcd};
 
     Menu::menu_action_st menu_actions[2] = {{"TX",
-                                             []() {
-
+                                             [this]() {
+                                                 send_packet();
                                              }},
                                             {"Exit", [this]() {
                                                  exit();
@@ -109,14 +110,19 @@ class APRSView : public View {
     Menu::menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(Menu::menu_action_st)};
 
     SignalToken aprs_signal_token;
-    APRSTask receive_task{};
-    AFSKTXTask tx_task{};
+    APRSTask receive_task{dspSuccess, dspError};
+    AFSKTXTask tx_task{dspSuccess, dspError};
+
+    os::periodic_task p = {5000, [this]() {
+                               send_packet();
+                           }};
 
     MODE previous_mode;
 
     void before_paint() override;
     void init();
     void exit();
+    void start_rx();
 };
 
 } // namespace dsp_ui

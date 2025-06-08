@@ -10,6 +10,9 @@
 #include "hw/stm32f4xx/rtc.h"
 #include "ips_font.h"
 #include "main_board.h"
+#include "os/periodic_task.h"
+#include "os/task_manager.h"
+#include "status.h"
 #include "types.h"
 #include "ui/console_widget.h"
 #include "ui/lcd.h"
@@ -19,6 +22,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <sys/_stdint.h>
 #include "dsp/protocols/aprs.hpp"
 
 namespace dsp_ui {
@@ -37,15 +41,6 @@ void APRSView::init() {
         this->on_source_selected(source);
     };
 
-    // record_view.set_sampling_rate(24000);
-
-    // baseband::set_aprs(1200);
-
-    // audio::set_rate(audio::Rate::Hz_24000);
-    // audio::output::start();
-
-    // receiver_model.enable();
-
     aprs_signal_token = aprs_signal.add(this, [this](void *, void *data) {
         on_packet((APRSPacket *)data);
     });
@@ -54,6 +49,14 @@ void APRSView::init() {
 
     previous_mode = config.mode;
 
+    start_rx();
+
+    // DEBUG
+    os::task_manager.add(&p);
+    // DEBUG
+}
+
+void APRSView::start_rx() {
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &receive_task}, nullptr);
     // To execute a task other than DSP_TASK_RECEIVE, setMode has to be called so
     main_board::setMode(DIGITAL_RX);
@@ -67,6 +70,9 @@ void APRSView::exit() {
             actions_signal.emit(nullptr);
             set_visible(false);
             main_board::setMode(previous_mode);
+            // DEBUG
+            os::task_manager.remove(&p);
+            // DEBIG
         }
     });
 }
@@ -80,13 +86,21 @@ void APRSView::before_paint(){
 
 void APRSView::send_packet() {
 
-    std::string frame = aprs::build_frame(config.callsign, 0, "APRS", 0, "UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU");
+    uint16_t buffer[256];
+    aprs::build_frame(config.callsign, 0, "APRS", 0, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!!", buffer);
 
-    tx_task.configure(1200, 2200, 1,
-                      10000, // APRS uses fixed 10k bandwidth
-                      8);
+    tx_task.configure(1200, 2200, 1, 8, 10000, 200, 100); // APRS uses fixed 10k bandwidth
+    tx_task.set_data(buffer);
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &tx_task}, nullptr);
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &tx_task}, [this](st_dsp_status *status) {
+        if (status->status == DSP_STATUS_STOPPED) {
+            if (status->fifo_underruns) {
+                status::handleError(status::ST_ERROR, "FIFO underruns");
+            }
+            start_rx();
+        }
+    });
+
     // To execute a task other than DSP_TASK_REPLAY, setMode has to be called so
     main_board::setMode(DIGITAL_TX);
 }

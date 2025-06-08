@@ -31,7 +31,7 @@ void set_status(enum status);
 bool enabled = false;
 st_power_amp_params params;
 float hysteresis = 0.94;
-os::periodic_task task(500, check_temp);
+os::periodic_task task(2000, check_temp);
 Signal temp_signal, status_signal;
 enum status last_status = OFF, status = OFF;
 float voltage;
@@ -53,7 +53,9 @@ void disable() {
     task.set_enabled(false);
 }
 
-void test() { temp = 35 + ((HAL_GetTick() / 1000) % 100); }
+void test() {
+    temp = 35 + ((HAL_GetTick() / 1000) % 100);
+}
 
 void calculate_temp() {
     uint16_t vadc = GetADCValue(&hadc3, POWER_AMP_TEMP_ADC_CHANNEL, 3);

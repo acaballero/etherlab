@@ -35,11 +35,6 @@
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
-ReceiveTask::ReceiveTask(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
-    on_error = onError;
-    on_success = onSucess;
-}
-
 void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
 
     if (compressor_enabled) {

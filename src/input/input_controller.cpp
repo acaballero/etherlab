@@ -207,7 +207,7 @@ void onInputEvent(st_inputEvent e) {
 #if DISPATCH_INMEDIATELY
     processEvent(&e);
 #else
-    inputFIFO.writeBlock((char *)&e, SIZEOFINPUTENVENT);
+    inputFIFO.write_block((char *)&e, SIZEOFINPUTENVENT);
 #endif
 }
 

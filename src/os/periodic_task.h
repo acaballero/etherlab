@@ -7,11 +7,12 @@
 
 #include "stdio.h"
 #include "stdint.h"
+#include <functional>
 #include <hw/stm32.h>
 
 namespace os {
 
-typedef void (*callback_t)(void);
+typedef std::function<void()> callback_t;
 
 class periodic_task {
   public:

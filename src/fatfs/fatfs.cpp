@@ -126,7 +126,7 @@ void sdcard_init(void) {
                 new_status.sectors = total_sectors / 2;
                 new_status.status = Mounted;
 
-                /* DEBUGPRINT("SD card stats:\r\n%10lu KiB total drive space.\r\n%10lu KiB available.\r\n",
+                /* LOG("SD card stats:\r\n%10lu KiB total drive space.\r\n%10lu KiB available.\r\n",
                             sdcard_info.sectors,
                             sdcard_info.free_kb);*/
             }

@@ -11,6 +11,10 @@
 
 void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
 
+    if (status.status != DSP_STATUS_RUNNING) {
+        return;
+    }
+
     uint16_t *p;
     uint16_t block_size_bytes = buffer->size_bytes;
 
@@ -24,7 +28,7 @@ void DspReceiveProcessor::work(const buffer_t<complex_t> *buffer) {
 
             status.processed_blocks++;
 
-            input_stream.writeBlock((char *)buffer->p, buffer->size_bytes);
+            input_stream.write_block((char *)buffer->p, buffer->size_bytes);
 
         } else {
 

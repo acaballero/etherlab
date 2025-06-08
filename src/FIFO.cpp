@@ -17,6 +17,7 @@
 void FIFO::reset() {
     this->read_ix = this->write_ix = 0;
     this->count = 0;
+    this->closed = false;
 }
 
 uint32_t FIFO::available() {
@@ -61,7 +62,7 @@ FIFO_ERROR FIFO::write(char *origin, uint32_t n) {
  * Writes a block
  * TODO: Caution. This function assumes the block is a divisor of the FIFO size
  */
-FIFO_ERROR FIFO::writeBlock(char *origin, uint32_t n) {
+FIFO_ERROR FIFO::write_block(char *origin, uint32_t n) {
 
     char *p = this->data + this->write_ix;
     uint32_t free = FREE();
@@ -120,10 +121,10 @@ FIFO_ERROR FIFO::consume(uint32_t n, char **dest) {
     // return n?FIFO_ERROR_UNDERRUN:FIFO_ERROR_NONE;
 }
 
-uint32_t FIFO::getSize() const {
+uint32_t FIFO::get_size() const {
     return size;
 }
 
-void FIFO::setSize(uint32_t size) {
+void FIFO::set_size(uint32_t size) {
     FIFO::size = size;
 }

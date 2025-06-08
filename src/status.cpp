@@ -16,7 +16,7 @@ inline void debug_print(const char *str, ...) {
     va_list argptr;
     va_start(argptr, str);
 #if SWO_ENABLED
-    printf(str, argptr);
+    vprintf_(str, argptr);
 #elif USB_PRINT_ENABLED
     usb.print(str, argptr);
 #endif
@@ -30,8 +30,8 @@ void clearError() {
 
 void handleError(StatusCode code, const char *msg) {
 
-    DEBUGPRINT(msg, 0) // Print to console, if enabled
-    DEBUGPRINT("\n", 0)
+    LOG(msg, 0) // Print to console, if enabled
+    LOG("\n", 0)
 
     systemStatus.code = code;
     snprintf(systemStatus.msg, 40, "%s", msg);

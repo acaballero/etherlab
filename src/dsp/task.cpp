@@ -6,23 +6,13 @@
 #include "task.h"
 #include "dsp_buffers.h"
 
+Task::Task(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
+    this->on_error = onError;
+    this->on_success = onSucess;
+}
+
 void Task::reset() {
-
-    // TODO: I don't remember why this was required for, but now there are two streams, so probably that's not what I want
-    output_stream.reset();
-
-    this->status.fifo_overruns = 0;
-    this->status.fifo_underruns = 0;
-    this->status.processed_blocks = 0;
-    // this->status.decimation_factor = 1;
-    // this->status.block_size_bytes = dsp_temp_buf.size_bytes;
-    // this->status.decimated_block_size = dsp_temp_buf.decimated_size_bytes;
-    // this->status.bits_per_sample = 0;
-    // this->status.n_channels = 2;
-    this->status.error = DSP_ERR_NONE;
-    this->status.stop_ms = 0;
-    this->status.last_error_ms = 0;
-    this->status.start_ms = HAL_GetTick();
+    status.reset();
 }
 
 void Task::halt(DSP_ERROR e) {

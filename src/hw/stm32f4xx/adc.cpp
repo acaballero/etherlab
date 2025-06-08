@@ -5,6 +5,7 @@
 #include "hw/hw_config.h"
 #include "stm32f4xx_hal_adc.h"
 #include "ui/lcd.h"
+#include "status.h"
 
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
@@ -555,10 +556,11 @@ int GetADCValue(ADC_HandleTypeDef *hadc, uint32_t Channel, int count) {
     // If we are reinitializing the same ADC between single shot and DMA mode we need to initialize for single shot here
     // TODO: Check if it's already in single shot mode to avoid reinitializing it in the same mode
 
-    if (hadc == &hadc1)
+    if (hadc == &hadc1) {
         MX_ADC1_Init();
-    else if (hadc == &hadc2)
+    } else if (hadc == &hadc2) {
         MX_ADC2_Init();
+    }
 
     int val = 0, v = 0;
     HAL_StatusTypeDef err = HAL_OK;
@@ -598,6 +600,7 @@ int GetADCValue(ADC_HandleTypeDef *hadc, uint32_t Channel, int count) {
 
 void ADC_DMA_Start(ADC_HandleTypeDef *hadc) {
 
+    LOG("ADC_DMA_START");
     if (!adc_dma_started) {
 
         Config_ADC_DMA();
@@ -617,11 +620,15 @@ void ADC_DMA_Start(ADC_HandleTypeDef *hadc) {
         HAL_ADC_Start_DMA(hadc, (uint32_t *)&adc_buff, capture_length);
 #endif
         adc_dma_started = true;
+    } else {
+        LOG(": Did nothing");
     }
+    LOG("\n");
 }
 
 void ADC_DMA_Stop(ADC_HandleTypeDef *hadc) {
 
+    LOG("ADC_DMA_STOP");
     if (adc_dma_started) {
 
         HAL_TIM_Base_Stop_IT(&htim2); // Stop ACD DMA timer
@@ -640,7 +647,11 @@ void ADC_DMA_Stop(ADC_HandleTypeDef *hadc) {
         adc_dma_started = false;
         hadc1_mode = 0;
         hadc2_mode = 0;
+    } else {
+        LOG(": Did nothing");
     }
+
+    LOG("\n");
 }
 
 void setup_adcs() {

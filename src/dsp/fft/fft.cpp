@@ -214,7 +214,7 @@ os::periodic_task waterfall_task(0, []() {
     view_manager::mainView.Waterfall()->set_dirty();
 });
 
-Signal signal;
+Signal signal{"fft_signal"};
 } // namespace fft
 
 uint64_t last_iqbalance_estimate_ms = 0;
@@ -481,8 +481,8 @@ bool fft_config(uint32_t span) {
         if (current_dec_factor != fft_params.decimation_factor) {
             // If decimation factor has changed, reset the fifo and make sure its size is a multiple
             // of the chunk size. This changes if we are decimating, since in that case, we store some filter delay blocks
-            fft_fifo.setSize((FFT_N + (fft_params.decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) * MAX_DECIMATION_FACTOR *
-                             sizeof(complex_t));
+            fft_fifo.set_size((FFT_N + (fft_params.decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) * MAX_DECIMATION_FACTOR *
+                              sizeof(complex_t));
             fft_fifo.reset();
         }
 
@@ -499,6 +499,7 @@ bool fft_config(uint32_t span) {
 
             set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
 
+            LOG("fft_config: Changed sample rate :%lu\n", config.fft.sample_rate);
             signal.emit(nullptr);
         } else {
             decimator_i.set_factor(fft_params.decimation_factor);

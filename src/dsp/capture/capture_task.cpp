@@ -8,11 +8,6 @@
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
-CaptureTask::CaptureTask(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
-    this->on_error = onError;
-    this->on_success = onSucess;
-}
-
 void CaptureTask::setFile(std::unique_ptr<File> file) {
     this->file = move(file);
 }

@@ -10,13 +10,18 @@
 class Task {
 
   public:
+    Task(){};
+    Task(void (*onSucess)(), void (*onError)(DSP_ERROR));
     virtual ~Task() = default;
     virtual bool start();
     virtual void stop();
     virtual void work() = 0;
-    void reset();
+    virtual void reset();
     void halt(DSP_ERROR);
     st_dsp_status status;
+
+    // Callback for the first processed block
+    std::function<void()> on_first_block{};
 
   protected:
     void (*on_success)();

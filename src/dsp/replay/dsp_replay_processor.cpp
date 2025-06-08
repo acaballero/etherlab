@@ -16,6 +16,10 @@ SignalGenerator sig_gen(1000, 346666);
 
 void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
 
+    if (this->status.status != DSP_STATUS_RUNNING) {
+        return;
+    }
+
     // The samples are stored in a particular sample rate but, if we are processing
     // them in a wider bandwidth FFT, or our output sample rate to the DAC or transceiver
     // is higher, we will need to interpolate/oversample.
@@ -34,7 +38,7 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
 
     if (av >= bytesToRead) {
 
-        int16_t *out_p = (int16_t *)buffer->p;
+        adc_type *out_p = (adc_type *)buffer->p;
 
         // Naive interpolation
         // Output channel number is always 2
@@ -48,12 +52,14 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
                 out_p[i + 1] = out_p[i - 1];
                 //  }
                 // d--;
+
             } else {
-                out_p[i] = ((uint16_t *)p)[j] + config.hw.dac_offset;
-                out_p[i] *= dsp::dsp_status->gain;
+                out_p[i] = ((adc_type *)p)[j] + config.hw.dac_offset;
+                //           LOG("%d,", out_p[i]);
+                //   out_p[i] *= dsp::dsp_status->gain;
                 if (this->status.n_channels == 2) {
-                    out_p[i + 1] = ((uint16_t *)p)[j + 1] + config.hw.dac_offset;
-                    out_p[i + 1] *= dsp::dsp_status->gain;
+                    out_p[i + 1] = ((adc_type *)p)[j + 1] + config.hw.dac_offset;
+                    //   out_p[i + 1] *= dsp::dsp_status->gain;
                     j++;
                 } else {
                     out_p[i + 1] = 0;
@@ -76,10 +82,8 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
         //  printf("\n", 0);
 
     } else {
-
-        this->status.fifo_underruns++;
-
-        // endDsp();
-        // dspError(DSP_ERR_FIFO_UNDERRUN);
+        if (!output_stream.is_closed()) {
+            this->status.fifo_underruns++;
+        }
     }
 }

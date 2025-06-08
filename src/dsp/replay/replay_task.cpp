@@ -17,11 +17,6 @@
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
-ReplayTask::ReplayTask(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
-    this->on_error = onError;
-    this->on_success = onSucess;
-}
-
 void ReplayTask::work() {
 
     if (this->status.status == DSP_STATUS_RUNNING) {
@@ -113,7 +108,7 @@ bool ReplayTask::start() {
 
     } else {
 
-        // DEBUGPRINT(
+        // LOG(
         //         "Info header:\nChannels:%d\nBits per sample :%u\nByte Rate:%lu\nCarrier:%llu\nFormat:%u\nSample rate:%lu\n",
         //         wi.n_channels, wi.bits_sample, wi.byte_rate, wi.carrier_freq, wi.format, wi.sample_rate)
 

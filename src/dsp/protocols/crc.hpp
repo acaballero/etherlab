@@ -40,19 +40,12 @@
  *
  */
 
-template <size_t Width, bool RevIn = false, bool RevOut = false>
-class CRC {
-   public:
+template <size_t Width, bool RevIn = false, bool RevOut = false> class CRC {
+  public:
     using value_type = uint32_t;
 
-    constexpr CRC(
-        const value_type truncated_polynomial,
-        const value_type initial_remainder = 0,
-        const value_type final_xor_value = 0)
-        : truncated_polynomial{truncated_polynomial},
-          initial_remainder{initial_remainder},
-          final_xor_value{final_xor_value},
-          remainder{initial_remainder} {
+    constexpr CRC(const value_type truncated_polynomial, const value_type initial_remainder = 0, const value_type final_xor_value = 0)
+        : truncated_polynomial{truncated_polynomial}, initial_remainder{initial_remainder}, final_xor_value{final_xor_value}, remainder{initial_remainder} {
     }
 
     value_type get_initial_remainder() const {
@@ -88,15 +81,14 @@ class CRC {
         process_bits(byte, 8);
     }
 
-    void process_bytes(const void* const data, const size_t length) {
-        const uint8_t* const p = reinterpret_cast<const uint8_t*>(data);
+    void process_bytes(const void *const data, const size_t length) {
+        const uint8_t *const p = reinterpret_cast<const uint8_t *>(data);
         for (size_t i = 0; i < length; i++) {
             process_byte(p[i]);
         }
     }
 
-    template <size_t N>
-    void process_bytes(const std::array<uint8_t, N>& data) {
+    template <size_t N> void process_bytes(const std::array<uint8_t, N> &data) {
         process_bytes(data.data(), data.size());
     }
 
@@ -104,7 +96,7 @@ class CRC {
         return ((RevOut ? reflect(remainder) : remainder) ^ final_xor_value) & mask();
     }
 
-   private:
+  private:
     const value_type truncated_polynomial;
     const value_type initial_remainder;
     const value_type final_xor_value;
@@ -153,32 +145,28 @@ class CRC {
 };
 
 class Adler32 {
-   public:
+  public:
     void feed(const uint8_t v) {
         feed_one(v);
     }
 
-    void feed(const void* const data, const size_t n) {
-        const uint8_t* const p = reinterpret_cast<const uint8_t*>(data);
+    void feed(const void *const data, const size_t n) {
+        const uint8_t *const p = reinterpret_cast<const uint8_t *>(data);
         for (size_t i = 0; i < n; i++) {
             feed_one(p[i]);
         }
     }
 
-    template <typename T>
-    void feed(const T& a) {
+    template <typename T> void feed(const T &a) {
         feed(a.data(), sizeof(T));
     }
 
     std::array<uint8_t, 4> bytes() const {
-        return {
-            static_cast<uint8_t>((b >> 8) & 0xff),
-            static_cast<uint8_t>((b >> 0) & 0xff),
-            static_cast<uint8_t>((a >> 8) & 0xff),
-            static_cast<uint8_t>((a >> 0) & 0xff)};
+        return {static_cast<uint8_t>((b >> 8) & 0xff), static_cast<uint8_t>((b >> 0) & 0xff), static_cast<uint8_t>((a >> 8) & 0xff),
+                static_cast<uint8_t>((a >> 0) & 0xff)};
     }
 
-   private:
+  private:
     static constexpr uint32_t mod = 65521;
 
     uint32_t a{1};
@@ -191,17 +179,14 @@ class Adler32 {
 };
 
 static const unsigned char parity_numbits[256] = {
-    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
-    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
+    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4,
+    3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5,
+    3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5,
+    4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
 
 class ParityCheck {
-   public:
+  public:
     static bool parity_check(uint8_t ch, uint8_t pbitpos = 1) {
         return ((parity_numbits[ch] & pbitpos) != 0);
     }

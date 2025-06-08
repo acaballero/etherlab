@@ -24,6 +24,8 @@
 class ReceiveTaskBase : public Task {
 
   public:
+    using Task::Task;
+
     static constexpr uint8_t max_decimators = 3; // Max number of cascaded decimators
 
     void work() override;

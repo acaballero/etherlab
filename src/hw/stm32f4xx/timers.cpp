@@ -2,6 +2,7 @@
 // Created by Angel Dust on 01/11/2019.
 //
 
+#include "handlers.h"
 #include "hw/stm32.h"
 #include "timers.h"
 #include "config.h"
@@ -499,11 +500,16 @@ void set_timer_sample_rate_NOT_INTEGER_PHASE_MATCH(TIM_TypeDef *timer, uint32_t 
 }
 
 void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
+
+    if (clk_freq == 0) {
+        HardFault_Handler();
+    }
+
     uint32_t target_div = clk_freq / hz;
 
     uint32_t best_psc = 0;
     uint32_t best_arr = 0;
-    uint32_t min_error = 0xFFFFFFFF;
+    volatile uint32_t min_error = 0xFFFFFFFF;
 
     for (uint32_t psc = 0; psc <= 0xFFFF; ++psc) {
         uint32_t denom = psc + 1;

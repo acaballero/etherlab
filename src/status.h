@@ -10,15 +10,28 @@
 #include "config.h"
 #include "Signal.h"
 #include "ui/menu_options.h"
+#include "../lib/printf/printf.h"
 
 #if DEBUG_MSGS
+
 #if SWO_ENABLED
-#define DEBUGPRINT(msg, ...)                                                                                                                                   \
+#define LOG_NOARGS(msg)                                                                                                                                        \
+    { printf_(msg); }
+#define LOG_VARS(msg, ...)                                                                                                                                     \
     { status::debug_print(msg, __VA_ARGS__); }
 #else
-#define DEBUGPRINT(msg, ...)                                                                                                                                   \
+#define LOG_NOARGS(msg)                                                                                                                                        \
+    {}
+#define LOG_VARS(msg, ...)                                                                                                                                     \
     {}
 #endif
+
+// Helper to count arguments and select macro
+#define LOG_GET_MACRO(_1, _2, _3, _4, _5, NAME, ...) NAME
+
+// Dispatch macro: handles 1–5 args (add more if needed)
+#define LOG(...) LOG_GET_MACRO(__VA_ARGS__, LOG_VARS, LOG_VARS, LOG_VARS, LOG_VARS, LOG_NOARGS)(__VA_ARGS__)
+
 #endif
 
 namespace status {

@@ -2,32 +2,32 @@
 // Created by Angel Dust on 23/03/2021.
 //
 #include "dac.h"
+#include "hw/stm32f4xx/timers.h"
 #include "main.h"
 #include "handlers.h"
 #include "stm32f4xx_hal_dac_ex.h"
 #include "stm32f4xx_hal_dac_ex_custom.h"
-
+#include "status.h"
+#include "stm32f4xx_hal_def.h"
 
 DAC_HandleTypeDef hdac1;
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void DAC_Error_Handler(void) {
     /* USER CODE BEGIN ADC_Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
 
-
     /* USER CODE END ADC_Error_Handler_Debug */
 }
 
-
 /**
-  * @brief DAC Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief DAC Initialization Function
+ * @param None
+ * @retval None
+ */
 void MX_DAC_Init(void) {
 
     /* USER CODE BEGIN DAC_Init 0 */
@@ -40,14 +40,14 @@ void MX_DAC_Init(void) {
 
     /* USER CODE END DAC_Init 1 */
     /** DAC Initialization
-    */
+     */
     hdac1.Instance = DAC;
 
     if (HAL_DAC_Init(&hdac1) != HAL_OK) {
         Error_Handler();
     }
     /** DAC channel OUT1 config
-    */
+     */
     sConfig.DAC_Trigger = DAC_TRIGGER_T6_TRGO;
     sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
 
@@ -56,23 +56,21 @@ void MX_DAC_Init(void) {
     }
 
     /** DAC channel OUT2 config
-   */
+     */
     if (HAL_DAC_ConfigChannel(&hdac1, &sConfig, DAC_CHANNEL_2) != HAL_OK) {
         Error_Handler();
     }
     /* USER CODE BEGIN DAC_Init 2 */
 
     /* USER CODE END DAC_Init 2 */
-
 }
 
-
 /**
-* @brief DAC MSP Initialization
-* This function configures the hardware resources used in this example
-* @param hdac: DAC handle pointer
-* @retval None
-*/
+ * @brief DAC MSP Initialization
+ * This function configures the hardware resources used in this example
+ * @param hdac: DAC handle pointer
+ * @retval None
+ */
 void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     if (hdac->Instance == DAC) {
@@ -102,8 +100,8 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac) {
         hdma_dac_ch1.Init.Mode = DMA_CIRCULAR;
         hdma_dac_ch1.Init.Priority = DMA_PRIORITY_LOW;
         hdma_dac_ch1.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-        //hdma_dac_ch1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-        //hdma_dac_ch1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+        // hdma_dac_ch1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+        // hdma_dac_ch1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
         hdma_dac_ch1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD; // WORD if the DAC buffer is complex and I/Q samples are interleaved int16_t
         hdma_dac_ch1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
 
@@ -117,17 +115,14 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac) {
 
         /* USER CODE END DAC_MspInit 1 */
     }
-
-
 }
 
-
 /**
-* @brief DAC MSP De-Initialization
-* This function freeze the hardware resources used in this example
-* @param hdac: DAC handle pointer
-* @retval None
-*/
+ * @brief DAC MSP De-Initialization
+ * This function freeze the hardware resources used in this example
+ * @param hdac: DAC handle pointer
+ * @retval None
+ */
 void HAL_DAC_MspDeInit(DAC_HandleTypeDef *hdac) {
     if (hdac->Instance == DAC) {
         /* USER CODE BEGIN DAC_MspDeInit 0 */
@@ -148,23 +143,41 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef *hdac) {
 
         /* USER CODE END DAC_MspDeInit 1 */
     }
-
 }
 
-
+volatile bool dac_dma_started = false;
 void DAC_DMA_Start(DAC_HandleTypeDef *hdac) {
 
-    HAL_TIM_Base_Start(&htim6); // Start DAC DMA timer
+    if (!dac_dma_started) {
+        LOG("DAC_DMA_START\n");
+        HAL_StatusTypeDef ret = HAL_TIM_Base_Start(&htim6); // Start DAC DMA timer
 
-    // We are using a complex buffer of int16_t, so the length of the buffer is DSP_BLOCK*2 to fill the whole dac_buff
+        if (ret == HAL_OK) {
+            // We are using a complex buffer of int16_t, so the length of the buffer is DSP_BLOCK*2 to fill the whole dac_buff
 
-    HAL_DAC_Start_DualDMA(hdac, DAC_CHANNEL_12D, (uint32_t *) dac_buff, DSP_BLOCK * 2, DAC_ALIGN_12B_R);
+            ret = HAL_DAC_Start_DualDMA(hdac, DAC_CHANNEL_12D, (uint32_t *)dac_buff, DSP_BLOCK * 2, DAC_ALIGN_12B_R);
 
+            if (ret != HAL_OK) {
+                LOG("HAL_DAC_Start_DualDMA ERROR!!\n");
+            } else {
+                dac_dma_started = true;
+            }
+        } else {
+            LOG("HAL_TIM_Base_Start ERROR!!\n");
+        }
+    } else {
+        LOG("DAC_DMA_START: Did nothing\n");
+    }
 }
 
 void DAC_DMA_Stop(DAC_HandleTypeDef *hdac) {
-
-    HAL_TIM_Base_Stop(&htim6); // Start DAC DMA timer
-    HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
-    HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_2);
+    if (dac_dma_started) {
+        LOG("DAC_DMA_STOP\n");
+        HAL_TIM_Base_Stop(&htim6); // Start DAC DMA timer
+        HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
+        HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_2);
+        dac_dma_started = false;
+    } else {
+        LOG("DAC_DMA_STOP: Did nothing\n");
+    }
 }

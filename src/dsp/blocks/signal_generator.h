@@ -39,8 +39,6 @@ class SignalGenerator : public Output<complex_t> {
   protected:
     adc_type get_sample(uint32_t phase);
 
-    // All 32 bit values are fixed point 8/24
-
     uint32_t tone_delta{0};
 
     // FM phase
@@ -60,6 +58,6 @@ class SignalGenerator : public Output<complex_t> {
     // uint32_t sphase{0};
 };
 
-extern int8_t sine_table_i8[LUT_SIZE];
+extern const int8_t sine_table_i8[LUT_SIZE];
 
 #endif // TRX_FRONTEND_SIGNAL_GENERATOR_H

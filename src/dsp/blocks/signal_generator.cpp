@@ -6,7 +6,7 @@
 #include "config.h"
 #include "blocks_common.h"
 
-static const int8_t sine_table_i8[LUT_SIZE] = {
+const int8_t sine_table_i8[LUT_SIZE] = {
     0,    2,    5,    8,    12,   15,   18,   21,   24,   27,   30,   33,   36,   39,   42,   45,   48,   51,   54,   57,   59,   62,   65,   67,   70,   73,
     75,   78,   80,   83,   85,   87,   90,   92,   94,   96,   98,   100,  102,  104,  105,  107,  109,  110,  112,  113,  115,  116,  117,  118,  120,  121,
     121,  122,  123,  124,  125,  125,  126,  126,  126,  127,  127,  127,  127,  127,  127,  127,  126,  126,  126,  125,  125,  124,  123,  122,  121,  121,
@@ -18,7 +18,9 @@ static const int8_t sine_table_i8[LUT_SIZE] = {
     -118, -117, -116, -114, -113, -111, -110, -108, -106, -105, -103, -101, -99,  -97,  -95,  -93,  -91,  -88,  -86,  -84,  -81,  -79,  -76,  -74,  -71,  -68,
     -66,  -63,  -60,  -58,  -55,  -52,  -49,  -46,  -43,  -40,  -37,  -34,  -31,  -28,  -25,  -22,  -19,  -16,  -13,  -9,   -6,   -3};
 
-void SignalGenerator::init() { tone_delta = (uint32_t)(((float)(LUT_SIZE * frequency) / (float)sample_rate) * (1 << 24)); }
+void SignalGenerator::init() {
+    tone_delta = (uint32_t)(((float)(LUT_SIZE * frequency) / (float)sample_rate) * (1 << 24));
+}
 
 adc_type SignalGenerator::get_sample(uint32_t phase) {
     int8_t a;

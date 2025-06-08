@@ -21,7 +21,7 @@ uint8_t cat_enqueue_command(char *buf, uint16_t len) {
         command.size += len;
 
         if ((uint8_t)buf[len - 1] == CAT_STOP_BYTE) { // Last byte received
-            ret = usb_rx_fifo.writeBlock((char *)&command, CAT_COMMAND_SIZE);
+            ret = usb_rx_fifo.write_block((char *)&command, CAT_COMMAND_SIZE);
             command.size = 0;
         }
     } else {

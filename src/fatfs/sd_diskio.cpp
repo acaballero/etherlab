@@ -389,25 +389,25 @@ DRESULT SD_write_dma(BYTE lun, const BYTE *buff, DWORD sector, UINT count) {
         SCB_CleanDCache_by_Addr((uint32_t *)alignedAddr, count * BLOCKSIZE + ((uint32_t)buff - alignedAddr));
 #endif
 
-        // DEBUGPRINT("SD:W:DMA(%u,%u,%d)\n",buff,sector,count);
+        // LOG("SD:W:DMA(%u,%u,%d)\n",buff,sector,count);
         // GPIOD->BSRR |= GPIO_PIN_7;
         uint32_t intmask = __get_BASEPRI();
         __set_BASEPRI(1);
         if (BSP_SD_WriteBlocks_DMA((uint32_t *)buff, (uint32_t)(sector), count) == MSD_OK) {
             __set_BASEPRI(intmask);
             /* Wait that writing process is completed or a timeout occurs */
-            // DEBUGPRINT("SD_write_dma: Waiting for DMA callback\n",0);
+            // LOG("SD_write_dma: Waiting for DMA callback\n",0);
             timeout = HAL_GetTick();
             while ((WriteStatus == 0) && ((HAL_GetTick() - timeout) < SD_TIMEOUT)) {
             }
             /* in case of a timeout return error */
             if (WriteStatus == 0) {
                 res = RES_ERROR;
-                // DEBUGPRINT("[!] SD_write_dma: DMA callback timeout\n",0);
+                // LOG("[!] SD_write_dma: DMA callback timeout\n",0);
             } else {
                 WriteStatus = 0;
                 timeout = HAL_GetTick();
-                // DEBUGPRINT("SD_write_dma: Ok. Getting card state\n",0);
+                // LOG("SD_write_dma: Ok. Getting card state\n",0);
                 while ((HAL_GetTick() - timeout) < SD_TIMEOUT) {
                     if (BSP_SD_GetCardState() == SD_TRANSFER_OK) {
                         res = RES_OK;
@@ -416,7 +416,7 @@ DRESULT SD_write_dma(BYTE lun, const BYTE *buff, DWORD sector, UINT count) {
                 }
             }
         } else {
-            // DEBUGPRINT("[!] SD_write_dma: BSP_SD_WriteBlocks_DMA returned ERROR\n", 0);
+            // LOG("[!] SD_write_dma: BSP_SD_WriteBlocks_DMA returned ERROR\n", 0);
         }
         // GPIOD->BSRR |= GPIO_PIN_7 << 16;
 #if defined(ENABLE_SCRATCH_BUFFER)
@@ -535,11 +535,11 @@ void BSP_SD_ReadCpltCallback(void) {
   or both could be defined, activate the callbacks below when suitable and needed
 ==============================================================================================*/
 void BSP_SD_AbortCallback(void) {
-    // DEBUGPRINT("BSP_SD_AbortCallback\n", NULL);
+    // LOG("BSP_SD_AbortCallback\n", NULL);
 }
 
 void BSP_SD_ErrorCallback(void) {
-    // DEBUGPRINT("BSP_SD_ErrorCallback\n", NULL);
+    // LOG("BSP_SD_ErrorCallback\n", NULL);
 }
 
 /* USER CODE BEGIN lastSection */

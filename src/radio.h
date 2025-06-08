@@ -128,7 +128,7 @@ extern os::periodic_task task;
 bool is_freq_inverted();
 bool is_filter_allowed(IF_FILTER);
 uint32_t get_bandwidth_hz();
-
+extern const char *modeNames[];
 #ifdef __cplusplus
 }
 #endif

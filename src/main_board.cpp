@@ -22,6 +22,7 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "dsp/dsp_tasks.h"
+#include <sys/_stdint.h>
 
 namespace main_board {
 
@@ -36,8 +37,8 @@ ShiftReg PowControlShiftReg(&powCtrlDataPin, &powCtrlClkPin, &powCtrlSetPin);
 
 GPIO_PinState mute = GPIO_PIN_RESET;
 
-Signal mode_signal;
-Signal if_filter_signal;
+Signal mode_signal{"mode_signal"};
+Signal if_filter_signal{"if_filter_signal"};
 
 st_modulation_mode modes[] = {{CW, false}};
 
@@ -218,6 +219,7 @@ void toggle_dsp() {
 
 bool _setMode(MODE mode, bool force) {
 
+    LOG("_setMode: mode: %s,%b\n", radio::modeNames[mode], force);
     bool changed = false;
 
     if (force || mode != config.mode) {
@@ -394,16 +396,19 @@ void update() {
 }
 
 bool setMode(MODE mode) {
+    // LOG("------ [BEGIN] setMode %s ------\n", radio::modeNames[mode]);
+    bool b = false;
     if (_setMode(mode, false)) {
         setModulationMode(config.modulation, true);
-        return true;
+        b = true;
     }
-
-    return false;
+    // LOG("------ [END] setMode %s: %d ------\n", radio::modeNames[mode], b);
+    return b;
 }
 
 void setMute(GPIO_PinState muteState) {
     if (mute != muteState) {
+        // LOG("setMute: %d\n", static_cast<int>(muteState));
         mute = muteState;
         if (mutePin.set(muteState) != HAL_OK) {
             status::handleError(status::ST_ERROR, "Error setting mute");

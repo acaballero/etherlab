@@ -183,7 +183,7 @@ void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
         cmx973State.rxc = (cmx973State.rxc & ~CMX973_RXC_VGBMSK) | (vgb << 2); // VGB gain
         uint8_t ret = cmx973_update();
         if (ret) {
-            // DEBUGPRINT("Error updating CMX973: %d", ret)
+            // LOG("Error updating CMX973: %d", ret)
         }
 
         cmx973_input_ip3 = calc_max_input_dbm();
@@ -289,7 +289,7 @@ void if_direction(RF_DIRECTION direction) {
 
     uint8_t ret = cmx973_update();
     if (ret) {
-        // DEBUGPRINT("Error updating CMX973: %d", ret)
+        // LOG("Error updating CMX973: %d", ret)
     }
 }
 
@@ -315,7 +315,7 @@ void if_setup() {
     bool b = si5351.init(Si5351_I2C_HANDLE, SI5351_CRYSTAL_LOAD_10PF, SI5351_XTAL_FREQ, config.f_correction);
 
     if (!b) {
-        // DEBUGPRINT("Error initalizing Si5351\n", 0);
+        // LOG("Error initalizing Si5351\n", 0);
     }
 
     /*** TEST ***/
@@ -374,7 +374,11 @@ void if_setup() {
 
 bool radio_config(st_radio_config radioConfig) {
 
+    // LOG("---START--- radio_config: ");
+
     if (radioConfig.direction == RF_DIRECTION_TX) {
+
+        // LOG("DIG TX\n");
 
         bool ret = main_board::setMode(DIGITAL_TX);
 
@@ -395,6 +399,7 @@ bool radio_config(st_radio_config radioConfig) {
 
         // Enable DAC for IF modulation
         MX_DAC_Init();
+        // LOG("Setting DAC_TIMER for DIGITAL_TX %d\n", radioConfig.sample_freq);
         set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq);
         DAC_DMA_Start(&hdac1);
 
@@ -405,6 +410,8 @@ bool radio_config(st_radio_config radioConfig) {
     } else {
 
         if (radioConfig.mode == ANALOG) {
+
+            // LOG("ANA RX\n");
 
             main_board::setMode(ANALOG_RX);
 
@@ -420,6 +427,8 @@ bool radio_config(st_radio_config radioConfig) {
             HAL_DAC_DeInit(&hdac1);
 
         } else { // DSP
+
+            // LOG("DIG RX\n");
 
             main_board::setMode(DIGITAL_RX);
 
@@ -437,6 +446,8 @@ bool radio_config(st_radio_config radioConfig) {
 
             int ratio = (float)(fft_params.sample_freq / radioConfig.sample_freq) * ((float)ADC_DMA_TIMER_CLOCK_HZ / (float)DAC_TIMER_CLOCK_HZ);
             uint32_t adc_timer_real_freq = ADC_DMA_TIMER_CLOCK_HZ / ((ADC_DMA_TIMER->PSC + 1) * (ADC_DMA_TIMER->ARR + 1));
+
+            // LOG("Setting DAC_TIMER for DIGITAL_RX %d\n", adc_timer_real_freq / ratio);
             set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, adc_timer_real_freq / ratio);
 
             // TODO: Use only one DAC instead of two in quadrature
@@ -448,6 +459,7 @@ bool radio_config(st_radio_config radioConfig) {
     // We need to set the frequency for the IF value to be calculated
     radio::update_freq();
 
+    // LOG("---END--- radio_config: %d\n", (int)radioConfig.direction);
     return true;
 }
 

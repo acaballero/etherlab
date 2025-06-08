@@ -107,9 +107,10 @@ void ReceiveTaskBase::work() {
             output_stream.feed(processed / status.decimation_factor);
 
         } else {
-            if (free < DSP_FIFO_BLOCK_BYTES) {
+            if (free < (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
                 status.fifo_overruns++;
-            } else {
+            }
+            if (av < DSP_FIFO_BLOCK_BYTES) {
                 status.fifo_underruns++;
             }
         }
@@ -207,7 +208,7 @@ bool ReceiveTaskBase::start() {
         status.sample_rate /= 2;
     }
 
-    status.direction = DSP_DIRECTION_IN;
+    status.direction = DSP_DIRECTION_INOUT;
 
     MODULATION_MODE mod = get_modulation_mode();
 

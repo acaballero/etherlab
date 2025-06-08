@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "Display_afb.h"
 #include "dsp/dsp_common.h"
+#include "hw/stm32f4xx/rtc.h"
 #include "input/inputEvent.h"
 #include "ips_font.h"
 #include "stm32f4xx_hal.h"
@@ -17,17 +18,22 @@
 #include "fatfs/fatfs.h"
 #include "main_board.h"
 #include "utils.hpp"
+#include "status.h"
 
 TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
     sdcard_signal.add(this, TitleBarWidgetInner::signal_static_callback);
     battery::battery_signal.add(this, TitleBarWidgetInner::signal_static_callback);
-    power_amp::temp_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    power_amp::temp_signal.add(this, [this](void *, void *) {
+        set_dirty();
+    });
     rf_coupler::rf_coupler_signal.add(this, TitleBarWidgetInner::signal_static_callback);
     rtc_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    main_board::mode_signal.add(this, TitleBarWidgetInner::signal_static_callback);
 }
 
 void TitleBarWidgetInner::paint_callback() {
 
+    display->set_trim_enabled(true);
     FontDef *font = (FontDef *)&Font_Tiny8x8;
 
     uint16_t color = C565_BLACK;
@@ -193,7 +199,6 @@ void TitleBarWidgetInner::before_paint() {
 }
 
 void TitleBarWidgetInner::on_info_changed_signal(void *) {
-    ;
     this->set_dirty();
 }
 
@@ -215,7 +220,12 @@ void TitleBarWidget::init() {
         ((Button *)btn)->set_fg(C565_WHITE);
     }
 
-    // Update every rtc update event
+    // Update every mode update event
+    main_board::mode_signal.add(this, [this](void *, void *) {
+        set_dirty();
+    });
+
+    // And every clock tick, so the DSP status label is regularly updated
     rtc_signal.add(this, [this](void *, void *) {
         set_dirty();
     });
@@ -229,17 +239,19 @@ void TitleBarWidget::before_paint() {
 
         color = C565_GREY_LIGHT;
 
+        btnDSP.set_bg(ISTX ? C565_RED : C565_VIOLET);
+
         if (ISANALOG) {
-
             btnDSP.set_text("ANA");
-
         } else {
-
             float drop_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->drop_rate() : 0;
             float starve_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->starve_rate() : 0;
             bool error = true;
 
-            if (!dsp::dsp_status || dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
+            if (!dsp::dsp_status) {
+                color = C565_GREY_DARKER;
+                error = false;
+            } else if (dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
                 color = C565_RED;
             } else if (drop_freq * 100 > 0.1 || starve_freq * 100 > 0.1) {
                 color = C565_YELLOW;

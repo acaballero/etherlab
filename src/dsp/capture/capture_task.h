@@ -24,8 +24,7 @@
 
 class CaptureTask : public Task {
   public:
-    CaptureTask(void (*onSucess)(), void (*onError)(DSP_ERROR));
-
+    using Task::Task;
     void work() override;
 
     bool start() override;

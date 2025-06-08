@@ -32,6 +32,8 @@ extern Signal aprs_signal;
 
 class APRSTask : public ReceiveTaskBase {
   public:
+    using ReceiveTaskBase::ReceiveTaskBase;
+
   private:
     static constexpr size_t baudrate = 1200;
     static constexpr size_t buffer_size = 256;

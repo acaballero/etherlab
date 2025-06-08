@@ -28,7 +28,7 @@ void DspCaptureProcessor::work(const buffer_t<complex_t> *buffer) {
     dc_blocker_q.filter(buff, this->status.n_channels, 1);
 #endif
 
-    FIFO_ERROR err = input_stream.writeBlock((char *)buff.p, this->status.decimated_block_size_bytes);
+    FIFO_ERROR err = input_stream.write_block((char *)buff.p, this->status.decimated_block_size_bytes);
 
     if (err != FIFO_ERROR_NONE) {
 

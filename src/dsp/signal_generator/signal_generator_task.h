@@ -14,7 +14,7 @@
 class SignalGeneratorTask : public Task {
 
   public:
-    SignalGeneratorTask(void (*onSucess)(), void (*onError)(DSP_ERROR));
+    using Task::Task;
 
     void work() override;
 

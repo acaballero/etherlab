@@ -209,7 +209,7 @@ int main() {
 
         os::task_manager.run();
 
-        watchdog();
+        // watchdog();
 
         if (!dsptested) {
 #if DEBUG_SD_CARD

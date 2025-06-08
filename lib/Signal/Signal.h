@@ -3,13 +3,20 @@
 
 #include <functional>
 #include <stdio.h>
-
+#include "printf.h"
 #define MAX_LISTENERS 3
 
 typedef uint32_t SignalToken;
 typedef std::function<void(void *caller, void *params)> Callback;
 
 struct Signal {
+
+    std::string name;
+
+    Signal(){};
+    Signal(std::string name) {
+        this->name = name;
+    }
 
     SignalToken add(void *caller, Callback callback) {
 
@@ -47,6 +54,11 @@ struct Signal {
     }
 
     void emit(void *args) {
+
+        if (name.size()) {
+            printf_("Triggering signal %s: next_token: %d\n", name.c_str(), next_token);
+        }
+
         int i = 0;
         while (listeners[i].token > 0) {
             listeners[i].callback(listeners[i].caller, args);
