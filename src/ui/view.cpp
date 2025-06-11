@@ -196,6 +196,17 @@ void View::set_area() {
     }
 }
 
+void View::to_top(Widget &widget) {
+    int max_z_index = 0;
+    for (auto w : children()) {
+        if (w->get_z_index() > max_z_index) {
+            max_z_index = w->get_z_index();
+        }
+    }
+    widget.set_z_index(max_z_index + 1);
+    widget.set_visible(true);
+}
+
 const std::vector<Widget *> &View::children() const {
     return children_;
 }

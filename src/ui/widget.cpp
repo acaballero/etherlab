@@ -8,13 +8,21 @@
 
 const std::vector<Widget *> Widget::no_children{};
 
-Point Widget::screen_pos() { return screen_rect().location(); }
+Point Widget::screen_pos() {
+    return screen_rect().location();
+}
 
-Size Widget::size() const { return _parent_rect.size(); }
+Size Widget::size() const {
+    return _parent_rect.size();
+}
 
-Rect Widget::screen_rect() const { return parent() ? (parent_rect() + parent()->screen_pos()) : (parent_rect()); }
+Rect Widget::screen_rect() const {
+    return parent() ? (parent_rect() + parent()->screen_pos()) : (parent_rect());
+}
 
-Rect Widget::parent_rect() const { return _parent_rect; }
+Rect Widget::parent_rect() const {
+    return _parent_rect;
+}
 
 void Widget::set_parent_rect(const Rect new_parent_rect) {
 
@@ -30,7 +38,9 @@ void Widget::set_parent_rect(const Rect new_parent_rect) {
     set_dirty();
 }
 
-Widget *Widget::parent() const { return parent_; }
+Widget *Widget::parent() const {
+    return parent_;
+}
 
 void Widget::set_parent(Widget *const new_parent) {
     if (new_parent == parent_) {
@@ -59,7 +69,9 @@ void Widget::set_parent(Widget *const new_parent) {
     set_dirty();
 }
 
-char *Widget::get_name() { return name; }
+char *Widget::get_name() {
+    return name;
+}
 
 void Widget::set_dirty() {
     if (!flags.dirty) {
@@ -68,7 +80,9 @@ void Widget::set_dirty() {
     }
 }
 
-bool Widget::dirty() const { return flags.dirty; }
+bool Widget::dirty() const {
+    return flags.dirty;
+}
 
 void Widget::set_clean() {
 
@@ -154,9 +168,13 @@ bool Widget::on_input(const st_inputEvent event) {
     return consumed;
 }
 
-const std::vector<Widget *> &Widget::children() const { return no_children; }
+const std::vector<Widget *> &Widget::children() const {
+    return no_children;
+}
 
-bool Widget::is_focused() const { return this->flags.focus; }
+bool Widget::is_focused() const {
+    return this->flags.focus;
+}
 
 void Widget::focus(Widget *widget) {
 
@@ -219,9 +237,13 @@ Widget *Widget::focused_widget() const {
     return nullptr;
 }
 
-bool Widget::visible() { return this->flags.visible; }
+bool Widget::visible() {
+    return this->flags.visible;
+}
 
-bool Widget::can_be_seen() { return this->flags.visible && !this->flags.hidden; }
+bool Widget::can_be_seen() {
+    return this->flags.visible && !this->flags.hidden;
+}
 
 void Widget::set_visible(bool v) {
 
@@ -252,9 +274,13 @@ void Widget::set_visible(bool v) {
     }
 }
 
-Display *Widget::get_display() const { return display; }
+Display *Widget::get_display() const {
+    return display;
+}
 
-void Widget::set_display(Display *display) { Widget::display = display; }
+void Widget::set_display(Display *display) {
+    Widget::display = display;
+}
 
 void Widget::paint(Area *area) {
 
@@ -363,9 +389,13 @@ void Widget::refresh_fps() {
 #endif
 }
 
-void Widget::set_font(FontDef *font) { Widget::font = font; }
+void Widget::set_font(FontDef *font) {
+    Widget::font = font;
+}
 
-void Widget::set_aling(Align a) { align = a; }
+void Widget::set_aling(Align a) {
+    align = a;
+}
 
 void Widget::set_show_fps(bool b) {
     this->show_fps = b;
@@ -379,21 +409,33 @@ void Widget::set_area() {
     area = {{(int16_t)r.left(), (int16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), this->show_fps, this->fps};
 }
 
-uint8_t Widget::get_z_index() const { return z_index + (parent() ? parent()->get_z_index() : 0); }
+uint16_t Widget::get_z_index() const {
+    return z_index + (parent() ? parent()->get_z_index() : 0);
+}
 
-void Widget::set_z_index(uint8_t index) {
+void Widget::set_z_index(uint16_t index) {
     Widget::z_index = index;
     if (parent()) {
         parent()->on_child_update(this);
     }
 }
 
-void Widget::set_name(const char *str) { snprintf(name, sizeof(name), str); }
+void Widget::set_name(const char *str) {
+    snprintf(name, sizeof(name), str);
+}
 
-bool Widget::active() { return flags.active; }
+bool Widget::active() {
+    return flags.active;
+}
 
-void Widget::set_active(bool v) { flags.active = v; }
+void Widget::set_active(bool v) {
+    flags.active = v;
+}
 
-bool Widget::enabled() { return flags.enabled; }
+bool Widget::enabled() {
+    return flags.enabled;
+}
 
-void Widget::set_enabled(bool v) { flags.enabled = v; }
+void Widget::set_enabled(bool v) {
+    flags.enabled = v;
+}

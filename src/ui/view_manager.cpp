@@ -3,6 +3,7 @@
 //
 #include "view_manager.h"
 #include "Display_afb.h"
+#include "os/periodic_task.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
 #include "ui/keyboard_view.h"
@@ -100,15 +101,21 @@ void view_loop() {
 
 std::unique_ptr<dsp_ui::APRSView> view;
 void open_aprs() {
+
+    view.reset();
+
     view = std::make_unique<dsp_ui::APRSView>(Rect{0, MENU_START_Y - 50, DISPLAY_X_PIXELS, METERS_HEIGHT + 80});
-    view->on_hide_fn = []() {
-        view_manager::mainView.remove_child(view.get());
+
+    auto *view_ptr = view.get();
+    view->on_hide_fn = [view_ptr]() {
+        view_manager::mainView.remove_child(view_ptr);
         view.reset();
         Menu::menu_exit();
     };
 
     view->set_visible(true);
     view->set_z_index(200);
+    view->set_focus(true);
     view_manager::mainView.add_child(view.get());
 }
 

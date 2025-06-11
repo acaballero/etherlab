@@ -31,11 +31,10 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
     float32_t *audio_sample_p = audio.p;
 
     for (size_t c = 0; c < audio.count; c++) {
-        const int32_t sample_int = *audio_sample_p; //* 32768.0f;
+        const int32_t sample_int = *audio_sample_p;
         int32_t current_sample = __SSAT(sample_int, 16);
 
         //   current_sample /= 128;
-
         // Delay line put
         delay_line[delay_line_index & delay_line_ix_mask] = current_sample;
 
@@ -70,16 +69,16 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         if (phase >= 0x10000) { // 65536
 
             // DEBUG
-            // static uint32_t i = 0;
-            // if (i++ % 30000 == 0) {
-            //     std::string str = std::string("EADB0") + "ABCDEFGHIJ"[HAL_GetTick() % 7];
-            //     if (HAL_GetTick() % 200 > 100) {
-            //         aprs_packet.init_test_packet(str, "APRS", "INFO text containing several lines that has to be wrapped up");
-            //     } else {
-            //         aprs_packet.init_test_packet(str, "APRS", "SHORT info text");
-            //     }
-            //     aprs_signal.emit(&aprs_packet);
-            // }
+            static uint32_t i = 0;
+            if (i++ % 3000 == 0) {
+                std::string str = std::string("EADB0") + "ABCDEFGHIJ"[HAL_GetTick() % 7];
+                if (HAL_GetTick() % 200 > 100) {
+                    aprs_packet.init_test_packet(str, "APRS", "INFO text containing several lines that has to be wrapped up");
+                } else {
+                    aprs_packet.init_test_packet(str, "APRS", "SHORT info text");
+                }
+                aprs_signal.emit(&aprs_packet);
+            }
 
             // for (int j = 31; j >= 0; j--) {
             //     printf_("%d", (sample_bits >> j) & 1);

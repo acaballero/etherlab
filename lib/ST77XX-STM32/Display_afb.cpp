@@ -19,8 +19,8 @@ static const uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * 12;
 
 uint16_t b565_buffer[b565_buffer_size] __attribute__((aligned(4)));
 
-uint16_t palette16[16] = {C565_WHITE, C565_RED,  C565_GOLD,       C565_GREY_DARKER, C565_OLIVE, C565_PURPLE, C565_GREY_DARK, C565_GREY_LIGHT,
-                          C565_PINK,  C565_NAVY, C565_GREEN_DARK, C565_CYAN_DARK,   C565_BLUE,  C565_GREEN,  C565_CYAN,      C565_RED};
+uint16_t palette16[16] = {C565_WHITE, C565_RED,  C565_GOLD,       C565_GREY_DARKER, C565_BLUE, C565_PURPLE, C565_GREY_DARK, C565_GREY_LIGHT,
+                          C565_PINK,  C565_NAVY, C565_GREEN_DARK, C565_CYAN_DARK,   C565_BLUE, C565_GREEN,  C565_CYAN,      C565_RED};
 
 Display::Display(SPI_HandleTypeDef *spi_port) {
     this->spi_port = spi_port;

@@ -48,7 +48,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->optionButtonsView.set_z_index(30);
     this->numberEditView.set_visible(false);
     this->numberEditView.set_z_index(30);
-    this->msg_w.set_z_index(100);
+    this->msg_w.set_z_index(1000);
     this->msg_w.set_visible(false);
     this->msg_w.get_display()->setPadding(8, 8);
     this->msg_w.get_display()->setVerticalLineSpacing(1);
@@ -154,11 +154,15 @@ bool MainView::on_input(const st_inputEvent event) {
 
             consumed = menu_w.on_input(event); // First try to consume it by the menu
 
-            if (!consumed) { // Now let see if the status bar can consume it
-                consumed = status_w.on_input(event);
+            if (consumed) {
+                to_top(menu_w);
             }
         } else if (!event.is_touch()) {
             consumed = View::on_input(event);
+        }
+
+        if (!consumed) { // Let's see if the status bar can consume it
+            consumed = status_w.on_input(event);
         }
     }
 

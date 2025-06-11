@@ -9,6 +9,7 @@
 #include "printf.h"
 #include "radio.h"
 #include "ui/menu.h"
+#include "ui/widget.h"
 #include <cstddef>
 #include <functional>
 
@@ -78,7 +79,10 @@ void StatusWidget::set_action(uint8_t index, Menu::menu_action_st &menu_action) 
     button->action = [&menu_action](Button &, st_inputEvent) {
         menu_action.action();
     };
-    button->set_text(menu_action.name);
+    button->set_bg(menu_action.bg_color);
+    button->set_fg(menu_action.fg_color);
+    button->set_text(menu_action.name.c_str());
+    button->set_aling(ALIGN_CENTER);
     button->set_visible(true);
 }
 
@@ -212,10 +216,10 @@ void StatusWidget::before_paint() {
         default_buttons[FRONTEND].set_text(frontend());
         default_buttons[AGC].set_text(agc_alc());
 
-        for (Widget *btn : View::children()) {
-            ((Button *)btn)->set_bg(bg_color);
-            btn->set_aling(ALIGN_CENTER);
-            btn->set_dirty();
+        for (auto &btn : default_buttons) {
+            btn.set_bg(bg_color);
+            btn.set_aling(ALIGN_CENTER);
+            btn.set_dirty();
         }
     }
 }
@@ -254,22 +258,22 @@ bool StatusWidget::on_input(const st_inputEvent e) {
                     main_board::update();
                     break;
                 case FPANEL_DISPLAY_BUTTON_5: // FILTER 1
-                    if (buttons[3].visible()) {
-                        buttons[3].action(buttons[0], e);
+                    if (buttons[4].visible()) {
+                        buttons[4].action(buttons[0], e);
                     } else {
                         Menu::open(Menu::filterMenu);
                     }
                     break;
                 case FPANEL_DISPLAY_BUTTON_6: // FILTER 2
-                    if (buttons[4].visible()) {
-                        buttons[4].action(buttons[0], e);
+                    if (buttons[5].visible()) {
+                        buttons[5].action(buttons[0], e);
                     } else {
                         Menu::open(Menu::IFFilterMenu);
                     }
                     break;
                 case FPANEL_DISPLAY_BUTTON_4: // BAND
-                    if (buttons[0].visible()) {
-                        buttons[0].action(buttons[0], e);
+                    if (buttons[3].visible()) {
+                        buttons[3].action(buttons[0], e);
                     } else {
                         Menu::open(Menu::bandMenu);
                     }

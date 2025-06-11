@@ -74,6 +74,7 @@
 #define C565_BG C565_GREY_LIGHT
 #define C565_BG_DISABLED C565_GREY_DARK
 #define C565_BG_FOCUS C565_WHITE
+#define C565_BG_ENABLED C565_WHITE
 
 extern uint16_t palette16[16];
 

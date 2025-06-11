@@ -28,7 +28,7 @@ extern complex_t dac_buff[DSP_BLOCK * 2];
 extern buffer_t<adc_type> dsp_temp_buf;
 
 //__attribute__((section(".fccmram"))) // Can't be in CCM RAM if DMA is used
-extern uint8_t dsp_output_fifo_buff[DSP_FIFO_SIZE];
+extern uint8_t dsp_output_fifo_buff[DSP_FIFO_SIZE / 2];
 extern uint8_t dsp_input_fifo_buff[DSP_FIFO_SIZE];
 
 // Half-DMA buffer wrappers

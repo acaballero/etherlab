@@ -30,7 +30,7 @@ class KeyboardView : public View {
         init();
     }
 
-    void (*on_changed)(char *){};
+    std::function<void(char *)> on_changed = nullptr;
 
     void on_focus() override;
 

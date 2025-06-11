@@ -107,9 +107,9 @@ class Widget : public Painter {
 
     void set_enabled(bool v);
 
-    uint8_t get_z_index() const;
+    uint16_t get_z_index() const;
 
-    void set_z_index(uint8_t z_index);
+    void set_z_index(uint16_t z_index);
 
     void set_font(FontDef *);
 
@@ -129,7 +129,7 @@ class Widget : public Painter {
 
     Rect _parent_rect;
 
-    uint8_t z_index = 0;
+    uint16_t z_index = 0;
 
     Display *display;
 

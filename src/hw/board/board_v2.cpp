@@ -132,7 +132,9 @@ bool if_freq(RF_DIRECTION direction, uint64_t freq) {
         si5351.output_enable(clk, true);
 
         // A shift is applied so the frequency of interest does not lie around DC to avoid DC leakage and flickr noise
-        freq += radio::get_dsp_frequency_shift();
+        if (!ISTX) {
+            freq += radio::get_dsp_frequency_shift();
+        }
 
         uint64_t f = freq * SI5351_FREQ_MULT * (div ? 2 : 4);
 

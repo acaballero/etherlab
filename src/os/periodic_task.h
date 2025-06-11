@@ -9,6 +9,7 @@
 #include "stdint.h"
 #include <functional>
 #include <hw/stm32.h>
+#include <sys/_stdint.h>
 
 namespace os {
 
@@ -35,6 +36,14 @@ class periodic_task {
     }
     void set_enabled(bool b);
 
+    void set_id(int id) {
+        this->id = id;
+    };
+
+    int get_id() {
+        return id;
+    };
+
     // Set next execution time
     void set_next(uint64_t ms);
 
@@ -49,6 +58,7 @@ class periodic_task {
     void run();
 
   private:
+    int id{0};
     // Period
     uint64_t _period_ms{0};
     // First execution time

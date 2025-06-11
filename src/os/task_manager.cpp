@@ -13,9 +13,19 @@
 #include <memory>
 
 namespace os {
-void TaskManager::add(periodic_task *t) {
-
+int TaskManager::add(periodic_task *t) {
+    t->set_id(++last_id);
     tasks.push_back(std::unique_ptr<periodic_task>(t));
+
+    return last_id;
+}
+
+bool TaskManager::remove(int task_id) {
+    auto it = std::remove_if(tasks.begin(), tasks.end(), [task_id](const std::unique_ptr<periodic_task> &item) {
+        return item->get_id() == task_id;
+    });
+
+    return remove(it->get());
 }
 
 bool TaskManager::remove(periodic_task *t) {

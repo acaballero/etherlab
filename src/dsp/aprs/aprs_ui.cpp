@@ -8,10 +8,12 @@
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
 #include "hw/stm32f4xx/rtc.h"
+#include "input/inputEvent.h"
 #include "ips_font.h"
 #include "main_board.h"
 #include "os/periodic_task.h"
 #include "os/task_manager.h"
+#include "radio.h"
 #include "status.h"
 #include "types.h"
 #include "ui/console_widget.h"
@@ -49,50 +51,131 @@ void APRSView::init() {
 
     previous_mode = config.mode;
 
-    start_rx();
+    radio::set_frequency(EU_APRS_FREQ);
 
-    // DEBUG
-    os::task_manager.add(&p);
-    // DEBUG
+    start_rx();
 }
 
+void APRSView::stop() {
+    menu_actions[0].name = "Resume";
+    paused = true;
+    actions_signal.emit(&actions);
+}
+void APRSView::resume() {
+    menu_actions[0].name = "Pause";
+    paused = false;
+    actions_signal.emit(&actions);
+}
+
+void APRSView::toggle_beacon() {
+    auto *p = new os::periodic_task{5000, [this]() {
+                                        send_packet("Beacon");
+                                    }};
+
+    if (!os::task_manager.remove(beacon_task_id)) {
+        menu_actions[2].bg_color = C565_BG_ENABLED;
+        menu_actions[2].fg_color = C565_GREEN;
+        beacon_task_id = os::task_manager.add(p);
+    } else {
+        menu_actions[2].fg_color = C565_TEXT_FG;
+        menu_actions[2].bg_color = C565_BG_DISABLED;
+    }
+
+    actions_signal.emit(&actions);
+}
 void APRSView::start_rx() {
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &receive_task}, nullptr);
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, nullptr);
     // To execute a task other than DSP_TASK_RECEIVE, setMode has to be called so
     main_board::setMode(DIGITAL_RX);
 }
 
+void APRSView::settings() {
+
+    view_manager::keyboardView.set_text("");
+    view_manager::keyboardView.set_label("Info");
+    view_manager::keyboardView.set_size(255);
+    view_manager::keyboardView.on_changed = [this](char *str) {
+        send_packet(std::string(str));
+    };
+    view_manager::push((View *)&view_manager::keyboardView);
+}
+
 void APRSView::exit() {
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, DSP_TASK_RECEIVE, &receive_task}, [this](st_dsp_status *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_status *status) {
         if (status->status == DSP_STATUS_STOPPED) {
+
+            os::task_manager.remove(beacon_task_id);
+
             aprs_signal.remove(aprs_signal_token);
+
+            MODE m = previous_mode;
+            os::task_manager.set_timeout(1, [m]() {
+                if (m == DIGITAL_RX) {
+                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE}, nullptr);
+                }
+                main_board::setMode(m);
+            });
+
+            // Clear specific bottom quick buttons
             actions_signal.emit(nullptr);
+
             set_visible(false);
-            main_board::setMode(previous_mode);
-            // DEBUG
-            os::task_manager.remove(&p);
-            // DEBIG
         }
     });
+}
+
+bool APRSView::on_input(const st_inputEvent e) {
+    bool consumed = true;
+
+    switch (e.type) {
+
+        case INPUT_EVENT_TYPE_BUTTON_PRESS:
+        case INPUT_EVENT_TYPE_BUTTON_DBL_PRESS:
+
+            switch (e.value) {
+                case KEY_BACK:
+                    exit();
+                    break;
+                default:
+                    consumed = false;
+            }
+            break;
+        case INPUT_EVENT_TYPE_BUTTON_RELEASE:
+
+            switch (e.value) {
+                case KEY_BACK:
+                    consumed = true;
+                    break;
+                default:
+                    consumed = false;
+            }
+
+            break;
+        default:
+            consumed = false;
+            break;
+    }
+
+    return consumed;
 }
 
 void APRSView::on_source_selected(APRSSource &source) {
 }
 
-void APRSView::before_paint(){
+void APRSView::before_paint() {
+}
 
-};
-
-void APRSView::send_packet() {
+void APRSView::send_packet(std::string info) {
 
     uint16_t buffer[256];
-    aprs::build_frame(config.callsign, 0, "APRS", 0, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!!", buffer);
+    trim(config.callsign);
+    aprs::build_frame(config.callsign, 0, "rig   ", 0, ":" + info, buffer);
 
-    tx_task.configure(1200, 2200, 1, 8, 10000, 200, 100); // APRS uses fixed 10k bandwidth
-    tx_task.set_data(buffer);
+    aprs_tx_task.configure(1200, 2200, 1, 8, 10000, 200, 100); // APRS uses fixed 10k bandwidth
+    aprs_tx_task.set_data(buffer);
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &tx_task}, [this](st_dsp_status *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &aprs_tx_task}, [this](st_dsp_status *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->fifo_underruns) {
                 status::handleError(status::ST_ERROR, "FIFO underruns");
@@ -107,6 +190,10 @@ void APRSView::send_packet() {
 
 void APRSView::on_packet(APRSPacket *packet) {
 
+    if (paused) {
+        return;
+    }
+
     int ix = table_view.on_packet(packet);
 
     std::string str_console = {ConsoleWidget::color_mark};
@@ -114,7 +201,7 @@ void APRSView::on_packet(APRSPacket *packet) {
     std::string stream_text;
     packet->get_stream_text(stream_text);
     str_console += (char)(ix + 1); // Colors index starts in 1
-    str_console += stream_text + "\n\n";
+    str_console += stream_text + "\n";
 
     console.write(str_console);
 }
@@ -160,16 +247,14 @@ void APRSTableWidget::paint_callback() {
 
 void APRSTableWidget::before_paint(){};
 
-bool APRSTableWidget::on_touch(const st_inputEvent) {
-    return true;
+bool APRSTableWidget::on_touch(const st_inputEvent e) {
 
-    //   recent_entries_view.on_select = [this](const APRSRecentEntry &entry) {
-    //     this->on_show_detail(entry);
-    //
-    //  if (on_select) {
-    //    on_select(*entry);
-    //}
-    //};
+    size_t ix = ((e.point - screen_pos()).y() - 5) / (font->height + 2);
+    if (ix >= 0 && ix < sources.size()) {
+        on_select(sources[ix]);
+    }
+
+    return true;
 }
 
 void APRSTableWidget::init() {

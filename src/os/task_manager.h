@@ -17,14 +17,15 @@ class TaskManager {
 
   public:
     TaskManager(){};
-
-    void add(periodic_task *t);
+    int add(periodic_task *t);
     bool remove(periodic_task *t);
+    bool remove(int task_id);
     void run();
     periodic_task *set_timeout(uint32_t delay, callback_t c);
 
   private:
     std::vector<std::unique_ptr<periodic_task>> tasks{};
+    int last_id = 0;
 };
 
 extern TaskManager task_manager;

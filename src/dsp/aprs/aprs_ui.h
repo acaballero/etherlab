@@ -17,15 +17,19 @@
 #include "dsp/dsp.h"
 #include "main_board.h"
 #include "menuBase.h"
+#include "os/periodic_task.h"
 #include "ring_buffer.hpp"
 #include "types.h"
+#include "ui/ui_types.h"
 #include "ui/view.h"
 #include "ui/button_widget.h"
 #include "ui/console_widget.h"
+#include "os/task_manager.h"
 
 namespace dsp_ui {
 
 #define APRS_DEBUG 1
+#define EU_APRS_FREQ 144800000
 
 using namespace dsp;
 
@@ -83,7 +87,7 @@ class APRSView : public View {
     }
 
     void on_packet(APRSPacket *packet);
-    void send_packet();
+    void send_packet(std::string info);
 
   private:
     static constexpr int title_height = 20;
@@ -91,6 +95,7 @@ class APRSView : public View {
     static constexpr int max_sources = 7;
     static constexpr int table_width = DISPLAY_X_PIXELS / 2 - 60;
     static constexpr int console_width = DISPLAY_X_PIXELS - table_width;
+
     void on_source_selected(APRSSource &source);
     bool reset_console = false;
 
@@ -99,9 +104,26 @@ class APRSView : public View {
     APRSTableWidget table_view{{0, title_height + panel_sep, table_width - panel_sep / 2, 90 + title_height}, max_sources};
     ConsoleWidget console{{table_width + panel_sep / 2, title_height + panel_sep, console_width - panel_sep, 90 + title_height}, &lcd};
 
-    Menu::menu_action_st menu_actions[2] = {{"TX",
+    Menu::menu_action_st menu_actions[5] = {{"Pause",
                                              [this]() {
-                                                 send_packet();
+                                                 if (!paused) {
+                                                     stop();
+                                                 } else {
+                                                     resume();
+                                                 }
+                                             }},
+                                            {"Send",
+                                             [this]() {
+                                                 send_packet("Beacon");
+                                             }},
+                                            {"Beacon",
+                                             [this]() {
+                                                 toggle_beacon();
+                                             },
+                                             C565_TEXT_FG, C565_BG_DISABLED},
+                                            {"Text",
+                                             [this]() {
+                                                 settings();
                                              }},
                                             {"Exit", [this]() {
                                                  exit();
@@ -110,19 +132,24 @@ class APRSView : public View {
     Menu::menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(Menu::menu_action_st)};
 
     SignalToken aprs_signal_token;
-    APRSTask receive_task{dspSuccess, dspError};
-    AFSKTXTask tx_task{dspSuccess, dspError};
+    APRSTask aprs_task{dspSuccess, dspError};
+    AFSKTXTask aprs_tx_task{dspSuccess, dspError};
+    APRSSource current_source;
 
-    os::periodic_task p = {5000, [this]() {
-                               send_packet();
-                           }};
+    int beacon_task_id{0};
 
     MODE previous_mode;
 
+    bool on_input(const st_inputEvent event) override;
     void before_paint() override;
     void init();
+    void stop();
+    void resume();
     void exit();
+    void settings();
     void start_rx();
+    void toggle_beacon();
+    bool paused{false};
 };
 
 } // namespace dsp_ui

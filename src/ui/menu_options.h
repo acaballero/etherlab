@@ -25,7 +25,7 @@ template <typename T> struct menu_option_st {
 };
 
 struct menu_action_st {
-    const char *name;
+    std::string name;
     std::function<void(void)> action;
     uint16_t fg_color = C565_TEXT_FG;
     uint16_t bg_color = C565_TEXT_BG;

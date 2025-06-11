@@ -129,7 +129,7 @@ typedef struct st_config //__attribute__ ((packed))
     // Stations memory
     st_freq_mem freqs[FREQ_MEM_SIZE] = {{0, 0, 144300000, SSB_LSB, "TEST 1"}, {0, 1, 144400000, FM, "TEST 2"}};
 
-    char callsign[9] = "  EA4IAB";
+    char callsign[7] = "EA4IAB";
 
 } Config;
 

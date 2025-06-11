@@ -90,6 +90,7 @@ void dsp_init(dsp::st_dsp_config &config) {
     dsp::set_max_sample_freq(false);
     main_board::mode_signal.add(nullptr, restart_callback); // modulation or mode changed
     fft::signal.add(nullptr, restart_callback);             // fft params changed
+    restart_callback(nullptr, nullptr);                     // First time, in case we start in DSP mode and miss initial signals
 }
 
 void dsp_stop_tasks() {
@@ -97,7 +98,7 @@ void dsp_stop_tasks() {
     if (current_task) {
         // LOG(": stopping current task\n");
         current_task->stop();
-        current_task = nullptr;
+        //   current_task = nullptr;
         if (on_event) {
             on_event(dsp::dsp_status);
         }
@@ -160,6 +161,9 @@ void dsp_start_task() {
     if (!dsp::dsp_status || dsp::dsp_status->status != DSP_STATUS_RUNNING) {
 
         // LOG(": not running, will start\n");
+
+        input_stream.reset();
+        output_stream.reset();
 
         current_buffer->sample_rate = current_task->status.sample_rate;
 
