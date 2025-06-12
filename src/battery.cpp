@@ -28,7 +28,7 @@ void update_battery_info() {
 
     if (abs(delta) / fmin(battery_info.voltage, v) < 25) {
         // exponential filter
-        float filter_factor = 0.4;
+        constexpr float filter_factor = 0.4;
         battery_info.voltage = (battery_info.voltage - (filter_factor * delta));
     } else {
         // If delta>25% (which may occur at startup or when the charger is plugged-in) we won't smooth it
@@ -43,8 +43,8 @@ void update_battery_info() {
     battery_info.capacity = battery_info.voltage > BATTERY_VOLTAGE_80 ? 100 : (battery_info.voltage > BATTERY_VOLTAGE_20 ? 50 : 10);
 
     // Calculate threshold levels taking hysteresis into account
-    float battery_voltage_80 = BATTERY_VOLTAGE_80 - (battery_info.status == BATTERY_STATUS_HIGH ? BATTERY_VOLTAGE_80 * BATTERY_STATUS_HYSTERESIS : 0);
-    float battery_voltage_20 = BATTERY_VOLTAGE_20 - (battery_info.status != BATTERY_STATUS_LOW ? BATTERY_VOLTAGE_20 * BATTERY_STATUS_HYSTERESIS : 0);
+    const float battery_voltage_80 = BATTERY_VOLTAGE_80 - (battery_info.status == BATTERY_STATUS_HIGH ? BATTERY_VOLTAGE_80 * BATTERY_STATUS_HYSTERESIS : 0);
+    const float battery_voltage_20 = BATTERY_VOLTAGE_20 - (battery_info.status != BATTERY_STATUS_LOW ? BATTERY_VOLTAGE_20 * BATTERY_STATUS_HYSTERESIS : 0);
 
     if (battery_info.voltage > INPUT_VOLTAGE_MAX) {
         battery_info.status = BATTERY_STATUS_CHARGING;

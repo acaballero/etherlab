@@ -8,7 +8,6 @@
 #include "aprs_packet.h"
 #include "dsp/modulation/dsp_demodulate.h"
 #include "dsp/receive/receive_task_base.h"
-#include "dsp/task.h"
 
 namespace dsp {
 

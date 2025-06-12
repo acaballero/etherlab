@@ -9,7 +9,6 @@
 #include "stdint.h"
 #include <functional>
 #include <hw/stm32.h>
-#include <sys/_stdint.h>
 
 namespace os {
 

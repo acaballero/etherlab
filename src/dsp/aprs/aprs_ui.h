@@ -15,16 +15,13 @@
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/afsk/afsk_tx_task.h"
 #include "dsp/dsp.h"
-#include "main_board.h"
-#include "menuBase.h"
-#include "os/periodic_task.h"
-#include "ring_buffer.hpp"
 #include "types.h"
 #include "ui/ui_types.h"
 #include "ui/view.h"
 #include "ui/button_widget.h"
 #include "ui/console_widget.h"
 #include "os/task_manager.h"
+#include "aprs_table_widget.h"
 
 namespace dsp_ui {
 
@@ -32,53 +29,6 @@ namespace dsp_ui {
 #define EU_APRS_FREQ 144800000
 
 using namespace dsp;
-
-struct APRSSource {
-
-    static constexpr uint64_t invalid_key = 0xffffffffffffffff;
-    static constexpr uint8_t source_length = 15;
-    static constexpr uint8_t time_length = 8;
-
-    int id{-1};
-    uint16_t hits{0};
-    uint32_t age{0};
-    uint64_t source{0};
-    char source_formatted[source_length + 1];
-    char time_string[time_length + 1];
-
-    aprs_pos pos{0, 0, 0, 0};
-    bool has_position = false;
-};
-
-class APRSTableWidget : public Widget {
-  public:
-    APRSTableWidget(Rect parent_rect, int max_rows) : Widget(parent_rect, &lcd) {
-        set_max_rows(max_rows);
-        init();
-    }
-
-    void paint_callback() override;
-    int on_packet(APRSPacket *packet);
-    bool on_touch(const st_inputEvent) override;
-    void set_max_rows(int n) {
-        assert(n <= MAX_ROWS);
-        max_sources = n;
-    }
-
-    std::function<void(APRSSource &)> on_select = nullptr;
-
-  private:
-    static constexpr int MAX_ROWS = 8;
-
-    RingBuffer<APRSSource, MAX_ROWS> sources;
-
-    uint8_t max_sources = 1;
-
-    bool send_updates{false};
-    void before_paint() override;
-    void init();
-    int find_free_id();
-};
 
 class APRSView : public View {
   public:
@@ -93,7 +43,7 @@ class APRSView : public View {
     static constexpr int title_height = 20;
     static constexpr int panel_sep = 4;
     static constexpr int max_sources = 7;
-    static constexpr int table_width = DISPLAY_X_PIXELS / 2 - 60;
+    static constexpr int table_width = DISPLAY_X_PIXELS / 2 - 66;
     static constexpr int console_width = DISPLAY_X_PIXELS - table_width;
 
     void on_source_selected(APRSSource &source);

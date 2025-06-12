@@ -17,12 +17,9 @@
 #include "status.h"
 #include "types.h"
 #include "ui/console_widget.h"
-#include "ui/lcd.h"
-#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <iterator>
-#include <memory>
 #include <string>
 #include <sys/_stdint.h>
 #include "dsp/protocols/aprs.hpp"
@@ -38,6 +35,8 @@ void APRSView::init() {
 
     console.set_font(this->font);
     table_view.set_font(this->font);
+
+    table_view.set_focus(true);
 
     table_view.on_select = [this](APRSSource &source) {
         this->on_source_selected(source);
@@ -126,7 +125,11 @@ void APRSView::exit() {
 }
 
 bool APRSView::on_input(const st_inputEvent e) {
-    bool consumed = true;
+    bool consumed = Widget::on_input(e);
+
+    if (consumed) {
+        return true;
+    }
 
     switch (e.type) {
 
@@ -161,6 +164,7 @@ bool APRSView::on_input(const st_inputEvent e) {
 }
 
 void APRSView::on_source_selected(APRSSource &source) {
+    current_source = source;
 }
 
 void APRSView::before_paint() {
@@ -204,153 +208,6 @@ void APRSView::on_packet(APRSPacket *packet) {
     str_console += stream_text + "\n";
 
     console.write(str_console);
-}
-
-void APRSTableWidget::paint_callback() {
-
-    char buf[26];
-
-    display->clear();
-
-    display->setFont(this->font);
-    display->set_trim_enabled(false);
-    display->setColor(C565_GREY_DARKER);
-
-    int title_height = this->font->height + 5;
-    display->drawRoundedRectangle(0, 0, area.box.width, title_height, 2, true);
-
-    display->gotoXY(4, 3);
-    sprintf(buf, "%-7s %5s %-8s\n", "Source", "Hits", "Time");
-    display->setBgColor(C565_GREY_DARKER);
-    display->setColor(C565_WHITE);
-    display->print(buf);
-
-    display->setBgColor(C565_BLACK);
-
-    for (size_t i = 0; i < sources.size(); i++) {
-        APRSSource *source = &sources[i];
-
-        display->gotoXY(4, 5 + ((i + 1) * (font->height + 2)));
-
-        display->setColor(palette16[source->id]);
-
-        snprintf(buf, sizeof(buf), "%-7s %s%4d %-8s\n", source->source_formatted, source->hits <= 999 ? " " : "+", source->hits <= 999 ? source->hits : 999,
-                 source->time_string);
-
-        display->print(buf);
-
-        if (source->has_position) {
-            // draw map icon
-        }
-    }
-}
-
-void APRSTableWidget::before_paint(){};
-
-bool APRSTableWidget::on_touch(const st_inputEvent e) {
-
-    size_t ix = ((e.point - screen_pos()).y() - 5) / (font->height + 2);
-    if (ix >= 0 && ix < sources.size()) {
-        on_select(sources[ix]);
-    }
-
-    return true;
-}
-
-void APRSTableWidget::init() {
-}
-
-int APRSTableWidget::find_free_id() {
-
-    bool used[max_sources];
-    int id = -1;
-
-    for (int i = 0; i < max_sources; i++) {
-        used[i] = false;
-    }
-
-    for (size_t i = 0; i < sources.size(); i++) {
-        APRSSource s = sources[i];
-        if (s.id >= 0) {
-            used[s.id] = true;
-        }
-    }
-
-    for (size_t i = 0; i < sources.size(); i++) {
-        APRSSource s = sources[i];
-        if (s.id == -1) {
-            for (int i = 0; i < max_sources; ++i) {
-                if (!used[i]) {
-                    id = i;
-                    break;
-                }
-            }
-            break;
-        }
-    }
-
-    return id;
-}
-
-int APRSTableWidget::on_packet(APRSPacket *packet) {
-
-    APRSSource *entry = sources.find([&](const APRSSource &s) {
-        return s.source == packet->get_source();
-    });
-
-    bool isnew = false;
-
-    if (!entry) {
-        entry = sources.push({});
-        entry->source = packet->get_source();
-        isnew = true;
-    }
-
-    st_datetime dt = rtc_get_date_time();
-    uint32_t ts = rtc_to_epoch(&dt.time, &dt.date);
-    entry->age = ts;
-    entry->hits++;
-
-    char buff[20];
-
-    rtc_to_string(dt, true, buff);
-    snprintf(entry->time_string, APRSSource::time_length + 1, "%s", buff);
-
-    packet->get_source_formatted(buff);
-    snprintf(entry->source_formatted, APRSSource::source_length + 1, "%s", buff);
-
-    if (entry->has_position && !packet->has_position()) {
-        // maintain position info
-    } else {
-        //    entry.has_position = packet->has_position();
-        //       entry.pos = packet->get_position();
-    }
-
-    int id = entry->id;
-
-    // Sort by age
-    sources.sort([&](const APRSSource &a, const APRSSource &b) {
-        return a.age > b.age;
-    });
-
-    if (sources.size() > max_sources) {
-        // sources.clear();
-        sources.erase_last(sources.size() - max_sources);
-    }
-
-    // Find it again (not really needed at the moment since we are assigning now() as its timestamp and so it will be the first)
-
-    entry = sources.find([id](const APRSSource &i) {
-        return i.id == id;
-    });
-
-    if (isnew) {
-        entry->id = find_free_id();
-    }
-
-    set_dirty();
-
-    return entry->id;
 }
 
 } // namespace dsp_ui

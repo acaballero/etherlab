@@ -5,9 +5,6 @@
 #ifndef __AFSK_TX_TASK_H__
 #define __AFSK_TX_TASK_H__
 
-#include "dsp/aprs/aprs_packet.h"
-#include "dsp/modulation/dsp_demodulate.h"
-#include "dsp/receive/receive_task_base.h"
 #include "dsp/task.h"
 #include <stdint.h>
 #include <vector>

@@ -7,11 +7,9 @@
 
 #include "dsp/dsp_common.h"
 #include "hw/stm32f4xx/rtc.h"
-#include <stdio.h>
-
 namespace dsp {
 
-const int APRS_MIN_LENGTH = 18; // 14 bytes address, control byte and pid. 2 CRC.
+constexpr int APRS_MIN_LENGTH = 18; // 14 bytes address, control byte and pid. 2 CRC.
 
 struct aprs_pos {
     float latitude;

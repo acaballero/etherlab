@@ -169,7 +169,9 @@ static inline unsigned int _strnlen_s(const char *str, size_t maxsize) {
 
 // internal test if char is a digit (0-9)
 // \return true if char is a digit
-static inline bool _is_digit(char ch) { return (ch >= '0') && (ch <= '9'); }
+static inline bool _is_digit(char ch) {
+    return (ch >= '0') && (ch <= '9');
+}
 
 // internal ASCII string to unsigned int conversion
 static unsigned int _atoi(const char **str) {
@@ -873,7 +875,9 @@ int vprintf_(const char *format, va_list va) {
     return _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
 }
 
-int vsnprintf_(char *buffer, size_t count, const char *format, va_list va) { return _vsnprintf(_out_buffer, buffer, count, format, va); }
+int vsnprintf_(char *buffer, size_t count, const char *format, va_list va) {
+    return _vsnprintf(_out_buffer, buffer, count, format, va);
+}
 
 int fctprintf(void (*out)(char character, void *arg), void *arg, const char *format, ...) {
     va_list va;

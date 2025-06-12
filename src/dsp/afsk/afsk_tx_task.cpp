@@ -4,13 +4,11 @@
 
 #include "afsk_tx_task.h"
 #include "arm_math.h"
-#include "dsp/aprs/aprs_packet.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/fft/fft.h"
 #include "dsp/receive/receive_task_base.h"
 #include "hw/stm32f4xx/adc.h"
-#include "hw/stm32f4xx/dac.h"
 #include "main_board.h"
 #include "printf.h"
 #include "stdio.h"

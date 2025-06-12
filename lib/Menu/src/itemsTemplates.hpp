@@ -17,15 +17,21 @@ template <typename T> bool menuValue<T>::async(const char *uri, navRoot &root, i
                          << " navFocus:" << (*(prompt *)root.navFocus) << endl);
     return prompt::async(uri, root, lvl);
 }
-template <typename T> const char *menuValue<T>::typeName() const { return "menuValue"; }
+template <typename T> const char *menuValue<T>::typeName() const {
+    return "menuValue";
+}
 #endif
 
 #ifndef constrain
 #define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 #endif
-template <typename T> bool menuField<T>::canTune() { return !!tune(); }
+template <typename T> bool menuField<T>::canTune() {
+    return !!tune();
+}
 
-template <typename T> void menuField<T>::constrainField() { target() = constrain(target(), low(), high()); }
+template <typename T> void menuField<T>::constrainField() {
+    target() = constrain(target(), low(), high());
+}
 
 template <typename T> void menuField<T>::clearChanged(const navNode &nav, const menuOut &out, bool sub) {
     fieldBase::clearChanged(nav, out, sub);
@@ -38,7 +44,9 @@ template <typename T> bool menuField<T>::changed(const navNode &nav, const menuO
     return dirty || (reflex != target());
 }
 
-template <typename T> idx_t menuField<T>::printReflex(menuOut &o) const { return o.print(reflex); }
+template <typename T> idx_t menuField<T>::printReflex(menuOut &o) const {
+    return o.print(reflex);
+}
 
 template <typename T> Used menuField<T>::printTo(navRoot &root, bool sel, menuOut &out, idx_t idx, idx_t len, idx_t panelNr) {
     trace(print_P(out, getText()); MENU_DEBUG_OUT << " menuField<T>::printTo " << reflex << endl);
@@ -73,12 +81,24 @@ template <typename T> void menuField<T>::parseInput(navNode &nav, menuIn &in) {
 }
 
 #ifdef MENU_ASYNC
-template <typename T> void menuField<T>::printValue(menuOut &o) const { o.print(reflex); }
-template <typename T> void menuField<T>::printHigh(menuOut &o) const { o.print(high()); }
-template <typename T> void menuField<T>::printLow(menuOut &o) const { o.print(low()); }
-template <typename T> void menuField<T>::printStep(menuOut &o) const { o.print(step()); }
-template <typename T> void menuField<T>::printTune(menuOut &o) const { o.print(tune()); }
-template <typename T> const char *menuField<T>::typeName() const { return typeStr<T>(); };
+template <typename T> void menuField<T>::printValue(menuOut &o) const {
+    o.print(reflex);
+}
+template <typename T> void menuField<T>::printHigh(menuOut &o) const {
+    o.print(high());
+}
+template <typename T> void menuField<T>::printLow(menuOut &o) const {
+    o.print(low());
+}
+template <typename T> void menuField<T>::printStep(menuOut &o) const {
+    o.print(step());
+}
+template <typename T> void menuField<T>::printTune(menuOut &o) const {
+    o.print(tune());
+}
+template <typename T> const char *menuField<T>::typeName() const {
+    return typeStr<T>();
+};
 #endif
 
 template <typename T> void menuField<T>::stepit(int dir) {
@@ -117,7 +137,9 @@ template <typename T> Used toggle<T>::printTo(navRoot &root, bool sel, menuOut &
 }
 
 #ifdef MENU_ASYNC
-template <typename T> const char *toggle<T>::typeName() const { return "toggle"; }
+template <typename T> const char *toggle<T>::typeName() const {
+    return "toggle";
+}
 template <typename T> bool toggle<T>::async(const char *uri, navRoot &root, idx_t lvl) {
     _trace(MENU_DEBUG_OUT << (*(prompt *)this) << " toggle::async! uri:" << uri << endl);
     if (uri[0]) {
@@ -158,7 +180,9 @@ template <typename T> result toggle<T>::sysHandler(SYS_FUNC_PARAMS) {
 }
 
 #ifdef MENU_FMT_WRAPS
-template <typename T> classes toggle<T>::type() const { return toggleClass; }
+template <typename T> classes toggle<T>::type() const {
+    return toggleClass;
+}
 #endif
 
 template <typename T> idx_t menuVariant<T>::sync() {
@@ -195,8 +219,12 @@ template <typename T> bool menuVariant<T>::changed(const navNode &nav, const men
 }
 
 #ifdef MENU_ASYNC
-template <typename T> idx_t menuVariant<T>::selected() const { return reflex; }
-template <typename T> const char *menuVariant<T>::typeName() const { return "menuVariant"; }
+template <typename T> idx_t menuVariant<T>::selected() const {
+    return reflex;
+}
+template <typename T> const char *menuVariant<T>::typeName() const {
+    return "menuVariant";
+}
 #endif
 
 template <typename T> result choose<T>::sysHandler(SYS_FUNC_PARAMS) {
@@ -214,11 +242,15 @@ template <typename T> bool choose<T>::changed(const navNode &nav, const menuOut 
 }
 
 #ifdef MENU_FMT_WRAPS
-template <typename T> classes choose<T>::type() const { return chooseClass; }
+template <typename T> classes choose<T>::type() const {
+    return chooseClass;
+}
 #endif
 
 #ifdef MENU_ASYNC
-template <typename T> const char *choose<T>::typeName() const { return "choose"; }
+template <typename T> const char *choose<T>::typeName() const {
+    return "choose";
+}
 #endif
 
 } // namespace Menu

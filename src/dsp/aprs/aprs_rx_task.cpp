@@ -6,9 +6,7 @@
 #include "arm_math.h"
 #include "dsp/aprs/aprs_packet.h"
 #include "dsp/receive/receive_task_base.h"
-#include "hw/stm32f4xx/adc.h"
 #include "main_board.h"
-#include "printf.h"
 #include "stdio.h"
 #include "stm32f4xx_hal.h"
 
