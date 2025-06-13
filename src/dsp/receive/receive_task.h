@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_RECEIVE_TASK_H
 
 #include <memory>
+#include "dsp/audio/fm_squelch.h"
 #include "dsp/buffer.hpp"
 #include "dsp/decimation/dsp_iir_decimator.h"
 #include "dsp/dsp_buffers.h"
@@ -35,6 +36,8 @@ class ReceiveTask : public ReceiveTaskBase {
 
     FeedForwardCompressor compressor;
     bool compressor_enabled = false;
+
+    FMSquelch squelch;
 
     bool init() override;
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;

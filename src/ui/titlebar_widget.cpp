@@ -261,7 +261,9 @@ void TitleBarWidget::before_paint() {
 
             dsp::dsp_status->reset();
             char buf[20];
-            sprintf(buf, "%s%s%s", "DSP", dsp::dsp_config.audio_compressor_enabled ? " C" : "", error ? " !" : "");
+            bool space = dsp::dsp_config.audio_compressor_enabled || dsp::dsp_config.deemphasis_enabled;
+            sprintf(buf, "%s%s%s%s%s", "DSP", space ? " " : "", dsp::dsp_config.audio_compressor_enabled ? "C" : "",
+                    dsp::dsp_config.deemphasis_enabled ? "D" : "", error ? " !" : "");
             trim(buf);
             btnDSP.set_text(buf);
         }

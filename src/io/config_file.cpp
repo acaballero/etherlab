@@ -92,6 +92,7 @@ bool ConfigFile::save(const char *filename, const st_config &cfg) {
 
     WRITE_FIELD("dsp.gain=%d", cfg.dsp.gain);
     WRITE_FIELD("dsp.audio_compressor_enabled=%d", cfg.dsp.audio_compressor_enabled);
+    WRITE_FIELD("dsp.deemphasis_enabled=%d", cfg.dsp.deemphasis_enabled);
     WRITE_FIELD("dsp.audio_compressor_threshold=%d", cfg.dsp.audio_compressor_threshold);
     WRITE_FIELD("dsp.test_signal.pulse_duty=%d", cfg.dsp.test_signal.pulse_duty);
     WRITE_FIELD("dsp.test_signal.baseband_frequency=%u", cfg.dsp.test_signal.baseband_frequency);
@@ -358,6 +359,7 @@ bool ConfigFile::load(const char *filename, st_config &cfg) {
 
     read_int8("dsp.gain=", &cfg.dsp.gain);
     read_bool("dsp.audio_compressor_enabled=", &cfg.dsp.audio_compressor_enabled);
+    read_bool("dsp.deemphasis_enabled=", &cfg.dsp.deemphasis_enabled);
     read_int("dsp.audio_compressor_threshold=", &cfg.dsp.audio_compressor_threshold);
     read_int8("dsp.test_signal.pulse_duty=", &cfg.dsp.test_signal.pulse_duty);
     read_uint("dsp.test_signal.baseband_frequency=", &cfg.dsp.test_signal.baseband_frequency);

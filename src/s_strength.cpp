@@ -3,13 +3,16 @@
 //
 
 #include <math.h>
+#include "dsp/fft/fft.h"
 #include "s_strength.h"
 #include "os/periodic_task.h"
 #include "config.h"
 #include "signal.h"
+#include "stm32f4xx_hal.h"
 #include "types.h"
 #include <hw/stm32.h>
 #include <stdio.h>
+#include "status.h"
 
 /* Definitions for the audio frequency signal strength meter */
 
@@ -30,7 +33,7 @@
 #define S_STRENGTH_S1_LOGAMP (S_STRENGTH_S9_LOGAMP - (8 * 6 * S_STRENGTH_V_DB_LOGAMP))
 
 // Minimum time to turn on squelch after the signal goes under the threshold
-#define SQUELCH_TIMEOUT_MS 200
+#define SQUELCH_TIMEOUT_MS 50
 
 namespace sstrength {
 
@@ -84,7 +87,7 @@ float get_s_strength(bool filter, uint8_t channel) {
     }
 
     // exponential filter
-    float filter_factor = filter ? 0.3 : 0.95;
+    float filter_factor = filter ? 0.1 : 0.95;
 
     s_strength = (s_strength - (filter_factor * (s_strength - v)));
 
@@ -118,7 +121,7 @@ float update_s_strength() {
 
         s_level = get_s_strength(false, S_STRENGTH_ADC_CHANNEL);
     } else {
-        s_level = db_to_s_strength(fft::dbm);
+        s_level = db_to_s_strength(fft::dbm_raw);
     }
     return s_level;
 }
@@ -144,6 +147,7 @@ void check_signal_strength() {
         bool in_squelch = s_level < squelch_level;
 
         if (in_squelch != last_squelch_test) {
+            // LOG("%ul: new squelch: %d\n", HAL_GetTick(), in_squelch);
             if (in_squelch) {
                 last_activation_trigger_ms = HAL_GetTick();
             } else {
@@ -159,6 +163,7 @@ void check_signal_strength() {
         if (emit) {
             info.in_squelch = in_squelch;
             info.level = config.squelch_level;
+            // LOG("%ul: emit squelch: %d\n", HAL_GetTick(), in_squelch);
             squelch_signal.emit(&info);
         }
     }

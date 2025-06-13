@@ -219,7 +219,7 @@ void toggle_dsp() {
 
 bool _setMode(MODE mode, bool force) {
 
-    LOG("_setMode: mode: %s,%b\n", radio::modeNames[mode], force);
+    // LOG("_setMode: mode: %s,%b\n", radio::modeNames[mode], force);
     bool changed = false;
 
     if (force || mode != config.mode) {

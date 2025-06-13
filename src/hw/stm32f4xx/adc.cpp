@@ -600,7 +600,7 @@ int GetADCValue(ADC_HandleTypeDef *hadc, uint32_t Channel, int count) {
 
 void ADC_DMA_Start(ADC_HandleTypeDef *hadc) {
 
-    LOG("ADC_DMA_START");
+    // LOG("ADC_DMA_START");
     if (!adc_dma_started) {
 
         Config_ADC_DMA();
@@ -621,14 +621,14 @@ void ADC_DMA_Start(ADC_HandleTypeDef *hadc) {
 #endif
         adc_dma_started = true;
     } else {
-        LOG(": Did nothing");
+        // LOG(": Did nothing");
     }
-    LOG("\n");
+    // LOG("\n");
 }
 
 void ADC_DMA_Stop(ADC_HandleTypeDef *hadc) {
 
-    LOG("ADC_DMA_STOP");
+    // LOG("ADC_DMA_STOP");
     if (adc_dma_started) {
 
         HAL_TIM_Base_Stop_IT(&htim2); // Stop ACD DMA timer
@@ -648,10 +648,10 @@ void ADC_DMA_Stop(ADC_HandleTypeDef *hadc) {
         hadc1_mode = 0;
         hadc2_mode = 0;
     } else {
-        LOG(": Did nothing");
+        // LOG(": Did nothing");
     }
 
-    LOG("\n");
+    // LOG("\n");
 }
 
 void setup_adcs() {

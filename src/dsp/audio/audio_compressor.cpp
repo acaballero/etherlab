@@ -27,7 +27,7 @@ void FeedForwardCompressor::work(const buffer_t<float32_t> &buffer) {
 
     // Expects interleaved i,q samples
     // TODO: Currently, on receive, the DAC processor expects complex signals (TX mode heritage) Make it work with real signals for RX.
-    for (size_t i = 0; i < buffer.count * 2; i += 2) {
+    for (size_t i = 0; i < buffer.count; i += 2) {
         buffer.p[i] = work(buffer.p[i]) * makeup_gain;
     }
 }

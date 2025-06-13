@@ -141,7 +141,7 @@ template <typename T> void open(numberPrompt<T> &prompt) {
         Menu::open_number_edit<T>(
             *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals,
             [&prompt](T v) {
-                *prompt.value = v;
+                *(prompt.value) = v;
                 if (prompt.on_select) {
                     prompt.on_select(v);
                 }

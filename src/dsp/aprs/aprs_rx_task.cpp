@@ -21,6 +21,7 @@ MODULATION_MODE APRSTask::get_modulation_mode() {
 void APRSTask::process_audio(buffer_t<float32_t> &audio) {
 
     // Audio signal processing
+    // NOTE: Expects interleaved IQ samples buffer
 
     if (deemph_enabled) {
         deemph_filter.decimate(audio, audio, 0, 2, 2);
@@ -67,16 +68,16 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         if (phase >= 0x10000) { // 65536
 
             // DEBUG
-            static uint32_t i = 0;
-            if (i++ % 3000 == 0) {
-                std::string str = std::string("EADB0") + "ABCDEFGHIJ"[HAL_GetTick() % 7];
-                if (HAL_GetTick() % 200 > 100) {
-                    aprs_packet.init_test_packet(str, "APRS", "INFO text containing several lines that has to be wrapped up");
-                } else {
-                    aprs_packet.init_test_packet(str, "APRS", "SHORT info text");
-                }
-                aprs_signal.emit(&aprs_packet);
-            }
+            // static uint32_t i = 0;
+            // if (i++ % 3000 == 0) {
+            //     std::string str = std::string("EADB0") + "ABCDEFGHIJ"[HAL_GetTick() % 7];
+            //     if (HAL_GetTick() % 200 > 100) {
+            //         aprs_packet.init_test_packet(str, "APRS", "INFO text containing several lines that has to be wrapped up");
+            //     } else {
+            //         aprs_packet.init_test_packet(str, "APRS", "SHORT info text");
+            //     }
+            //     aprs_signal.emit(&aprs_packet);
+            // }
 
             // for (int j = 31; j >= 0; j--) {
             //     printf_("%d", (sample_bits >> j) & 1);

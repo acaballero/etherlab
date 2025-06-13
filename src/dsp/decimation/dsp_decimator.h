@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include "dsp/buffer.hpp"
 #include "dsp/dsp_common.h"
+#include "dsp/fir_filter.h"
 
 template <typename T> class DspDecimator {
 

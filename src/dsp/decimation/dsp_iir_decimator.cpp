@@ -3,13 +3,18 @@
 //
 
 #include "../buffer.hpp"
+#include "Elliptic.h"
+#include "dsp/fir_filter.h"
 #include "dsp_iir_decimator.h"
 #include "../../../lib/DspFilters/include/Dsp.h"
 #include "../../../lib/DspFilters/include/ChebyshevI.h"
 #include "../../../lib/DspFilters/include/State.h"
 #include "../../../lib/DspFilters/include/Cascade.h"
+#include "../../../lib/DspFilters/include/Filter.h"
+#include "../../status.h"
 
 template class DspIIRDecimator<1>; // Pre-declared
+template class DspIIRDecimator<2>; // Pre-declared
 
 template <int order> void DspIIRDecimator<order>::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) {
     this->decimate(src, dst, 0, 2, 2);
@@ -67,20 +72,38 @@ template <int order> void DspIIRDecimator<order>::init() {
 
     // Generate coefficients for the current DSP parameters
 
-    Dsp::SimpleFilter<Dsp::ChebyshevI::LowPass<order>, 1, Dsp::DirectFormI> f;
+    Dsp::Cascade::Stage *dg;
 
-    f.setup(order,                           // order
-            this->input_rate,                // sample rate
-            ((double)this->bandwidth / 2.0), // center frequency
-            1);                              // ripple dB
+    if (type == LPF) {
+        Dsp::SimpleFilter<Dsp::ChebyshevI::LowPass<order>, 1, Dsp::DirectFormI> f;
 
-    Dsp::Cascade::Storage st = f.getCascadeStorage();
+        f.setup(order,                     // order
+                this->input_rate,          // sample rate
+                ((double)this->bandwidth), // cutoff frequency
+                1);                        // ripple dB
 
-    Dsp::Cascade::Stage *dg = st.stageArray;
+        Dsp::Cascade::Storage st = f.getCascadeStorage();
+        dg = st.stageArray;
+    } else {
+        Dsp::SimpleFilter<Dsp::Elliptic::HighPass<order>, 1, Dsp::DirectFormI> f;
+
+        f.setup(order,                     // order
+                this->input_rate,          // sample rate
+                ((double)this->bandwidth), // cutoff frequency
+                1,                         // Ripple
+                0);                        // Rolloff
+
+        Dsp::Cascade::Storage st = f.getCascadeStorage();
+        dg = st.stageArray;
+    }
 
     n_stages = (order + 1) / 2;
 
     // Convert to CMSIS format (output coefficients are negated)
+    LOG("IIR Filter : type %d\n", type);
+    LOG("a=[%f,%f,%f]\n", dg[0].m_a0, dg[0].m_a1, dg[0].m_a2);
+    LOG("b=[%f,%f,%f]\n", dg[0].m_b0, dg[0].m_b1, dg[0].m_b2);
+    LOG("rate %d, bw: %d\n", input_rate, bandwidth);
 
     coeffs[0] = dg[0].m_b0;
     coeffs[1] = dg[0].m_b1;
@@ -112,11 +135,12 @@ template <int order> void DspIIRDecimator<order>::init() {
 #endif
 }
 
-template <int order> bool DspIIRDecimator<order>::config(uint32_t input_rate, uint32_t output_rate, uint16_t factor) {
+template <int order> bool DspIIRDecimator<order>::config(uint32_t input_rate, uint32_t cutoff_freq, uint16_t factor, filter_type type) {
 
     this->input_rate = input_rate;
-    this->bandwidth = output_rate;
+    this->bandwidth = cutoff_freq;
     this->factor = factor;
+    this->type = type;
 
     this->init();
 

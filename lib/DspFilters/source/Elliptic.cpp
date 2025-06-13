@@ -63,7 +63,9 @@ namespace Elliptic {
 
     //------------------------------------------------------------------------------
 
-    AnalogLowPass::AnalogLowPass() : m_numPoles(-1) { setNormal(0, 1); }
+    AnalogLowPass::AnalogLowPass() : m_numPoles(-1) {
+        setNormal(0, 1);
+    }
 
     void AnalogLowPass::design(int numPoles, double rippleDb, double rolloff) {
         if (m_numPoles != numPoles || m_rippleDb != rippleDb || m_rolloff != rolloff) {

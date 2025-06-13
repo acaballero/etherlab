@@ -29,7 +29,7 @@
 // Helper to count arguments and select macro
 #define LOG_GET_MACRO(_1, _2, _3, _4, _5, NAME, ...) NAME
 
-// Dispatch macro: handles 1–5 args (add more if needed)
+// Dispatch macro: handles 1–7 args (add more if needed)
 #define LOG(...) LOG_GET_MACRO(__VA_ARGS__, LOG_VARS, LOG_VARS, LOG_VARS, LOG_VARS, LOG_NOARGS)(__VA_ARGS__)
 
 #endif

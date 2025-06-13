@@ -53,10 +53,10 @@ void ReceiveTaskBase::work() {
             in_start = in_p;
 
             // Process blocks (DSP_BLOCK items each)
-            while (av >= status.block_size_bytes) {
+            while (av >= bytes_per_batch) {
 
-                uint16_t block_size_in = status.block_size_bytes / sizeof(complex_t);
-                uint16_t block_size_out = status.decimated_block_size;
+                uint16_t block_size_in = samples_per_batch;
+                uint16_t block_size_out = samples_per_batch / status.decimation_factor;
 
                 dsp::s16_to_f32((const adc_type *)in_p, bi2_p, block_size_in << 1);
 
@@ -88,7 +88,7 @@ void ReceiveTaskBase::work() {
 
                 // Wrap the destination buffer
                 buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)bi2_p, (size_t)block_size_out};
-                buffer_t<float32_t> buff_out_f32 = {(float32_t *)bi1_p, (size_t)block_size_out};
+                buffer_t<float32_t> buff_out_f32 = {(float32_t *)bi1_p, (size_t)block_size_out << 1};
 
                 demodulator->work(buff_out, (float32_t *)buff_out_f32.p);
 
@@ -96,9 +96,9 @@ void ReceiveTaskBase::work() {
 
                 dsp::f32_to_s16((const float32_t *)bi1_p, (adc_type *)out_p, block_size_out << 1);
 
-                out_p += status.decimated_block_size_bytes;
-                in_p += status.block_size_bytes;
-                av -= status.block_size_bytes;
+                out_p += bytes_per_batch / status.decimation_factor;
+                in_p += bytes_per_batch;
+                av -= bytes_per_batch;
             }
 
             uint32_t processed = DSP_FIFO_BLOCK_BYTES - av;

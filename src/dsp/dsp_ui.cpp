@@ -49,6 +49,9 @@ result dsp_compressor_set(eventMask) {
 TOGGLE(dsp::dsp_config.audio_compressor_enabled, toggleDSPCompressor, "Audio compressor: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
        VALUE("On", true, dsp_compressor_set, noEvent), VALUE("Off", false, dsp_compressor_set, noEvent));
 
+TOGGLE(dsp::dsp_config.deemphasis_enabled, toggleFMDeemph, "FM Deemph: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
+       VALUE("On", true, dsp_compressor_set, noEvent), VALUE("Off", false, dsp_compressor_set, noEvent));
+
 result open_aprs(eventMask) {
     Menu::menu_exit();
     view_manager::open_aprs();
@@ -57,7 +60,7 @@ result open_aprs(eventMask) {
 
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleDSPCompressor),
-     OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleFMDeemph),
+     SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu));
 
 } // namespace dsp_ui

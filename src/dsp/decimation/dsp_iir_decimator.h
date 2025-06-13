@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_DSP_IIR_DECIMATOR_H
 #define TRX_FRONTEND_DSP_IIR_DECIMATOR_H
 
+#include "dsp/fir_filter.h"
 #include "dsp_decimator.h"
 #include "dsp_iir_decimator.h"
 #include "stdio.h"
@@ -17,12 +18,11 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
 
     DspIIRDecimator(uint32_t factor) : DspDecimator<int16_t>(factor){};
 
-    DspIIRDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<int16_t>(input_rate, output_rate, factor) {
-
+    DspIIRDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<int16_t>(input_rate, output_rate, factor), type{LPF} {
         this->init();
     };
 
-    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor);
+    bool config(uint32_t input_rate, uint32_t cutoff_freq, uint16_t factor = 1, filter_type type = LPF);
 
     void decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) override;
 
@@ -38,6 +38,7 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
     arm_biquad_casd_df1_inst_f32 iir_instance;
     int n_stages;
     float state[8];
+    filter_type type;
 };
 
 void test_iir_decimator();
