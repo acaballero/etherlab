@@ -42,3 +42,5 @@ build
 .cmake/
 .idea/
 CMakeFiles/
+CMakeCache.txt
+.cmake/api/v1/reply/cache-v2-f1552aa9bca5bd79f505.json
