@@ -10,6 +10,7 @@
 #include "aprs_packet.h"
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <stdio.h>
 #include <string>
 #include "dsp/aprs/aprs_rx_task.h"
@@ -22,6 +23,7 @@
 #include "ui/console_widget.h"
 #include "os/task_manager.h"
 #include "aprs_table_widget.h"
+#include "io/log_file.h"
 
 namespace dsp_ui {
 
@@ -48,6 +50,8 @@ class APRSView : public View {
 
     void on_source_selected(APRSSource &source);
     bool reset_console = false;
+
+    std::unique_ptr<LogFile> logger;
 
     Label title_widget{{0, 0, DISPLAY_X_PIXELS, title_height}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
 

@@ -47,7 +47,7 @@ void saveTarget() {
     config.freqs[curr_index] = tempFreqMem;
 
     using namespace status;
-    if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {
+    if (settings_write(config.freqs) == HAL_FLASH_ERROR_NONE) {
         handleError(ST_INFO, "Configuration saved");
     } else {
         handleError(ST_ERROR, "Error saving configuration");
@@ -103,7 +103,7 @@ void save_freq(st_freq_mem item, int i) {
     } else {
         config.freqs[i] = item;
         using namespace status;
-        if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {
+        if (settings_write(config.freqs) == HAL_FLASH_ERROR_NONE) {
             handleError(ST_INFO, "Saved");
         } else {
             handleError(ST_ERROR, "Error saving");
@@ -157,7 +157,7 @@ void del_freq(int i) {
     config.freqs[i] = {};
 
     using namespace status;
-    if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {
+    if (settings_write(config.freqs) == HAL_FLASH_ERROR_NONE) {
         handleError(ST_INFO, "Deleted");
     } else {
         handleError(ST_ERROR, "Error deleting");

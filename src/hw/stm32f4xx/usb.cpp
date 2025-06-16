@@ -3,17 +3,21 @@
 //
 
 #include "usb.h"
+#include "fatfs/fatfs.h"
+#include "status.h"
 #include "usb/usbd_conf.h"
 #include "usbd_def.h"
+#include "usb/usb_device.h"
+#include "usbd_msc.h"
 
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
+volatile uint8_t usb_msc_active = 0;
 
 /**
-  * @brief This function handles USB On The Go HS global interrupt.
-  */
-void OTG_HS_IRQHandler(void)
-{
+ * @brief This function handles USB On The Go HS global interrupt.
+ */
+void OTG_HS_IRQHandler(void) {
     /* USER CODE BEGIN OTG_HS_IRQn 0 */
 
     /* USER CODE END OTG_HS_IRQn 0 */
@@ -23,7 +27,44 @@ void OTG_HS_IRQHandler(void)
     /* USER CODE END OTG_HS_IRQn 1 */
 }
 
+uint8_t getUSBConnectionStatus() {
+    return ((((USBD_HandleTypeDef *)hpcd_USB_OTG_HS.pData)->dev_state) == USBD_STATE_CONFIGURED) ? USB_CONN_STATUS_CONNECTED : USB_CONN_STATUS_DISCONNECTED;
+}
 
-uint8_t getConnectionStatus() {
-    return  ((((USBD_HandleTypeDef *)hpcd_USB_OTG_HS.pData)->dev_state) == USBD_STATE_CONFIGURED) ? USB_CONN_STATUS_CONNECTED : USB_CONN_STATUS_DISCONNECTED;
+bool wait_for_sd_card(uint32_t timeout_ms) {
+    uint32_t start = HAL_GetTick();
+    while (!lock_sd_card()) {
+        if ((HAL_GetTick() - start) > timeout_ms) {
+            return false; // timeout
+        }
+    }
+    return true;
+}
+
+bool init_USB_MSC() {
+
+    if (usb_msc_active) {
+        return true;
+    }
+
+    if (wait_for_sd_card(5000)) { // Wait for SD card to be free
+
+        USB_SetupMSC();
+
+        usb_msc_active = 1;
+
+        return true;
+    }
+
+    status::handleError(status::ST_ERROR, "Timeout waiting for SD card");
+
+    return false;
+}
+
+bool init_USB_CDC() {
+    USB_SetupCDC();
+
+    usb_msc_active = 0;
+
+    return true;
 }

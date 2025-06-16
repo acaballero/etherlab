@@ -52,10 +52,6 @@ class SignalGenerator : public Output<complex_t> {
     uint32_t frequency{0};
     uint32_t sample_rate{0};
     uint32_t tone_phase{0};
-
-    // uint32_t phase{0};
-    // uint32_t delta{0};
-    // uint32_t sphase{0};
 };
 
 extern const int8_t sine_table_i8[LUT_SIZE];

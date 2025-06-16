@@ -9,6 +9,7 @@
 #include "dsp/decimation/dsp_decimators.h"
 #include <cstdint>
 #include <cstddef>
+#include <sys/_stdint.h>
 
 class FMSquelch {
   public:
@@ -20,6 +21,15 @@ class FMSquelch {
   private:
     float threshold{0.0f};
     DspIIRDecimator<2> high_pass_filter;
+
+    // With only one block of samples some false positives may appear
+    // We could measure (relative) variance, but just a simple audio history
+    // is usually enough to delay the noise detection a few ms.
+    // 64,32..8 bits can be used, depending on the length of the delay line we need
+    // NOT USED: Even with only 8 bits the squelch is not as fast as I want and, anyway, just with the mean squared it works great
+    // However, i've tested it only with narrow bandwidth FM, so the deviation is small and the signal is naturally limited in amplitude.
+    // With larger deviation, the 2nd order HPF would not have enough attenuation and, for example, a high amplitude tone may fire the threshold.
+    // uint8_t audio_history{0};
 };
 
 #endif /*__FM_SQUELCH_H__*/

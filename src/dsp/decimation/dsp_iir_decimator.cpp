@@ -90,8 +90,8 @@ template <int order> void DspIIRDecimator<order>::init() {
         f.setup(order,                     // order
                 this->input_rate,          // sample rate
                 ((double)this->bandwidth), // cutoff frequency
-                1,                         // Ripple
-                0);                        // Rolloff
+                4,                         // Ripple
+                -1);                       // Rolloff
 
         Dsp::Cascade::Storage st = f.getCascadeStorage();
         dg = st.stageArray;

@@ -7,9 +7,10 @@
 
 #include "config.h"
 #include "hw/stm32.h"
+#include "types.h"
 
 uint8_t settings_read(Config *settings);
 uint8_t settings_write(Config *settings);
+uint8_t settings_write(st_freq_mem *mem);
 
-
-#endif //TRX_FRONTEND_SETTINGS_H
+#endif // TRX_FRONTEND_SETTINGS_H

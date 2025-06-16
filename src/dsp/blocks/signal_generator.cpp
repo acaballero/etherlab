@@ -44,7 +44,7 @@ adc_type SignalGenerator::get_sample(uint32_t phase) {
             break;
     }
 
-    return sample;
+    return sample * gain_factor;
 }
 
 void SignalGenerator::get_sample(adc_type &sample) {

@@ -17,13 +17,16 @@
  */
 
 #include "fatfs.h"
+#include "hw/stm32f4xx/usb.h"
 #include "status.h"
 #include "hw/stm32_hal.h"
 #include "../../lib/FatFs/ff.h"
 #include "../../lib/FatFs/diskio.h"
+#include "usb/usbd_msc.h"
 #include <stdio.h>
 
 extern Diskio_drvTypeDef SD_CARD_DRIVER; // Defined in the parent project
+extern USBD_HandleTypeDef hUsbDeviceHS;  // Defined in usbd_msc.h
 
 char USERPath[4];    /* USER logical drive path */
 FATFS FatFS;         /* File system object for USER logical drive */
@@ -47,14 +50,32 @@ os::periodic_task task(2000, sdcard_loop);
  */
 void sdcard_loop() {
     uint64_t t = HAL_GetTick();
-    if (t - sdcard_last_check_ms > SDCARD_LOOP_PERIOD_MS) {
+
+    if (usb_msc_active) {
+        if (hUsbDeviceHS.dev_state ==
+            USBD_STATE_CONFIGURED) { // Some hosts (almost all) don't cause a MSC_DeInit when the USB is detacched or unplugged so we also check the dev_state
+
+            // Don't touch the SD card when the host is controlling it as a MSC (mass storage device)
+            sdcard_info.status = MassStorageDeviceActive;
+            sdcard_signal.emit(&sdcard_info);
+        } else {
+            if (hUsbDeviceHS.dev_old_state == USBD_STATE_CONFIGURED && hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED) {
+                sdcard_info.status = Present;
+                unlock_sd_card(); // TODO: This has to be unlocked by the one who locked it (usb MSC initialization in usb.cpp)
+                init_USB_CDC();
+                sdcard_signal.emit(&sdcard_info);
+            }
+        }
+    }
+
+    if (!usb_msc_active && t - sdcard_last_check_ms > SDCARD_LOOP_PERIOD_MS) {
         sdcard_last_check_ms = t;
         sdcard_init();
     }
 }
 
 bool lock_sd_card() {
-    if (sd_card_locked) {
+    if (sd_card_locked || usb_msc_active) {
         return false;
     } else {
         sd_card_locked = true;
@@ -64,9 +85,13 @@ bool lock_sd_card() {
 }
 
 bool unlock_sd_card() {
-    SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
-    sd_card_locked = false;
-    return true;
+    if (sd_card_locked) {
+        SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
+        sd_card_locked = false;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 /* USER CODE END Variables */

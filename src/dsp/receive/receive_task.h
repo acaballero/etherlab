@@ -38,6 +38,7 @@ class ReceiveTask : public ReceiveTaskBase {
     bool compressor_enabled = false;
 
     FMSquelch squelch;
+    bool squelch_enabled = false;
 
     bool init() override;
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;

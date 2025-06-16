@@ -149,7 +149,7 @@ volatile bool dac_dma_started = false;
 void DAC_DMA_Start(DAC_HandleTypeDef *hdac) {
 
     if (!dac_dma_started) {
-        LOG("DAC_DMA_START\n");
+        // LOG("DAC_DMA_START\n");
         HAL_StatusTypeDef ret = HAL_TIM_Base_Start(&htim6); // Start DAC DMA timer
 
         if (ret == HAL_OK) {
@@ -158,26 +158,26 @@ void DAC_DMA_Start(DAC_HandleTypeDef *hdac) {
             ret = HAL_DAC_Start_DualDMA(hdac, DAC_CHANNEL_12D, (uint32_t *)dac_buff, DSP_BLOCK * 2, DAC_ALIGN_12B_R);
 
             if (ret != HAL_OK) {
-                LOG("HAL_DAC_Start_DualDMA ERROR!!\n");
+                // LOG("HAL_DAC_Start_DualDMA ERROR!!\n");
             } else {
                 dac_dma_started = true;
             }
         } else {
-            LOG("HAL_TIM_Base_Start ERROR!!\n");
+            // LOG("HAL_TIM_Base_Start ERROR!!\n");
         }
     } else {
-        LOG("DAC_DMA_START: Did nothing\n");
+        // LOG("DAC_DMA_START: Did nothing\n");
     }
 }
 
 void DAC_DMA_Stop(DAC_HandleTypeDef *hdac) {
     if (dac_dma_started) {
-        LOG("DAC_DMA_STOP\n");
+        // LOG("DAC_DMA_STOP\n");
         HAL_TIM_Base_Stop(&htim6); // Start DAC DMA timer
         HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
         HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_2);
         dac_dma_started = false;
     } else {
-        LOG("DAC_DMA_STOP: Did nothing\n");
+        // LOG("DAC_DMA_STOP: Did nothing\n");
     }
 }

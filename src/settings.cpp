@@ -10,6 +10,7 @@
 #include "status.h"
 #include "stm32f4xx_hal_flash.h"
 #include "io/config_file.h"
+#include "types.h"
 #include "usbd_cdc_if.h"
 #include <cstring>
 
@@ -65,15 +66,18 @@ uint8_t settings_read(Config *settings) {
     if (sdcard_info.status == sdcard_STATUS::Mounted) {
 
         // Try to read the config from the SD Card
-        ConfigFile config_file;
+        ConfigFile<> config_file;
+        ConfigFile<st_freq_mem> mem_file;
 
         memcpy(version, settings->version, 3);
 
-        ok = config_file.load("config.cfg", *settings);
+        ok = config_file.load("config.cfg", settings);
 
         if (ok) {
             ok = (memcmp(version, &settings->version, 3) == 0);
         }
+
+        mem_file.load("mem.db", settings->freqs);
     }
 #endif
     if (!ok) {
@@ -105,10 +109,9 @@ uint8_t settings_write(Config *settings) {
 
     if (sdcard_info.status == sdcard_STATUS::Mounted) {
 
-        // Try to read the config from the SD Card
-        ConfigFile config_file;
+        ConfigFile<> config_file;
 
-        ok = config_file.save("config.cfg", *settings);
+        ok = config_file.save("config.cfg", settings);
 
         if (!ok) {
             status::handleError(status::ST_ERROR, "Error saving config in SD card. Fallback to Flash");
@@ -122,6 +125,28 @@ uint8_t settings_write(Config *settings) {
     } else {
         return 0;
     }
+}
+
+uint8_t settings_write(st_freq_mem *mem) {
+
+    bool ok = false;
+
+#if ENABLE_SD_CARD
+    if (sdcard_info.status == sdcard_STATUS::Mounted) {
+
+        ConfigFile<st_freq_mem> config_file;
+
+        ok = config_file.save("mem.db", mem);
+
+        if (!ok) {
+            status::handleError(status::ST_ERROR, "Error saving memory in SD card");
+        }
+    }
+#else
+    return flash_write((uint16_t *)config, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
+#endif
+
+    return ok ? 0 : 1;
 }
 
 // static void _settings_reset_to_defaults(Config *settings) {

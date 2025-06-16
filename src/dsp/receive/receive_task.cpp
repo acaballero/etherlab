@@ -5,6 +5,9 @@
 #include "receive_task.h"
 #include "arm_math.h"
 #include "dsp/blocks/dc_block.h"
+#include "dsp/blocks/noise_generator.h"
+#include "dsp/blocks/signal_generator.h"
+#include "dsp/buffer.hpp"
 #include "dsp/decimation/dsp_fir_decimator_float.h"
 #include "dsp/decimation/dsp_fir_decimator_float_complex.h"
 #include "dsp/dsp_buffers.h"
@@ -28,6 +31,7 @@
 #include "dsp/decimation/dsp_decimators.h"
 #include <cstddef>
 #include <memory>
+#include <sys/_stdint.h>
 
 #include "printf.h"
 #include "utils.hpp"
@@ -35,7 +39,35 @@
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
+//#define RECEIVETASK_DEBUG
+#ifdef RECEIVETASK_DEBUG
+
+SignalGenerator s;
+NoiseGenerator n;
+complex_t d[DSP_BLOCK];
+buffer_t<complex_t> b{d, DSP_BLOCK};
+
+#endif
+
 void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
+
+#ifdef RECEIVETASK_DEBUG
+
+    uint32_t freq = (HAL_GetTick() / 2) % 5000;
+    int i = (HAL_GetTick() / 2 / 5000);
+    int gain = -20 + i * 2;
+
+    if (i & 1) {
+        s.set_config(freq, buff_out_f32.sample_rate);
+        s.set_gain_db(gain);
+        s.get_block(b);
+        dsp::s16_to_f32((adc_type *)b.p, buff_out_f32.p, buff_out_f32.count);
+    } else {
+        n.set_gain_db(gain);
+        //  n.get_block(b);
+    }
+
+#endif
 
     if (squelch.is_noise(buff_out_f32)) {
         // Ouput silence
@@ -80,7 +112,13 @@ bool ReceiveTask::init() {
         compressor_enabled = false;
     }
 
-    squelch.config(config.squelch_level, status.sample_rate);
+    MODULATION_MODE m = get_modulation_mode();
+    if ((m == FM || m == WFM) && config.squelch_level) {
+        squelch.config(4, status.sample_rate);
+        squelch_enabled = true;
+    } else {
+        squelch_enabled = false;
+    }
 
     return true;
 }

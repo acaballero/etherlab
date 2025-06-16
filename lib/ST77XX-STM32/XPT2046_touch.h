@@ -5,12 +5,13 @@
 #ifndef TRX_FRONTEND_XPT2046_TOUCH_H
 #define TRX_FRONTEND_XPT2046_TOUCH_H
 
+#include "hw/stm32.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "stdio.h"
-#include "hw/stm32.h"
 
 #define XPT2046_TOUCH_CS_PORT TOUCH_CE_PORT
 #define XPT2046_TOUCH_CS_PIN TOUCH_CE_PIN
@@ -30,52 +31,52 @@ extern "C" {
 #define __FROUND(t, x) ((x) < 0.0F ? -((t)((-(x)) + 0.5F)) : (t)((x) + 0.5F))
 
 typedef struct {
-   union {
-      uint16_t x;
-      uint16_t width;
-   };
-   union {
-      uint16_t y;
-      uint16_t height;
-   };
+    union {
+        uint16_t x;
+        uint16_t width;
+    };
+    union {
+        uint16_t y;
+        uint16_t height;
+    };
 } xpt2046_two_dimension_t;
 
 typedef enum {
-   // orientation is based on position of board pins when looking at the screen
-   isoNONE = -1,
-   isoDown,
-   isoPortrait = isoDown, // = 0
-   isoRight,
-   isoLandscape = isoRight, // = 1
-   isoUp,
-   isoPortraitFlip = isoUp, // = 2
-   isoLeft,
-   isoLandscapeFlip = isoLeft, // = 3
-   isoCOUNT                    // = 4
+    // orientation is based on position of board pins when looking at the screen
+    isoNONE = -1,
+    isoDown,
+    isoPortrait = isoDown, // = 0
+    isoRight,
+    isoLandscape = isoRight, // = 1
+    isoUp,
+    isoPortraitFlip = isoUp, // = 2
+    isoLeft,
+    isoLandscapeFlip = isoLeft, // = 3
+    isoCOUNT                    // = 4
 } xpt2046_screen_orientation_t;
 
 typedef enum { itpNONE = -1, itpNotPressed, itpPressed, itpCOUNT } xpt2046_touch_pressed_t;
 
 typedef enum {
-   itcNONE = -1,
-   itcScalar,
-   itc3Point,
-   itcCOUNT,
+    itcNONE = -1,
+    itcScalar,
+    itc3Point,
+    itcCOUNT,
 } xpt2046_touch_calibration_t;
 
 typedef struct {
-   xpt2046_two_dimension_t min;
-   xpt2046_two_dimension_t max;
+    xpt2046_two_dimension_t min;
+    xpt2046_two_dimension_t max;
 } xpt2046_scalar_calibrator_t;
 
 typedef struct {
-   xpt2046_two_dimension_t scale;
-   int32_t delta_x;
-   int32_t delta_y;
-   float alpha_x;
-   float beta_x;
-   float alpha_y;
-   float beta_y;
+    xpt2046_two_dimension_t scale;
+    int32_t delta_x;
+    int32_t delta_y;
+    float alpha_x;
+    float beta_x;
+    float alpha_y;
+    float beta_y;
 } xpt2046_3point_calibrator_t;
 
 typedef struct xpt2046 xpt2046_t;
@@ -83,19 +84,19 @@ typedef struct xpt2046 xpt2046_t;
 typedef void (*xpt2046_touch_callback_t)(xpt2046_t *, uint16_t, uint16_t);
 
 struct xpt2046 {
-   SPI_HandleTypeDef *spi_hal;
-   xpt2046_screen_orientation_t orientation;
-   uint16_t width;
-   uint16_t height;
-   uint8_t averages = 3;
-   xpt2046_two_dimension_t touch_coordinate;
-   xpt2046_touch_calibration_t touch_calibration;
-   xpt2046_scalar_calibrator_t touch_scalar;
-   xpt2046_3point_calibrator_t touch_3point;
-   xpt2046_touch_pressed_t touch_pressed;
-   xpt2046_touch_callback_t touch_pressed_begin;
-   xpt2046_touch_callback_t touch_pressed_end;
-   bool power_on_between_reads = false;
+    SPI_HandleTypeDef *spi_hal;
+    xpt2046_screen_orientation_t orientation;
+    uint16_t width;
+    uint16_t height;
+    uint8_t averages = 3;
+    xpt2046_two_dimension_t touch_coordinate;
+    xpt2046_touch_calibration_t touch_calibration;
+    xpt2046_scalar_calibrator_t touch_scalar;
+    xpt2046_3point_calibrator_t touch_3point;
+    xpt2046_touch_pressed_t touch_pressed;
+    xpt2046_touch_callback_t touch_pressed_begin;
+    xpt2046_touch_callback_t touch_pressed_end;
+    bool power_on_between_reads = false;
 };
 
 typedef HAL_StatusTypeDef xpt2046_status_t;

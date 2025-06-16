@@ -59,7 +59,7 @@ void setup() {
 #if USB_ENABLED
     // Set the USB enabled pin to drive the pullup in DP (D+) line
     // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
-    MX_USB_DEVICE_Init();
+    USB_SetupCDC();
 #endif
 
     // Notice: Initialize any MCP23017 feature after BitbangI2C (initPowerControl)

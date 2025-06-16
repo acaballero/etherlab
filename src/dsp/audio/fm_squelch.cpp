@@ -5,6 +5,7 @@
 #include "fm_squelch.h"
 #include "dsp/decimation/dsp_decimator.h"
 #include <stdio.h>
+#include "status.h"
 
 bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
     if (threshold == 0.0f) {
@@ -13,7 +14,6 @@ bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
 
     // Expects interleaved IQ.
     // TODO: Make it work with real signals so one single DAC is feed
-
     size_t n = audio.count >> 1;
     float32_t high_freq_samples[n];
     buffer_t<float32_t> high_freq_buffer{high_freq_samples, n};
@@ -21,24 +21,29 @@ bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
 
     float high_freq_magnitude = 0;
 
-    for (size_t i = 0; i < high_freq_buffer.count; i++) {
+    for (size_t i = 0; i < n; i++) {
         auto sample = high_freq_buffer.p[i];
         float sample_squared = sample * sample;
-
-        if (sample_squared > high_freq_magnitude) {
-            high_freq_magnitude = sample_squared;
-        }
+        high_freq_magnitude += sample_squared;
     }
+    high_freq_magnitude /= n;
+    // LOG("%5.1f,%5.1f,%5.1f\n", high_freq_magnitude_max, high_freq_magnitude_min, high_freq_magnitude);
+    // LOG("%5.1f\n", high_freq_magnitude);
 
-    if (high_freq_magnitude > threshold) {
+    bool is_noise = high_freq_magnitude > threshold;
+
+    // audio_history = (audio_history << 1) | (is_noise ? 0 : 1);
+    //  is_noise = audio_history == 0;
+
+    if (is_noise) {
         return true;
     } else {
         return false;
     }
 }
 
-void FMSquelch::config(const float threshold, uint32_t sample_rate) {
-    this->threshold = threshold * threshold; // square the peak magnitude
+void FMSquelch::config(const float mag_threshold, uint32_t sample_rate) {
+    this->threshold = mag_threshold * mag_threshold; // square the peak magnitude
 
     high_pass_filter.config(sample_rate, 4000, 1, HPF);
 }

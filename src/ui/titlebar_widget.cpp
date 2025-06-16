@@ -106,6 +106,7 @@ void TitleBarWidgetInner::paint_callback() {
             color = C565_YELLOW;
             break;
         case sdcard_STATUS::IOError:
+        case sdcard_STATUS::ConnectError:
             color = C565_RED;
             break;
         case sdcard_STATUS::Present:
@@ -116,6 +117,9 @@ void TitleBarWidgetInner::paint_callback() {
             break;
         case sdcard_STATUS::Mounted:
             color = C565_GREEN;
+            break;
+        case sdcard_STATUS::MassStorageDeviceActive:
+            color = C565_PURPLE;
             break;
     }
 
@@ -131,7 +135,7 @@ void TitleBarWidgetInner::paint_callback() {
     display->setFont((FontDef *)&Font_Icons9x8);
 
 #if USB_ENABLED
-    switch (getConnectionStatus()) {
+    switch (getUSBConnectionStatus()) {
         case USB_CONN_STATUS_CONNECTED:
             color = C565_GREEN;
             break;

@@ -21,8 +21,10 @@
 #include "os/task_manager.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "types.h"
+#include "ui/lock_view.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
+#include "usb_device.h"
 
 #include <sys/unistd.h>
 
@@ -186,6 +188,8 @@ void watchdog() {
 }
 
 bool dsptested = false;
+
+#include "io/log_file.h"
 
 int main() {
 

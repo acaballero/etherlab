@@ -5,14 +5,16 @@
 #ifndef TRX_FRONTEND_USB_H
 #define TRX_FRONTEND_USB_H
 
-#include "stdio.h"
-
 #define USB_CONN_STATUS_CONNECTED 1
 #define USB_CONN_STATUS_DISCONNECTED 0
+
+#include "fatfs/fatfs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "stdio.h"
 
 void OTG_HS_IRQHandler(void);
 
@@ -20,6 +22,9 @@ void OTG_HS_IRQHandler(void);
 }
 #endif
 
-uint8_t getConnectionStatus();
+uint8_t getUSBConnectionStatus();
 
-#endif //TRX_FRONTEND_USB_H
+bool init_USB_MSC();
+bool init_USB_CDC();
+
+#endif // TRX_FRONTEND_USB_H

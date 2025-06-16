@@ -28,6 +28,7 @@
 #include "dsp/decimation/dsp_decimators.h"
 #include <cstddef>
 #include <memory>
+#include <sys/_stdint.h>
 
 #include "printf.h"
 #include "utils.hpp"
@@ -44,6 +45,8 @@ void ReceiveTaskBase::work() {
 
         uint32_t free = output_stream.free(&out_p);
         uint32_t av = input_stream.available(&in_p);
+        uint32_t output_samples = 0;
+        float32_t *tmp_out = out_f32_p;
 
         if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
 
@@ -70,33 +73,42 @@ void ReceiveTaskBase::work() {
                         block_size_in /= decimators[i].get_factor();
                     } else {
                         // Output decimator. This is the final nawrrowband decimator
-                        signal_decimator->decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
+                        signal_decimator->decimate(bi1_p, bq1_p, tmp_out, tmp_out + samples_per_batch, block_size_in);
                     }
 
                     SWAP_PTR(bi1_p, bi2_p);
                     SWAP_PTR(bq1_p, bq2_p);
                 }
 
-                dsp::zip_f32(bi1_p, bq1_p, (float32_t *)bi2_p, block_size_out);
+                tmp_out += block_size_out;
+                output_samples += block_size_out;
+
+                if (output_samples == samples_per_batch) {
+
+                    tmp_out = out_f32_p;
+                    dsp::zip_f32(tmp_out, tmp_out + samples_per_batch, (float32_t *)bi2_p, samples_per_batch);
 
 #if !DSP_FS4_SHIFT
-                // DC block
-                buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
-                dc_block_i.filter(bb, 2, 0);
-                dc_block_q.filter(bb, 2, 1);
+                    // DC block
+                    buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
+                    dc_block_i.filter(bb, 2, 0);
+                    dc_block_q.filter(bb, 2, 1);
 #endif
 
-                // Wrap the destination buffer
-                buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)bi2_p, (size_t)block_size_out};
-                buffer_t<float32_t> buff_out_f32 = {(float32_t *)bi1_p, (size_t)block_size_out << 1};
+                    // Wrap the destination buffer
+                    buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)bi2_p, (size_t)samples_per_batch};
+                    buffer_t<float32_t> buff_out_f32 = {(float32_t *)bi1_p, (size_t)samples_per_batch << 1, status.sample_rate};
 
-                demodulator->work(buff_out, (float32_t *)buff_out_f32.p);
+                    demodulator->work(buff_out, (float32_t *)buff_out_f32.p);
 
-                process_audio(buff_out_f32);
+                    process_audio(buff_out_f32);
 
-                dsp::f32_to_s16((const float32_t *)bi1_p, (adc_type *)out_p, block_size_out << 1);
+                    dsp::f32_to_s16((const float32_t *)bi1_p, (adc_type *)out_p, samples_per_batch << 1);
 
-                out_p += bytes_per_batch / status.decimation_factor;
+                    out_p += bytes_per_batch;
+                    output_samples = 0;
+                }
+
                 in_p += bytes_per_batch;
                 av -= bytes_per_batch;
             }
@@ -184,7 +196,11 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
             return std::make_unique<dsp::ssb_demodulator>();
         case FM:
             demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(status.sample_rate, 3000);
+            ((dsp::fm_demodulator *)demod.get())->configure(status.sample_rate, 2500);
+            return demod;
+        case WFM:
+            demod = std::make_unique<dsp::fm_demodulator>();
+            ((dsp::fm_demodulator *)demod.get())->configure(status.sample_rate, 75000);
             return demod;
         default:
             return std::make_unique<dsp::ssb_demodulator>();

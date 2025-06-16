@@ -35,14 +35,6 @@ struct st_vfo_config {
     uint32_t step = 10000;
     int32_t rit = 0; // Receive incremental tuning offset
 
-    // Copy
-    st_vfo_config &operator=(const st_vfo_config &o) {
-        freq = o.freq;
-        step = o.step;
-        rit = o.rit;
-        return *this;
-    }
-
     bool operator==(const st_vfo_config &st) const {
         return freq == st.freq && step == st.step && rit == st.rit;
     }

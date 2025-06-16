@@ -9,6 +9,7 @@
 #include "dsp/dsp_tasks.h"
 #include "hw/stm32f4xx/rtc.h"
 #include "input/inputEvent.h"
+#include "io/log_file.h"
 #include "ips_font.h"
 #include "main_board.h"
 #include "os/periodic_task.h"
@@ -27,6 +28,11 @@
 namespace dsp_ui {
 
 void APRSView::init() {
+
+    logger = std::make_unique<LogFile>();
+    if (logger) {
+        logger->append("aprs.log");
+    }
 
     set_font((FontDef *)&Font_7x10);
     title_widget.set_label("APRS");
@@ -206,6 +212,10 @@ void APRSView::on_packet(APRSPacket *packet) {
     packet->get_stream_text(stream_text);
     str_console += (char)(ix + 1); // Colors index starts in 1
     str_console += stream_text + "\n";
+
+    if (logger) {
+        logger->log(stream_text);
+    }
 
     console.write(str_console);
 }

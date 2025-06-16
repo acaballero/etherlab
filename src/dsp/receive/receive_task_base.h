@@ -51,16 +51,15 @@ class ReceiveTaskBase : public Task {
         DSP_BLOCK; // Note all decimators are configured for a block size of DSP_BLOCK. Don't use bigger blocks or memory will be corrupted
     static constexpr int bytes_per_batch = samples_per_batch * 2 * 2; // complex int16 samples
 
-    float32_t tmp_buff_data[samples_per_batch * 4 * 2];
+    float32_t tmp_buff_data[samples_per_batch * 6];
 
     // 4 temp buffers are used to purposedly avoid overlapping buffers or in-place decimation processing in the hope (is it worth it?) that the compiler
     // is able to fully optimize the loops with instruction reordering
     float32_t *bi1_p = tmp_buff_data;
-    float32_t *bq1_p = tmp_buff_data + samples_per_batch * 2;
-    float32_t *bi2_p = tmp_buff_data + samples_per_batch * 4;
-    float32_t *bq2_p = tmp_buff_data + samples_per_batch * 6;
-
-    buffer_t<float32_t> tmp_buff{bi1_p, samples_per_batch};
+    float32_t *bq1_p = tmp_buff_data + samples_per_batch;
+    float32_t *bi2_p = tmp_buff_data + samples_per_batch * 2;
+    float32_t *bq2_p = tmp_buff_data + samples_per_batch * 3;
+    float32_t *out_f32_p = tmp_buff_data + samples_per_batch * 4;
 
     bool init_decimators(MODULATION_MODE mod);
     uint8_t n_decimators;

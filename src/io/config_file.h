@@ -12,12 +12,16 @@
 
 #include <sys/types.h>
 
-class ConfigFile {
-  public:
-    bool save(const char *filename, const st_config &cfg);
-    bool load(const char *filename, st_config &cfg);
+#define WRITE_FIELD(fmt, ...)                                                                                                                                  \
+    snprintf(buf, sizeof(buf), fmt "\n", __VA_ARGS__);                                                                                                         \
+    f_write(file, buf, strlen(buf), &bw)
 
-  private:
+template <typename T = st_config> class ConfigFile {
+  public:
+    bool save(const char *filename, const T *cfg);
+    bool load(const char *filename, T *cfg);
+
+  protected:
     FIL *file = &FatFSFileHandle;
 
     char buf[256];
@@ -37,6 +41,9 @@ class ConfigFile {
     bool read_bin(const char *fmt, uint8_t *data, size_t length);
 
     bool read_line(const char *fmt);
+
+    virtual bool save(const T *cfg);
+    virtual bool load(T *cfg);
 };
 
 #endif // TRX_CONFIG_FILE_H

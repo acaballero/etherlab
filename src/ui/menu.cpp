@@ -34,6 +34,7 @@
 #include "menu_options.h"
 #include "menu_prompts.h"
 #include "standby.h"
+#include "ui/lock_view.h"
 
 namespace Menu {
 
@@ -243,6 +244,27 @@ result settings_reset(eventMask) {
     return proceed;
 }
 
+bool locked = false;
+result set_usb_msc_mode(eventMask) {
+    init_USB_MSC();
+    return proceed;
+}
+
+void lock() {
+    LockView view;
+    view.paint();
+    fft::fft_task.set_enabled(false);
+    view_manager::task.set_enabled(false);
+    locked = true;
+}
+
+void unlock() {
+    fft::fft_task.set_enabled(true);
+    view_manager::task.set_enabled(true);
+    view_manager::mainView.set_dirty();
+    locked = false;
+}
+
 MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), OBJ(powerSavePeriod),
      OP("Reset to defaults", settings_reset, enterEvent), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu), OBJ(Menu::frontendPathMenu), OBJ(couplerOffsetMenu),
      OBJ(driveStrength1stLOMenu), OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu), OBJ(if1stFreqMenu), OBJ(ifFMTXFreqMenu), OBJ(loRefCorrectionMenu),
@@ -256,7 +278,8 @@ MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED
      SUBMENU(dsp_ui::menuDSP),
 #endif
-     SUBMENU(scanner_ui::menuScan), SUBMENU(fftUI::fftMenu), SUBMENU(menuSettings), SUBMENU(boardUI::boardMenu), OBJ(freq_memory::freqMemMenu));
+     SUBMENU(scanner_ui::menuScan), SUBMENU(fftUI::fftMenu), SUBMENU(menuSettings), SUBMENU(boardUI::boardMenu), OBJ(freq_memory::freqMemMenu),
+     OP("USB Mass Storage Device", set_usb_msc_mode, enterEvent));
 
 const colorDef<uint16_t> menuColors[8] MEMMODE = {
     {{C565_TRANSPARENT, C565_TRANSPARENT}, {C565_BLACK, C565_TRANSPARENT, C565_TRANSPARENT}}, // bgColor
@@ -321,12 +344,22 @@ void menu_sdcard_callback(void *, void *args) {
 
     sdcard_st_info *info = (sdcard_st_info *)args;
 
-    if (info->status == Mounted) {
-        dspReplayUI::replayMenu.enable();
-        dspCaptureUI::captureMenu.enable();
-    } else {
-        dspReplayUI::replayMenu.disable();
-        dspCaptureUI::captureMenu.disable();
+    switch (info->status) {
+
+        case MassStorageDeviceActive:
+            lock();
+            break;
+        case Mounted:
+            dspReplayUI::replayMenu.enable();
+            dspCaptureUI::captureMenu.enable();
+
+            if (locked) {
+                unlock();
+            }
+            break;
+        default:
+            dspReplayUI::replayMenu.disable();
+            dspCaptureUI::captureMenu.disable();
     }
 }
 
