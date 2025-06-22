@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <sstream>
 #include <sys/_stdint.h>
+#include "utils.hpp"
 
 namespace freq_memory {
 
@@ -51,7 +52,8 @@ st_freq_mem deserialize_freq_mem(const std::string &line) {
     std::string token;
 
     int field = 0;
-    size_t pos;
+    int intvalue;
+    bool b;
     while (std::getline(iss, token, ',') && field < 5) {
         switch (field) {
             case 0:
@@ -61,13 +63,20 @@ st_freq_mem deserialize_freq_mem(const std::string &line) {
                 mem.mode = static_cast<MODULATION_MODE>(std::stoi(token));
                 break;
             case 2:
-                mem.group = std::stoi(token, &pos);
-                if (pos != token.length()) {
+                b = parse_int(token.c_str(), intvalue);
+                if (!b) {
                     return {}; // Partial conversion (e.g., "123abc")
+                } else {
+                    mem.group = intvalue;
                 }
                 break;
             case 3:
-                mem.id = std::stoi(token);
+                b = parse_int(token.c_str(), intvalue);
+                if (!b) {
+                    return {}; // Partial conversion (e.g., "123abc")
+                } else {
+                    mem.id = intvalue;
+                }
                 break;
             case 4:
                 strncpy(mem.name, token.c_str(), FREQ_MEM_NAME_SIZE - 1);
@@ -114,6 +123,69 @@ void build_sorted_database(std::vector<st_freq_mem> &memories) {
         }
     }
 }
+
+// void log_file() {
+//     FatFSFile *f = db_file->get_file();
+//     size_t pos = f->tell();
+//     f->seek(0);
+
+//     char copy_buffer[BUFFER_SIZE];
+
+//     while (true) {
+//         auto read_result = f->read(copy_buffer, BUFFER_SIZE);
+//         if (read_result.is_error() || *read_result == 0) {
+//             LOG("Empty!\n");
+//             break;
+//         }
+
+//         if (*read_result < BUFFER_SIZE) {
+//             copy_buffer[*read_result] = 0;
+//         }
+//         LOG("********\n%s*********\n", copy_buffer);
+
+//         if (*read_result < BUFFER_SIZE) {
+//             break;
+//         }
+//     }
+
+//     f->seek(pos);
+// }
+
+// void test() {
+//     INIT_OR_ABORT()
+//     if (db_file->load("test.db", true)) {
+//         LOG("loaded test.db\n");
+//         log_file();
+//         db_file->clear();
+//         LOG("Truncated\n");
+//         log_file();
+//         int n = 3;
+//         std::string name;
+//         for (int i = 0; i < n; i++) {
+//             name = (std::string("NAME_") + std::to_string(i));
+//             LOG("Inserting %s\n", name.c_str());
+//             st_freq_mem m{0, (uint16_t)i, (uint64_t)100 * (i + 1), FM, name.c_str()};
+//             save(m);
+//             log_file();
+//             db_file->log();
+//         }
+//         name = (std::string("NEW_BIGGER_1"));
+//         LOG("Inserting %s\n", name.c_str());
+//         st_freq_mem m1{0, (uint16_t)(n + 1), (uint64_t)50, FM, name.c_str()};
+//         save(m1);
+//         log_file();
+//         name = (std::string("NEW_2"));
+//         LOG("Inserting %s\n", name.c_str());
+//         st_freq_mem m2{0, (uint16_t)(n + 1), (uint64_t)150, FM, name.c_str()};
+//         save(m2);
+//         log_file();
+//         name = (std::string("NEW_3"));
+//         LOG("Inserting %s\n", name.c_str());
+//         st_freq_mem m3{0, (uint16_t)(n + 1), (uint64_t)500, FM, name.c_str()};
+//         save(m3);
+//         log_file();
+//     }
+// }
 
 void fix_db() {
     INIT_OR_ABORT()
@@ -235,7 +307,13 @@ void saveTarget() {
 int find_index(st_freq_mem &data) {
     INIT_OR_ABORT(-1)
 
-    uint32_t line_pos = db_file->binary_search_first(data.freq, extract_freq_func, FindMode::EQ);
+    auto res = db_file->binary_search_first(data.freq, extract_freq_func, FindMode::EQ);
+
+    if (res.is_error()) {
+        return -1;
+    }
+
+    uint32_t line_pos = *res;
 
     if (line_pos < db_file->line_count()) {
         return line_pos;
@@ -246,11 +324,14 @@ int find_index(st_freq_mem &data) {
 
 void save(st_freq_mem &mem) {
 
-    uint32_t line_pos = db_file->binary_search_first(mem.freq, extract_freq_func, GTE);
+    auto res = db_file->binary_search_first(mem.freq, extract_freq_func, GTE);
+
+    uint32_t line_pos = *res;
 
     std::string serialized = serialize_freq_mem(mem);
 
     if (line_pos >= db_file->line_count()) {
+
         // Append at end
         mem.id = line_pos;
         db_file->append_line(serialized);
@@ -385,7 +466,14 @@ st_freq_mem find_closest(uint64_t f, DIRECTION direction = STOP) {
 
     int count = get_freq_mem_count();
 
-    int32_t line_pos = db_file->binary_search_first(f + (direction == FORWARD ? 1 : -1), extract_freq_func, direction == FORWARD ? GTE : LTE);
+    auto res = db_file->binary_search_first(f + (direction == FORWARD ? 1 : -1), extract_freq_func, direction == FORWARD ? GTE : LTE);
+
+    if (res.is_error()) {
+        return {};
+    }
+
+    int32_t line_pos = *res;
+
     if (line_pos < count) {
         found_mem = get_by_index(line_pos);
         return found_mem;

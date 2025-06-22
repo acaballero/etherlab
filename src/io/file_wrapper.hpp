@@ -3,10 +3,13 @@
 //
 #pragma once
 
+#include "dsp/decimation/dsp_fir_decimator_float.h"
 #include "ff.h"
 #include "io/fatfs_file.h"
+#include "printf.h"
 #include "ring_buffer.hpp"
 #include "status.h"
+#include <cstdio>
 #include <string>
 #include <cstring>
 #include <sys/_stdint.h>
@@ -62,6 +65,7 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
 
     bool load(io::path path, bool create) {
 
+        file_.close();
         path_ = path;
         auto res = file_.open(path, false, create);
 
@@ -70,9 +74,12 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
             invalidate_all_caches();
             scan_file();
 
-            LOG("**** INIT\n");
+	    memcpy(void *__restrict dest, DspFIRDecimatorFloat<>ize_t n);
+	    •DspFIRDecimatorFloat<int TAPS, typename T>fdf
+
+            // LOG("**** INIT\n");
             for (int i = 0; i < newline_cache_.size(); i++) {
-                LOG("lc:%d:%d:%d\n", i, newline_cache_[i].offset, newline_cache_[i].line_number);
+                // LOG("lc:%d:%d:%d\n", i, newline_cache_[i].offset, newline_cache_[i].line_number);
             }
             return true;
         }
@@ -82,6 +89,10 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
 
     ~FileWrapper() {
         file_.close();
+    }
+
+    FatFSFile *get_file() {
+        return &file_;
     }
 
     uint32_t get_cache_size() {
@@ -113,6 +124,8 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
     void insert_line(uint32_t line_number, const std::string &content);
     void append_line(const std::string &content);
     void delete_line(uint32_t line_number);
+
+    void log();
 
     // Generic range queries for sorted data
     template <typename T, typename ExtractKey> FRESULT find_range(const T &min_key, const T &max_key, ExtractKey extract_key, std::vector<uint32_t> &results);
@@ -238,12 +251,13 @@ Result<uint32_t, io::filesystem_error> FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACH
     uint32_t left = 0;
     uint32_t right = total_lines_;
     uint32_t result = total_lines_; // Not found
-
+    T result_key;
     while (left < right) {
         uint32_t mid = left + (right - left) / 2;
         std::string line = get_line(mid);
 
         if (line.empty()) {
+            // LOG("FR_INT_ERROR\n");
             return io::filesystem_error{FR_INT_ERR};
         }
 
@@ -252,6 +266,7 @@ Result<uint32_t, io::filesystem_error> FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACH
         if (mode == GTE) {
             if (line_key >= key) {
                 result = mid;
+                result_key = key;
                 right = mid;
             } else {
                 left = mid + 1;
@@ -259,6 +274,7 @@ Result<uint32_t, io::filesystem_error> FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACH
         } else {
             if (line_key <= key) {
                 result = mid;
+                result_key = key;
                 left = mid + 1;
             } else {
                 right = mid;
@@ -266,7 +282,7 @@ Result<uint32_t, io::filesystem_error> FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACH
         }
     }
 
-    if (mode == EQ && result != key) {
+    if (mode == EQ && result_key != key) {
         return (uint32_t)total_lines_;
     } else {
         return (uint32_t)result;
@@ -762,7 +778,9 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::update_newline_cache_afte
 }
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::ensure_newline_at_eof() {
+    // LOG("Ensuring newline at eof: ");
     if (file_size() == 0) {
+        // LOG("empty!\n");
         return;
     }
 
@@ -773,11 +791,16 @@ template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrappe
     if (result.is_ok() && *result == 1 && last_char != '\n') {
         file_.seek(file_size());
         file_.write("\n", 1);
+        // LOG("wrote \\n at eof\n");
+    } else {
+        // LOG("already \\n eof!\n");
     }
 }
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
 void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::append_line(const std::string &content) {
+
+    // LOG("Append line\n");
     ensure_newline_at_eof();
 
     file_.seek(file_size());
@@ -797,10 +820,20 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::append_line(const std::st
 
     // Add newline to cache if there's space
     if (!newline_cache_.isFull()) {
+        // LOG("File size is %d, writing newline at %d\n", file_size(), file_size() - 1);
         uint32_t newline_offset = file_size() - 1;
         newline_cache_.push(NewlineEntry(total_lines_ - 1, newline_offset));
     }
 }
+
+// template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::log() {
+
+//     for (int i = 0; i < newline_cache_.size(); i++) {
+//         int ln = newline_cache_[i].offset;
+//         int dln = i > 0 ? ln - newline_cache_[i - 1].offset : -1;
+//         //LOG("lc:%d:%d:%d%s\n", i, newline_cache_[i].offset, newline_cache_[i].line_number, i > 0 && dln < 2 ? " ERR!" : "");
+//     }
+// }
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
 void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::replace_line(uint32_t line_number, const std::string &content) {
@@ -811,16 +844,12 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::replace_line(uint32_t lin
         }
     }
 
-    LOG("**** before replace\n");
-    for (int i = 0; i < newline_cache_.size(); i++) {
-        LOG("lc:%d:%d:%d\n", i, newline_cache_[i].offset, newline_cache_[i].line_number);
-    }
+    // LOG("**** before replace\n");
+    // log();
 
     uint32_t line_start = find_line_start_offset(line_number);
     uint32_t line_end = find_line_end_offset(line_number);
-    uint32_t old_length = line_end - line_start;
-
-    LOG("start:%d,end:%d,old_length:%d\n", line_start, line_end, old_length);
+    uint32_t old_length = line_end - line_start + 1; // account for the new line
 
     // Prepare new content with newline
     std::string new_content = content;
@@ -828,8 +857,10 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::replace_line(uint32_t lin
         new_content += '\n';
     }
     uint32_t new_length = new_content.length();
-
     int32_t size_delta = new_length - old_length;
+
+    // LOG("start:%d,end:%d,old_length:%d\n", line_start, line_end, old_length);
+    // LOG("new:%d,delta:%d\n", new_length, size_delta);
 
     if (size_delta > 0) {
         // Need to make space
@@ -839,7 +870,8 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::replace_line(uint32_t lin
         shift_file_content_left(line_end, -size_delta);
     }
 
-    // Writenew content
+    // Write new content
+
     file_.seek(line_start);
     file_.write(new_content.data(), new_content.length());
     file_.sync();
@@ -849,10 +881,8 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::replace_line(uint32_t lin
     cache_line(line_number, content); // Cache without newline
     update_newline_cache_after_edit(line_start, size_delta);
 
-    LOG("**** after replace\n");
-    for (int i = 0; i < newline_cache_.size(); i++) {
-        LOG("lc:%d:%d:%d\n", i, newline_cache_[i].offset, newline_cache_[i].line_number);
-    }
+    // LOG("**** after replace\n");
+    // log();
 }
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>

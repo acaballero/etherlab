@@ -36,6 +36,7 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
 void set_next_prev(DIRECTION d);
 uint8_t toggle_memory_mode();
 bool get_memory_mode();
+void test();
 
 // Custom frequency memory menu (updated for FileBuffer)
 struct FreqMemoryMenu : Menu::UserMenu {

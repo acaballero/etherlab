@@ -93,6 +93,8 @@ void min_max_f32(float *v, uint16_t size, float *min, float *max, float discard)
 
 char *ftoa(char *dest, size_t size, double val, int dec);
 
+bool parse_int(const char *str, int &result);
+
 #if ENABLE_LOGGER
 
 #define LOG_MAX_ITEMS 40

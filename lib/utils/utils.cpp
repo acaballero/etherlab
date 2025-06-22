@@ -778,3 +778,44 @@ float adc_to_mv(int adc_value, float adc_vref, int adc_max) {
 float mv_to_adc(int millivolts, float adc_vref, int adc_max) {
     return ((float)millivolts / adc_vref) * (float)adc_max;
 }
+
+bool parse_int(const char *str, int &result) {
+    if (!str[0]) {
+        return false;
+    }
+
+    result = 0;
+    bool negative = false;
+    size_t start = 0;
+
+    // Handle sign
+    if (str[0] == '-') {
+        negative = true;
+        start = 1;
+    } else if (str[0] == '+') {
+        start = 1;
+    }
+
+    if (start >= strlen(str)) {
+        return false;
+    }
+
+    // Parse digits
+    for (size_t i = start; i < strlen(str); ++i) {
+        if (str[i] < '0' || str[i] > '9') {
+            return false; // Invalid character
+        }
+
+        // Check for overflow before multiplying
+        if (result > (INT32_MAX - (str[i] - '0')) / 10) {
+            return false; // Overflow
+        }
+
+        result = result * 10 + (str[i] - '0');
+    }
+
+    if (negative) {
+        result = -result;
+    }
+    return true;
+}
