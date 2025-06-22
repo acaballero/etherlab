@@ -94,7 +94,6 @@ void view_loop() {
 
     mainView.TuneInfo()->set_dirty();
     mainView.FFTInfo()->set_dirty();
-    mainView.Menu()->set_dirty();
 
     currentView->paint();
 }

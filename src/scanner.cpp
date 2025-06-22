@@ -187,7 +187,8 @@ void sweep() {
                         if (scanner_config.save_found) {
                             char name[FREQ_MEM_NAME_SIZE];
                             generate_string(name, sizeof(name), nsaved++);
-                            freq_memory::save_freq({0, 0, freq, config.modulation, name});
+                            st_freq_mem f{0, 0, freq, config.modulation, name};
+                            freq_memory::save(f);
                         }
 
                     } else {

@@ -2,6 +2,8 @@
 // Created by Angel Dust on 15/06/2025
 //
 
+#pragma once
+
 #include <utility>
 
 template <typename TValue, typename TError> struct Result {

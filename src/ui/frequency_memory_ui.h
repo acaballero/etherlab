@@ -1,5 +1,6 @@
 //
 // Created by Angel Dust on 03/02/2025.
+// Updated to use FileBuffer instead of in-memory array
 //
 #ifndef TRX_FRONTEND_FREQUENCY_MEMORY_UI_H
 #define TRX_FRONTEND_FREQUENCY_MEMORY_UI_H
@@ -14,23 +15,29 @@
 #include "keyboard_view.h"
 #include "../lib/Menu/src/plugin/userMenu.h"
 #include "menu_options.h"
+#include <sys/_stdint.h>
 
 namespace freq_memory {
 
-int get_index();
-int find_index(st_freq_mem);
+// FileBuffer functions
+bool init_file_buffer();
+st_freq_mem get_by_index(int index);
+int get_freq_mem_count();
+
+// Original interface functions (now using FileBuffer internally)
+int find_index(st_freq_mem &);
 void open_save_current();
-void save_freq(st_freq_mem item, int index = -1);
+void save(st_freq_mem &item);
 void del_freq(int ix);
-st_freq_mem *find_id(uint16_t group, uint16_t id);
-void set(st_freq_mem *);
-st_freq_mem *next_prev(bool next);
-st_freq_mem *find_closest(uint64_t frequency, uint16_t group, DIRECTION);
+void set(st_freq_mem &);
+st_freq_mem next_prev(bool next);
+st_freq_mem find_closest(uint64_t frequency, DIRECTION);
+void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories);
 void set_next_prev(DIRECTION d);
 uint8_t toggle_memory_mode();
 bool get_memory_mode();
 
-// Custom frequency memory menu
+// Custom frequency memory menu (updated for FileBuffer)
 struct FreqMemoryMenu : Menu::UserMenu {
     using UserMenu::UserMenu;
 
@@ -46,13 +53,16 @@ struct FreqMemoryMenu : Menu::UserMenu {
             static constexpr int buf_size = FREQ_MEM_NAME_SIZE + 27;
             char buf[buf_size], sf[14];
             bool empty;
-            st_freq_mem fm = config.freqs[idx];
+
+            // Get frequency memory from FileBuffer instead of config.freqs
+            st_freq_mem fm = get_by_index(idx);
             empty = fm.freq == 0;
+
             if (empty) {
                 sprintf(buf, "[%2d]", idx);
             } else {
                 format_long(fm.freq, sf);
-                snprintf(buf, buf_size, "[%2d] %-4s %14s  %*s", idx, radio::modulation_names[fm.mode], sf, FREQ_MEM_NAME_SIZE, fm.name);
+                snprintf(buf, buf_size, "[%2d] %-4s %14s  %-*s", idx, radio::modulation_names[fm.mode], sf, FREQ_MEM_NAME_SIZE, fm.name);
             }
 
             return out.printText(buf, buf_size);
@@ -64,21 +74,19 @@ struct FreqMemoryMenu : Menu::UserMenu {
     void doNav(Menu::navNode &nav, Menu::navCmd cmd) override {
 
         switch (cmd.cmd) {
-            case Menu::idxCmd: // long clicked
-
+            case Menu::idxCmd:             // long clicked
                 UserMenu::doNav(nav, cmd); // TODO: Make this the delete command
-
                 break;
 
             case Menu::enterCmd: // clicked
-                if (config.freqs[nav.sel].freq) {
-                    set(&config.freqs[nav.sel]);
+            {
+                st_freq_mem fm = get_by_index(nav.sel);
+                if (fm.freq) {
+                    set(fm);
                 }
-                break;
+            } break;
             default:
-
                 UserMenu::doNav(nav, cmd);
-
                 break;
         }
 

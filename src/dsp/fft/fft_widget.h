@@ -9,6 +9,7 @@
 #include "../../ui/dbscale_widget.h"
 #include "../../types.h"
 #include "input/inputEvent.h"
+#include <vector>
 
 #define FFT_HEIGHT 70
 #define FFT_X_AXIS_HEIGHT 12
@@ -31,6 +32,7 @@ class FFTWidget : public Widget {
     void draw_noise_floor();
     void draw_spectrum();
     void draw_h_labels();
+    void fetch_stations_in_range();
 
     bool on_touch(const st_inputEvent) override;
 
@@ -43,6 +45,8 @@ class FFTWidget : public Widget {
     FFT_SPECTRUM_STYLE style = FFT_SPECTRUM_STYLE_LINE;
     uint16_t spectrum_line_color = C565_YELLOW;
     uint16_t spectrum_fill_color = C565_BLUE;
+
+    std::vector<st_freq_mem> stations_in_range{};
 
     bool refresh_x_axis;
 };

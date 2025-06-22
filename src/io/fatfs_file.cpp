@@ -3,12 +3,15 @@
 //
 
 #include "fatfs_file.h"
+#include "fatfs/fatfs.h"
+#include "ff.h"
 #include <algorithm>
 #include <codecvt>
 #include <cstring>
 #include <locale>
 
 io::filesystem_error FatFSFile::open_fatfs(const io::path &filename, BYTE mode) {
+    lock_sd_card();
     auto result = f_open(&f, reinterpret_cast<const TCHAR *>(filename.c_str()), mode);
     if (result == FR_OK) {
         if (mode & FA_OPEN_ALWAYS) {
@@ -19,6 +22,7 @@ io::filesystem_error FatFSFile::open_fatfs(const io::path &filename, BYTE mode) 
         }
     }
 
+    unlock_sd_card();
     if (result == FR_OK) {
         return {};
     } else {
@@ -57,7 +61,9 @@ void FatFSFile::close() {
 
 FatFSFile::Result<FatFSFile::Size> FatFSFile::read(void *data, Size bytes_to_read) {
     UINT bytes_read = 0;
+    lock_sd_card();
     const auto result = f_read(&f, data, bytes_to_read, &bytes_read);
+    unlock_sd_card();
     if (result == FR_OK) {
         return {static_cast<size_t>(bytes_read)};
     } else {
@@ -67,7 +73,9 @@ FatFSFile::Result<FatFSFile::Size> FatFSFile::read(void *data, Size bytes_to_rea
 
 FatFSFile::Result<FatFSFile::Size> FatFSFile::write(const void *data, Size bytes_to_write) {
     UINT bytes_written = 0;
+    lock_sd_card();
     const auto result = f_write(&f, data, bytes_to_write, &bytes_written);
+    unlock_sd_card();
     if (result == FR_OK) {
         if (bytes_to_write == bytes_written) {
             return {static_cast<FatFSFile::Size>(bytes_written)};
@@ -90,7 +98,9 @@ FatFSFile::Result<bool> FatFSFile::eof() {
 FatFSFile::Result<FatFSFile::Offset> FatFSFile::seek(Offset new_position) {
     /* NOTE: Returns *old* position, not new position */
     const auto old_position = tell();
+    lock_sd_card();
     const auto result = f_lseek(&f, new_position);
+    unlock_sd_card();
     if (result != FR_OK) {
         return {static_cast<Error>(result)};
     }
@@ -102,7 +112,10 @@ FatFSFile::Result<FatFSFile::Offset> FatFSFile::seek(Offset new_position) {
 
 FatFSFile::Result<FatFSFile::Offset> FatFSFile::truncate() {
     const auto position = f_tell(&f);
-    const auto result = f_truncate(&f);
+    lock_sd_card();
+    auto result = f_truncate(&f);
+    result = result == FR_OK ? f_sync(&f) : result;
+    unlock_sd_card();
     if (result != FR_OK) {
         return {static_cast<Error>(result)};
     }
@@ -128,7 +141,9 @@ io::filesystem_error FatFSFile::write_line(const std::string &s) {
 }
 
 io::filesystem_error FatFSFile::sync() {
+    lock_sd_card();
     const auto result = f_sync(&f);
+    unlock_sd_card();
     if (result == FR_OK) {
         return {};
     } else {
@@ -234,11 +249,17 @@ std::vector<io::path> scan_root_directories(const io::path &directory) {
 }
 
 io::filesystem_error delete_file(const io::path &file_path) {
-    return {f_unlink(reinterpret_cast<const TCHAR *>(file_path.c_str()))};
+    lock_sd_card();
+    FRESULT res = f_unlink(reinterpret_cast<const TCHAR *>(file_path.c_str()));
+    unlock_sd_card();
+    return {res};
 }
 
 io::filesystem_error rename_file(const io::path &file_path, const io::path &new_name) {
-    return {f_rename(reinterpret_cast<const TCHAR *>(file_path.c_str()), reinterpret_cast<const TCHAR *>(new_name.c_str()))};
+    lock_sd_card();
+    FRESULT res = f_rename(reinterpret_cast<const TCHAR *>(file_path.c_str()), reinterpret_cast<const TCHAR *>(new_name.c_str()));
+    unlock_sd_card();
+    return {res};
 }
 
 io::filesystem_error copy_file(const io::path &file_path, const io::path &dest_path) {
@@ -279,8 +300,9 @@ io::filesystem_error copy_file(const io::path &file_path, const io::path &dest_p
 FATTimestamp file_created_date(const io::path &file_path) {
     FILINFO filinfo;
 
+    lock_sd_card();
     f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
-
+    unlock_sd_card();
     return {filinfo.fdate, filinfo.ftime};
 }
 
@@ -289,7 +311,9 @@ io::filesystem_error file_update_date(const io::path &file_path, FATTimestamp ti
 
     filinfo.fdate = timestamp.FAT_date;
     filinfo.ftime = timestamp.FAT_time;
+    lock_sd_card();
     return f_utime(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
+    unlock_sd_card();
 }
 
 io::filesystem_error make_new_file(const io::path &file_path) {
@@ -303,7 +327,10 @@ io::filesystem_error make_new_file(const io::path &file_path) {
 }
 
 io::filesystem_error make_new_directory(const io::path &dir_path) {
-    return {f_mkdir(reinterpret_cast<const TCHAR *>(dir_path.c_str()))};
+    lock_sd_card();
+    FRESULT res = f_mkdir(reinterpret_cast<const TCHAR *>(dir_path.c_str()));
+    unlock_sd_card();
+    return {res};
 }
 
 io::filesystem_error ensure_directory(const io::path &dir_path) {
@@ -513,14 +540,17 @@ bool is_regular_file(const file_status s) {
 
 bool file_exists(const path &file_path) {
     FILINFO filinfo;
+    lock_sd_card();
     auto fr = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
-
+    unlock_sd_card();
     return fr == FR_OK;
 }
 
 bool is_directory(const path &file_path) {
     FILINFO filinfo;
+    lock_sd_card();
     auto fr = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
+    unlock_sd_card();
 
     return fr == FR_OK && is_directory(static_cast<file_status>(filinfo.fattrib));
 }
@@ -533,7 +563,9 @@ bool is_empty_directory(const path &file_path) {
         return false;
     }
 
+    lock_sd_card();
     auto result = f_findfirst(&dir, &filinfo, reinterpret_cast<const TCHAR *>(file_path.c_str()), (const TCHAR *)"*");
+    unlock_sd_card();
     return !((result == FR_OK) && (filinfo.fname[0] != (TCHAR)'\0'));
 }
 
@@ -551,7 +583,10 @@ int file_count(const path &directory) {
 space_info space(const path &p) {
     DWORD free_clusters{0};
     FATFS *fs;
-    if (f_getfree(reinterpret_cast<const TCHAR *>(p.c_str()), &free_clusters, &fs) == FR_OK) {
+    lock_sd_card();
+    FRESULT res = f_getfree(reinterpret_cast<const TCHAR *>(p.c_str()), &free_clusters, &fs);
+    unlock_sd_card();
+    if (res == FR_OK) {
 #if _MAX_SS != _MIN_SS
         static_assert(false, "FatFs not configured for fixed sector size");
 #else

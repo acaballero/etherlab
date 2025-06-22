@@ -109,7 +109,6 @@ uint32_t getPeak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v);
 void adquireFFTAsync();
 void reorderBins(complex_t_f32 *v);
 void calcFFTRange();
-uint8_t findFreqs(int *arr_idx_freqs, uint8_t max);
 
 extern st_fft_params fft_params;
 extern FFTIQBalancer fftIQBalancer;

@@ -28,8 +28,7 @@ enum LO_POWER { LO_POWER_LOW, LO_POWER_MEDIUM, LO_POWER_HIGH };
 /*
  * Frequency station
  */
-#define FREQ_MEM_NAME_SIZE 16
-#define FREQ_MEM_SIZE 50
+#define FREQ_MEM_NAME_SIZE 32
 
 struct st_freq_mem {
     uint16_t group;

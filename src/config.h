@@ -24,7 +24,7 @@
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ANALOGMODE(mode) (mode == ANALOG_TX || mode == ANALOG_RX)
 #define ISANALOG (ANALOGMODE(config.mode))
-#define CONFIG_VERSION "334"
+#define CONFIG_VERSION "335"
 
 namespace configuration {
 extern os::periodic_task task;
@@ -117,9 +117,6 @@ typedef struct st_config //__attribute__ ((packed))
 
     // Hardware dependant config struct
     ST_HW_CONFIG hw;
-
-    // Stations memory
-    st_freq_mem freqs[FREQ_MEM_SIZE] = {{0, 0, 144300000, SSB_LSB, "TEST 1"}, {0, 1, 144400000, FM, "TEST 2"}};
 
     char callsign[7] = "EA4IAB";
 

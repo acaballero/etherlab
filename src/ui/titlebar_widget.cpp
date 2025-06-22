@@ -116,7 +116,12 @@ void TitleBarWidgetInner::paint_callback() {
             color = C565_GREY_DARK;
             break;
         case sdcard_STATUS::Mounted:
-            color = C565_GREEN;
+            if (usb_msc_active) {
+                // Mounted but MSC is active and waiting for the USB host
+                color = C565_PURPLE;
+            } else {
+                color = C565_GREEN;
+            }
             break;
         case sdcard_STATUS::MassStorageDeviceActive:
             color = C565_PURPLE;

@@ -94,6 +94,15 @@ bool unlock_sd_card() {
     }
 }
 
+FRESULT check_sd_card_health(void) {
+    // Level 1: Quick disk status check
+    if (disk_status(0) != RES_OK) {
+        return FR_DISK_ERR;
+    }
+
+    DIR dir;
+    return f_opendir(&dir, ""); // Check root directory
+}
 /* USER CODE END Variables */
 
 void sdcard_init(void) {
@@ -118,9 +127,12 @@ void sdcard_init(void) {
         }
 
         if (stat == RES_OK) {
-            // Open the file system
-            fres = f_mount(&FatFS, "/", 1); // 1=mount now
-            error = fres != FR_OK;
+            stat = check_sd_card_health();
+            if (stat != FR_OK) {
+                // Try to remount
+                fres = f_mount(&FatFS, "/", 1); // 1=mount now
+                error = fres != FR_OK;
+            }
         } else {
             error = true;
         }

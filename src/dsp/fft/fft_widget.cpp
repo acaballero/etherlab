@@ -10,6 +10,7 @@
 #include "agc.h"
 #include "input/inputEvent.h"
 #include "ips_font.h"
+#include "ui/frequency_memory_ui.h"
 #include <utility>
 
 FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {
@@ -36,10 +37,12 @@ void FFTWidget::draw_bandwidth() {
     display->writeVertLine(bm_m, 0, FFT_HEIGHT - 1, C565_GREY_DARK);
 }
 
+void FFTWidget::fetch_stations_in_range() {
+    unsigned long fft_span_f_end = fft_params.span_f_start + config.fft.span;
+    freq_memory::find_in_freq_range(fft_params.span_f_start, fft_span_f_end, stations_in_range);
+}
+
 void FFTWidget::draw_freq_marks() {
-    int arr_idx_freqs[10];
-    uint8_t n = findFreqs(arr_idx_freqs, 10);
-    st_freq_mem data;
 
     int text_width, padding = 3, padding_v = 3;
     FontDef *font = (FontDef *)&Font_Fixed5x7;
@@ -47,8 +50,8 @@ void FFTWidget::draw_freq_marks() {
     int height = font->height + padding_v * 2 - 1;
     int margin_top = 1;
 
-    while (n) {
-        data = config.freqs[arr_idx_freqs[n - 1]];
+    for (auto data : stations_in_range) {
+
         uint16_t x = ((float)(data.freq - fft_params.span_f_start) / (float)(fft_params.span)) * FTT_DISPLAY_WIDTH;
         text_width = strlen(data.name) * font->width;
         int x0 = x - (text_width / 2) - padding;
@@ -65,7 +68,6 @@ void FFTWidget::draw_freq_marks() {
             display->setColor(C565_GREY_LIGHT);
             display->write(data.name);
         }
-        n--;
     }
 }
 
@@ -248,6 +250,7 @@ void FFTWidget::paint_callback() {
 void FFTWidget::before_paint() {
     if (this->dirty()) {
         refresh_x_axis = f_start != fft_params.span_f_start || fft_span != fft_params.span;
+        fetch_stations_in_range();
     }
 }
 

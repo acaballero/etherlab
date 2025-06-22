@@ -2,10 +2,13 @@
  * Filename: frequency_memory_ui.cpp
  * Author: Angel Dust
  * Date: 2025-02-22
+ * Modified to use FileBuffer instead of in-memory array
  */
 
 #include "frequency_memory_ui.h"
 #include "config.h"
+#include "fatfs/fatfs.h"
+#include "io/file_wrapper.hpp"
 #include "itemsTemplates.hpp"
 #include "main_board.h"
 #include "menuBase.h"
@@ -14,105 +17,279 @@
 #include "ui/menu_actions.h"
 #include "ui/menu_options.h"
 #include "ui/ui_types.h"
+#include "io/file_wrapper.hpp"
+#include "result.h"
 #include <cstddef>
+#include <sstream>
+#include <sys/_stdint.h>
 
 namespace freq_memory {
 
-int get_index() {
-    int i = 0;
-    while (i < FREQ_MEM_SIZE) {
-        if (!config.freqs[i].freq) {
-            return i;
-        }
-        i++;
+#define INIT_OR_ABORT(value)                                                                                                                                   \
+    {                                                                                                                                                          \
+        if (!init_file_buffer()) {                                                                                                                             \
+            return value;                                                                                                                                      \
+        }                                                                                                                                                      \
     }
 
-    return -1;
+// FileBuffer for frequency memory storage
+static std::unique_ptr<FileWrapper<>> db_file = nullptr;
+
+static const char *FREQ_MEMORY_FILE = "freqs.db";
+
+// Serialize frequency memory entry to string
+std::string serialize_freq_mem(const st_freq_mem &mem) {
+    std::ostringstream oss;
+    oss << mem.freq << "," << static_cast<int>(mem.mode) << "," << mem.group << "," << mem.id << "," << mem.name;
+    return oss.str();
 }
 
-int get_index();
-void open_save_current();
+// Deserialize string to frequency memory entry
+st_freq_mem deserialize_freq_mem(const std::string &line) {
+    st_freq_mem mem = {};
+    std::istringstream iss(line);
+    std::string token;
+
+    int field = 0;
+    size_t pos;
+    while (std::getline(iss, token, ',') && field < 5) {
+        switch (field) {
+            case 0:
+                mem.freq = std::stoull(token);
+                break;
+            case 1:
+                mem.mode = static_cast<MODULATION_MODE>(std::stoi(token));
+                break;
+            case 2:
+                mem.group = std::stoi(token, &pos);
+                if (pos != token.length()) {
+                    return {}; // Partial conversion (e.g., "123abc")
+                }
+                break;
+            case 3:
+                mem.id = std::stoi(token);
+                break;
+            case 4:
+                strncpy(mem.name, token.c_str(), FREQ_MEM_NAME_SIZE - 1);
+                break;
+        }
+        field++;
+    }
+
+    return mem;
+}
+
+std::vector<st_freq_mem> get_all() {
+
+    std::vector<st_freq_mem> memories;
+    memories.reserve(db_file->line_count());
+
+    for (uint32_t i = 0; i < db_file->line_count(); ++i) {
+        std::string line = db_file->get_line(i);
+        if (!line.empty()) {
+            memories.push_back(deserialize_freq_mem(line));
+        }
+    }
+
+    return memories;
+}
+
+// Build sorted database from unsorted data
+void build_sorted_database(std::vector<st_freq_mem> &memories) {
+
+    // Sort by frequency
+    std::sort(memories.begin(), memories.end(), [](const st_freq_mem &a, const st_freq_mem &b) {
+        return a.freq < b.freq;
+    });
+
+    db_file->backup();
+    db_file->clear();
+
+    for (size_t i = 0; i < memories.size(); ++i) {
+        std::string serialized = serialize_freq_mem(memories[i]);
+        if (i < db_file->line_count()) {
+            db_file->replace_line(i, serialized);
+        } else {
+            db_file->append_line(serialized);
+        }
+    }
+}
+
+void fix_db() {
+    INIT_OR_ABORT()
+    if (!db_file->line_count()) {
+        return;
+    }
+    LOG("Fixing memory database. Count: %d\n", db_file->line_count());
+    auto all = get_all();
+    LOG("Fixing memory database. Found %d non empty lines\n", all.size());
+    build_sorted_database(all);
+    LOG("Fixed memory database. Count: %d\n", db_file->line_count());
+}
+
+// Initialize file buffer
+bool init_file_buffer() {
+
+    if (sdcard_info.status != sdcard_STATUS::Mounted) {
+        return false;
+    }
+
+    if (db_file) {
+        return true; // Already initialized
+    }
+
+    auto result = std::unique_ptr<FileWrapper<>>(new FileWrapper<>());
+    if (result->load(FREQ_MEMORY_FILE, true)) {
+        db_file = std::move(result);
+        sdcard_signal.add(NULL, [](void *, void *) {
+            if (sdcard_info.status != sdcard_STATUS::Mounted) {
+                db_file.reset();
+            }
+        });
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// Get frequency memory entry by index (line number)
+st_freq_mem get_by_index(int index) {
+
+    INIT_OR_ABORT({});
+
+    if (index < 0) {
+        return {};
+    }
+
+    if (index >= static_cast<int>(db_file->line_count())) {
+        return {}; // Index out of bounds
+    }
+
+    // Use the new get_line_content method which handles newlines properly
+    std::string line = db_file->get_line(index);
+
+    st_freq_mem m = deserialize_freq_mem(line);
+
+    return m;
+}
+
+auto extract_freq_func = [](const std::string &line) {
+    st_freq_mem m = deserialize_freq_mem(line);
+    return m.freq;
+};
+
+void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories) {
+    INIT_OR_ABORT()
+    out_memories.clear();
+
+    std::vector<uint32_t> line_numbers;
+    FRESULT res = db_file->find_range(freq_min, freq_max, extract_freq_func, line_numbers);
+
+    if (res != FR_OK) {
+        // TODO: Remove this once this is stable
+        fix_db();
+        return;
+    }
+
+    out_memories.reserve(line_numbers.size());
+
+    // Prefetch for efficiency
+    if (!line_numbers.empty()) {
+        uint32_t min_line = *std::min_element(line_numbers.begin(), line_numbers.end());
+        uint32_t max_line = *std::max_element(line_numbers.begin(), line_numbers.end());
+
+        std::vector<std::string> lines = db_file->get_lines_range(min_line, max_line + 1);
+
+        for (auto line : lines) {
+            if (!line.empty()) {
+                out_memories.push_back(deserialize_freq_mem(line));
+            }
+        }
+    }
+}
+
+// Get total number of frequency memory entries
+int get_freq_mem_count() {
+    INIT_OR_ABORT(0)
+    return static_cast<int>(db_file->line_count());
+}
 
 // st_freq_mem temporary register
 st_freq_mem tempFreqMem;
 char tempFreqBuf[] = "00 000 000 000";
 int curr_index = -1;
 using namespace Menu;
+
 // A function to save the edited data record
 void saveTarget() {
-
     char *ptr;
     removePunct(tempFreqBuf);
     tempFreqMem.freq = strtol(tempFreqBuf, &ptr, 10);
-    config.freqs[curr_index] = tempFreqMem;
 
-    using namespace status;
-    if (settings_write(config.freqs) == HAL_FLASH_ERROR_NONE) {
-        handleError(ST_INFO, "Configuration saved");
-    } else {
-        handleError(ST_ERROR, "Error saving configuration");
-    }
+    save(tempFreqMem);
 }
 
 /**
  * Retrieves the index of a stored frequency by frequency and mode
  */
-int find_index(st_freq_mem data) {
+int find_index(st_freq_mem &data) {
+    INIT_OR_ABORT(-1)
 
-    uint16_t i = 0;
-    for (; i < FREQ_MEM_SIZE; i++) {
-        if (config.freqs[i].freq == data.freq && config.freqs[i].mode == data.mode) {
-            return i;
-        }
+    uint32_t line_pos = db_file->binary_search_first(data.freq, extract_freq_func, FindMode::EQ);
+
+    if (line_pos < db_file->line_count()) {
+        return line_pos;
     }
 
     return -1;
 }
 
-/**
- * Retrieves a register by channel id
- */
-st_freq_mem *find_id(uint16_t group, uint16_t id) {
+void save(st_freq_mem &mem) {
 
-    uint16_t i = 0;
-    for (; i < FREQ_MEM_SIZE; i++) {
-        if (config.freqs[i].id == id && config.freqs[i].group == group) {
-            return &config.freqs[i];
-        }
-    }
+    uint32_t line_pos = db_file->binary_search_first(mem.freq, extract_freq_func, GTE);
 
-    return nullptr;
-}
+    std::string serialized = serialize_freq_mem(mem);
 
-void save_freq(st_freq_mem item, int i) {
+    if (line_pos >= db_file->line_count()) {
+        // Append at end
+        mem.id = line_pos;
+        db_file->append_line(serialized);
 
-    if (i < 0) { // Find by frequency
-        i = find_index(item);
-    }
-
-    if (i < 0) {
-        i = get_index();
-    }
-
-    item.id = i;
-
-    using namespace status;
-
-    if (i < 0) {
-        handleError(ST_ERROR, "Memory full");
     } else {
-        config.freqs[i] = item;
-        using namespace status;
-        if (settings_write(config.freqs) == HAL_FLASH_ERROR_NONE) {
-            handleError(ST_INFO, "Saved");
+
+        // Check if frequency already exists
+
+        std::string existing_line = db_file->get_line(line_pos);
+        st_freq_mem existing = deserialize_freq_mem(existing_line);
+
+        if (existing.freq == mem.freq) {
+            // Update existing item
+            mem.id = line_pos;
+            db_file->replace_line(line_pos, serialized);
+
         } else {
-            handleError(ST_ERROR, "Error saving");
+
+            // Insert at correct position - shift remaining lines
+            std::vector<std::string> remaining_lines;
+            for (uint32_t i = line_pos; i < db_file->line_count(); ++i) {
+                remaining_lines.push_back(db_file->get_line(i));
+            }
+
+            db_file->replace_line(line_pos, serialized);
+            for (size_t i = 0; i < remaining_lines.size(); ++i) {
+                uint32_t ix = line_pos + 1 + i;
+                mem.id = ix;
+                if (ix >= db_file->line_count()) {
+                    db_file->append_line(remaining_lines[i]);
+                } else {
+                    db_file->replace_line(ix, remaining_lines[i]);
+                }
+            }
         }
     }
 }
 
 void open_save_current() {
-
     view_manager::keyboardView.set_text("");
     view_manager::keyboardView.set_label("Name");
     view_manager::keyboardView.set_size(FREQ_MEM_NAME_SIZE);
@@ -120,13 +297,12 @@ void open_save_current() {
         strncpy(tempFreqMem.name, str, FREQ_MEM_NAME_SIZE);
         tempFreqMem.mode = config.modulation;
         tempFreqMem.freq = radio::get_frequency();
-        save_freq(tempFreqMem);
+        save(tempFreqMem);
     };
     view_manager::push((View *)&view_manager::keyboardView);
 }
 
 result edit_freq_name(eventMask, navNode &) {
-
     view_manager::keyboardView.set_text(tempFreqMem.name);
     view_manager::keyboardView.set_label("Name");
     view_manager::keyboardView.set_size(FREQ_MEM_NAME_SIZE);
@@ -138,6 +314,7 @@ result edit_freq_name(eventMask, navNode &) {
     return proceed;
 }
 
+/* Start frequency edition */
 result edit_freq(eventMask, navNode &) {
     Menu::open_keypad<uint64_t>(
         tempFreqMem.freq, "Hz", "Frequency", 0, false,
@@ -153,82 +330,67 @@ result edit_freq(eventMask, navNode &) {
     return proceed;
 }
 
+/* Deletes the radio station with a particular index */
 void del_freq(int i) {
-    config.freqs[i] = {};
-
-    using namespace status;
-    if (settings_write(config.freqs) == HAL_FLASH_ERROR_NONE) {
+    if (i >= 0 && i < get_freq_mem_count()) {
+        db_file->delete_line(i);
+        using namespace status;
         handleError(ST_INFO, "Deleted");
     } else {
+        using namespace status;
         handleError(ST_ERROR, "Error deleting");
     }
 }
 
-st_freq_mem *next_prev(bool next) {
+/* Retrieves a pointer to the next or previous radio station of that of the current index, by frequency order */
+st_freq_mem next_prev(bool next) {
+    static st_freq_mem found_mem; // Static to return pointer
+
+    INIT_OR_ABORT({})
 
     int16_t step = next ? 1 : -1;
-    uint16_t from_ix = curr_index >= 0 ? constrain(curr_index + step, 0, FREQ_MEM_SIZE) : 0;
-    int16_t to_ix = next ? FREQ_MEM_SIZE : -1;
-
-    uint16_t ix = from_ix;
-    while (ix != to_ix) {
-
-        if (config.freqs[ix].freq) {
-            return &config.freqs[ix];
-        }
-
-        ix += step;
-    }
-
-    return nullptr;
+    int count = get_freq_mem_count();
+    uint16_t ix = curr_index >= 0 ? constrain(curr_index + step, 0, count) : 0;
+    return get_by_index(ix);
 }
 
-void set(st_freq_mem *mem) {
-    int ix = find_index(*mem);
+/* Tune the radio to the frequency of a station */
+void set(st_freq_mem &mem) {
+    int ix = find_index(mem);
 
     if (ix >= 0) {
         curr_index = ix;
     }
 
-    main_board::setModulationMode(mem->mode, false);
-    radio::set_frequency(mem->freq);
+    main_board::setModulationMode(mem.mode, false);
+    radio::set_frequency(mem.freq);
 }
 
+/* Sets the next frequency in a given direction */
 void set_next_prev(DIRECTION d) {
     if (get_memory_mode() && curr_index >= 0) {
-        st_freq_mem *mem = find_closest(config.freqs[curr_index].freq, 0, d);
-        if (mem) {
+        st_freq_mem curr_mem = get_by_index(curr_index);
+        st_freq_mem mem = find_closest(curr_mem.freq, d);
+        if (mem.freq) {
             freq_memory::set(mem);
         }
-    } else {
     }
 }
 
-st_freq_mem *find_closest(uint64_t f, uint16_t group, DIRECTION direction = STOP) {
-    int ix = -1;
-    uint32_t min_distance = (uint32_t)-1;
-    int32_t distance = 0;
+/* Finds the closest station to a given frequency and direction */
+st_freq_mem find_closest(uint64_t f, DIRECTION direction = STOP) {
+    static st_freq_mem found_mem; // Static to return pointer
 
-    for (int i = 0; i < FREQ_MEM_SIZE; i++) {
-        distance = config.freqs[i].freq - f;
+    INIT_OR_ABORT({})
 
-        if (!config.freqs[i].freq || (direction == FORWARD && distance <= 0) || (direction == BACKWARDS && distance >= 0)) {
-            continue;
-        }
+    int count = get_freq_mem_count();
 
-        distance = abs(distance);
-
-        if ((uint32_t)distance < min_distance && config.freqs[i].group == group) {
-            min_distance = distance;
-            ix = i;
-        }
-    }
-
-    if (ix >= 0) {
-        return &config.freqs[ix];
-
+    int32_t line_pos = db_file->binary_search_first(f + (direction == FORWARD ? 1 : -1), extract_freq_func, direction == FORWARD ? GTE : LTE);
+    if (line_pos < count) {
+        found_mem = get_by_index(line_pos);
+        return found_mem;
     } else {
-        return nullptr;
+        return {};
     }
 }
 
@@ -237,17 +399,18 @@ bool get_memory_mode() {
 }
 
 uint8_t toggle_memory_mode() {
-    bool memory_mode = (config.memory_mode == 0 ? 1 : 0);
+    bool memory_mode = (get_memory_mode() == 0 ? 1 : 0);
 
     if (memory_mode) {
-        // Are there any frequencies
-        st_freq_mem *mem = find_closest(radio::get_frequency(), 0);
+        st_freq_mem mem = find_closest(radio::get_frequency());
 
-        if (mem) {
+        if (mem.freq) {
             freq_memory::set(mem);
+
         } else {
             using namespace status;
             handleError(ST_ERROR, "Frequency memory empty");
+            memory_mode = false;
             return 1;
         }
     }
@@ -269,7 +432,8 @@ MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqN
 
 result freqMemorySelectedEvent(eventMask e, navNode &nav);
 
-FreqMemoryMenu freqMemMenu("Frequency memory", FREQ_MEM_SIZE, nullptr, freqMemEditMenu, freqMemorySelectedEvent, (eventMask)(enterEvent | exitEvent));
+// Updated FreqMemoryMenu to work with FileBuffer
+FreqMemoryMenu freqMemMenu("Frequency memory", 255, nullptr, freqMemEditMenu, freqMemorySelectedEvent, (eventMask)(enterEvent | exitEvent));
 
 menu_action_st menu_actions[] = {navigation_actions_arr[Menu::UP], navigation_actions_arr[Menu::DOWN], {"Delete", []() {
                                                                                                             if (freqMemMenu.curr_ix >= 0) {
@@ -284,15 +448,15 @@ menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(menu_acti
  * It copies the currently selected index st_freq_mem in the temporary struct
  */
 result freqMemorySelectedEvent(eventMask e, navNode &nav) {
-    // trace(MENU_DEBUG_OUT << "copy data to temp target:" << (int)nav.target << "\n");
     if (nav.target == &freqMemMenu && freqMemMenu.curr_ix >= 0) { // Only if we are on memory menu
-        tempFreqMem = config.freqs[freqMemMenu.curr_ix];
+        tempFreqMem = get_by_index(freqMemMenu.curr_ix);
 
         // If it's empty: New entry. Use current frequency
         if (!tempFreqMem.freq) {
             tempFreqMem.freq = radio::get_frequency();
             tempFreqMem.mode = config.modulation;
             curr_index = -1;
+
         } else {
             curr_index = nav.sel;
         }
@@ -303,20 +467,17 @@ result freqMemorySelectedEvent(eventMask e, navNode &nav) {
     }
 
     if (e == Menu::enterEvent) {
-
         if (!actions.actions[0].action) {
             for (size_t i = 0; i < navigation_actions.size; i++) {
                 actions.actions[i] = navigation_actions.actions[i];
             }
         }
-
         actions_signal.emit(&actions);
     } else if (e == Menu::exitEvent) {
         // Remove context actions
         actions_signal.emit(nullptr);
     }
 
-    // nav.sel can be stored for future reference
     return proceed;
 }
 

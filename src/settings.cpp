@@ -4,13 +4,16 @@
 #include "settings.h"
 #include "dsp/dsp_config.h"
 #include "fatfs/fatfs.h"
+#include "ff.h"
 #include "hw/stm32f4xx/eeprom.h"
 #include "main.h"
 #include "hw/stm32.h"
 #include "status.h"
+#include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_flash.h"
 #include "io/config_file.h"
 #include "types.h"
+#include "ui/frequency_memory_ui.h"
 #include "usbd_cdc_if.h"
 #include <cstring>
 
@@ -76,13 +79,13 @@ uint8_t settings_read(Config *settings) {
         if (ok) {
             ok = (memcmp(version, &settings->version, 3) == 0);
         }
-
-        mem_file.load("mem.db", settings->freqs);
     }
 #endif
     if (!ok) {
 
         // Read config from flash
+
+        settings = {};
 
         uint8_t status = flash_read((uint16_t *)version, 2);
 
@@ -117,7 +120,6 @@ uint8_t settings_write(Config *settings) {
             status::handleError(status::ST_ERROR, "Error saving config in SD card. Fallback to Flash");
         }
     }
-
 #endif
 
     if (!ok) {

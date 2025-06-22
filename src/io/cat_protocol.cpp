@@ -9,6 +9,7 @@
 #include "cat_if.h"
 #include "standby.h"
 #include "status.h"
+#include "stm32f4xx_hal.h"
 #include "types.h"
 #include "ui/frequency_memory_ui.h"
 #include "usb/usbd_cdc_if.h"
@@ -106,8 +107,9 @@ void print_hex(char *buf, int size, bool response = false) {
         printf(" => ");
     }
     while (size > 0) {
-        if (*byte == '\r')
+        if (*byte == '\r') {
             continue;
+        }
         snprintf_(str, sizeof(str), "%.2x", *byte);
         size--;
         printf_("%s ", str);
@@ -177,6 +179,8 @@ uint8_t from_modulation_mode(MODULATION_MODE mode) {
     switch (mode) {
         case AM:
             return MODE_TYPE_AM;
+        case CW:
+            return MODE_TYPE_CW;
         case FM:
             return MODE_TYPE_FM;
         case WFM:
@@ -217,6 +221,7 @@ void process_command(st_usb_cdc_command *command) {
             // print_hex((char *)response, size, true);
 
             CDC_Transmit_HS(response, size);
+            // LOG("%d: Sent response. Size: %d\n", HAL_GetTick(), size);
         } else {
             // printf_(" => not for me\n");
         }
@@ -421,42 +426,80 @@ void cmd_set_vfo_freq_handler(st_usb_cdc_command *command, uint8_t *response, ui
     }
 }
 
+// Encode a 16-bit value into two BCD bytes
+static void to_bcd16(uint16_t value, uint8_t *hi, uint8_t *lo) {
+    uint8_t high = value / 100;
+    uint8_t low = value % 100;
+    *hi = ((high / 10) << 4) | (high % 10);
+    *lo = ((low / 10) << 4) | (low % 10);
+}
+
+// static uint8_t to_bcd(uint8_t val) {
+//     return ((val / 10) << 4) | (val % 10);
+// }
+
+// Decode two BCD bytes into a 16-bit integer
+static uint16_t from_bcd16(uint8_t hi, uint8_t lo) {
+    return (((hi >> 4) * 10 + (hi & 0x0F)) * 100) + ((lo >> 4) * 10 + (lo & 0x0F));
+}
+
+// static uint8_t from_bcd(uint8_t bcd) {
+//     return ((bcd >> 4) * 10) + (bcd & 0x0F);
+// }
+
 void cmd_set_read_mem(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
 
     uint8_t *buf = command->data;
-    // uint8_t init_pos = *size;
+    // uint8_gt init_pos = *size;
 
-    st_freq_mem *mem;
+    st_freq_mem mem;
 
     if (command->size > 10) { // set
 
         st_freq_mem rcvd_mem;
         rcvd_mem.freq = parse_freq(buf + 5 + 6);
         rcvd_mem.group = 0;
-        rcvd_mem.id = buf[9];
+        rcvd_mem.id = from_bcd16(0, buf[9]);
         rcvd_mem.mode = to_modulation_mode(buf[16]);
         strncpy(rcvd_mem.name, (const char *)(buf + 103), FREQ_MEM_NAME_SIZE);
         trim(rcvd_mem.name);
         rcvd_mem.name[FREQ_MEM_NAME_SIZE] = 0;
 
-        freq_memory::save_freq(rcvd_mem, rcvd_mem.id);
+        freq_memory::save(rcvd_mem);
 
-        mem = freq_memory::find_id(0, buf[9]);
+        mem = freq_memory::get_by_index(rcvd_mem.id);
+
     } else {
-        mem = freq_memory::find_id(0, buf[8]);
+        uint32_t id = from_bcd16(0, buf[8]);
+
+        mem = freq_memory::get_by_index(id);
+
+        //  mem.id = id;
     }
 
-    if (!mem) {
+    if (!mem.freq) {
         memcpy(response, ok_response_data, 5);
         *size = 5;
         return;
     }
 
     // Memory Group & ID (2 Bytes Each)
-    response[(*size)++] = (mem->group >> 8) & 0xFF;
-    response[(*size)++] = mem->group & 0xFF;
-    response[(*size)++] = (mem->id >> 8) & 0xFF;
-    response[(*size)++] = mem->id & 0xFF;
+    //  response[(*size)++] = (mem->group >> 8) & 0xFF;
+    // response[(*size)++] = mem->group & 0xFF;
+    // response[(*size)++] = (mem->id >> 8) & 0xFF;
+    // response[(*size)++] = mem->id & 0xFF;
+
+    uint8_t hi, lo;
+
+    // Group
+    to_bcd16(mem.group, &hi, &lo);
+    response[(*size)++] = hi;
+    response[(*size)++] = lo;
+
+    // ID
+    to_bcd16(mem.id, &hi, &lo);
+    response[(*size)++] = hi;
+    response[(*size)++] = lo;
 
     // Split & Select Memory Setting (Default: OFF)
     response[(*size)++] = 0x00;
@@ -465,12 +508,12 @@ void cmd_set_read_mem(st_usb_cdc_command *command, uint8_t *response, uint8_t *s
 
     // Frequency (BCD Format)
     uint64_t bcdfreq = 0;
-    bcdfreq = uint64_to_bcd(mem->freq);
+    bcdfreq = uint64_to_bcd(mem.freq);
     memcpy(response + *size, &bcdfreq, sizeof(bcdfreq));
     *size += 5;
 
     // Mode & Filter (Mode Mapped to CI-V Code)
-    uint8_t mode_civ = from_modulation_mode(mem->mode);
+    uint8_t mode_civ = from_modulation_mode(mem.mode);
     response[(*size)++] = mode_civ;
     response[(*size)++] = 0x01; // Default Filter
 
@@ -519,7 +562,7 @@ void cmd_set_read_mem(st_usb_cdc_command *command, uint8_t *response, uint8_t *s
 
     // Memory Name (FREQ_MEM_NAME_SIZE Chars, Padded)
     memset(&response[(*size)], ' ', FREQ_MEM_NAME_SIZE);
-    strncpy((char *)&response[(*size)], mem->name, FREQ_MEM_NAME_SIZE);
+    strncpy((char *)&response[(*size)], mem.name, FREQ_MEM_NAME_SIZE);
     *size += FREQ_MEM_NAME_SIZE;
 }
 

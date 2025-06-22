@@ -19,7 +19,9 @@
 
 void FrequencyWidget::init() {
 
-    scanner::signal.add(nullptr, [this](void *, void *) { set_dirty(); });
+    scanner::signal.add(nullptr, [this](void *, void *) {
+        set_dirty();
+    });
 
     btnVFO.action = [](Button &, st_inputEvent e) {
         if (e.ms > LONG_PRESS_MS) {
@@ -28,7 +30,9 @@ void FrequencyWidget::init() {
             radio::toggle_vfo();
         }
     };
-    btnScan.action = [](Button &, st_inputEvent) { scanner::toggle(); };
+    btnScan.action = [](Button &, st_inputEvent) {
+        scanner::toggle();
+    };
 
     add_children({&btnRpt, &btnVFO, &btnScan, &freqWidget});
     set_name("freq_w");
@@ -42,7 +46,9 @@ void FrequencyWidget::init() {
     }
 
     btnRpt.set_color(C565_WHITE, C565_CYAN, C565_YELLOW);
-    btnRpt.action = [](Button &, st_inputEvent) { Menu::open(Menu::repeaterMenu); };
+    btnRpt.action = [](Button &, st_inputEvent) {
+        Menu::open(Menu::repeaterMenu);
+    };
 }
 
 void FrequencyWidget::before_paint() {
@@ -86,11 +92,10 @@ void FrequencyWidget::before_paint() {
             btnRpt.set_value("");
         }
 
-        if (freq_memory::get_memory_mode()) {
-            btnVFO.set_text("M");
-        } else {
-            btnVFO.set_text(radio::get_vfo() == 0 ? "A" : "B");
-        }
+        sprintf(buf, "%s%s", freq_memory::get_memory_mode() ? "M:" : "", radio::get_vfo() == 0 ? "A" : "B");
+
+        btnVFO.set_text(buf);
+
         this->status = freqInfo;
         this->set_dirty();
     }
@@ -103,7 +108,11 @@ bool FrequencyWidget::on_touch(const st_inputEvent e) {
 
     } else {
         Menu::open_keypad<uint64_t>(
-            radio::get_frequency(), "Hz", "Frequency", 6, true, [](uint64_t v) { radio::set_frequency((uint64_t)v); }, 0, 0);
+            radio::get_frequency(), "Hz", "Frequency", 6, true,
+            [](uint64_t v) {
+                radio::set_frequency((uint64_t)v);
+            },
+            0, 0);
     }
     return true;
 }
@@ -149,4 +158,5 @@ void FrequencyWidgetInner::paint_callback() {
     display->writeRect(start_line, 18, start_line + 4, 18);
 }
 
-void FrequencyWidgetInner::before_paint() {}
+void FrequencyWidgetInner::before_paint() {
+}

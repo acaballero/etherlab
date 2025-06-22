@@ -13,6 +13,24 @@ template <typename T, size_t Capacity> class RingBuffer {
     RingBuffer() : head(0), tail(0), full(false) {
     }
 
+    T &front() {
+        return buffer[tail];
+    }
+
+    const T &front() const {
+        return buffer[tail];
+    }
+
+    T &back() {
+        size_t last = (head + Capacity - 1) % Capacity;
+        return buffer[last];
+    }
+
+    const T &back() const {
+        size_t last = (head + Capacity - 1) % Capacity;
+        return buffer[last];
+    }
+
     T *push(const T &item) {
         if (full) {
             return nullptr;
@@ -24,14 +42,23 @@ template <typename T, size_t Capacity> class RingBuffer {
         return allocated_item;
     }
 
+    bool pop() {
+        if (empty()) {
+            return false;
+        }
+
+        tail = (tail + 1) % Capacity;
+        full = false;
+        return true;
+    }
+
     bool pop(T &item) {
         if (empty()) {
             return false;
         }
+
         item = buffer[tail];
-        tail = (tail + 1) % Capacity;
-        full = false;
-        return true;
+        pop();
     }
 
     T &operator[](size_t index) {

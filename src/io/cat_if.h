@@ -7,7 +7,7 @@
 
 #include "stdint.h"
 
-#define CAT_COMMAND_SIZE 128
+#define CAT_COMMAND_SIZE 160
 #define CAT_STOP_BYTE 0xFD
 
 struct st_usb_cdc_command {

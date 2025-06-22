@@ -26,7 +26,8 @@ void MenuWidget::paint_callback() {
     nav.doOutput();
 }
 
-void MenuWidget::before_paint() {}
+void MenuWidget::before_paint() {
+}
 
 bool MenuWidget::on_input(const st_inputEvent e) {
 
@@ -102,6 +103,10 @@ bool MenuWidget::on_input(const st_inputEvent e) {
             break;
         default:
             consumed = false;
+    }
+
+    if (consumed) {
+        set_dirty();
     }
 
     return consumed;

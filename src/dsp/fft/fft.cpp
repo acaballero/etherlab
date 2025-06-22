@@ -30,6 +30,7 @@
 #include "ui/main_view.h"
 #include "ui/view_manager.h"
 #include "utils.hpp"
+#include "ui/frequency_memory_ui.h"
 
 // FFT parameters
 st_fft_params fft_params;
@@ -579,19 +580,6 @@ uint32_t getPeak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v) {
     }
 
     return max_ix;
-}
-
-uint8_t findFreqs(int *arr_idx_freqs, uint8_t max) {
-
-    uint16_t n = 0;
-    unsigned long fft_span_f_end = fft_params.span_f_start + config.fft.span;
-    for (int i = 0; i < FREQ_MEM_SIZE && n < max; i++) {
-        if (config.freqs[i].freq > fft_params.span_f_start && config.freqs[i].freq < fft_span_f_end) {
-            *(arr_idx_freqs++) = i;
-            n++;
-        }
-    }
-    return n;
 }
 
 /**
