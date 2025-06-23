@@ -25,22 +25,27 @@ enum DIRECTION { BACKWARDS, STOP, FORWARD };
 
 enum LO_POWER { LO_POWER_LOW, LO_POWER_MEDIUM, LO_POWER_HIGH };
 
+enum FREQ_TYPE { STATION, BAND_START, BAND_END };
 /*
  * Frequency station
  */
 #define FREQ_MEM_NAME_SIZE 32
 
 struct st_freq_mem {
-    uint16_t group;
-    int32_t id = -1;
-    uint64_t freq;
+
+    int32_t id{-1};
     MODULATION_MODE mode;
+    FREQ_TYPE type{STATION};
+    uint32_t width{0};
+    uint64_t freq{0};
+    bool repeater{false};
+    int32_t offset{0};
     char name[FREQ_MEM_NAME_SIZE + 1] = ""; // Must be allocated beforehand or the menu won't let increase it's size beyond the NULL char
 
     // Default constructor
-    st_freq_mem() : group(0), id(0), freq(0), mode(SSB_LSB), name{""} {};
+    st_freq_mem() : id(0), mode(SSB_LSB), freq(0), name{""} {};
 
-    st_freq_mem(uint16_t g, uint16_t id, uint64_t f, MODULATION_MODE m, const char *n) : group(g), id(id), freq(f), mode(m) {
+    st_freq_mem(uint16_t id, uint64_t f, MODULATION_MODE m, const char *n) : id(id), mode(m), freq(f) {
         strncpy(name, n, FREQ_MEM_NAME_SIZE);
         name[FREQ_MEM_NAME_SIZE] = '\0'; // Ensure null-termination
     }
@@ -49,7 +54,10 @@ struct st_freq_mem {
         strncpy(name, o.name, FREQ_MEM_NAME_SIZE);
         mode = o.mode;
         freq = o.freq;
-        group = o.group;
+        type = o.type;
+        repeater = o.repeater;
+        offset = o.offset;
+        width = o.width;
         id = o.id;
     }
 
@@ -58,7 +66,10 @@ struct st_freq_mem {
         strncpy(name, o.name, FREQ_MEM_NAME_SIZE);
         mode = o.mode;
         freq = o.freq;
-        group = o.group;
+        type = o.type;
+        repeater = o.repeater;
+        offset = o.offset;
+        width = o.width;
         id = o.id;
         return *this;
     }

@@ -76,7 +76,9 @@
 #define C565_BG_FOCUS C565_WHITE
 #define C565_BG_ENABLED C565_WHITE
 
-extern uint16_t palette16[16];
+using Color = uint16_t;
+
+extern Color palette16[16];
 
 #define RGB888_TO_RGB565(rgb) ((((rgb >> 19) & 0x1f) << 11) | (((rgb >> 10) & 0x3f) << 5) | (((rgb >> 3) & 0x1f)))
 

@@ -154,6 +154,7 @@ void zip_c16(const adc_type *__restrict src_i, const adc_type *__restrict src_q,
 void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples) {
     for (uint16_t i = 0; i < n_samples; i++) {
         *(dst_i++) = *(src++);
+
         *(dst_q++) = *(src++);
     }
 }

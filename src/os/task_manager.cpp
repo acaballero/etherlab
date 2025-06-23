@@ -45,7 +45,7 @@ bool TaskManager::remove(periodic_task *t) {
 
 periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
 
-    // To create a timeout we set a period of the same length as the duration AND a delay, so the task will finish after its first execution
+    // To create a timeout we set a period of same length and duration AND a delay, so the task will finish after its first execution
     periodic_task *task = new periodic_task(delay, c, delay, delay);
     add(task);
     return task;

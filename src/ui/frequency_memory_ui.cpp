@@ -26,6 +26,7 @@
 
 namespace freq_memory {
 
+#define MAX_RETRIEVED_ITEMS_PER_RANGE 10 // Use this to save memory
 #define INIT_OR_ABORT(value)                                                                                                                                   \
     {                                                                                                                                                          \
         if (!init_file_buffer()) {                                                                                                                             \
@@ -36,53 +37,128 @@ namespace freq_memory {
 // FileBuffer for frequency memory storage
 static std::unique_ptr<FileWrapper<>> db_file = nullptr;
 
-static const char *FREQ_MEMORY_FILE = "freqs.db";
+static const char *FREQ_MEMORY_FILE = "madrid.db";
 
 // Serialize frequency memory entry to string
 std::string serialize_freq_mem(const st_freq_mem &mem) {
     std::ostringstream oss;
-    oss << mem.freq << "," << static_cast<int>(mem.mode) << "," << mem.group << "," << mem.id << "," << mem.name;
+    oss << mem.id << "," << static_cast<int>(mem.mode) << "," << static_cast<int>(mem.type) << "," << mem.width << "," << mem.freq << "," << mem.repeater << ","
+        << mem.offset << "," << mem.name;
     return oss.str();
 }
 
-// Deserialize string to frequency memory entry
-st_freq_mem deserialize_freq_mem(const std::string &line) {
-    st_freq_mem mem = {};
-    std::istringstream iss(line);
-    std::string token;
+bool parse_int_bounded(const char *start, size_t len, int &result) {
+    if (len == 0 || len > 10) {
+        return false; // Basic validation
+    }
 
+    char temp[12];
+    memcpy(temp, start, len);
+    temp[len] = '\0';
+
+    return parse_int(temp, result);
+}
+
+bool parse_long_bounded(const char *start, size_t len, int64_t &result) {
+    if (len == 0 || len > 20) {
+        return false; // Basic validation
+    }
+
+    char temp[24];
+    memcpy(temp, start, len);
+    temp[len] = '\0';
+
+    return parse_long(temp, result);
+}
+
+st_freq_mem deserialize_freq_mem(const char *line) {
+    st_freq_mem mem = {};
+
+    const char *current = line;
+    const char *field_start = line;
     int field = 0;
-    int intvalue;
-    bool b;
-    while (std::getline(iss, token, ',') && field < 5) {
-        switch (field) {
-            case 0:
-                mem.freq = std::stoull(token);
-                break;
-            case 1:
-                mem.mode = static_cast<MODULATION_MODE>(std::stoi(token));
-                break;
-            case 2:
-                b = parse_int(token.c_str(), intvalue);
-                if (!b) {
-                    return {}; // Partial conversion (e.g., "123abc")
-                } else {
-                    mem.group = intvalue;
-                }
-                break;
-            case 3:
-                b = parse_int(token.c_str(), intvalue);
-                if (!b) {
-                    return {}; // Partial conversion (e.g., "123abc")
-                } else {
-                    mem.id = intvalue;
-                }
-                break;
-            case 4:
-                strncpy(mem.name, token.c_str(), FREQ_MEM_NAME_SIZE - 1);
-                break;
+    int val;
+
+    while (*current != '\0' && field < 8) {
+        // Find field end
+        while (*current != ',' && *current != '\0') {
+            current++;
         }
+
+        size_t field_len = current - field_start;
+
+        // Parse field based on type - no temporary string creation
+        switch (field) {
+            case 0: // index
+                if (!parse_int_bounded(field_start, field_len, val)) {
+                    return {};
+                }
+                mem.id = val;
+                break;
+
+            case 1: // mode
+            {
+                int temp;
+                if (!parse_int_bounded(field_start, field_len, temp)) {
+                    return {};
+                }
+                mem.mode = static_cast<MODULATION_MODE>(temp);
+            } break;
+
+            case 2: // band type
+            {
+                int temp;
+                if (!parse_int_bounded(field_start, field_len, temp)) {
+                    return {};
+                }
+                mem.type = static_cast<FREQ_TYPE>(temp);
+            } break;
+
+            case 3: // width
+                if (!parse_int_bounded(field_start, field_len, val)) {
+                    return {};
+                }
+                mem.width = val;
+                break;
+
+            case 4: // frequency
+            {
+                int64_t freq_val;
+                if (!parse_long_bounded(field_start, field_len, freq_val)) {
+                    return {};
+                }
+                mem.freq = static_cast<uint64_t>(freq_val);
+            } break;
+
+            case 5: // repeater
+                if (!parse_int_bounded(field_start, field_len, val)) {
+                    return {};
+                }
+                mem.repeater = val;
+                break;
+
+            case 6: // offset
+                if (!parse_int_bounded(field_start, field_len, val)) {
+                    return {};
+                }
+                mem.offset = val;
+                break;
+
+            case 7: // name
+            {
+                size_t copy_len = (field_len < FREQ_MEM_NAME_SIZE - 1) ? field_len : FREQ_MEM_NAME_SIZE - 1;
+                memcpy(mem.name, field_start, copy_len);
+                mem.name[copy_len] = '\0';
+            } break;
+        }
+
         field++;
+        if (*current == ',') {
+            current++;
+            field_start = current;
+        } else {
+            break;
+        }
     }
 
     return mem;
@@ -96,7 +172,7 @@ std::vector<st_freq_mem> get_all() {
     for (uint32_t i = 0; i < db_file->line_count(); ++i) {
         std::string line = db_file->get_line(i);
         if (!line.empty()) {
-            memories.push_back(deserialize_freq_mem(line));
+            memories.push_back(deserialize_freq_mem(line.c_str()));
         }
     }
 
@@ -240,26 +316,28 @@ st_freq_mem get_by_index(int index) {
     // Use the new get_line_content method which handles newlines properly
     std::string line = db_file->get_line(index);
 
-    st_freq_mem m = deserialize_freq_mem(line);
+    st_freq_mem m = deserialize_freq_mem(line.c_str());
 
     return m;
 }
 
 auto extract_freq_func = [](const std::string &line) {
-    st_freq_mem m = deserialize_freq_mem(line);
+    st_freq_mem m = deserialize_freq_mem(line.c_str());
     return m.freq;
 };
 
 void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories) {
+
     INIT_OR_ABORT()
     out_memories.clear();
 
     std::vector<uint32_t> line_numbers;
-    FRESULT res = db_file->find_range(freq_min, freq_max, extract_freq_func, line_numbers);
+
+    FRESULT res = db_file->find_range(freq_min, freq_max, extract_freq_func, line_numbers, MAX_RETRIEVED_ITEMS_PER_RANGE);
 
     if (res != FR_OK) {
         // TODO: Remove this once this is stable
-        fix_db();
+        // fix_db();
         return;
     }
 
@@ -274,7 +352,7 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
 
         for (auto line : lines) {
             if (!line.empty()) {
-                out_memories.push_back(deserialize_freq_mem(line));
+                out_memories.push_back(deserialize_freq_mem(line.c_str()));
             }
         }
     }
@@ -341,7 +419,7 @@ void save(st_freq_mem &mem) {
         // Check if frequency already exists
 
         std::string existing_line = db_file->get_line(line_pos);
-        st_freq_mem existing = deserialize_freq_mem(existing_line);
+        st_freq_mem existing = deserialize_freq_mem(existing_line.c_str());
 
         if (existing.freq == mem.freq) {
             // Update existing item

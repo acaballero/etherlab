@@ -11,6 +11,9 @@
 #include <functional>
 #include <stdint.h>
 
+/**
+ * Editable field
+ */
 class Field : public Widget {
   public:
     static const size_t MAX_SIZE = 120;

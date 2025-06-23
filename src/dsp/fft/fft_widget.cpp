@@ -10,10 +10,26 @@
 #include "agc.h"
 #include "input/inputEvent.h"
 #include "ips_font.h"
+#include "os/task_manager.h"
+#include "radio.h"
 #include "ui/frequency_memory_ui.h"
 #include <utility>
 
 FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {
+
+    static os::periodic_task *t;
+    // Update the frequencies in the range every time the frequency changes
+    radio::freq_signal.add(this, [this](void *, void *) {
+        if (visible()) {
+            if (t) {
+                os::task_manager.remove(t);
+            }
+
+            t = os::task_manager.set_timeout(500, [this]() { // Debounce
+                fetch_stations_in_range();
+            });
+        }
+    });
 }
 
 void FFTWidget::draw_bandwidth() {
@@ -30,11 +46,11 @@ void FFTWidget::draw_bandwidth() {
 
     for (uint16_t i = bm_s; i <= bm_e; i++) {
         if (i != bm_m) {
-            display->writeVertLine(i, 0, FFT_HEIGHT - 1, SWAP_BYTES(RGB888_TO_RGB565(0x333333)));
+            display->writeVertLine(i, 0, FFT_HEIGHT - 1, SWAP_BYTES(RGB888_TO_RGB565(0x111133)));
         }
     }
 
-    display->writeVertLine(bm_m, 0, FFT_HEIGHT - 1, C565_GREY_DARK);
+    display->writeVertLine(bm_m, 0, FFT_HEIGHT - 1, C565_GREY_DARKER);
 }
 
 void FFTWidget::fetch_stations_in_range() {
@@ -52,21 +68,24 @@ void FFTWidget::draw_freq_marks() {
 
     for (auto data : stations_in_range) {
 
-        uint16_t x = ((float)(data.freq - fft_params.span_f_start) / (float)(fft_params.span)) * FTT_DISPLAY_WIDTH;
-        text_width = strlen(data.name) * font->width;
-        int x0 = x - (text_width / 2) - padding;
-        int x1 = x0 + padding * 2 + text_width;
-        if (x0 >= 0 && x1 < FFT_ZONE_WIDTH) {
+        if (data.type == STATION) {
 
-            // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
-            display->writeVertLine(x, margin_top + height, FFT_HEIGHT, C565_GREY_DARKER);
+            uint16_t x = ((float)(data.freq - fft_params.span_f_start) / (float)(fft_params.span)) * FTT_DISPLAY_WIDTH;
+            text_width = strlen(data.name) * font->width;
+            int x0 = x - (text_width / 2) - padding;
+            int x1 = x0 + padding * 2 + text_width;
+            if (x0 >= 0 && x1 < FFT_ZONE_WIDTH) {
 
-            display->setColor(C565_GREY_DARKER);
-            display->setBgColor(C565_DARKEST);
-            display->drawRoundedRectangle(x0, margin_top, text_width + padding * 2, height, 3, false);
-            display->gotoXY(x - (text_width / 2), margin_top + padding_v);
-            display->setColor(C565_GREY_LIGHT);
-            display->write(data.name);
+                // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
+                display->writeVertLine(x, margin_top + height, FFT_HEIGHT, C565_GREY_DARKER);
+
+                display->setColor(C565_GREY_DARKER);
+                display->setBgColor(C565_DARKEST);
+                display->drawRoundedRectangle(x0, margin_top, text_width + padding * 2, height, 3, false);
+                display->gotoXY(x - (text_width / 2), margin_top + padding_v);
+                display->setColor(C565_GREY_LIGHT);
+                display->write(data.name);
+            }
         }
     }
 }
@@ -219,22 +238,11 @@ void FFTWidget::paint_callback() {
 
     display->clear();
 
-    // DEBUG: slice mark
-    // if (fft_slice_n > 0) {
-    //       display->writeLine(x, 0, x, 10, C565_GRAY);
-    //   }
-
-    // uint16_t start;
-
-    // GPIOA->BSRR= GPIO_PIN_15;
-
     draw_bandwidth();
 
     draw_freq_marks();
 
     draw_spectrum();
-
-    // GPIOA->BSRR= GPIO_PIN_15 << 16;
 
     draw_peak();
 
@@ -250,7 +258,6 @@ void FFTWidget::paint_callback() {
 void FFTWidget::before_paint() {
     if (this->dirty()) {
         refresh_x_axis = f_start != fft_params.span_f_start || fft_span != fft_params.span;
-        fetch_stations_in_range();
     }
 }
 

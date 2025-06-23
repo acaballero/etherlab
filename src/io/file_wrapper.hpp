@@ -38,12 +38,19 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
     };
 
     struct NewlineEntry {
-        uint32_t line_number; // Which line this newline ends
-        uint32_t offset;      // File offset of the newline character
+        uint32_t line_number;  // Which line this entry represents
+        uint32_t start_offset; // File offset where the line starts
+        uint32_t end_offset;   // File offset of the newline character (line end)
 
-        NewlineEntry() : line_number(0), offset(0) {
+        NewlineEntry() : line_number(0), start_offset(0), end_offset(0) {
         }
-        NewlineEntry(uint32_t line, uint32_t off) : line_number(line), offset(off) {
+
+        NewlineEntry(uint32_t line, uint32_t start, uint32_t end) : line_number(line), start_offset(start), end_offset(end) {
+        }
+
+        // Convenience method to get line length (excluding newline)
+        uint32_t length() const {
+            return (end_offset > start_offset) ? end_offset - start_offset : 0;
         }
     };
 
@@ -73,9 +80,6 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
 
             invalidate_all_caches();
             scan_file();
-
-	    memcpy(void *__restrict dest, DspFIRDecimatorFloat<>ize_t n);
-	    •DspFIRDecimatorFloat<int TAPS, typename T>fdf
 
             // LOG("**** INIT\n");
             for (int i = 0; i < newline_cache_.size(); i++) {
@@ -128,7 +132,8 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
     void log();
 
     // Generic range queries for sorted data
-    template <typename T, typename ExtractKey> FRESULT find_range(const T &min_key, const T &max_key, ExtractKey extract_key, std::vector<uint32_t> &results);
+    template <typename T, typename ExtractKey>
+    FRESULT find_range(const T &min_key, const T &max_key, ExtractKey extract_key, std::vector<uint32_t> &results, uint32_t max = 0);
 
     template <typename T, typename ExtractKey>
     Result<uint32_t, io::filesystem_error> binary_search_first(const T &key, ExtractKey extract_key, FindMode mode = GTE);
@@ -198,6 +203,12 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
     void shift_file_content_right(uint32_t from_offset, uint32_t shift_amount);
     void shift_file_content_left(uint32_t from_offset, uint32_t shift_amount);
     void ensure_newline_at_eof();
+
+    void fill_cache_from_offset(uint32_t start_offset, uint32_t start_line);
+
+    void rebuild_cache(uint32_t start_line, uint32_t limit_offset = UINT32_MAX);
+
+    uint32_t scan_to_line(uint32_t target_line, uint32_t limit_offset = UINT32_MAX);
 
     bool copy_file_contents(const char *src_path, const char *dst_path);
 };
@@ -292,8 +303,8 @@ Result<uint32_t, io::filesystem_error> FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACH
 // Generic range search implementation
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
 template <typename T, typename ExtractKey>
-FRESULT FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_range(const T &min_key, const T &max_key, ExtractKey extract_key,
-                                                                     std::vector<uint32_t> &results) {
+FRESULT FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_range(const T &min_key, const T &max_key, ExtractKey extract_key, std::vector<uint32_t> &results,
+                                                                     uint32_t max) {
 
     // Find first line >= min_key
     auto res = binary_search_first(min_key, extract_key, GTE);
@@ -312,12 +323,17 @@ FRESULT FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_range(const T &mi
 
     uint32_t end = *res;
 
-    if (end >= total_lines_) {
-        end = total_lines_ - 1;
+    if (end >= total_lines_) { // Not found
+        return {};
     }
 
     if (end >= start) {
-        // Collect all line numbers in range
+
+        if (max) { // if max=0 there's no limit
+            end = min2(end, start + max);
+        }
+
+        // Collect line numbers in range
         results.reserve(end - start + 1);
         for (uint32_t i = start; i <= end; ++i) {
 
@@ -380,6 +396,7 @@ template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrappe
     cache_start_line_ = 0;
     uint32_t offset = 0;
     uint32_t current_line = 0;
+    uint32_t line_start = 0; // Track start of current line
 
     while (offset < file_size()) {
         uint32_t to_read = std::min((uint32_t)BUFFER_SIZE, file_size() - offset);
@@ -391,15 +408,14 @@ template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrappe
 
         for (uint32_t i = 0; i < *result; ++i) {
             if (work_buffer_[i] == '\n') {
-                // Always count the line
-                total_lines_++;
-
-                // Only cache if there's space
+                // Store both start and end for this line
                 if (!newline_cache_.isFull()) {
-                    newline_cache_.push(NewlineEntry(current_line, offset + i));
+                    newline_cache_.push(NewlineEntry(current_line, line_start, offset + i));
                 }
 
+                total_lines_++;
                 current_line++;
+                line_start = offset + i + 1; // Next line starts after this newline
             }
         }
 
@@ -463,6 +479,52 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::invalidate_lines_from(uin
     }
 }
 
+// template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
+// void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::ensure_newline_cache_covers(uint32_t line_number) {
+//     // Check if line is already covered by cache
+//     if (!newline_cache_.empty()) {
+//         uint32_t cache_end_line = cache_start_line_ + newline_cache_.size();
+//         if (line_number >= cache_start_line_ && line_number < cache_end_line) {
+//             return; // Already covered
+//         }
+//     }
+
+//     // Need to rebuild cache around this line
+//     newline_cache_.clear();
+
+//     // Start scanning from beginning of file to find the target line
+//     file_.seek(0);
+//     uint32_t offset = 0;
+//     uint32_t current_line = 0;
+//     cache_start_line_ = 0;
+
+//     // Scan until we reach the target line or fill the cache
+//     while (offset < file_size() && !newline_cache_.isFull()) {
+//         uint32_t to_read = std::min(BUFFER_SIZE, file_size() - offset);
+//         auto result = file_.read(work_buffer_, to_read);
+
+//         if (result.is_error() || *result == 0) {
+//             break;
+//         }
+
+//         for (uint32_t i = 0; i < *result; ++i) {
+//             if (work_buffer_[i] == '\n') {
+//                 newline_cache_.push(NewlineEntry(current_line, offset + i));
+//                 current_line++;
+
+//                 if (newline_cache_.isFull()) {
+//                     return;
+//                 }
+//             }
+//         }
+
+//         offset += *result;
+//         if (*result < to_read) {
+//             break;
+//         }
+//     }
+// }
+
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
 void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::ensure_newline_cache_covers(uint32_t line_number) {
     // Check if line is already covered by cache
@@ -473,16 +535,63 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::ensure_newline_cache_cove
         }
     }
 
-    // Need to rebuild cache around this line
-    newline_cache_.clear();
+    // Calculate optimal cache start position to center the requested line
+    uint32_t cache_capacity = newline_cache_.capacity();
+    uint32_t optimal_start;
 
-    // Start scanning from beginning of file to find the target line
-    file_.seek(0);
-    uint32_t offset = 0;
-    uint32_t current_line = 0;
-    cache_start_line_ = 0;
+    if (line_number >= cache_capacity / 2) {
+        optimal_start = line_number - cache_capacity / 2;
+    } else {
+        optimal_start = 0;
+    }
 
-    // Scan until we reach the target line or fill the cache
+    // Ensure we don't go past the end of the file
+    if (optimal_start + cache_capacity > total_lines_) {
+        optimal_start = (total_lines_ > cache_capacity) ? total_lines_ - cache_capacity : 0;
+    }
+
+    // Check if we can slide the cache instead of rebuilding
+    if (!newline_cache_.empty()) {
+        uint32_t current_start = cache_start_line_;
+        uint32_t current_end = cache_start_line_ + newline_cache_.size();
+
+        // Can we slide forward efficiently?
+        if (optimal_start > current_start && optimal_start < current_end) {
+            uint32_t lines_to_skip = optimal_start - current_start;
+
+            // Remove entries from front
+            for (uint32_t i = 0; i < lines_to_skip && !newline_cache_.empty(); ++i) {
+                newline_cache_.pop();
+            }
+            cache_start_line_ = optimal_start;
+
+            // Fill the rest by continuing from where we left off
+            if (!newline_cache_.empty()) {
+                NewlineEntry &last_entry = newline_cache_[newline_cache_.size() - 1];
+                fill_cache_from_offset(last_entry.end_offset + 1, last_entry.line_number + 1);
+            }
+            return;
+        }
+
+        // Can we use existing cache data to limit backward scanning?
+        if (optimal_start < current_start && optimal_start + cache_capacity > current_start) {
+            NewlineEntry &first_entry = newline_cache_[0];
+            rebuild_cache(optimal_start, first_entry.start_offset);
+            return;
+        }
+    }
+
+    // No overlap - rebuild from scratch
+    rebuild_cache(optimal_start, UINT32_MAX);
+}
+
+template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
+void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::fill_cache_from_offset(uint32_t start_offset, uint32_t start_line) {
+    file_.seek(start_offset);
+    uint32_t offset = start_offset;
+    uint32_t current_line = start_line;
+    uint32_t line_start = start_offset;
+
     while (offset < file_size() && !newline_cache_.isFull()) {
         uint32_t to_read = std::min(BUFFER_SIZE, file_size() - offset);
         auto result = file_.read(work_buffer_, to_read);
@@ -493,8 +602,9 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::ensure_newline_cache_cove
 
         for (uint32_t i = 0; i < *result; ++i) {
             if (work_buffer_[i] == '\n') {
-                newline_cache_.push(NewlineEntry(current_line, offset + i));
+                newline_cache_.push(NewlineEntry(current_line, line_start, offset + i));
                 current_line++;
+                line_start = offset + i + 1;
 
                 if (newline_cache_.isFull()) {
                     return;
@@ -510,29 +620,30 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::ensure_newline_cache_cove
 }
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
-uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_line_start_offset(uint32_t line_number) {
-    if (line_number == 0) {
-        return 0;
+void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::rebuild_cache(uint32_t start_line, uint32_t limit_offset) {
+    newline_cache_.clear();
+    cache_start_line_ = start_line;
+
+    if (start_line == 0) {
+        // Start from beginning
+        fill_cache_from_offset(0, 0);
+    } else {
+        // Find start offset for start_line
+        uint32_t start_offset = scan_to_line(start_line, limit_offset);
+        fill_cache_from_offset(start_offset, start_line);
     }
+}
 
-    ensure_newline_cache_covers(line_number - 1);
-
-    // Look for the newline that ends the previous line
-    uint32_t prev_line = line_number - 1;
-    for (uint32_t i = 0; i < newline_cache_.size(); ++i) {
-        const NewlineEntry &entry = newline_cache_[i];
-        if (entry.line_number == prev_line) {
-            return entry.offset + 1;
-        }
-    }
-
-    // Fallback: scan from beginning
+template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
+uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::scan_to_line(uint32_t target_line, uint32_t limit_offset) {
     file_.seek(0);
     uint32_t offset = 0;
     uint32_t current_line = 0;
+    uint32_t line_start = 0;
+    uint32_t max_offset = (limit_offset == UINT32_MAX) ? file_size() : std::min(file_size(), limit_offset);
 
-    while (offset < file_size() && current_line < line_number) {
-        uint32_t to_read = std::min(BUFFER_SIZE, file_size() - offset);
+    while (offset < max_offset && current_line < target_line) {
+        uint32_t to_read = std::min(BUFFER_SIZE, max_offset - offset);
         auto result = file_.read(work_buffer_, to_read);
 
         if (result.is_error() || *result == 0) {
@@ -542,9 +653,10 @@ uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_line_start_offse
         for (uint32_t i = 0; i < *result; ++i) {
             if (work_buffer_[i] == '\n') {
                 current_line++;
-                if (current_line == line_number) {
+                if (current_line == target_line) {
                     return offset + i + 1;
                 }
+                line_start = offset + i + 1;
             }
         }
 
@@ -554,22 +666,62 @@ uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_line_start_offse
         }
     }
 
-    return offset;
+    return line_start;
+}
+
+template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
+uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_line_start_offset(uint32_t line_number) {
+    if (line_number == 0) {
+        return 0;
+    }
+
+    // Try to find in cache first - now we can directly get the start!
+    if (!newline_cache_.empty()) {
+        uint32_t cache_end_line = cache_start_line_ + newline_cache_.size();
+        if (line_number >= cache_start_line_ && line_number < cache_end_line) {
+            uint32_t cache_index = line_number - cache_start_line_;
+            return newline_cache_[cache_index].start_offset;
+        }
+    }
+
+    // Fallback: ensure cache covers this line, then try again
+    ensure_newline_cache_covers(line_number);
+
+    if (!newline_cache_.empty()) {
+        uint32_t cache_end_line = cache_start_line_ + newline_cache_.size();
+        if (line_number >= cache_start_line_ && line_number < cache_end_line) {
+            uint32_t cache_index = line_number - cache_start_line_;
+            return newline_cache_[cache_index].start_offset;
+        }
+    }
+
+    // Final fallback: scan from beginning (should rarely happen)
+    return scan_to_line(line_number);
 }
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
 uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_line_end_offset(uint32_t line_number) {
-    ensure_newline_cache_covers(line_number);
-
-    // Look for the newline that ends this line
-    for (uint32_t i = 0; i < newline_cache_.size(); ++i) {
-        const NewlineEntry &entry = newline_cache_[i];
-        if (entry.line_number == line_number) {
-            return entry.offset;
+    // Try to find in cache first
+    if (!newline_cache_.empty()) {
+        uint32_t cache_end_line = cache_start_line_ + newline_cache_.size();
+        if (line_number >= cache_start_line_ && line_number < cache_end_line) {
+            uint32_t cache_index = line_number - cache_start_line_;
+            return newline_cache_[cache_index].end_offset;
         }
     }
 
-    // Fallback: scan from line start
+    // Fallback: ensure cache covers this line, then try again
+    ensure_newline_cache_covers(line_number);
+
+    if (!newline_cache_.empty()) {
+        uint32_t cache_end_line = cache_start_line_ + newline_cache_.size();
+        if (line_number >= cache_start_line_ && line_number < cache_end_line) {
+            uint32_t cache_index = line_number - cache_start_line_;
+            return newline_cache_[cache_index].end_offset;
+        }
+    }
+
+    // Final fallback: scan from line start
     uint32_t start_offset = find_line_start_offset(line_number);
     file_.seek(start_offset);
     uint32_t offset = start_offset;
@@ -636,7 +788,6 @@ template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> std::string Fil
     if (line_number >= total_lines_) {
         return {};
     }
-
     std::string content;
     std::string *cached = find_cached_line(line_number);
     if (cached) {
@@ -758,22 +909,19 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::update_newline_cache_afte
     for (uint32_t i = 0; i < newline_cache_.size(); ++i) {
         NewlineEntry &entry = newline_cache_[i];
 
-        if (entry.offset >= from_offset) {
-            if (size_delta < 0 && entry.offset < from_offset + (-size_delta)) {
-                // This entry was deleted - remove it by marking invalid
-                // We'll handle removal by rebuilding cache lazily
-                continue;
+        if (entry.start_offset >= from_offset) {
+            entry.start_offset += size_delta;
+        }
+
+        if (entry.end_offset >= from_offset) {
+            if (size_delta < 0 && entry.end_offset < from_offset + (-size_delta)) {
+                // This entry was deleted - clear cache for simplicity
+                newline_cache_.clear();
+                return;
             } else {
-                // Adjust offset
-                entry.offset += size_delta;
+                entry.end_offset += size_delta;
             }
         }
-    }
-
-    // For simplicity, clear cache if we had deletions
-    // More sophisticated approach would compact the ring buffer
-    if (size_delta < 0) {
-        newline_cache_.clear();
     }
 }
 
@@ -799,14 +947,13 @@ template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrappe
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
 void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::append_line(const std::string &content) {
-
-    // LOG("Append line\n");
+    bool add_newline = content.empty() || content.back() != '\n';
     ensure_newline_at_eof();
 
     file_.seek(file_size());
     file_.write(content.data(), content.length());
 
-    if (content.empty() || content.back() != '\n') {
+    if (add_newline) {
         file_.write("\n", 1);
     }
 
@@ -820,9 +967,12 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::append_line(const std::st
 
     // Add newline to cache if there's space
     if (!newline_cache_.isFull()) {
-        // LOG("File size is %d, writing newline at %d\n", file_size(), file_size() - 1);
         uint32_t newline_offset = file_size() - 1;
-        newline_cache_.push(NewlineEntry(total_lines_ - 1, newline_offset));
+        uint32_t line_start = newline_offset - content.length();
+        if (add_newline) {
+            line_start--; // Account for added newline
+        }
+        newline_cache_.push(NewlineEntry(total_lines_ - 1, line_start, newline_offset));
     }
 }
 

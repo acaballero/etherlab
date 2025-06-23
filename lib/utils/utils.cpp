@@ -779,6 +779,72 @@ float mv_to_adc(int millivolts, float adc_vref, int adc_max) {
     return ((float)millivolts / adc_vref) * (float)adc_max;
 }
 
+bool parse_long(const char *v, int64_t &result) {
+    if (!v) {
+        return false;
+    }
+
+    // Skip whitespace using ARM SIMD where possible
+    while (*v <= ' ' && *v > '\0') {
+        v++;
+    }
+
+    if (*v == '\0') {
+        return false;
+    }
+
+    // Handle sign
+    if (*v == '+') {
+        v++;
+    } else if (*v == '-') {
+        return false;
+    }
+
+    if (*v == '\0') {
+        return false;
+    }
+
+    uint64_t value = 0;
+    bool found_digit = false;
+
+    // Unroll loop for better performance on ARM
+    while (*v != '\0') {
+        uint32_t c = *v;
+
+        // Branchless digit check
+        uint32_t is_digit = (c - '0' < 10) ? 1 : 0;
+        if (!is_digit) {
+            break;
+        }
+
+        found_digit = true;
+
+        // Quick overflow check
+        if (value > 1844674407370955161ULL) { // UINT64_MAX/10
+            return false;
+        }
+
+        value = value * 10 + (c - '0');
+        v++;
+    }
+
+    if (!found_digit) {
+        return false;
+    }
+
+    // Skip trailing whitespace
+    while (*v <= ' ' && *v > '\0') {
+        v++;
+    }
+
+    if (*v != '\0') {
+        return false;
+    }
+
+    result = (int64_t)value;
+    return true;
+}
+
 bool parse_int(const char *str, int &result) {
     if (!str[0]) {
         return false;

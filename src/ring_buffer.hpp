@@ -13,6 +13,10 @@ template <typename T, size_t Capacity> class RingBuffer {
     RingBuffer() : head(0), tail(0), full(false) {
     }
 
+    size_t capacity() {
+        return Capacity;
+    };
+
     T &front() {
         return buffer[tail];
     }

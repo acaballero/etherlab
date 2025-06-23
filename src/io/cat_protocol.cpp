@@ -458,7 +458,7 @@ void cmd_set_read_mem(st_usb_cdc_command *command, uint8_t *response, uint8_t *s
 
         st_freq_mem rcvd_mem;
         rcvd_mem.freq = parse_freq(buf + 5 + 6);
-        rcvd_mem.group = 0;
+
         rcvd_mem.id = from_bcd16(0, buf[9]);
         rcvd_mem.mode = to_modulation_mode(buf[16]);
         strncpy(rcvd_mem.name, (const char *)(buf + 103), FREQ_MEM_NAME_SIZE);
@@ -474,7 +474,7 @@ void cmd_set_read_mem(st_usb_cdc_command *command, uint8_t *response, uint8_t *s
 
         mem = freq_memory::get_by_index(id);
 
-        //  mem.id = id;
+        //  TODO: Does not work since frequencies are ordered in the radio
     }
 
     if (!mem.freq) {
@@ -492,7 +492,7 @@ void cmd_set_read_mem(st_usb_cdc_command *command, uint8_t *response, uint8_t *s
     uint8_t hi, lo;
 
     // Group
-    to_bcd16(mem.group, &hi, &lo);
+    to_bcd16(0, &hi, &lo);
     response[(*size)++] = hi;
     response[(*size)++] = lo;
 
@@ -542,7 +542,7 @@ void cmd_set_read_mem(st_usb_cdc_command *command, uint8_t *response, uint8_t *s
     // Digital code squelch setting (None)
     response[(*size)++] = 0x00;
 
-    // Duple offset frequency setting (None)
+    // Duplex offset frequency setting (None)
     memset(&response[(*size)], 0x00, 3);
     *size += 3;
 
