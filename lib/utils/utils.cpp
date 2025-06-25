@@ -374,6 +374,22 @@ void min_max_f32(float *v, uint16_t size, float *min, float *max, float discard)
     }
 }
 
+int32_t int16_sin_s4(int32_t x) {
+    static const int qN = 14, qA = 16, qR = 12, B = 19900, C = 3516;
+
+    const int32_t c = x << (30 - qN); // Semi-circle info into carry.
+    x -= 1 << qN;                     // sine -> cosine calc
+
+    x = x << (31 - qN);         // Mask with PI
+    x = x >> (31 - qN);         // Note: SIGNED shift! (to qN)
+    x = x * x >> (2 * qN - 14); // x=x^2 To Q14
+
+    int32_t y = B - (x * C >> 14); // B - x^2*C
+    y = (1 << qA) - (x * y >> qR); // A - x^2*(B-x^2*C)
+
+    return c >= 0 ? y : -y;
+}
+
 char prefixes[] = "num kMGT";
 
 float format_eng(char *dest, float value, const char *units, char *new_units) {

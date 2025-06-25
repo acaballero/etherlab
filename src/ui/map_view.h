@@ -9,21 +9,24 @@
 #include "io/fatfs_file.h"
 #include "label_widget.h"
 #include "field_widget.h"
+#include "menu_options.h"
 #include "view.h"
 #include <stdint.h>
+#include <type_traits>
 
 namespace ui {
 
 #define MAX_MAP_ZOOM_IN 4000
 #define MAX_MAP_ZOOM_OUT 10
-#define MAP_ZOOM_RESOLUTION_LIMIT 5 // Max zoom-in to show map; rect height & width must divide into this evenly
+#define MAP_ZOOM_RESOLUTION_LIMIT 3 // Max zoom-in to show map; rect height & width must divide into this evenly
 
 #define INVALID_LAT_LON 200
 #define INVALID_ANGLE 400
 
-#define GEOMAP_BANNER_HEIGHT (3 * 16)
-#define GEOMAP_RECT_WIDTH 240
-#define GEOMAP_RECT_HEIGHT (320 - 16 - GEOMAP_BANNER_HEIGHT)
+#define MAP_Y_POS HEADER_HEIGHT
+#define MAP_TITLE_HEIGHT HEADER_HEIGHT
+#define MAP_WIDTH DISPLAY_X_PIXELS
+#define MAP_HEIGHT (DISPLAY_Y_PIXELS - (HEADER_HEIGHT * 2) - MAP_TITLE_HEIGHT)
 
 enum MapMode { DISPLAY, PROMPT };
 
@@ -74,35 +77,35 @@ class Locator : public View {
 
     void set_report_change(bool v);
 
+    void before_paint() override{};
+
   private:
     bool read_only{false};
     bool report_change{true};
     alt_unit altitude_unit_{};
     spd_unit speed_unit_{};
 
-    Label labels_position[]{
-        {{1 * 8, 0 * 16}, "Alt:", C565_GREY_LIGHT},
-        {{1 * 8, 1 * 16}, "Lat:    \xB0  '  \"", Theme::getInstance()->fg_light->foreground}, // 0xB0 is degree ° symbol in our 8x16 font
-        {{1 * 8, 2 * 16}, "Lon:    \xB0  '  \"", Theme::getInstance()->fg_light->foreground},
-    };
-    Labels label_spd_position{
-        {{15 * 8, 0 * 16}, "Spd:", Theme::getInstance()->fg_light->foreground},
-    };
-    Field field_altitude{{6 * 8, 0 * 16}, 5, {-1000, 50000}, " "};
+    Label label_alt{{1 * 8, 0 * 16}, "Alt:", C565_GREY_LIGHT};
+    Label label_lat{{1 * 8, 1 * 16}, "Lat:    \xB0  '  \"", C565_GREY_LIGHT};
+    Label label_lon{{1 * 8, 2 * 16}, "Lon:    \xB0  '  \"", C565_GREY_LIGHT};
 
-    Field field_speed{{19 * 8, 0 * 16}, 4, {0, 5000}, ' '};
+    Label label_spd_position{{15 * 8, 0 * 16}, "Spd:", C565_GREY_LIGHT};
+
+    // NumberField field_altitude{{6 * 8, 0 * 16}, 5, {-1000, 50000}, " "};
+
+    // Field field_speed{{19 * 8, 0 * 16}, 4, {0, 5000}, ' '};
     Label text_alt_unit{{12 * 8, 0 * 16, 2 * 8, 16}};
     Label text_speed_unit{{25 * 8, 0 * 16, 4 * 8, 16}};
 
-    Field field_lat_degrees{{5 * 8, 1 * 16}, 4, {-90, 90}, 1, ' '};
-    Field field_lat_minutes{{10 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
-    Field field_lat_seconds{{13 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
+    // Field field_lat_degrees{{5 * 8, 1 * 16}, 4, {-90, 90}, 1, ' '};
+    // Field field_lat_minutes{{10 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
+    // Field field_lat_seconds{{13 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
     Label text_lat_decimal{{17 * 8, 1 * 16, 13 * 8, 1 * 16}};
 
-    Field field_lon_degrees{{5 * 8, 2 * 16}, 4, {-180, 180}, 1, ' '};
-    Field field_lon_minutes{{10 * 8, 2 * 16}, 2, {0, 59}, 1, ' ', true};
-    Field field_lon_seconds{{13 * 8, 2 * 16}, 2, {0, 59}, 1, ' ', true};
-    Label text_lon_decimal{{17 * 8, 2 * 16, 13 * 8, 1 * 16}};
+    Field field_lon_degrees{{{5 * 8, 2 * 16}, {-180, 180}}, " "};
+    Field field_lon_minutes{{{10 * 8, 2 * 16}, {0, 59}}, " "};
+    Field field_lon_seconds{{{13 * 8, 2 * 16}, {0, 59}}, " "};
+    Label text_lon_decimal{{{17 * 8, 2 * 16}, {13 * 8, 2 * 16}}};
 };
 
 enum MarkerStorage { MARKER_NOT_STORED, MARKER_STORED, MARKER_LIST_FULL };
@@ -125,6 +128,7 @@ class Map : public Widget {
     void set_manual_panning(bool v);
     bool manual_panning();
     void move(const float lon, const float lat);
+    void pan(const int dx, const int dy);
     void set_tag(std::string new_tag) {
         tag = new_tag;
     }
@@ -149,9 +153,9 @@ class Map : public Widget {
     void clear_markers();
     MarkerStorage store_marker(Marker &marker);
 
-    static const Dim banner_height = GEOMAP_BANNER_HEIGHT;
-    static const Dim geomap_rect_width = GEOMAP_RECT_WIDTH;
-    static const Dim geomap_rect_height = GEOMAP_RECT_HEIGHT;
+    static const Dim banner_height = MAP_TITLE_HEIGHT;
+    static const Dim geomap_rect_width = MAP_WIDTH;
+    static const Dim geomap_rect_height = MAP_HEIGHT;
 
   private:
     void before_paint() override;
@@ -159,16 +163,17 @@ class Map : public Widget {
     Point item_rect_pixel(Marker &item);
     FloatPoint lat_lon_to_map_pixel(float lat, float lon);
     void draw_marker_item(Marker &item, const Color color, const Color fontColor = C565_WHITE, const Color backColor = C565_BLACK);
-    void draw_marker(const FloatPoint itemPoint, const uint16_t itemAngle, const std::string itemTag, const Color color = C565_RED,
+    void draw_marker(const Point itemPoint, const uint16_t itemAngle, const std::string itemTag, const Color color = C565_RED,
                      const Color fontColor = C565_WHITE, const Color backColor = C565_BLACK);
     void draw_markers();
     void draw_mypos();
-    void draw_bearing(const FloatPoint origin, const uint16_t angle, uint32_t size, const Color color);
+    void draw_bearing(const Point origin, const uint16_t angle, uint32_t size, const Color color);
     void draw_map_grid();
+    Point polar_to_point(int32_t angle, uint32_t distance);
     void map_read_line(Color *buffer, uint16_t pixels);
 
-    bool manual_panning_{false};
-    bool hide_center_marker_{false};
+    bool manual_panning_{true};
+    bool hide_center_marker_{true};
     MapMode mode{};
     FatFSFile file{};
     bool map_opened{};
@@ -190,13 +195,11 @@ class Map : public Widget {
     uint16_t angle{};
     std::string tag{};
 
-    // the portapack's position data ( for example injected from serial )
     Marker my_pos{INVALID_LAT_LON, INVALID_LAT_LON, INVALID_ANGLE, ""}; // lat, lon, angle, tag
     int32_t my_altitude{0};
 
     int markerListLen{0};
     Marker markerList[NumMarkerListElements];
-    bool redraw_map{false};
 };
 
 class MapView : public View {
@@ -205,7 +208,8 @@ class MapView : public View {
             const std::function<void(void)> on_close = nullptr);
     MapView(int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd_unit speed_unit, float lat, float lon,
             const std::function<void(int32_t, float, float, int32_t)> on_done);
-    ~MapView();
+
+    ~MapView() override;
 
     MapView(const MapView &) = delete;
     MapView(MapView &&) = delete;
@@ -223,25 +227,51 @@ class MapView : public View {
 
     void update_tag(const std::string tag);
 
+    bool on_input(const st_inputEvent e) override;
+
+    void exit();
+
   private:
+    void before_paint() override{};
+
     void setup();
 
     const std::function<void(int32_t, float, float, int32_t)> on_done{};
-    MapMode mode_{};
-    int32_t altitude_{};
-    int32_t speed_{};
-    Locator::alt_unit altitude_unit_{};
-    Locator::spd_unit speed_unit_{};
-    float lat_{};
-    float lon_{};
-    uint16_t angle_{};
+    MapMode mode{};
+    int32_t altitude{};
+    int32_t speed{};
+    Locator::alt_unit altitude_unit{};
+    Locator::spd_unit speed_unit{};
+    float lat{};
+    float lon{};
+    uint16_t angle{};
     std::function<void(void)> on_close_{nullptr};
 
-    Locator geopos{{0, 0}, altitude_unit_, speed_unit_};
+    Locator locator{{0, 0}, altitude_unit, speed_unit};
 
-    Map geomap{{0, Map::banner_height, Map::geomap_rect_width, Map::geomap_rect_height}};
+    Map map{{0, Map::banner_height, Map::geomap_rect_width, Map::geomap_rect_height}};
 
-    Button button_ok{{DISPLAY_X_PIXELS - 15 * 8, 0, 15 * 8, 1 * 16}, display, "OK"};
+    Menu::menu_action_st menu_actions[5] = {{"<",
+                                             [this]() {
+                                                 map.pan(40, 0);
+                                             }},
+                                            {">",
+                                             [this]() {
+                                                 map.pan(-40, 0);
+                                             }},
+                                            {"up",
+                                             [this]() {
+                                                 map.pan(0, -40);
+                                             }},
+                                            {"down",
+                                             [this]() {
+                                                 map.pan(0, 40);
+                                             }},
+                                            {"Exit", [this]() {
+                                                 exit();
+                                             }}};
+
+    Menu::menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(Menu::menu_action_st)};
 };
 
 } /* namespace ui */

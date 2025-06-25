@@ -73,6 +73,8 @@ float format_eng(char *dest, float value, const char *units, char *new_units, ui
 
 float fasterlog2(float);
 
+int32_t int16_sin_s4(int32_t x);
+
 void extract_file_and_path(const char *fileandpath, char *path, char *file, size_t size);
 
 float fasterlog(float);

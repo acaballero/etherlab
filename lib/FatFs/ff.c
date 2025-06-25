@@ -2633,8 +2633,9 @@ FRESULT f_open(FIL *fp,           /* Pointer to the blank file object */
     DWORD dw, cl;
 #endif
 
-    if (!fp)
+    if (!fp) {
         return FR_INVALID_OBJECT;
+    }
     fp->fs = 0; /* Clear file object */
 
     /* Get logical drive number */
@@ -2651,21 +2652,23 @@ FRESULT f_open(FIL *fp,           /* Pointer to the blank file object */
         dir = dj.dir;
 #if !_FS_READONLY /* R/W configuration */
         if (res == FR_OK) {
-            if (!dir) /* Default directory itself */
+            if (!dir) { /* Default directory itself */
                 res = FR_INVALID_NAME;
 #if _FS_LOCK
-            else
+            } else {
                 res = chk_lock(&dj, (mode & ~FA_READ) ? 1 : 0);
+            }
 #endif
         }
         /* Create or Open a file */
         if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
-            if (res != FR_OK) {        /* No file, create new */
-                if (res == FR_NO_FILE) /* There is no file to open, create a new entry */
+            if (res != FR_OK) {          /* No file, create new */
+                if (res == FR_NO_FILE) { /* There is no file to open, create a new entry */
 #if _FS_LOCK
                     res = enq_lock() ? dir_register(&dj) : FR_TOO_MANY_OPEN_FILES;
+                }
 #else
-                    res = dir_register(&dj);
+                        res = dir_register(&dj);
 #endif
                 mode |= FA_CREATE_ALWAYS;                /* File is created */
                 dir = dj.dir;                            /* New entry */
@@ -2673,8 +2676,9 @@ FRESULT f_open(FIL *fp,           /* Pointer to the blank file object */
                 if (dir[DIR_Attr] & (AM_RDO | AM_DIR)) { /* Cannot overwrite it (R/O or DIR) */
                     res = FR_DENIED;
                 } else {
-                    if (mode & FA_CREATE_NEW) /* Cannot create as new file */
+                    if (mode & FA_CREATE_NEW) { /* Cannot create as new file */
                         res = FR_EXIST;
+                    }
                 }
             }
             if (res == FR_OK && (mode & FA_CREATE_ALWAYS)) { /* Truncate it if overwrite mode */
@@ -2810,8 +2814,8 @@ FRESULT f_read(FIL *fp,    /* Pointer to the file object */
                 if (fp->fs->wflag && fp->fs->winsect - sect < cc)
                     mem_cpy(rbuff + ((fp->fs->winsect - sect) * SS(fp->fs)), fp->fs->win.d8, SS(fp->fs));
 #else
-                if ((fp->flag & FA__DIRTY) && fp->dsect - sect < cc)
-                    mem_cpy(rbuff + ((fp->dsect - sect) * SS(fp->fs)), fp->buf.d8, SS(fp->fs));
+                        if ((fp->flag & FA__DIRTY) && fp->dsect - sect < cc)
+                            mem_cpy(rbuff + ((fp->dsect - sect) * SS(fp->fs)), fp->buf.d8, SS(fp->fs));
 #endif
 #endif
                 rcnt = SS(fp->fs) * cc; /* Number of bytes transferred */
@@ -2906,11 +2910,11 @@ FRESULT f_write(FIL *fp,          /* Pointer to the file object */
             if (fp->fs->winsect == fp->dsect && sync_window(fp->fs)) /* Write-back sector cache */
                 ABORT(fp->fs, FR_DISK_ERR);
 #else
-            if (fp->flag & FA__DIRTY) { /* Write-back sector cache */
-                if (disk_write(fp->fs->drv, fp->buf.d8, fp->dsect, 1) != RES_OK)
-                    ABORT(fp->fs, FR_DISK_ERR);
-                fp->flag &= ~FA__DIRTY;
-            }
+                    if (fp->flag & FA__DIRTY) { /* Write-back sector cache */
+                        if (disk_write(fp->fs->drv, fp->buf.d8, fp->dsect, 1) != RES_OK)
+                            ABORT(fp->fs, FR_DISK_ERR);
+                        fp->flag &= ~FA__DIRTY;
+                    }
 #endif
             sect = clust2sect(fp->fs, fp->clust); /* Get current sector */
             if (!sect)
@@ -2945,10 +2949,10 @@ FRESULT f_write(FIL *fp,          /* Pointer to the file object */
                 fp->fs->winsect = sect;
             }
 #else
-            if (fp->dsect != sect) { /* Fill sector cache with file data */
-                if (fp->fptr < fp->fsize && disk_read(fp->fs->drv, fp->buf.d8, sect, 1) != RES_OK)
-                    ABORT(fp->fs, FR_DISK_ERR);
-            }
+                    if (fp->dsect != sect) { /* Fill sector cache with file data */
+                        if (fp->fptr < fp->fsize && disk_read(fp->fs->drv, fp->buf.d8, sect, 1) != RES_OK)
+                            ABORT(fp->fs, FR_DISK_ERR);
+                    }
 #endif
             fp->dsect = sect;
         }
@@ -2961,8 +2965,8 @@ FRESULT f_write(FIL *fp,          /* Pointer to the file object */
         mem_cpy(&fp->fs->win.d8[fp->fptr % SS(fp->fs)], wbuff, wcnt); /* Fit partial sector */
         fp->fs->wflag = 1;
 #else
-        mem_cpy(&fp->buf.d8[fp->fptr % SS(fp->fs)], wbuff, wcnt); /* Fit partial sector */
-        fp->flag |= FA__DIRTY;
+                mem_cpy(&fp->buf.d8[fp->fptr % SS(fp->fs)], wbuff, wcnt); /* Fit partial sector */
+                fp->flag |= FA__DIRTY;
 #endif
     }
 
@@ -4003,7 +4007,7 @@ FRESULT f_getlabel(const TCHAR *path, /* Path name of the logical drive number *
                     label[j++] = ff_convert(w, 1); /* OEM -> Unicode */
                 } while (j < 11);
 #else
-                mem_cpy(label, dj.dir, 11);
+                        mem_cpy(label, dj.dir, 11);
 #endif
                 j = 11;
                 do {
@@ -4608,10 +4612,10 @@ TCHAR *f_gets(TCHAR *buff, /* Pointer to the string buffer to read */
             c = '?';
 #endif
 #else /* Read a character without conversion */
-        f_read(fp, s, 1, &rc);
-        if (rc != 1)
-            break;
-        c = s[0];
+                f_read(fp, s, 1, &rc);
+                if (rc != 1)
+                    break;
+                c = s[0];
 #endif
         if (_USE_STRFUNC == 2 && c == '\r')
             continue; /* Strip '\r' */

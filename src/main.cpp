@@ -22,6 +22,7 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "ui/lock_view.h"
+#include "ui/map_view.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
 #include "usb_device.h"
@@ -208,6 +209,10 @@ int main() {
     blink_task.set_enabled(false);
 
     standby::init();
+
+    ui::MapView map("FROM", 0, ui::Locator::alt_unit::METERS, ui::Locator::spd_unit::HIDDEN, 40.4, -3.7, 0, nullptr);
+    map.set_z_index(10000);
+    view_manager::mainView.add_child(&map);
 
     while (1) {
 

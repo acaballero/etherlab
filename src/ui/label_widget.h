@@ -26,11 +26,20 @@ class Label : public Widget {
         set_label("");
     }
 
-    Label(Rect parent_rect, uint16_t fg_color, uint16_t bg_color, ButtonStyle style = LABEL_STYLE_HOLLOW) : Widget{parent_rect, &lcd} {
+    Label(Rect parent_rect, Color fg_color, Color bg_color, ButtonStyle style = LABEL_STYLE_HOLLOW) : Widget{parent_rect, &lcd} {
         set_label("");
         set_color(fg_color);
         set_bg(bg_color);
         set_style(style);
+    }
+
+    Label(Point position, const char *text, Color fg_color) : Widget{} {
+
+        int w = strlen(text) * font->width;
+        int h = font->height + display->getVerticalLineSpacing() * 2;
+        set_parent_rect({position, {w, h}});
+        set_label(text);
+        set_color(fg_color);
     }
 
     void paint_callback() override;

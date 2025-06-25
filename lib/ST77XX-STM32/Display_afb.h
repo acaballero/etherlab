@@ -98,6 +98,13 @@ struct Area {
     float fps{0};
 };
 
+struct DisplayPoint {
+    uint32_t x, y;
+};
+struct DisplaySize {
+    uint32_t w, h;
+};
+
 class Display {
 
   public:
@@ -135,6 +142,8 @@ class Display {
 
     void writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 
+    void writeRect(DisplayPoint p, DisplaySize s, Color c);
+
     void drawCircle(int16_t x0, int16_t y0, uint8_t r, uint16_t color);
 
     void invertColors(uint8_t invert);
@@ -164,6 +173,8 @@ class Display {
     uint16_t getY();
 
     void gotoCharXY(int16_t x, int16_t y);
+
+    void fill(DisplayPoint p, DisplaySize s, Color c);
 
     void fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c);
 
@@ -271,11 +282,19 @@ class Display {
 
     void clearOffset();
 
-    void setEnabled(bool);
+    void set_enabled(bool);
 
-    bool getWrapText() const;
+    bool get_wrap_text() const;
 
-    void setWrapText(bool wrap_text);
+    bool get_use_dma() {
+        return use_dma;
+    }
+
+    void set_use_dma(bool v) {
+        use_dma = v;
+    }
+
+    void set_wrap_text(bool wrap_text);
 
     void set_trim_enabled(bool b);
 

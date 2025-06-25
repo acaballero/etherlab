@@ -24,7 +24,8 @@ class Field : public Widget {
 
     Field() : Widget(){};
 
-    Field(Rect parent_rect, const char *t, uint16_t fg_color, uint8_t size = MAX_SIZE) : Widget(parent_rect, &lcd), fg_color{fg_color}, max_shown(size) {
+    Field(Rect parent_rect, const char *t, uint16_t fg_color = C565_TEXT_FG, uint8_t size = MAX_SIZE)
+        : Widget(parent_rect, &lcd), fg_color{fg_color}, max_shown(size) {
         set_text(t);
     };
 

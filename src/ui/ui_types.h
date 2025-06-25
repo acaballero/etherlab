@@ -29,19 +29,31 @@ struct Point {
     Coord _y;
 
   public:
-    constexpr Point() : _x{0}, _y{0} {}
+    constexpr Point() : _x{0}, _y{0} {
+    }
 
-    constexpr Point(int x, int y) : _x{static_cast<Coord>(x)}, _y{static_cast<Coord>(y)} {}
+    constexpr Point(int x, int y) : _x{static_cast<Coord>(x)}, _y{static_cast<Coord>(y)} {
+    }
 
-    constexpr int x() const { return _x; }
+    constexpr int x() const {
+        return _x;
+    }
 
-    constexpr int y() const { return _y; }
+    constexpr int y() const {
+        return _y;
+    }
 
-    constexpr Point operator-() const { return {-_x, -_y}; }
+    constexpr Point operator-() const {
+        return {-_x, -_y};
+    }
 
-    constexpr Point operator+(const Point &p) const { return {_x + p._x, _y + p._y}; }
+    constexpr Point operator+(const Point &p) const {
+        return {_x + p._x, _y + p._y};
+    }
 
-    constexpr Point operator-(const Point &p) const { return {_x - p._x, _y - p._y}; }
+    constexpr Point operator-(const Point &p) const {
+        return {_x - p._x, _y - p._y};
+    }
 
     Point &operator+=(const Point &p) {
         _x += p._x;
@@ -55,7 +67,9 @@ struct Point {
         return *this;
     }
 
-    constexpr bool operator==(const Point &other) const { return _x == other._x && _y == other._y; }
+    constexpr bool operator==(const Point &other) const {
+        return _x == other._x && _y == other._y;
+    }
 };
 
 struct Size {
@@ -64,17 +78,27 @@ struct Size {
     Dim _h;
 
   public:
-    constexpr Size() : _w{0}, _h{0} {}
+    constexpr Size() : _w{0}, _h{0} {
+    }
 
-    constexpr Size(int w, int h) : _w{static_cast<Dim>(w)}, _h{static_cast<Dim>(h)} {}
+    constexpr Size(int w, int h) : _w{static_cast<Dim>(w)}, _h{static_cast<Dim>(h)} {
+    }
 
-    int width() const { return _w; }
+    int width() const {
+        return _w;
+    }
 
-    int height() const { return _h; }
+    int height() const {
+        return _h;
+    }
 
-    bool is_empty() const { return (_w < 1) || (_h < 1); }
+    bool is_empty() const {
+        return (_w < 1) || (_h < 1);
+    }
 
-    constexpr bool operator==(const Size &other) const { return _w == other._w && _w == other._w; }
+    constexpr bool operator==(const Size &other) const {
+        return _w == other._w && _w == other._w;
+    }
 };
 
 struct Rect {
@@ -83,34 +107,61 @@ struct Rect {
     Size _size;
 
   public:
-    constexpr Rect() : _pos{}, _size{} {}
+    constexpr Rect() : _pos{}, _size{} {
+    }
 
-    constexpr Rect(int x, int y, int w, int h) : _pos{x, y}, _size{w, h} {}
+    constexpr Rect(int x, int y, int w, int h) : _pos{x, y}, _size{w, h} {
+    }
 
-    constexpr Rect(Point pos, Size size) : _pos(pos), _size(size) {}
+    constexpr Rect(Point pos, Size size) : _pos(pos), _size(size) {
+    }
 
-    Point location() const { return _pos; }
+    Point location() const {
+        return _pos;
+    }
 
-    Size size() const { return _size; }
+    Size size() const {
+        return _size;
+    }
 
-    int top() const { return _pos.y(); }
+    int32_t top() const {
+        return _pos.y();
+    }
 
-    int bottom() const { return _pos.y() + _size.height() - 1; }
+    int32_t bottom() const {
+        return _pos.y() + _size.height() - 1;
+    }
 
-    int left() const { return _pos.x(); }
+    int32_t left() const {
+        return _pos.x();
+    }
 
-    int right() const { return _pos.x() + _size.width() - 1; }
+    int32_t right() const {
+        return _pos.x() + _size.width() - 1;
+    }
 
-    int width() const { return _size.width(); }
+    int32_t width() const {
+        return _size.width();
+    }
 
-    int height() const { return _size.height(); }
+    int32_t height() const {
+        return _size.height();
+    }
 
-    void set_height(int h) { _size = {_size.width(), h}; }
-    void set_width(int w) { _size = {w, _size.height()}; }
+    void set_height(int h) {
+        _size = {_size.width(), h};
+    }
+    void set_width(int w) {
+        _size = {w, _size.height()};
+    }
 
-    Point center() const { return {_pos.x() + _size.width() / 2, _pos.y() + _size.height() / 2}; }
+    Point center() const {
+        return {_pos.x() + _size.width() / 2, _pos.y() + _size.height() / 2};
+    }
 
-    bool is_empty() const { return _size.is_empty(); }
+    bool is_empty() const {
+        return _size.is_empty();
+    }
 
     bool contains(const Point p) const;
 
@@ -118,15 +169,21 @@ struct Rect {
 
     Rect intersect(const Rect &o) const;
 
-    Rect operator+(const Point &p) const { return {_pos + p, _size}; }
+    Rect operator+(const Point &p) const {
+        return {_pos + p, _size};
+    }
 
     Rect &operator+=(const Rect &p);
 
     Rect &operator+=(const Point &p);
 
-    constexpr bool operator==(const Rect &other) const { return _pos == other._pos && _size == other._size; }
+    constexpr bool operator==(const Rect &other) const {
+        return _pos == other._pos && _size == other._size;
+    }
 
-    constexpr bool operator!=(const Rect &other) const { return !(*this == other); }
+    constexpr bool operator!=(const Rect &other) const {
+        return !(*this == other);
+    }
 
     Rect &operator-=(const Point &p);
 
@@ -134,7 +191,9 @@ struct Rect {
 
     Rect operator-(const Point &p);
 
-    operator bool() const { return !_size.is_empty(); }
+    operator bool() const {
+        return !_size.is_empty();
+    }
 };
 
 Area to_area(Rect &r);

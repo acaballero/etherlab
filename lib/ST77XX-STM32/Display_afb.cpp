@@ -7,7 +7,6 @@
 #include "ILI9341_fb.h"
 #include "Painter.hpp"
 #include "stm32f4xx_hal_def.h"
-#include "ui/ui_types.h"
 
 #define min2(a, b) ((a) < (b) ? (a) : (b))
 #define max2(a, b) ((a) > (b) ? (a) : (b))
@@ -76,7 +75,7 @@ void Display::clearOffset() {
     oh = 0;
 }
 
-void Display::setEnabled(bool b) {
+void Display::set_enabled(bool b) {
     this->enabled = b;
 }
 
@@ -145,16 +144,16 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
             return false;
         }
 
-        if (this->use_dma) {
+        if (use_dma) {
             InitDisplayDataTransfer();
         } else {
             DISP_DC_PORT->BSRR |= DISP_DC_PIN; // DC PIN SET
         }
 
-        this->current_line = 0;
+        current_line = 0;
         // uint16_t dy = area->y;
 
-        this->curr_buffer = b565_buffer;
+        curr_buffer = b565_buffer;
 
 #if DEBUG_LCD
         char str[10];
@@ -163,13 +162,13 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         }
 #endif
 
-        while (this->current_line < area->box.height) {
+        while (current_line < area->box.height) {
 
-            this->current_last_line = min2(this->current_line + this->chunk_height, area->box.height) - 1;
+            current_last_line = min2(current_line + chunk_height, area->box.height) - 1;
 
             // Prevent any interruption of the paint callback
             // NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn); // Disabled, since I'm checking the 'busy' flag from outside
-            this->busy = true; // Not fully atomic. Disable interrupt for proper atomic behavior
+            busy = true; // Not fully atomic. Disable interrupt for proper atomic behavior
 
             painter->paint_callback();
 
@@ -180,17 +179,17 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
 #if DEBUG_LCD
             if (area->show_fps) {
-                this->writeString(0, curr_area->box.height - 11 - oy, str, (FontDef *)&Font_7x10, C565_BLACK, C565_WHITE);
-                this->writeLine(0, curr_area->box.height - 12 - oy, 21, curr_area->box.height - 12, C565_WHITE);
+                writeString(0, curr_area->box.height - 11 - oy, str, (FontDef *)&Font_7x10, C565_BLACK, C565_WHITE);
+                writeLine(0, curr_area->box.height - 12 - oy, 21, curr_area->box.height - 12, C565_WHITE);
             }
 #endif
-            this->busy = false;
+            busy = false;
             // NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
 
-            this->current_line += this->chunk_height;
+            current_line += chunk_height;
             // dy += this->chunk_height;
 
-            if (!this->use_dma) {
+            if (!use_dma) {
                 // Transfer the buffer without DMA
                 // Experimental: Just to see if I manage to share one SPI bus with two devices, one of which transfers within an interrupt
                 for (uint32_t i = 0; i < dma_buffer_size; i++) {
@@ -201,8 +200,7 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                     if ((spi_port->Instance->CR1 & SPI_CR1_SPE) != SPI_CR1_SPE) {
                         spi_port->Instance->CR1 |= SPI_CR1_SPE; // enable SPI
                     }
-                    *(__IO uint8_t *)&spi_port->Instance->DR =
-                        *((__IO uint8_t *)this->curr_buffer + i); // Write data to be transmitted to the SPI data register
+                    *(__IO uint8_t *)&spi_port->Instance->DR = *((__IO uint8_t *)curr_buffer + i); // Write data to be transmitted to the SPI data register
                     // while (!(spi_port->Instance->SR & (SPI_SR_TXE)));     // Wait until transmit complete
                     // while (!(spi_port->Instance->SR & (SPI_SR_RXNE)));    // Wait until receive complete
                     while (spi_port->Instance->SR & (SPI_SR_BSY)) {
@@ -215,20 +213,20 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                 }
             }
 
-            if (this->curr_buffer == b565_buffer) {
+            if (curr_buffer == b565_buffer) {
 
                 // The first half of the RGB buffer is ready to be transferred
                 // If DMA is ready (second half has been transferred, so state == READY), we start another transfer now
 
-                this->curr_buffer = b565_buffer + half_dma_buffer_size;
+                curr_buffer = b565_buffer + half_dma_buffer_size;
 
-                if (this->use_dma) {
+                if (use_dma) {
                     // GPIOD->BSRR |= GPIO_PIN_5;
                     while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {
                         ;
                     }
                     // GPIOD->BSRR |= GPIO_PIN_5<<16;
-                    this->DMAHalfTransferCompleted = false;
+                    DMAHalfTransferCompleted = false;
                     HAL_SPI_Transmit_DMA(spi_port, ((uint8_t *)b565_buffer), dma_transfer_length);
                 }
             } else {
@@ -236,23 +234,23 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                 // The second half of the RGB buffer is ready
                 // Wait for the first half of the buffer to be transferred before start again
 
-                this->curr_buffer = b565_buffer;
+                curr_buffer = b565_buffer;
 
-                if (this->use_dma) {
-                    while (!this->DMAHalfTransferCompleted) {
+                if (use_dma) {
+                    while (!DMAHalfTransferCompleted) {
                         ;
                     }
                 }
 
                 // The last chunk may need fewer bytes to transfer
-                if (area->box.height - this->current_line < this->chunk_height << 1) {
-                    dma_buffer_size = (area->box.height - this->current_line) * area->box.width;
+                if (area->box.height - current_line < chunk_height << 1) {
+                    dma_buffer_size = (area->box.height - current_line) * area->box.width;
                     dma_transfer_length = dma_buffer_size << 1;
                 }
             }
         }
 
-        if (this->use_dma) {
+        if (use_dma) {
             while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {
                 ;
             }
@@ -264,6 +262,9 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
         this->drawing = false;
     }
+
+    // DMA is the default write mode. When disabled, it is enabled again after every redraw and must be set again before the next
+    use_dma = true;
 
     return true;
 }
@@ -390,6 +391,9 @@ void Display::fillBuffer(uint16_t c) {
     }
 }
 
+void Display::fill(DisplayPoint p, DisplaySize s, Color c) {
+    fill(p.x, p.y, p.x + s.w - 1, p.y + s.h - 1, c);
+}
 void Display::fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c) {
 
     x1 += ox;
@@ -639,6 +643,11 @@ void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t
         //
         //        }
     }
+}
+
+void Display::writeRect(DisplayPoint p, DisplaySize s, Color c) {
+    // select();
+    writeRect(p.x, p.y, p.x + s.w, p.y + s.h, c);
 }
 
 void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
@@ -1059,11 +1068,11 @@ size_t Display::printFloat(double number, uint8_t digits) {
     return n;
 }
 
-bool Display::getWrapText() const {
+bool Display::get_wrap_text() const {
     return wrap_text;
 }
 
-void Display::setWrapText(bool wrap_text) {
+void Display::set_wrap_text(bool wrap_text) {
     Display::wrap_text = wrap_text;
 }
 
