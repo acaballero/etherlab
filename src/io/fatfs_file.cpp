@@ -52,7 +52,9 @@ io::filesystem_error FatFSFile::create(const io::path &filename) {
 }
 
 FatFSFile::~FatFSFile() {
+    lock_sd_card();
     f_close(&f);
+    unlock_sd_card();
 }
 
 void FatFSFile::close() {

@@ -210,10 +210,6 @@ int main() {
 
     standby::init();
 
-    ui::MapView map("FROM", 0, ui::Locator::alt_unit::METERS, ui::Locator::spd_unit::HIDDEN, 40.4, -3.7, 0, nullptr);
-    map.set_z_index(10000);
-    view_manager::mainView.add_child(&map);
-
     while (1) {
 
         os::task_manager.run();
@@ -224,7 +220,7 @@ int main() {
 #if DEBUG_SD_CARD
             test_sd_card();
 #endif
-            //  test();
+            test();
 
             dsptested = true;
         }

@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstring>
 #include <stdio.h>
+#include <sys/_stdint.h>
 
 namespace ui {
 
@@ -20,8 +21,8 @@ Locator::Locator(const Point pos, const alt_unit altitude_unit, const spd_unit s
     set_parent_rect({pos.x(), pos.y(), DISPLAY_X_PIXELS, 3 * 16});
 
     add_children({&label_alt, &label_lat, &label_lon, &label_spd_position, &text_alt_unit, &text_speed_unit, &text_lat_decimal, &text_lon_decimal});
-    // add_children({&field_altitude, &field_speed, &field_lat_degrees, &field_lat_minutes, &field_lat_seconds, &field_lon_degrees, &field_lon_minutes,
-    //              &field_lon_seconds});
+    add_children({&field_altitude, &field_speed, &field_lat_degrees, &field_lat_minutes, &field_lat_seconds, &field_lon_degrees, &field_lon_minutes,
+                  &field_lon_seconds});
 
     // Defaults
     set_altitude(0);
@@ -29,52 +30,52 @@ Locator::Locator(const Point pos, const alt_unit altitude_unit, const spd_unit s
     set_lat(0);
     set_lon(0);
 
-    // const auto changed_fn = [this](int32_t) {
-    //     // Convert degrees/minutes/seconds fields to decimal (floating point) lat/lon degree
-    //     float lat_value = lat();
-    //     float lon_value = lon();
+    const auto changed_fn = [this](int32_t) {
+        // Convert degrees/minutes/seconds fields to decimal (floating point) lat/lon degree
+        float lat_value = lat();
+        float lon_value = lon();
 
-    //     char buf[6];
+        char buf[6];
 
-    //     format_double(lat_value, buf, ' ', ' ', 5);
-    //     text_lat_decimal.set_label(buf);
-    //     format_double(lon_value, buf, ' ', ' ', 5);
-    //     text_lon_decimal.set_label(buf);
+        format_double(lat_value, buf, ' ', ' ', 5);
+        text_lat_decimal.set_label(buf);
+        format_double(lon_value, buf, ' ', ' ', 5);
+        text_lon_decimal.set_label(buf);
 
-    //     if (on_change && report_change) {
-    //         on_change(altitude(), lat_value, lon_value, speed());
-    //     }
-    // };
+        if (on_change && report_change) {
+            on_change(altitude(), lat_value, lon_value, speed());
+        }
+    };
 
-    // field_altitude.on_change = changed_fn;
-    // field_speed.on_change = changed_fn;
-    // field_lat_degrees.on_change = changed_fn;
-    // field_lat_minutes.on_change = changed_fn;
-    // field_lat_seconds.on_change = changed_fn;
-    // field_lon_degrees.on_change = changed_fn;
-    // field_lon_minutes.on_change = changed_fn;
-    // field_lon_seconds.on_change = changed_fn;
+    field_altitude.on_change = changed_fn;
+    field_speed.on_change = changed_fn;
+    field_lat_degrees.on_change = changed_fn;
+    field_lat_minutes.on_change = changed_fn;
+    field_lat_seconds.on_change = changed_fn;
+    field_lon_degrees.on_change = changed_fn;
+    field_lon_minutes.on_change = changed_fn;
+    field_lon_seconds.on_change = changed_fn;
 
-    // const auto wrapped_lat_seconds = [this](int32_t v) {
-    //     field_lat_minutes.on_encoder(v);
-    // };
+    const auto wrapped_lat_seconds = [this](int32_t v) {
+        field_lat_minutes.add(v);
+    };
 
-    // const auto wrapped_lat_minutes = [this](int32_t v) {
-    //     field_lat_degrees.on_encoder((field_lat_degrees.value() >= 0) ? v : -v);
-    // };
+    const auto wrapped_lat_minutes = [this](int32_t v) {
+        field_lat_degrees.add((field_lat_degrees.get_value() >= 0) ? v : -v);
+    };
 
-    // const auto wrapped_lon_seconds = [this](int32_t v) {
-    //     field_lon_minutes.on_encoder(v);
-    // };
+    const auto wrapped_lon_seconds = [this](int32_t v) {
+        field_lon_minutes.add(v);
+    };
 
-    // const auto wrapped_lon_minutes = [this](int32_t v) {
-    //     field_lon_degrees.on_encoder((field_lon_degrees.value() >= 0) ? v : -v);
-    // };
+    const auto wrapped_lon_minutes = [this](int32_t v) {
+        field_lon_degrees.add((field_lon_degrees.get_value() >= 0) ? v : -v);
+    };
 
-    // field_lat_seconds.on_wrap = wrapped_lat_seconds;
-    // field_lat_minutes.on_wrap = wrapped_lat_minutes;
-    // field_lon_seconds.on_wrap = wrapped_lon_seconds;
-    // field_lon_minutes.on_wrap = wrapped_lon_minutes;
+    field_lat_seconds.on_wrap = wrapped_lat_seconds;
+    field_lat_minutes.on_wrap = wrapped_lat_minutes;
+    field_lon_seconds.on_wrap = wrapped_lon_seconds;
+    field_lon_minutes.on_wrap = wrapped_lon_minutes;
 
     text_alt_unit.set_label(altitude_unit_ ? "m" : "ft");
 
@@ -103,29 +104,26 @@ void Locator::set_report_change(bool v) {
 }
 
 void Locator::on_focus() {
-    // if (field_altitude.focusable())
-    //     field_altitude.focus();
-    // else
-    //     field_lat_degrees.focus();
+    field_altitude.set_focus(true);
 }
 
 void Locator::hide_altandspeed() {
     // Color altitude grey to indicate it's not updated in manual panning mode
-    // field_altitude.set_style(Theme::getInstance()->fg_medium);
-    // field_speed.set_style(Theme::getInstance()->fg_medium);
+    field_altitude.set_visible(false);
+    field_speed.set_visible(false);
 }
 
 void Locator::set_altitude(int32_t altitude) {
-    // field_altitude.set_value(altitude);
+    field_altitude.set_value(altitude);
 }
 void Locator::set_speed(int32_t speed) {
-    // field_speed.set_value(speed);
+    field_speed.set_value(speed);
 }
 
 void Locator::set_lat(float lat) {
-    // field_lat_degrees.set_value(lat);
-    //  field_lat_minutes.set_value((uint32_t)abs(lat / (1.0 / 60)) % 60);
-    //  field_lat_seconds.set_value((uint32_t)abs(lat / (1.0 / 3600)) % 60);
+    field_lat_degrees.set_value(lat);
+    field_lat_minutes.set_value((uint32_t)abs(lat / (1.0 / 60)) % 60);
+    field_lat_seconds.set_value((uint32_t)abs(lat / (1.0 / 3600)) % 60);
 }
 
 void Locator::set_lon(float lon) {
@@ -135,35 +133,34 @@ void Locator::set_lon(float lon) {
 }
 
 float Locator::lat() {
-    // if (field_lat_degrees.value() < 0) {
-    //     return -1 * (-1 * field_lat_degrees.value() + (field_lat_minutes.value() / 60.0) + (field_lat_seconds.value() / 3600.0));
-    // } else {
-    //     return field_lat_degrees.value() + (field_lat_minutes.value() / 60.0) + (field_lat_seconds.value() / 3600.0);
-    // }
+    if (field_lat_degrees.get_value() < 0) {
+        return -1 * (-1 * field_lat_degrees.get_value() + (field_lat_minutes.get_value() / 60.0) + (field_lat_seconds.get_value() / 3600.0));
+    } else {
+        return field_lat_degrees.get_value() + (field_lat_minutes.get_value() / 60.0) + (field_lat_seconds.get_value() / 3600.0);
+    }
 
     return 0;
 };
 
 float Locator::lon() {
-    // if (field_lon_degrees.value() < 0) {
-    //     return -1 * (-1 * field_lon_degrees.value() + (field_lon_minutes.value() / 60.0) + (field_lon_seconds.value() / 3600.0));
-    // } else {
-    //     return field_lon_degrees.value() + (field_lon_minutes.value() / 60.0) + (field_lon_seconds.value() / 3600.0);
-    // }
+    if (field_lon_degrees.get_value() < 0) {
+        return -1 * (-1 * field_lon_degrees.get_value() + (field_lon_minutes.get_value() / 60.0) + (field_lon_seconds.get_value() / 3600.0));
+    } else {
+        return field_lon_degrees.get_value() + (field_lon_minutes.get_value() / 60.0) + (field_lon_seconds.get_value() / 3600.0);
+    }
     return 0;
 };
 
 int32_t Locator::altitude() {
-    // return field_altitude.value();
-    return 0;
+    return field_altitude.get_value();
 };
 
 int32_t Locator::speed() {
-    //   return field_speed.value();
-    return 0;
+    return field_speed.get_value();
 };
 
 Map::Map(Rect parent_rect) : Widget{parent_rect, &lcd}, markerListLen(0) {
+    LOG("\n");
 }
 
 bool Map::on_input(const st_inputEvent ev) {
@@ -218,7 +215,7 @@ void Map::map_read_line(Color *buffer, uint16_t pixels) {
         // For 240 width, than means no check is needed for map_zoom values up to 6.
         // (Rectangle height must also divide evenly into map_zoom or we get black lines at end of screen)
         // Note that zooming in results in a map offset of (1/map_zoom) pixels to the right & downward directions (see zoom_pixel_offset).
-        for (int i = (geomap_rect_width / map_zoom) - 1; i >= 0; i--) {
+        for (int i = (map_rect_width / map_zoom) - 1; i >= 0; i--) {
             for (int j = 0; j < map_zoom; j++) {
                 buffer[(i * map_zoom) + j] = buffer[i];
             }
@@ -229,7 +226,7 @@ void Map::map_read_line(Color *buffer, uint16_t pixels) {
 
         // Zoom out:  Collapse each group of "-map_zoom" pixels into one pixel.
         // TODO: Use mean value of adjacent pixels.
-        for (int i = 0; i < geomap_rect_width; i++) {
+        for (int i = 0; i < map_rect_width; i++) {
             buffer[i] = zoom_out_buffer[i * (-map_zoom)];
         }
         delete[] zoom_out_buffer;
@@ -313,12 +310,10 @@ void Map::draw_map_grid() {
 void Map::paint_callback() {
 
     const auto r = parent_rect();
-    std::array<Color, geomap_rect_width> map_line_buffer;
+    std::array<Color, map_rect_width> map_line_buffer;
     int16_t zoom_seek_x, zoom_seek_y;
 
     display->setFont((FontDef *)&Font_Tiny8x8);
-
-    uint16_t y1 = display->current_line - display->getOffset().y;
 
     prev_x_pos = x_pos; // Note x_pos/y_pos pixel position in map file now correspond to screen rect CENTER pixel
     prev_y_pos = y_pos;
@@ -335,11 +330,18 @@ void Map::paint_callback() {
     }
 
     if (map_visible) {
+        int16_t oy = display->getOffset().y;
+        int16_t y1 = display->current_line - oy;
+
+        LOG("cl:%d, y1:%d, oy:%d\n", display->current_line, y1, display->getOffset().y);
+
         // Read from map file and disqqplay to zoomed scale
         int duplicate_lines = (map_zoom < 0) ? 1 : map_zoom;
         int nlines = display->chunk_height / duplicate_lines;
         for (uint16_t line = 0; line < nlines; line++) {
-            uint16_t seek_line = zoom_seek_y + ((map_zoom >= 0) ? (line + y1) : ((y1 + line) * (-map_zoom)));
+
+            int widget_line = line + y1;
+            uint16_t seek_line = zoom_seek_y + ((map_zoom >= 0) ? widget_line : (widget_line * (-map_zoom)));
             file.seek(4 + ((zoom_seek_x + (map_width * seek_line)) << 1)); // skip 4 bytes for the
             map_read_line(map_line_buffer.data(), r.width());
 
@@ -357,7 +359,7 @@ void Map::paint_callback() {
     }
 
     // Draw crosshairs in center in manual panning mode
-    if (manual_panning_) {
+    if (manual_panning) {
         Point p1 = r.center() - Point(16, 1) + Point(zoom_pixel_offset, zoom_pixel_offset);
         Point p2 = r.center() - Point(1, 16) + Point(zoom_pixel_offset, zoom_pixel_offset);
         display->writeRect(p1.x(), p1.y(), p1.x() + 32, p1.y() + 2, C565_RED);
@@ -370,7 +372,7 @@ void Map::paint_callback() {
     draw_mypos();
 
     // Draw the marker in the center
-    if (!manual_panning_ && !hide_center_marker_) {
+    if (!manual_panning && !hide_center_marker) {
         draw_marker(r.center() + Point(zoom_pixel_offset, zoom_pixel_offset), angle, tag, C565_RED, C565_WHITE, C565_BLACK);
     }
 }
@@ -449,11 +451,11 @@ void Map::set_mode(MapMode mode) {
 }
 
 void Map::set_manual_panning(bool v) {
-    manual_panning_ = v;
+    manual_panning = v;
 }
 
-bool Map::manual_panning() {
-    return manual_panning_;
+bool Map::get_manual_panning() {
+    return manual_panning;
 }
 
 void Map::draw_scale() {
@@ -637,7 +639,7 @@ void MapView::update_my_orientation(uint16_t angle, bool refresh) {
 }
 
 void MapView::update_position(float lat, float lon, uint16_t angle, int32_t altitude, int32_t speed) {
-    if (map.manual_panning()) {
+    if (map.get_manual_panning()) {
         map.set_dirty();
         return;
     }
@@ -709,8 +711,8 @@ MapView::~MapView() {
 // Display mode
 MapView::MapView(const std::string &tag, int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd_unit speed_unit, float lat, float lon, uint16_t angle,
                  const std::function<void(void)> on_close)
-    : View({0, MAP_Y_POS, MAP_WIDTH, MAP_HEIGHT}), altitude(altitude), altitude_unit(altitude_unit), speed_unit(speed_unit), lat(lat), lon(lon), angle(angle),
-      on_close_(on_close) {
+    : View({0, MAPVIEW_Y_POS, MAPVIEW_WIDTH, MAPVIEW_HEIGHT}), altitude(altitude), altitude_unit(altitude_unit), speed_unit(speed_unit), lat(lat), lon(lon),
+      angle(angle), on_close_(on_close) {
     mode = DISPLAY;
 
     add_child(&locator);
@@ -730,7 +732,7 @@ MapView::MapView(const std::string &tag, int32_t altitude, Locator::alt_unit alt
 // Prompt mode
 MapView::MapView(int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd_unit speed_unit, float lat, float lon,
                  const std::function<void(int32_t, float, float, int32_t)> on_done)
-    : View({0, MAP_Y_POS, MAP_WIDTH, MAP_HEIGHT}), altitude(altitude), altitude_unit(altitude_unit), speed_unit(speed_unit), lat(lat), lon(lon) {
+    : View({0, MAPVIEW_Y_POS, MAPVIEW_WIDTH, MAPVIEW_HEIGHT}), altitude(altitude), altitude_unit(altitude_unit), speed_unit(speed_unit), lat(lat), lon(lon) {
     mode = PROMPT;
 
     add_child(&locator);

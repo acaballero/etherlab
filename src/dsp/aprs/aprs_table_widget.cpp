@@ -47,14 +47,10 @@ void APRSTableWidget::paint_callback() {
             display->drawRoundedRectangle(0, y - 2, area.box.width, line_height, 2, false);
         }
 
-        snprintf(buf, sizeof(buf), "%-7s %s%4d %-8s\n", source->source_formatted, source->hits <= 999 ? " " : "+", source->hits <= 999 ? source->hits : 999,
-                 source->time_string);
+        snprintf(buf, sizeof(buf), "%-7s%s %s%3d %-8s\n", source->source_formatted, source->has_position ? "*" : "", source->hits <= 999 ? " " : "+",
+                 source->hits <= 999 ? source->hits : 999, source->time_string);
 
         display->print(buf);
-
-        if (source->has_position) {
-            // draw map icon
-        }
     }
 }
 
@@ -71,7 +67,7 @@ bool APRSTableWidget::on_touch(const st_inputEvent e) {
 }
 
 void APRSTableWidget::select(int ix) {
-    on_select(sources[ix]);
+
     selected_id = sources[ix].id;
     set_dirty();
 }
@@ -106,6 +102,26 @@ bool APRSTableWidget::on_input(const st_inputEvent e) {
             }
 
             consumed = true;
+            break;
+
+        case INPUT_EVENT_TYPE_BUTTON_PRESS:
+            switch (e.value) {
+                case BTN_ENCODER:
+
+                    for (i = 0; i < sources.size(); i++) {
+                        if (selected_id == sources[i].id) {
+                            on_select(sources[i]);
+
+                            break;
+                        }
+                    }
+                    consumed = true;
+
+                    break;
+                default:
+                    consumed = false;
+                    break;
+            }
             break;
 
         default:
@@ -181,10 +197,10 @@ int APRSTableWidget::on_packet(dsp::APRSPacket *packet) {
     snprintf(entry->source_formatted, APRSSource::source_length + 1, "%s", buff);
 
     if (entry->has_position && !packet->has_position()) {
-        // maintain position info
+        // Just to clarify that we maintain last position info of this source, if it has one from a previous packet
     } else {
-        //    entry.has_position = packet->has_position();
-        //       entry.pos = packet->get_position();
+        entry->has_position = packet->has_position();
+        entry->pos = packet->get_position();
     }
 
     int id = entry->id;

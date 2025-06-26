@@ -258,8 +258,18 @@ class APRSPacket {
         set(index++, 0x03);
         set(index++, 0xF0);
 
-        // Info text
-        for (char c : info_text) {
+        // Create test position data (Madrid, Spain coordinates)
+        // Format: !DDMM.mmN/DDDMM.mmW#
+        // Madrid: 40.4168° N, 3.7038° W
+        std::string position_info = "!4025.01N/00342.23W#Test APRS position packet";
+
+        // If custom info_text is provided and not empty, append it
+        if (!info_text.empty()) {
+            position_info = "!4025.01N/00342.23W#" + info_text;
+        }
+
+        // Add position info to packet
+        for (char c : position_info) {
             set(index++, static_cast<uint8_t>(c));
         }
 

@@ -10,6 +10,8 @@
 #include "label_widget.h"
 #include "field_widget.h"
 #include "menu_options.h"
+#include "number_field_widget.h"
+#include "ui/ui_types.h"
 #include "view.h"
 #include <stdint.h>
 #include <type_traits>
@@ -23,10 +25,10 @@ namespace ui {
 #define INVALID_LAT_LON 200
 #define INVALID_ANGLE 400
 
-#define MAP_Y_POS HEADER_HEIGHT
+#define MAPVIEW_Y_POS HEADER_HEIGHT
 #define MAP_TITLE_HEIGHT HEADER_HEIGHT
-#define MAP_WIDTH DISPLAY_X_PIXELS
-#define MAP_HEIGHT (DISPLAY_Y_PIXELS - (HEADER_HEIGHT * 2) - MAP_TITLE_HEIGHT)
+#define MAPVIEW_WIDTH DISPLAY_X_PIXELS
+#define MAPVIEW_HEIGHT (DISPLAY_Y_PIXELS - MAPVIEW_Y_POS - STATUS_HEIGHT)
 
 enum MapMode { DISPLAY, PROMPT };
 
@@ -91,20 +93,20 @@ class Locator : public View {
 
     Label label_spd_position{{15 * 8, 0 * 16}, "Spd:", C565_GREY_LIGHT};
 
-    // NumberField field_altitude{{6 * 8, 0 * 16}, 5, {-1000, 50000}, " "};
+    NumberField field_altitude{{6 * 8, 0 * 16}, 5, {-1000, 50000}, 1, ' '};
 
-    // Field field_speed{{19 * 8, 0 * 16}, 4, {0, 5000}, ' '};
+    NumberField field_speed{{19 * 8, 0 * 16}, 4, {0, 5000}, 1, ' '};
     Label text_alt_unit{{12 * 8, 0 * 16, 2 * 8, 16}};
     Label text_speed_unit{{25 * 8, 0 * 16, 4 * 8, 16}};
 
-    // Field field_lat_degrees{{5 * 8, 1 * 16}, 4, {-90, 90}, 1, ' '};
-    // Field field_lat_minutes{{10 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
-    // Field field_lat_seconds{{13 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
+    NumberField field_lat_degrees{{5 * 8, 1 * 16}, 4, {-90, 90}, 1, ' '};
+    NumberField field_lat_minutes{{10 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
+    NumberField field_lat_seconds{{13 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
     Label text_lat_decimal{{17 * 8, 1 * 16, 13 * 8, 1 * 16}};
 
-    Field field_lon_degrees{{{5 * 8, 2 * 16}, {-180, 180}}, " "};
-    Field field_lon_minutes{{{10 * 8, 2 * 16}, {0, 59}}, " "};
-    Field field_lon_seconds{{{13 * 8, 2 * 16}, {0, 59}}, " "};
+    NumberField field_lon_degrees{{5 * 8, 2 * 16}, 4, {-180, 180}, 1, ' '};
+    NumberField field_lon_minutes{{10 * 8, 2 * 16}, 2, {0, 59}, 1, ' ', true};
+    NumberField field_lon_seconds{{13 * 8, 2 * 16}, 2, {0, 59}, 1, ' ', true};
     Label text_lon_decimal{{{17 * 8, 2 * 16}, {13 * 8, 2 * 16}}};
 };
 
@@ -126,7 +128,7 @@ class Map : public Widget {
     bool init();
     void set_mode(MapMode mode);
     void set_manual_panning(bool v);
-    bool manual_panning();
+    bool get_manual_panning();
     void move(const float lon, const float lat);
     void pan(const int dx, const int dy);
     void set_tag(std::string new_tag) {
@@ -142,10 +144,10 @@ class Map : public Widget {
     }
 
     void set_hide_center_marker(bool hide) {
-        hide_center_marker_ = hide;
+        hide_center_marker = hide;
     }
-    bool hide_center_marker() {
-        return hide_center_marker_;
+    bool get_hide_center_marker() {
+        return hide_center_marker;
     }
 
     static const int NumMarkerListElements = 30;
@@ -153,9 +155,9 @@ class Map : public Widget {
     void clear_markers();
     MarkerStorage store_marker(Marker &marker);
 
-    static const Dim banner_height = MAP_TITLE_HEIGHT;
-    static const Dim geomap_rect_width = MAP_WIDTH;
-    static const Dim geomap_rect_height = MAP_HEIGHT;
+    static const Dim map_top = MAP_TITLE_HEIGHT;
+    static const Dim map_rect_width = MAPVIEW_WIDTH;
+    static const Dim map_rect_height = MAPVIEW_HEIGHT - map_top;
 
   private:
     void before_paint() override;
@@ -172,8 +174,8 @@ class Map : public Widget {
     Point polar_to_point(int32_t angle, uint32_t distance);
     void map_read_line(Color *buffer, uint16_t pixels);
 
-    bool manual_panning_{true};
-    bool hide_center_marker_{true};
+    bool manual_panning{true};
+    bool hide_center_marker{true};
     MapMode mode{};
     FatFSFile file{};
     bool map_opened{};
@@ -249,7 +251,7 @@ class MapView : public View {
 
     Locator locator{{0, 0}, altitude_unit, speed_unit};
 
-    Map map{{0, Map::banner_height, Map::geomap_rect_width, Map::geomap_rect_height}};
+    Map map{{0, Map::map_top, Map::map_rect_width, Map::map_rect_height}};
 
     Menu::menu_action_st menu_actions[5] = {{"<",
                                              [this]() {

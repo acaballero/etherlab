@@ -24,6 +24,7 @@
 #include "os/task_manager.h"
 #include "aprs_table_widget.h"
 #include "io/log_file.h"
+#include "ui/map_view.h"
 
 namespace dsp_ui {
 
@@ -89,6 +90,8 @@ class APRSView : public View {
     APRSTask aprs_task{dspSuccess, dspError};
     AFSKTXTask aprs_tx_task{dspSuccess, dspError};
     APRSSource current_source;
+
+    std::unique_ptr<ui::MapView> map;
 
     int beacon_task_id{0};
 

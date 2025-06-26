@@ -22,8 +22,9 @@
 #include <cstring>
 #include <iterator>
 #include <string>
-#include <sys/_stdint.h>
 #include "dsp/protocols/aprs.hpp"
+#include "ui/map_view.h"
+#include "ui/view_manager.h"
 
 namespace dsp_ui {
 
@@ -171,6 +172,19 @@ bool APRSView::on_input(const st_inputEvent e) {
 
 void APRSView::on_source_selected(APRSSource &source) {
     current_source = source;
+
+    if (current_source.has_position) {
+
+        if (map) {
+            map.reset();
+        }
+        map = std::make_unique<ui::MapView>(std::string(source.source_formatted), 0, ui::Locator::alt_unit::METERS, ui::Locator::spd_unit::HIDDEN,
+                                            source.pos.latitude, source.pos.longitude, 0, [this]() {
+                                                view_manager::mainView.remove_child(map.get());
+                                            });
+        map->set_z_index(10000);
+        view_manager::mainView.add_child(map.get());
+    }
 }
 
 void APRSView::before_paint() {
