@@ -5,10 +5,7 @@
 #include "splash_view.h"
 #include "ips_font.h"
 #include "ui/widget.h"
-
-#ifndef BUILD_VERSION
-#define BUILD_VERSION "unknown"
-#endif
+#include "version.h"
 
 void SplashView::init() {
 
@@ -38,7 +35,7 @@ void SplashView::init() {
 
     lblText3.set_font((FontDef *)&Font_Tiny8x8);
     lblText3.set_color(C565_GREY_LIGHT);
-    lblText3.set_label(BUILD_VERSION);
+    lblText3.set_label(get_build_version());
     lblText3.set_aling(Align::ALIGN_CENTER);
     lblText3.set_has_border(false);
 

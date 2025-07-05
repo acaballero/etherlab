@@ -49,6 +49,9 @@ dsp::st_dsp_command pending_command{DSP_COMMAND_NONE};
 volatile bool execute_task = false;
 #endif
 
+DCBlock dc_block_i{0.999};
+DCBlock dc_block_q{0.999};
+
 std::function<void(st_dsp_status *)> on_event;
 
 /** Sets or unsets the real-time DSP mode, for which only one slice of FFT can be used **/
@@ -70,15 +73,15 @@ void dsp_set_real_time(bool b) {
 
 void restart_callback(void *, void *) {
 
-    // TODO: This assumes the current task is 'receive'
+    //  TODO: This assumes the current task is 'receive'
     if (config.mode != DIGITAL_RX && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
-        // LOG("restart_callback: sending stop receive commandxs\n");
+        LOG("restart_callback: sending stop receive commandxs\n");
         dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, nullptr);
     } else if (config.mode == DIGITAL_RX && !current_task) {
-        // LOG("restart_callback: sending start receive command\n");
+        LOG("restart_callback: sending start receive command\n");
         dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, nullptr);
     } else {
-        // LOG("restart_callback:dsp_restart\n");
+        LOG("restart_callback:dsp_restart\n");
         dsp_restart();
     }
 }
@@ -94,16 +97,16 @@ void dsp_init(dsp::st_dsp_config &config) {
 }
 
 void dsp_stop_tasks() {
-    // LOG("dsp_stop_tasks");
+    LOG("dsp_stop_tasks");
     if (current_task) {
-        // LOG(": stopping current task\n");
+        LOG(": stopping current task\n");
         current_task->stop();
         //   current_task = nullptr;
         if (on_event) {
             on_event(dsp::dsp_status);
         }
     } else {
-        // LOG(": no current task\n");
+        LOG(": no current task\n");
     }
 }
 
@@ -135,7 +138,8 @@ bool dsp_restart() {
     // LOG("dsp_restart");
     if (!ISANALOG && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
 
-        // LOG(": will restart\n");
+        //   LOG(": will restart\n");
+        dsp::dsp_status->status = DSP_STATUS_PENDING;
         DAC_DMA_Stop(&hdac1);
         ADC_DMA_Stop(&hadc1);
         input_stream.reset();
@@ -144,23 +148,23 @@ bool dsp_restart() {
         dsp::dsp_status->reset();
         return true;
     } else if (!current_task) {
-        // LOG(": wont restart: no task\n");
+        //   LOG(": wont restart: no task\n");
     } else if (current_task && dsp::dsp_status) {
         int b = dsp::dsp_status->status == DSP_STATUS_RUNNING ? 0 : 1;
-        // LOG(": wont restart: current task is running=%d\n", b);
+        //   LOG(": wont restart: current task is running=%d\n", b);
     }
 
     return false;
 }
 
 void dsp_start_task() {
-    // LOG("dsp_start_task");
+    //    LOG("dsp_start_task");
 
     //  current_task = tasks[pending_command.id];
     //  dsp_status = &current_task->status;
     if (!dsp::dsp_status || dsp::dsp_status->status != DSP_STATUS_RUNNING) {
 
-        // LOG(": not running, will start\n");
+        //   LOG(": not running, will start\n");
 
         input_stream.reset();
         output_stream.reset();
@@ -173,12 +177,12 @@ void dsp_start_task() {
         if (current_processor->status.direction == DSP_DIRECTION_OUT) {
             // Link the start of the processor with the 1st block processed event of the task to prevent false underruns
             current_task->on_first_block = []() {
-                // LOG("On first block\n");
+                //     LOG("On first block\n");
                 current_processor->start();
             };
         }
 
-        // LOG("dsp_start_task: starting task\n");
+        //  LOG("dsp_start_task: starting task\n");
         current_task->start();
 
         // TODO: Ugly!
@@ -197,7 +201,7 @@ void dsp_start_task() {
             on_event(dsp::dsp_status);
         }
     } else {
-        // LOG(": alerady running task\n");
+        //   LOG(": alerady running task\n");
     }
 }
 
@@ -252,14 +256,11 @@ inline void dac_work() {
     // GPIOD->BSRR |= GPIO_PIN_5 << 16;
 }
 
-DCBlock dc_block_i{0.999};
-DCBlock dc_block_q{0.999};
-
 inline void adc_work() {
     // GPIOD->BSRR |= GPIO_PIN_9;
 #if DSP_FS4_SHIFT
 
-    if (fft_params.n_slices == 1 && !ISANALOG) {
+    if (dsp::get_freq_shift_enabled()) {
 
         buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
         dc_block_i.filter(bb, 2, 0);
@@ -351,7 +352,7 @@ void dspStop() {
         dac_buff[i] = {{(adc_type)config.hw.dac_offset, (adc_type)config.hw.dac_offset}};
     }
 
-    // LOG("dspStop\n");
+    //  LOG("dspStop\n");
     if (current_processor) {
         current_processor->stop();
     }
@@ -368,7 +369,7 @@ void dspStop() {
 #endif
 
     if (on_event) {
-        // LOG("dspStop: onEvent\n");
+        //  LOG("dspStop: onEvent\n");
         on_event(dsp::dsp_status);
     }
 

@@ -17,7 +17,9 @@ class SplashView : public View {
     static constexpr uint16_t WIDTH = DISPLAY_X_PIXELS + (DISPLAY_PADDING * 2);
     static constexpr uint16_t TOP = 100;
 
-    SplashView() : View({0, 0, WIDTH, HEIGHT}) { init(); }
+    SplashView() : View({0, 0, WIDTH, HEIGHT}) {
+        init();
+    }
 
     void init();
 

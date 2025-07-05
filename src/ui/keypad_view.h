@@ -13,16 +13,19 @@
 #include "button_widget.h"
 #include "math.h"
 #include "label_widget.h"
-#include "main_view.h"
 
 class KeypadView : public View {
   public:
     static constexpr uint16_t HEIGHT = DISPLAY_Y_PIXELS - HEADER_HEIGHT;
     static constexpr uint16_t WIDTH = DISPLAY_X_PIXELS;
 
-    KeypadView() : View() { init(); }
+    KeypadView() : View() {
+        init();
+    }
 
-    KeypadView(Rect parent_rect) : View(parent_rect) { init(); }
+    KeypadView(Rect parent_rect) : View(parent_rect) {
+        init();
+    }
 
     static const uint8_t MAX_DIGITS = 12 + 3 + 6; // 3 for decimal and thousands separator, 6 for fractional places
 

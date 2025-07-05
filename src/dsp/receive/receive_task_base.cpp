@@ -162,6 +162,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
                 default:
                     signal_decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, complex_t_f32>>();
                     ret = signal_decimator->config(stage_fs, next_stage_bandwidth / 2, factor);
+
                     break;
             }
 

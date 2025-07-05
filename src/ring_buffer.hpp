@@ -46,6 +46,15 @@ template <typename T, size_t Capacity> class RingBuffer {
         return allocated_item;
     }
 
+    bool pop_stack() {
+        if (empty()) {
+            return false;
+        }
+        head = (head + Capacity - 1) % Capacity;
+        full = false;
+        return true;
+    }
+
     bool pop() {
         if (empty()) {
             return false;

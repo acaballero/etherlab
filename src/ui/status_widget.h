@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_STATUS_WIDGET_H
 #define TRX_FRONTEND_STATUS_WIDGET_H
 
+#include "ring_buffer.hpp"
 #include "view.h"
 #include "button_widget.h"
 #include "../types.h"
@@ -31,19 +32,18 @@ class StatusWidget : public View {
     static constexpr uint8_t n_buttons = 6;
     enum DEFAULT_ACTIONS { MODULATION, FRONTEND, AGC, BAND, FILTER1, FILTER2 };
 
-    Button default_buttons[n_buttons] = {{{0, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
-                                         {{BTN_WIDTH, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
-                                         {{BTN_WIDTH * 2, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
-                                         {{BTN_WIDTH * 3, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
-                                         {{BTN_WIDTH * 4, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
-                                         {{BTN_WIDTH * 5, STATUS_MARGIN_TOP, BTN_WIDTH, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK}};
-
     Button buttons[n_buttons] = {{{0, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
                                  {{BTN_WIDTH, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
                                  {{BTN_WIDTH * 2, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
                                  {{BTN_WIDTH * 3, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
                                  {{BTN_WIDTH * 4, STATUS_MARGIN_TOP, BTN_WIDTH - 1, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK},
                                  {{BTN_WIDTH * 5, STATUS_MARGIN_TOP, BTN_WIDTH, area.box.height - STATUS_MARGIN_TOP}, display, "", C565_BLACK}};
+
+    static Menu::menu_action_st default_actions_arr[n_buttons];
+
+    static Menu::menu_actions_st default_actions;
+
+    RingBuffer<Menu::menu_actions_st *, 4> actions_stack;
 
     char buf[20];
 
@@ -65,8 +65,10 @@ class StatusWidget : public View {
 
     void before_paint() override;
 
+    void set_actions(Menu::menu_actions_st *);
     void set_action(uint8_t index, Menu::menu_action_st &action);
-    void set_defaults();
+    bool push(Menu::menu_actions_st *);
+    void pop();
 };
 
 #endif // TRX_FRONTEND_STATUS_WIDGET_H

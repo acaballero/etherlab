@@ -14,6 +14,8 @@ namespace dsp {
 // TX gain for the digital domain
 int8_t dsp_tx_gain = 0;
 
+bool freq_shift_enabled = true;
+
 // Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
 uint32_t dsp_max_sample_rate = config.fft.max_sample_rate;
 
@@ -47,6 +49,14 @@ void set_tx_gain_db(int8_t gain_db) {
     dsp_tx_gain = constrain(gain_db, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB);
     dsp_status->gain = pow(10.0, (float)dsp_tx_gain / 20.0);
     dsp_common_params_signal.emit(&dsp_status);
+}
+
+void enable_frequency_shift(bool b) {
+    freq_shift_enabled = b;
+}
+
+bool get_freq_shift_enabled() {
+    return fft_params.n_slices == 1 && !ISANALOG && freq_shift_enabled;
 }
 
 int32_t get_frequency_shift(uint32_t sample_rate) {

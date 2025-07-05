@@ -9,6 +9,7 @@ ILI9431 (with partial (multiple callbacks to draw a panel) DMA drawing)
 
 #include "../../lib/ST77XX-STM32/st7789_fb.h"
 #include "../../lib/Menu/src/menuDefs.h"
+#include "dsp/dsp_buffers.h"
 
 namespace Menu {
 
@@ -20,7 +21,8 @@ class menuILI9431Out : public gfxOut {
     const colorDef<uint16_t> (&colors)[nColors];
 
     menuILI9431Out(Display &gfx, const colorDef<uint16_t> (&c)[nColors], idx_t *t, panelsList &p, idx_t resX = 6, idx_t resY = 9)
-        : gfxOut(resX, resY, t, p, (menuOut::styles)(menuOut::redraw | menuOut::rasterDraw), 2), gfx(gfx), colors(c) {}
+        : gfxOut(resX, resY, t, p, (menuOut::styles)(menuOut::redraw | menuOut::rasterDraw), 2), gfx(gfx), colors(c) {
+    }
     //: gfxOut(gfx.width()/resX,gfx.height()/resY,resX,resY,false),colors(c),gfx(gfx) {}
 
     size_t write(uint8_t ch) override {
@@ -29,7 +31,15 @@ class menuILI9431Out : public gfxOut {
     }
 
     size_t write(const uint8_t *buffer, size_t size) override {
-        gfx.write(buffer, size);
+        if (strlen((char *)buffer) > size) {
+            char buff[size + 1];
+            snprintf(buff, size + 1, "%.*s...", (int)(size - 3), buffer);
+
+            gfx.write(buff, size);
+        } else {
+            gfx.write(buffer, size);
+        }
+
         return size;
     }
 

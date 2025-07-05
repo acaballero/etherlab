@@ -59,7 +59,9 @@ void ReplayTask::work() {
             if (eof) {
 
                 if (!this->loop) {
+
                     this->stop();
+
                 } else {
 
 #if LCD_DISABLE_ON_DSP
@@ -71,6 +73,10 @@ void ReplayTask::work() {
                     f_rewind(&FatFSFileHandle);
                     this->reset();
                 }
+            }
+
+            if (++status.processed_blocks == 1 && on_first_block) {
+                on_first_block();
             }
 
             // GPIOA->BSRR = GPIO_PIN_12 << 16;
@@ -192,6 +198,8 @@ bool ReplayTask::start() {
             this->halt(DSP_ERR);
             return false;
         }
+
+        dsp::enable_frequency_shift(false); // Capture/Replay wont apply frequency shifts for DC issues mitigation
     }
 
     return true;
@@ -205,22 +213,24 @@ void ReplayTask::stop() {
 
         FRESULT fres; // Result after operations
 
-        fres = f_close(&FatFSFileHandle);
+        fres = m_file->close();
 
         if (fres != FR_OK) {
-
-            if (this->status.error != DSP_ERR_NONE)
-                this->status.error = DSP_ERR_FILECLOSE;
+            if (this->status.error != DSP_ERR_NONE) {
+                status.error = DSP_ERR_FILECLOSE;
+            }
         }
 
-        // Stop media read processing timer
+        // Stop task trigger timer
         HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
+
+        dsp::enable_frequency_shift(true);
 
         Task::stop(); // Let the base class finish
 
         fft_config(config.fft.span);
 
-        radio_config({RF_DIRECTION_RX, 0});
+        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = 0, .freq = 0, .mode = DSP});
 
 #if LCD_DISABLE_ON_DSP
         lcd.setEnabled(true);
@@ -230,6 +240,7 @@ void ReplayTask::stop() {
 
 void ReplayTask::setFile(std::unique_ptr<File> file) {
     m_file = move(file);
+    m_file->close();
 }
 
 bool ReplayTask::getLoop() const {

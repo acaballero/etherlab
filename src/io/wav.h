@@ -13,10 +13,12 @@
 #include "../../lib/FatFs/ff.h"
 
 struct fmt_pcm_t {
-    constexpr fmt_pcm_t() {}
+    constexpr fmt_pcm_t() {
+    }
     constexpr fmt_pcm_t(const uint32_t sampling_rate, const uint16_t n_channels)
         : nChannels{n_channels}, nSamplesPerSec{sampling_rate}, nAvgBytesPerSec{sampling_rate * 2 * n_channels}, nBlockAlign{static_cast<uint16_t>(n_channels *
-                                                                                                                                                   16 / 8)} {}
+                                                                                                                                                   16 / 8)} {
+    }
 
   public:
     uint8_t ckID[4]{'f', 'm', 't', ' '};
@@ -30,8 +32,10 @@ struct fmt_pcm_t {
 }; // 24 bytes lenght (8+16)
 
 struct data_t {
-    constexpr data_t() {}
-    constexpr data_t(const uint32_t size) : cksize{size} {}
+    constexpr data_t() {
+    }
+    constexpr data_t(const uint32_t size) : cksize{size} {
+    }
 
   public:
     uint8_t ckID[4]{'d', 'a', 't', 'a'};
@@ -43,7 +47,8 @@ struct header_t {
     constexpr header_t(){};
 
     constexpr header_t(const uint32_t sampling_rate, const uint16_t n_channels, const uint32_t data_chunk_size, const uint32_t info_chunk_size)
-        : cksize{(uint32_t)sizeof(header_t) + data_chunk_size + info_chunk_size - 8}, fmt{sampling_rate, n_channels}, data{data_chunk_size} {}
+        : cksize{(uint32_t)sizeof(header_t) + data_chunk_size + info_chunk_size - 8}, fmt{sampling_rate, n_channels}, data{data_chunk_size} {
+    }
 
   public:
     uint8_t riff_id[4]{'R', 'I', 'F', 'F'};
@@ -54,7 +59,8 @@ struct header_t {
 }; // 44 bytes (12+24+8)
 
 struct tags_t {
-    tags_t() {}
+    tags_t() {
+    }
     tags_t(const char *str) {
         strcpy(&(title[0]), str);
         cksize = sizeof(tags_t) - 8;
@@ -75,7 +81,11 @@ struct tags_t {
 class WaveFile : public File {
 
   public:
-    WaveFile(char *filepath) : File(filepath){};
+    WaveFile(io::path &p) : File(p){};
+
+    ~WaveFile() override {
+        close();
+    }
 
     FRESULT open(WaveInfo &wi) override;
     FRESULT close() override;

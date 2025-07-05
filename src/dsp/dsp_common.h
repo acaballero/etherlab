@@ -115,7 +115,7 @@ enum DSP_ERROR {
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
 #define FIR_DECIMATOR_1ST_HALFBAND_TAPS 23
-#define FIR_DECIMATOR_SIGNAL_TAPS 37
+#define FIR_DECIMATOR_SIGNAL_TAPS 31
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
 // A LCD SPI DMA transfer and cause problems
@@ -255,6 +255,9 @@ void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples);
 
 void set_config(st_dsp_config &);
 st_dsp_config get_config();
+
+void enable_frequency_shift(bool b);
+bool get_freq_shift_enabled();
 
 } // namespace dsp
 

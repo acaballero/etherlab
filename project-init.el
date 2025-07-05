@@ -15,6 +15,7 @@
 (defun stop-openocd ()
   "Stop OpenOCD."
   ;; Stop dape in case it was on
+ 
   (dape-quit)
   
   "Stop OpenOCD."
@@ -102,6 +103,7 @@
 (defun my-dap-reset-openocd-and-upload () "Stop existing OpenOCD instance, run platformio\n \
 upload and start OpenOCD and the SWO parser\n \
 for debug echo." (interactive)
+ (save-some-buffers t t)
   ;; Stop any running OpenOCD processes
   (stop-openocd)
 

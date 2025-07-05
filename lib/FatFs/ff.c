@@ -1852,15 +1852,19 @@ static void get_fileinfo(             /* No return code */
         i = 0;
         while (i < 11) { /* Copy name body and extension */
             c = (TCHAR)dir[i++];
-            if (c == ' ')
+            if (c == ' ') {
                 continue; /* Skip padding spaces */
-            if (c == RDDEM)
+            }
+            if (c == RDDEM) {
                 c = (TCHAR)DDEM; /* Restore replaced DDEM character */
-            if (i == 9)
+            }
+            if (i == 9) {
                 *p++ = '.'; /* Insert a . if extension is exist */
+            }
 #if _USE_LFN
-            if (IsUpper(c) && (dir[DIR_NTres] & (i >= 9 ? NS_EXT : NS_BODY)))
+            if (IsUpper(c) && (dir[DIR_NTres] & (i >= 9 ? NS_EXT : NS_BODY))) {
                 c += 0x20; /* To lower */
+            }
 #if _LFN_UNICODE
             if (IsDBCS1(c) && i != 8 && i != 11 && IsDBCS2(dir[i]))
                 c = c << 8 | dir[i++];
@@ -1890,9 +1894,10 @@ static void get_fileinfo(             /* No return code */
                 if (!w) {
                     i = 0;
                     break;
-                }                        /* No LFN if it could not be converted */
-                if (_DF1S && w >= 0x100) /* Put 1st byte if it is a DBC (always false on SBCS cfg) */
+                }                          /* No LFN if it could not be converted */
+                if (_DF1S && w >= 0x100) { /* Put 1st byte if it is a DBC (always false on SBCS cfg) */
                     p[i++] = (TCHAR)(w >> 8);
+                }
 #endif
                 if (i >= fno->lfsize - 1) {
                     i = 0;

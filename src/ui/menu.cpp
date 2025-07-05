@@ -265,10 +265,9 @@ void unlock() {
     locked = false;
 }
 
-MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), OBJ(powerSavePeriod),
-     OP("Reset to defaults", settings_reset, enterEvent), SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu), OBJ(Menu::frontendPathMenu), OBJ(couplerOffsetMenu),
-     OBJ(driveStrength1stLOMenu), OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu), OBJ(if1stFreqMenu), OBJ(ifFMTXFreqMenu), OBJ(loRefCorrectionMenu),
-     OBJ(ifCorrectionMenu),
+MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), OBJ(powerSavePeriod), OP("Reset defaults", settings_reset, enterEvent),
+     SUBMENU(enableHPAToggleMenu), OBJ(hpaPowerMenu), OBJ(Menu::frontendPathMenu), OBJ(couplerOffsetMenu), OBJ(driveStrength1stLOMenu),
+     OBJ(driveStrength2ndLOMenu), OBJ(loSideInjectionMenu), OBJ(if1stFreqMenu), OBJ(ifFMTXFreqMenu), OBJ(loRefCorrectionMenu), OBJ(ifCorrectionMenu),
 #if ENABLE_RTC
      SUBMENU(dateMenu), SUBMENU(timeMenu)
 #endif

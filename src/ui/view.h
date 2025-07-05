@@ -26,7 +26,7 @@ class View : public Widget {
 
     void add_children(const std::initializer_list<Widget *> children);
 
-    void remove_child(Widget *const widget);
+    bool remove_child(Widget *const widget);
 
     const std::vector<Widget *> &children() const override;
 

@@ -170,8 +170,8 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 3));
-    //   nav.doNav(Menu::navCmd(Menu::enterCmd));
+    //    nav.doNav(Menu::navCmd(Menu::idxCmd, 0));
+    nav.doNav(Menu::navCmd(Menu::enterCmd));
     //   nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
     //   nav.doNav(Menu::navCmd(Menu::enterCmd));
 

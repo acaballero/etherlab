@@ -179,11 +179,16 @@ void View::add_children(const std::initializer_list<Widget *> children) {
     }
 }
 
-void View::remove_child(Widget *const widget) {
+bool View::remove_child(Widget *const widget) {
     if (widget) {
-        children_.erase(std::remove(children_.begin(), children_.end(), widget), children_.end());
-        widget->set_parent(nullptr);
+        auto it = std::remove(children_.begin(), children_.end(), widget);
+        if (it != children_.end()) {
+            children_.erase(it, children_.end());
+            widget->set_parent(nullptr);
+            return true;
+        }
     }
+    return false;
 }
 
 void View::set_area() {

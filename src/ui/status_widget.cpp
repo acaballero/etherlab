@@ -13,64 +13,97 @@
 #include <cstddef>
 #include <functional>
 
+Menu::menu_action_st StatusWidget::default_actions_arr[n_buttons] = {{"",
+                                                                      []() {
+                                                                          Menu::open(Menu::modulationMenu);
+                                                                      }},
+                                                                     {"",
+                                                                      []() {
+                                                                          Menu::open(Menu::frontendPathMenu);
+                                                                      }},
+                                                                     {"",
+                                                                      []() {
+                                                                          config.agc_enabled = !config.agc_enabled;
+                                                                          main_board::update();
+                                                                      }},
+                                                                     {"",
+                                                                      []() {
+                                                                          Menu::open(Menu::bandMenu);
+                                                                      }},
+                                                                     {"",
+                                                                      []() {
+                                                                          Menu::open(Menu::filterMenu);
+                                                                      }},
+                                                                     {"", []() {
+                                                                          Menu::open(Menu::IFFilterMenu);
+                                                                      }}};
+
+Menu::menu_actions_st StatusWidget::default_actions = {default_actions_arr, n_buttons};
+
 void StatusWidget::init() {
 
     StatusWidget *self = this;
 
-    default_buttons[BAND].fn_writer = std::bind(&StatusWidget::band, self, &default_buttons[BAND]);
-    default_buttons[FILTER1].fn_writer = std::bind(&StatusWidget::filter1, self, &default_buttons[FILTER1]);
-    default_buttons[FILTER2].fn_writer = std::bind(&StatusWidget::filter2, self, &default_buttons[FILTER2]);
+    default_actions_arr[BAND].fn_writer = std::bind(&StatusWidget::band, self, &buttons[BAND]);
+    default_actions_arr[FILTER1].fn_writer = std::bind(&StatusWidget::filter1, self, &buttons[FILTER1]);
+    default_actions_arr[FILTER2].fn_writer = std::bind(&StatusWidget::filter2, self, &buttons[FILTER2]);
 
-    for (Button &b : default_buttons) {
+    StatusWidget::default_actions = {default_actions_arr, n_buttons};
+
+    for (Button &b : buttons) {
         add_child(&b);
     }
 
-    for (auto &b : buttons) {
-        add_child(&b);
-        b.set_visible(false);
-    }
-
-    int i = 0;
+    // int i = 0;
     for (Widget *btn : View::children()) {
         ((Button *)btn)->set_font((FontDef *)&Font_Tiny8x8);
 
-        char name[6];
-        sprintf(name, "stb-%d", i++);
-        btn->set_name(name);
+        // DEBUG (otherwise we don't need names
+        // char name[6];
+        // sprintf(name, "stb-%d", i++);
+        // btn->set_name(name);
     }
+
+    push(&default_actions);
 
     // Subscribe to published actions
     actions_signal.add(this, [this](void *, void *params) {
         if (params == nullptr) {
-            set_defaults();
-        } else {
-            Menu::menu_actions_st actions = *((Menu::menu_actions_st *)params);
-            for (size_t i = 0; i < n_buttons; i++) {
-
-                if (i < actions.size) {
-                    set_action(i, actions.actions[i]);
-                    buttons[i].set_visible(true);
-
-                } else {
-                    buttons[i].set_visible(false);
-                }
-
-                default_buttons[i].set_visible(false);
-
-                set_dirty();
-            }
+            pop();
+        } else if (params != actions_stack.back()) {
+            push((Menu::menu_actions_st *)params);
         }
     });
 }
 
-void StatusWidget::set_defaults() {
-
-    for (Button &b : default_buttons) {
-        b.set_visible(true);
+void StatusWidget::pop() {
+    if (actions_stack.size() > 1) {
+        actions_stack.pop_stack();
+        set_actions(actions_stack.back());
     }
+}
 
-    for (Button &b : buttons) {
-        b.set_visible(false);
+bool StatusWidget::push(Menu::menu_actions_st *actions) {
+    if (!actions_stack.isFull()) {
+        actions_stack.push(actions);
+        set_actions(actions);
+        return true;
+    }
+    return false;
+}
+
+void StatusWidget::set_actions(Menu::menu_actions_st *actions) {
+    for (size_t i = 0; i < n_buttons; i++) {
+
+        if (i < actions->size) {
+            set_action(i, actions->actions[i]);
+            buttons[i].set_visible(true);
+
+        } else {
+            buttons[i].set_visible(false);
+        }
+
+        set_dirty();
     }
 }
 
@@ -81,7 +114,12 @@ void StatusWidget::set_action(uint8_t index, Menu::menu_action_st &menu_action) 
     };
     button->set_bg(menu_action.bg_color);
     button->set_fg(menu_action.fg_color);
-    button->set_text(menu_action.name.c_str());
+    if (menu_action.fn_writer) {
+        button->fn_writer = menu_action.fn_writer;
+    } else {
+        button->set_text(menu_action.name.c_str());
+        button->fn_writer = nullptr;
+    }
     button->set_aling(ALIGN_CENTER);
     button->set_visible(true);
 }
@@ -117,7 +155,7 @@ char *StatusWidget::frontend() {
 char *StatusWidget::agc_alc() {
     if (!ISTX) {
         sprintf(buf, "AGC");
-        default_buttons[AGC].set_fg(fg_color);
+        buttons[AGC].set_fg(fg_color);
     } else {
         sprintf(buf, "ALC");
     }
@@ -174,7 +212,7 @@ void StatusWidget::before_paint() {
 
     };
 
-    if (this->dirty() || !(status == _status)) { // Update only if status has changed
+    if ((this->dirty() || !(status == _status)) && actions_stack.size() == 1) { // Update only if status has changed and the buttons are the defaults
 
         _status = status;
         this->set_dirty();
@@ -185,7 +223,7 @@ void StatusWidget::before_paint() {
             disabled_bg = C565_GREY_DARK;
             fg_color_auto = C565_MAGENTA;
 
-            default_buttons[AGC].set_enabled(false);
+            buttons[AGC].set_enabled(false);
 
         } else {
             fg_color = C565_BLACK;
@@ -195,13 +233,13 @@ void StatusWidget::before_paint() {
             disabled_bg = C565_GREY_LIGHT;
             fg_color_auto = C565_MAGENTA;
 
-            default_buttons[AGC].set_dimmed(!config.agc_enabled);
+            buttons[AGC].set_dimmed(!config.agc_enabled);
         }
 
-        default_buttons[BAND].set_enabled(!ISTX);
-        default_buttons[FILTER1].set_enabled(!ISTX);
-        default_buttons[FILTER2].set_enabled(!ISTX);
-        default_buttons[FRONTEND].set_enabled(!ISTX);
+        buttons[BAND].set_enabled(!ISTX);
+        buttons[FILTER1].set_enabled(!ISTX);
+        buttons[FILTER2].set_enabled(!ISTX);
+        buttons[FRONTEND].set_enabled(!ISTX);
 
         display->setBgColor(bg_color);
         display->setColor(fg_color);
@@ -212,11 +250,11 @@ void StatusWidget::before_paint() {
         display->gotoCharXY(0, 0);
 
         const char *modulation_str = modulation();
-        default_buttons[MODULATION].set_text(modulation_str);
-        default_buttons[FRONTEND].set_text(frontend());
-        default_buttons[AGC].set_text(agc_alc());
+        buttons[MODULATION].set_text(modulation_str);
+        buttons[FRONTEND].set_text(frontend());
+        buttons[AGC].set_text(agc_alc());
 
-        for (auto &btn : default_buttons) {
+        for (auto &btn : buttons) {
             btn.set_bg(bg_color);
             btn.set_aling(ALIGN_CENTER);
             btn.set_dirty();
@@ -238,44 +276,33 @@ bool StatusWidget::on_input(const st_inputEvent e) {
                 case FPANEL_DISPLAY_BUTTON_1: //  MODULATION
                     if (buttons[0].visible()) {
                         buttons[0].action(buttons[0], e);
-                    } else {
-                        Menu::open(Menu::modulationMenu);
                     }
                     break;
                 case FPANEL_DISPLAY_BUTTON_2: //  FRONTEND
                     if (buttons[1].visible()) {
                         buttons[1].action(buttons[0], e);
-                    } else {
-                        Menu::open(Menu::frontendPathMenu);
                     }
+
                     break;
                 case FPANEL_DISPLAY_BUTTON_3: // AGC
                     if (buttons[2].visible()) {
                         buttons[2].action(buttons[0], e);
-                    } else {
-                        config.agc_enabled = !config.agc_enabled;
                     }
-                    main_board::update();
+
                     break;
                 case FPANEL_DISPLAY_BUTTON_5: // FILTER 1
                     if (buttons[4].visible()) {
                         buttons[4].action(buttons[0], e);
-                    } else {
-                        Menu::open(Menu::filterMenu);
                     }
                     break;
                 case FPANEL_DISPLAY_BUTTON_6: // FILTER 2
                     if (buttons[5].visible()) {
                         buttons[5].action(buttons[0], e);
-                    } else {
-                        Menu::open(Menu::IFFilterMenu);
                     }
                     break;
                 case FPANEL_DISPLAY_BUTTON_4: // BAND
                     if (buttons[3].visible()) {
                         buttons[3].action(buttons[0], e);
-                    } else {
-                        Menu::open(Menu::bandMenu);
                     }
                     break;
                 default:

@@ -11,9 +11,9 @@
 
 class FileFactory {
 
-public:
-    static std::unique_ptr<File> getFile(FileType ftype, char *path);
-    static std::unique_ptr<File> getFile(char *path);
+  public:
+    static std::unique_ptr<File> getFile(FileType ftype, io::path &path);
+    static std::unique_ptr<File> getFile(io::path &path);
 };
 
-#endif //TRX_FRONTEND_FILE_FACTORY_H
+#endif // TRX_FRONTEND_FILE_FACTORY_H

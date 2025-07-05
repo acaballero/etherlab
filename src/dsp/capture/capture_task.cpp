@@ -135,6 +135,8 @@ bool CaptureTask::start() {
         IIRDecimator_I.config(config.fft.sample_rate, this->status.bandwidth, this->status.decimation_factor);
         IIRDecimator_Q.config(config.fft.sample_rate, this->status.bandwidth, this->status.decimation_factor);
 
+        dsp::enable_frequency_shift(false); // Capture/Replay wont apply frequency shifts for DC issues mitigation
+
         // Start media write processing timer
         HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
@@ -169,6 +171,8 @@ void CaptureTask::stop() {
         Task::stop(); // Let the base class do its common finish
 
         dsp::set_max_sample_freq(false);
+
+        dsp::enable_frequency_shift(true);
 
         fft_config(config.fft.span);
 

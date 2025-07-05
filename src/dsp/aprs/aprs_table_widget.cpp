@@ -52,6 +52,8 @@ void APRSTableWidget::paint_callback() {
 
         display->print(buf);
     }
+
+    display->set_trim_enabled(true);
 }
 
 void APRSTableWidget::before_paint(){};

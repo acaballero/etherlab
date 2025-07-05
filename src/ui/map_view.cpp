@@ -160,7 +160,6 @@ int32_t Locator::speed() {
 };
 
 Map::Map(Rect parent_rect) : Widget{parent_rect, &lcd}, markerListLen(0) {
-    LOG("\n");
 }
 
 bool Map::on_input(const st_inputEvent ev) {
@@ -332,8 +331,6 @@ void Map::paint_callback() {
     if (map_visible) {
         int16_t oy = display->getOffset().y;
         int16_t y1 = display->current_line - oy;
-
-        LOG("cl:%d, y1:%d, oy:%d\n", display->current_line, y1, display->getOffset().y);
 
         // Read from map file and disqqplay to zoomed scale
         int duplicate_lines = (map_zoom < 0) ? 1 : map_zoom;
@@ -702,17 +699,11 @@ void MapView::setup() {
     actions_signal.emit(&actions);
 }
 
-MapView::~MapView() {
-    if (on_close_) {
-        on_close_();
-    }
-}
-
 // Display mode
 MapView::MapView(const std::string &tag, int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd_unit speed_unit, float lat, float lon, uint16_t angle,
                  const std::function<void(void)> on_close)
     : View({0, MAPVIEW_Y_POS, MAPVIEW_WIDTH, MAPVIEW_HEIGHT}), altitude(altitude), altitude_unit(altitude_unit), speed_unit(speed_unit), lat(lat), lon(lon),
-      angle(angle), on_close_(on_close) {
+      angle(angle), on_close(on_close) {
     mode = DISPLAY;
 
     add_child(&locator);
@@ -746,11 +737,17 @@ MapView::MapView(int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd
 }
 
 void MapView::exit() {
+
+    actions_signal.emit(nullptr);
+    set_visible(false);
+
+    if (on_close) {
+        on_close();
+    }
+
     if (on_done) {
         on_done(this->altitude, this->lat, this->lon, this->speed);
     }
-    actions_signal.emit(nullptr);
-    set_visible(false);
 }
 
 bool MapView::on_input(const st_inputEvent e) {
@@ -775,6 +772,7 @@ bool MapView::on_input(const st_inputEvent e) {
                     consumed = false;
             }
             break;
+
         case INPUT_EVENT_TYPE_BUTTON_RELEASE:
 
             switch (e.value) {

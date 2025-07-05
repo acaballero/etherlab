@@ -18,8 +18,8 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #define SDCARD_LOOP_PERIOD_MS 2000
 #define FN_SIZE _MAX_LFN // _MAX_LFN is defined int FatFS library
-#define PATH_SIZE FN_SIZE * 3 + 3
-#define DEFAULT_PATH "/radio"
+#define PATH_SIZE FN_SIZE * 2
+
 extern uint64_t sdcard_last_check_ms;
 
 enum sdcard_STATUS { IOError = -3, MountError = -2, ConnectError = -1, NotPresent = 0, Present = 1, Mounted = 2, MassStorageDeviceActive = 3 };

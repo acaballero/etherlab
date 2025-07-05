@@ -17,12 +17,10 @@ stringIn<1> strIn;
 
 void MenuWidget::paint_callback() {
 
-    // display->fillBuffer(0);
     display->clear();
 
-    // display->gotoXY(0, 3);
     display->setFont((FontDef *)&Font_7x10);
-    // display->write("HELLO");
+
     nav.doOutput();
 }
 
@@ -46,6 +44,7 @@ bool MenuWidget::on_input(const st_inputEvent e) {
             //         return true;
             //     }
             // }
+            //
 
             switch (e.value) {
 

@@ -8,8 +8,8 @@
 #include "ui/option_buttons_view.h"
 #include "ui/number_edit_view.h"
 #include "view.h"
-#include "main_view.h"
 #include "keypad_view.h"
+#include "main_view.h"
 
 namespace view_manager {
 extern KeypadView keypadView;

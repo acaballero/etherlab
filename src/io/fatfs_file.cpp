@@ -9,6 +9,7 @@
 #include <codecvt>
 #include <cstring>
 #include <locale>
+#include "status.h"
 
 io::filesystem_error FatFSFile::open_fatfs(const io::path &filename, BYTE mode) {
     lock_sd_card();
@@ -410,6 +411,7 @@ path path::parent_path() const {
     if (index == _s.npos) {
         return {}; // NB: Deviation from STL.
     } else {
+
         return _s.substr(0, index);
     }
 }
@@ -555,6 +557,29 @@ bool is_directory(const path &file_path) {
     unlock_sd_card();
 
     return fr == FR_OK && is_directory(static_cast<file_status>(filinfo.fattrib));
+}
+
+FRESULT check_and_create_folder(const char *path) {
+    FRESULT res;
+    FILINFO fno;
+    lock_sd_card();
+    // Check if folder exists
+    res = f_stat(path, &fno);
+
+    if (res == FR_OK) {
+        // Path exists, check if it's a directory
+        if (fno.fattrib & AM_DIR) {
+            res = FR_OK; // Folder exists
+        } else {
+            res = FR_EXIST; // Path exists but it's a file, not a folder
+        }
+    } else if (res == FR_NO_FILE) {
+        // Folder doesn't exist, create it
+        res = f_mkdir(path);
+    }
+
+    unlock_sd_card();
+    return res;
 }
 
 bool is_empty_directory(const path &file_path) {

@@ -211,8 +211,6 @@ class MapView : public View {
     MapView(int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd_unit speed_unit, float lat, float lon,
             const std::function<void(int32_t, float, float, int32_t)> on_done);
 
-    ~MapView() override;
-
     MapView(const MapView &) = delete;
     MapView(MapView &&) = delete;
     MapView &operator=(const MapView &) = delete;
@@ -247,7 +245,7 @@ class MapView : public View {
     float lat{};
     float lon{};
     uint16_t angle{};
-    std::function<void(void)> on_close_{nullptr};
+    std::function<void(void)> on_close{nullptr};
 
     Locator locator{{0, 0}, altitude_unit, speed_unit};
 

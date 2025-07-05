@@ -90,6 +90,7 @@ void APRSView::toggle_beacon() {
     actions_signal.emit(&actions);
 }
 void APRSView::start_rx() {
+    LOG("START RX\n");
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, nullptr);
     // To execute a task other than DSP_TASK_RECEIVE, setMode has to be called so
     main_board::setMode(DIGITAL_RX);
@@ -176,6 +177,7 @@ void APRSView::on_source_selected(APRSSource &source) {
     if (current_source.has_position) {
 
         if (map) {
+
             map.reset();
         }
         map = std::make_unique<ui::MapView>(std::string(source.source_formatted), 0, ui::Locator::alt_unit::METERS, ui::Locator::spd_unit::HIDDEN,

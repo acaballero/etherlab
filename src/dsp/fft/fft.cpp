@@ -470,7 +470,7 @@ bool fft_config(uint32_t span) {
         // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
 
 #if DSP_FS4_SHIFT
-        if (fft_params.n_slices == 1 && !ISANALOG) {
+        if (dsp::get_freq_shift_enabled()) {
             // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
             // move to the adjacent slice. Not done yet.
             radio::set_dsp_frequency_shift(-dsp::get_frequency_shift());

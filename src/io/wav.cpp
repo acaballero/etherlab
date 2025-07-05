@@ -6,12 +6,13 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "fatfs/fatfs.h"
+#include "status.h"
 
 FRESULT WaveFile::open(WaveInfo &wi) {
 
     mode = FA_READ;
-    data_size=0;
-    FRESULT fres = f_open(fil, path, mode);
+    data_size = 0;
+    FRESULT fres = f_open(fil, path.c_str(), mode);
     UINT bytes_read;
     wi.format = FSTATUS_ERROR;
 
@@ -24,9 +25,9 @@ FRESULT WaveFile::open(WaveInfo &wi) {
         uint32_t riff_size, data_end, title_size;
         size_t search_limit = 0;
 
-        f_read(fil, &header, sizeof(header), &bytes_read);    // Read header (RIFF and WAVE)
+        f_read(fil, &header, sizeof(header), &bytes_read); // Read header (RIFF and WAVE)
 
-        riff_size = header.cksize + 8; // 8 bytes for the 2 first fields not included in cksize
+        riff_size = header.cksize + 8;       // 8 bytes for the 2 first fields not included in cksize
         data_start = header.fmt.cksize + 28; // always 44 (16+28) for PCM format
         data_end = data_start + header.data.cksize;
 
@@ -36,7 +37,7 @@ FRESULT WaveFile::open(WaveInfo &wi) {
 
             fres = f_lseek(fil, data_end);
 
-            if (fres==FR_OK) {
+            if (fres == FR_OK) {
                 while (f_read(fil, &ch, 1, &bytes_read) == FR_OK) {
 
                     if (ch == tag_INAM[i++]) {
@@ -44,7 +45,9 @@ FRESULT WaveFile::open(WaveInfo &wi) {
                             // Tag found, copy title
                             fres = f_read(fil, &title_size, sizeof(uint32_t), &bytes_read);
                             if (fres == FR_OK) {
-                                if (title_size > 32) title_size = 32;
+                                if (title_size > 32) {
+                                    title_size = 32;
+                                }
                                 fres = f_read(fil, &title_buffer, title_size, &bytes_read);
 
                                 if (fres == FR_OK) {
@@ -55,15 +58,17 @@ FRESULT WaveFile::open(WaveInfo &wi) {
                             break;
                         }
                     } else {
-                        if (ch == tag_INAM[0])
+                        if (ch == tag_INAM[0]) {
                             i = 1;
-                        else
+                        } else {
                             i = 0;
+                        }
                     }
-                    if (search_limit == 256)
+                    if (search_limit == 256) {
                         break;
-                    else
+                    } else {
                         search_limit++;
+                    }
                 }
             }
 
@@ -73,13 +78,12 @@ FRESULT WaveFile::open(WaveInfo &wi) {
 
             fres = f_lseek(fil, data_start);
 
-            if (fres==FR_OK) {
+            if (fres == FR_OK) {
                 info.format = FSTATUS_OK;
             }
 
             wi = info;
-        }
-        else {
+        } else {
             wi.format = FSTATUS_INVALID;
             fres = FR_INVALID_OBJECT;
         }
@@ -91,9 +95,9 @@ FRESULT WaveFile::open(WaveInfo &wi) {
 FRESULT WaveFile::create(WaveInfo wi) {
 
     mode = FA_WRITE | FA_OPEN_ALWAYS | FA_CREATE_ALWAYS;
-    data_size=0;
+    data_size = 0;
 
-    FRESULT fres = f_open(fil, path, mode);
+    FRESULT fres = f_open(fil, path.c_str(), mode);
 
     this->info = wi;
 
@@ -112,7 +116,6 @@ FRESULT WaveFile::read(char *p, uint32_t count) {
 
     return fres;
 }
-
 
 FRESULT WaveFile::close() {
 
@@ -155,7 +158,7 @@ FRESULT WaveFile::update_header() {
     FRESULT fres;
     UINT bytes_written;
 
-    header = {info.sample_rate, info.n_channels, data_size, tags_size};
+    header = {info.sample_rate, info.n_channels, static_cast<uint32_t>(data_size), static_cast<uint32_t>(tags_size)};
 
     const auto curr_fpos = fil->fptr;
 
@@ -187,12 +190,11 @@ FRESULT WaveFile::write_tags() {
     FRESULT fres;
     UINT bytes_written;
 
-
     /*
      * Write the carrier frequency as a tag
      */
     char buf[64];
-    snprintf(buf,64,"%lu",(uint32_t)info.carrier_freq);
+    snprintf(buf, 64, "%lu", (uint32_t)info.carrier_freq);
     tags_t tags{buf};
 
     fres = f_write(fil, &tags, sizeof(tags), &bytes_written);

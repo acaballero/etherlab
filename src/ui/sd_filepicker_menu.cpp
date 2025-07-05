@@ -8,10 +8,7 @@ Menu::result delete_file(Menu::eventMask e) {
 
     char path[PATH_SIZE];
 
-    strncpy(path, filePicker.focusedFolder, PATH_SIZE - 1);
-    strncat(path, filePicker.focusedFile, PATH_SIZE - 1);
-
-    FRESULT res = f_unlink(path);
+    FRESULT res = f_unlink(filePicker.focused_path.c_str());
 
     if (res == FR_OK) {
         filePicker.refresh();

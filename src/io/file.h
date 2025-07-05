@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_FILE_H
 #define TRX_FRONTEND_FILE_H
 
+#include "io/fatfs_file.h"
 #include "stdio.h"
 #include "file_types.h"
 #include "fatfs/fatfs.h"
@@ -12,9 +13,8 @@
 
 class File {
 
-public:
-
-    File(char *);
+  public:
+    File(io::path &);
 
     virtual ~File();
 
@@ -28,15 +28,16 @@ public:
 
     virtual FRESULT read(char *p, uint32_t count);
 
-    char *get_path() { return path; }
+    io::path get_path() {
+        return path;
+    }
 
     virtual bool is_open();
 
-protected:
-
+  protected:
     FIL *fil = &FatFSFileHandle;
-    char path[PATH_SIZE];
+    io::path path;
     uint8_t mode = 0;
 };
 
-#endif //TRX_FRONTEND_FILE_H
+#endif // TRX_FRONTEND_FILE_H

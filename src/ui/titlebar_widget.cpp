@@ -33,7 +33,6 @@ TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *displa
 
 void TitleBarWidgetInner::paint_callback() {
 
-    display->set_trim_enabled(true);
     FontDef *font = (FontDef *)&Font_Tiny8x8;
 
     uint16_t color = C565_BLACK;
@@ -193,8 +192,6 @@ void TitleBarWidgetInner::paint_callback() {
         display->setFont((FontDef *)&Font_Icons9x8);
         display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
     }
-
-    display->set_trim_enabled(true);
 }
 
 void TitleBarWidgetInner::before_paint() {
@@ -261,7 +258,7 @@ void TitleBarWidget::before_paint() {
                 color = C565_GREY_DARKER;
                 error = false;
             } else if (dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
-                color = C565_RED;
+                color = C565_ORANGE;
             } else if (drop_freq * 100 > 0.1 || starve_freq * 100 > 0.1) {
                 color = C565_YELLOW;
             } else {

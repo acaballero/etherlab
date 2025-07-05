@@ -8,6 +8,8 @@
 #include "../dsp_tasks.h"
 #include "../replay/replay_task.h"
 #include "../dsp.h"
+#include "io/fatfs_file.h"
+#include "io/file_types.h"
 #include "ui/main_view.h"
 #include "ui/sd_filepicker_menu.h"
 #include "replay_widget.h"
@@ -67,8 +69,9 @@ Menu::result change_dsp_status(Menu::eventMask e) {
 Menu::result on_menu_event(Menu::eventMask e) {
 
     ReplayTask *task = ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY]);
-
+    io::path start_path;
     FRESULT fres;
+    io::path filename;
 
     switch (e) {
 
@@ -83,19 +86,17 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
             signal_token = radio::freq_signal.add(NULL, on_freq_signal);
 
-            char start_path[PATH_SIZE];
-
             // If we have a selected file or a recent saved file, use it as default
 
-            strncpy(start_path, filePicker.selectedFolder, PATH_SIZE);
-            strcat(start_path, filePicker.selectedFile);
-            if (!start_path[0]) {
+            filename = filePicker.selected_path.filename();
+            if (filename.empty()) {
 
-                strncpy(start_path, ((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->getFile()->get_path(), PATH_SIZE);
+                start_path = io::path{"/"} + WAVEFILE_DEFAULT_FOLDER + io::path{"/"};
 
-                if (!start_path[0]) {
-                    start_path[0] = '/';
-                }
+                io::check_and_create_folder(start_path.parent_path().c_str());
+
+            } else {
+                start_path = filePicker.selected_path;
             }
 
             // TODO: Seriously, this menu system is one of the shittiest piece of code I've come across. Got to get rid of it any time soon
@@ -126,7 +127,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
                 radio::freq_signal.remove(signal_token);
 
-                dsp_set_real_time(false);
+                dsp_set_real_time(!ISANALOG);
 
                 filePicker.end(); // Important to call begin/end as we need to lock the SD card while exploring
 
@@ -185,16 +186,17 @@ MENU(replayMenu, "Replay", on_menu_event, (eventMask)(enterEvent | exitEvent | s
 
 Menu::result on_filepicker(eventMask e) {
 
-    char path[PATH_SIZE];
+    io::path path;
 
     replay_w.setShowActions(e == Menu::refreshEvent || e == Menu::enterEvent);
 
     if (e == Menu::refreshEvent) {
-        strcpy(path, filePicker.focusedFolder);
-        strcat(path, filePicker.focusedFile);
+
+        path = filePicker.focused_path;
+        //  LOG("onfile: refresh: %s\n", path.c_str());
     } else {
-        strcpy(path, filePicker.selectedFolder);
-        strcat(path, filePicker.selectedFile);
+        path = filePicker.selected_path;
+        //   LOG("onfile: select: %s\n", path.c_str());
     }
 
     // Check file format. Files are not deeply analyzed to determine their type. It is inferred from the extension
@@ -236,6 +238,7 @@ Menu::result on_filepicker(eventMask e) {
 
         replay_w.setFileInfo(filePicker.fileinfo);
         replay_w.setWaveInfo(wi);
+
     } else {
         replay_w.setWaveInfo({FSTATUS_ERROR});
         filePicker.disable_selection();

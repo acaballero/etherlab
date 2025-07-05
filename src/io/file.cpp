@@ -8,9 +8,10 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "fatfs/fatfs.h"
+#include "status.h"
 
-File::File(char *filepath) {
-    strncpy(this->path, filepath, PATH_SIZE);
+File::File(io::path &filepath) {
+    path = {filepath};
 }
 
 FRESULT File::open(WaveInfo &wi) {
@@ -24,7 +25,7 @@ FRESULT File::open(WaveInfo &wi) {
 
         mode = FA_READ;
 
-        fres = f_open(fil, path, mode);
+        fres = f_open(fil, path.c_str(), mode);
 
         wi.format = FSTATUS_OK;
 
@@ -39,7 +40,7 @@ FRESULT File::create(WaveInfo wi) {
 
     mode = FA_WRITE | FA_OPEN_ALWAYS | FA_CREATE_ALWAYS;
 
-    FRESULT fres = f_open(fil, path, mode);
+    FRESULT fres = f_open(fil, path.c_str(), mode);
 
     return fres;
 }
@@ -54,10 +55,8 @@ FRESULT File::read(char *p, uint32_t count) {
 }
 
 FRESULT File::close() {
-
     FRESULT fres;
     fres = f_close(fil);
-
     mode = 0;
     return fres;
 }
@@ -76,6 +75,5 @@ bool File::is_open() {
 }
 
 File::~File() {
-
     close();
 }

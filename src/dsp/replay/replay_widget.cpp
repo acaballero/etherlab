@@ -97,19 +97,19 @@ void ReplayWidget::paint_callback() {
                               : 0;
         float bytes_processed = (this->processor_status->processed_blocks - this->processor_status->fifo_underruns) * this->processor_status->block_size_bytes;
 
-        float bytes_read =
+        float bytes_decimated =
             (this->processor_status->processed_blocks - this->processor_status->fifo_underruns) * this->processor_status->decimated_block_size_bytes;
 
         char new_units[5];
         this->display->setColor(C565_WHITE);
         sprintf(buff, "%.1f", seconds_elapsed);
         this->display->print("Elapsed: ", buff, " s.\n");
-        format_eng(buff, bytes_processed, "b.\n", new_units);
+        format_eng(buff, bytes_decimated, "b.\n", new_units);
         this->display->print("In: ", buff, new_units);
-        format_eng(buff, bytes_read, "b.\n", new_units);
+        format_eng(buff, bytes_processed, "b.\n", new_units);
         this->display->print("Out: ", buff, new_units);
         sprintf(buff, "%.1f", drop_rate);
-        this->display->print("Miss: ", buff, "%\n");
+        this->display->print("Drop: ", buff, "%\n");
     }
 
     if (this->wi.format != FSTATUS_NONE && show_actions) {

@@ -57,16 +57,14 @@ struct path {
     path(path &&p) : _s{std::move(p._s)} {
     }
 
-    template <class Source> path(const Source &source) : path{std::begin(source), std::end(source)} {
+    template <class Source>
+    path(const Source &source, typename std::enable_if<!std::is_array<Source>::value>::type * = nullptr) : path{std::begin(source), std::end(source)} {
     }
 
     template <class InputIt> path(InputIt first, InputIt last) : _s{first, last} {
     }
 
-    // path(const value_t *const s) : _s{s} {
-    // }
-
-    path(const TCHAR *const s) : _s{reinterpret_cast<const io::path::value_type *>(s)} {
+    path(const TCHAR *const s) : _s{s} {
     }
 
     path &operator=(const path &p) {
@@ -223,6 +221,7 @@ bool is_regular_file(const file_status s);
 bool file_exists(const path &file_path);
 bool is_directory(const path &file_path);
 bool is_empty_directory(const path &file_path);
+FRESULT check_and_create_folder(const char *path);
 
 int file_count(const path &dir_path);
 

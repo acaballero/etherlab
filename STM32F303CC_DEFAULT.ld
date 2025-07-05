@@ -1,26 +1,23 @@
 /*
- *
- * Automatically generated file
- * PlatformIO default linker script template for STM32 F1/F2/F3/F4/F7/L0/L1/L4
- *
+ * Optimized linker script for STM32F427 - HAL + lib/ + src/ structure
+ * Reduces block update churn by grouping stable vs volatile code
  */
 
 /* Entry Point */
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */ 
-_estack = 0x2000A000;    /* end of RAM */
+_estack = 0x20030000;    /* end of RAM */
 /* Generate a link error if heap and stack don't fit into RAM */
-/*_Min_Heap_Size = 0x200;*/      /* required amount of heap  */
-_Min_Heap_Size = 0x800;      /* required amount of heap  */
-_Min_Stack_Size = 0x800;     /* required amount of stack */
+_Min_Heap_Size = 0x1FFF;      /* required amount of heap  */
+_Min_Stack_Size = 0x1FFF;     /* required amount of stack */
 
 /* Specify the memory areas */
 MEMORY
 {
-    RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 40K
-    FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 256K
-    CCMRAM (rw)     : ORIGIN = 0x10000000, LENGTH = 8K
+    RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 196K
+    FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 1024K
+    CCMRAM (rw)     : ORIGIN = 0x10000000, LENGTH = 64K
 }
 
 /* Define output sections */
@@ -34,7 +31,44 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
 
-  /* The program code and other data goes into FLASH */
+  /* Group stable code that rarely changes */
+  .text.stable :
+  {
+    . = ALIGN(4);
+    
+    /* System startup and HAL - very stable */
+    *system_stm32f4xx.o(.text .text.*)
+    *FrameworkCMSISDevice*(.text .text.*)
+    *FrameworkHALDriver*(.text .text.*)
+    *stm32f4xx_hal*.o(.text .text.*)
+    *stm32f4xx_ll*.o(.text .text.*)
+    *libFrameworkCMSISDevice.a:*(.text .text.*)
+    
+    /* Your lib/ folders - these are the lib### directories */
+    *lib4b7*(.text .text.*)  /* InputPin */
+    *lib695*(.text .text.*)  /* CDC */
+    *lib9ca*(.text .text.*)  /* FatFs */
+    *libaee*(.text .text.*)  /* I2CBitBang */
+    *lib*(.text .text.*)     /* All other lib### folders */
+    
+    /* Version info - rarely changes */
+    *version.o(.text .text.*)
+    
+    . = ALIGN(4);
+  } >FLASH
+
+  /* Group your application code that changes frequently */
+  .text.application :
+  {
+    . = ALIGN(4);
+    
+    /* Your src/ files - these change frequently during development */
+    */src/*(.text .text.*)        /* All src files and subdirectories */
+    
+    . = ALIGN(4);
+  } >FLASH
+
+  /* Standard text section for everything else */
   .text :
   {
     . = ALIGN(4);
@@ -51,7 +85,63 @@ SECTIONS
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
 
-  /* Constant data goes into FLASH */
+  /* Group read-only data by stability */
+  .rodata.stable :
+  {
+    . = ALIGN(4);
+    
+    /* HAL and system constants - very stable */
+    */startup_stm32f427xx.o(.rodata .rodata.*)
+    */system_stm32f4xx.o(.rodata .rodata.*)
+    */FrameworkCMSISDevice*(.rodata .rodata.*)
+    */FrameworkHALDriver*(.rodata .rodata.*)
+    */stm32f4xx_hal*.o(.rodata .rodata.*)
+    */stm32f4xx_ll*.o(.rodata .rodata.*)
+    libFrameworkCMSISDevice.a:*(.rodata .rodata.*)
+    
+    /* Your lib### folder constants */
+    */lib1f3/*(.rodata .rodata.*)     /* printf */
+    */lib4b7/*(.rodata .rodata.*)     /* InputPin */
+    */lib695/*(.rodata .rodata.*)     /* CDC */
+    */lib9ca/*(.rodata .rodata.*)     /* FatFs */
+    */libaee/*(.rodata .rodata.*)     /* I2CBitBang */
+    */lib815/*(.rodata .rodata.*)     /* utils */
+    */lib8a3/*(.rodata .rodata.*)     /* DspFilters */
+    */lib407/*(.rodata .rodata.*)     /* Menu */
+    */lib9e8/*(.rodata .rodata.*)     /* ADF4351 */
+    */lib67c/*(.rodata .rodata.*)     /* CMX973 */
+    */lib091/*(.rodata .rodata.*)     /* Si5351 */
+    */libb85/*(.rodata .rodata.*)     /* MCP23017 */
+    */lib5ec/*(.rodata .rodata.*)     /* Core */
+    */lib121/*(.rodata .rodata.*)     /* IOPin */
+    */libd6f/*(.rodata .rodata.*)     /* ST77XX-STM32 */
+    
+    /* CMSIS DSP library constants */
+    libarm_cortexM4lf_math.a:*(.rodata .rodata.*)
+    
+    /* Standard library constants */
+    libgcc.a:*(.rodata .rodata.*)
+    libstdc++_nano.a:*(.rodata .rodata.*)
+    libm.a:*(.rodata .rodata.*)
+    libc_nano.a:*(.rodata .rodata.*)
+    
+    /* Version strings */
+    */version.o(.rodata .rodata.*)
+    
+    . = ALIGN(4);
+  } >FLASH
+
+  .rodata.application :
+  {
+    . = ALIGN(4);
+    
+    /* Application constants and strings - your src/ folder */
+    */src/*(.rodata .rodata.*)
+    
+    . = ALIGN(4);
+  } >FLASH
+
+  /* Remaining constant data */
   .rodata :
   {
     . = ALIGN(4);
@@ -150,11 +240,10 @@ SECTIONS
     PROVIDE ( end = . );
     PROVIDE ( _end = . );
     . = . + _Min_Heap_Size;
+    __heap_limit__ = .;
     . = . + _Min_Stack_Size;
     . = ALIGN(4);
   } >RAM
-
-  
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
@@ -166,5 +255,3 @@ SECTIONS
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }
-
-

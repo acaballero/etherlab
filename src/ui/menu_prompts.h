@@ -19,15 +19,6 @@ namespace Menu {
 template <typename T = double>
 void open_keypad(T value, const char *units, const char *name, uint8_t frac_digits, bool with_multipliers, std::function<void(T)> on_changed, T min, T max);
 
-template <typename T>
-void open_number_edit(T value, const char *units, const char *name, uint8_t frac_digits, std::function<void(T)> on_changed, T min, T max, T step, T step_big) {
-
-    view_manager::mainView.NumberEdit()->on_changed = on_changed; // note this must be assigned before setting the value or a previous handler might be called
-    view_manager::mainView.NumberEdit()->set_value(value, frac_digits, units, name, min, max, step, step_big);
-    view_manager::mainView.NumberEdit()->set_visible(true);
-    view_manager::mainView.NumberEdit()->set_focus(true);
-}
-
 template <typename T> void open_option_buttons(menu_options_t<T> options, const char *title, T &value, uint16_t size, std::function<void(T)> on_select) {
 
     OptionButtonsView *view = view_manager::mainView.OptionButtons();
@@ -53,15 +44,6 @@ template <typename T> void open_option_buttons(menu_options_t<T> options, const 
     view->set_title(title);
     view->set_visible(true);
     view->set_focus(true);
-}
-
-template <typename T>
-void open_keypad(T value, const char *units, const char *name, uint8_t frac_digits, bool with_multipliers, std::function<void(T)> on_changed, T min, T max) {
-
-    view_manager::keypadView.set_value(value, frac_digits, units, name, min, max);
-    view_manager::keypadView.with_multipliers(with_multipliers);
-    view_manager::keypadView.on_changed = on_changed;
-    view_manager::push(&view_manager::keypadView);
 }
 
 class labelPrompt : public Menu::prompt {
@@ -134,6 +116,24 @@ template <typename T> class optionsPrompt : public Menu::prompt {
 };
 
 template <typename T> class numberPrompt;
+
+template <typename T>
+void open_number_edit(T value, const char *units, const char *name, uint8_t frac_digits, std::function<void(T)> on_changed, T min, T max, T step, T step_big) {
+
+    view_manager::mainView.NumberEdit()->on_changed = on_changed; // note this must be assigned before setting the value or a previous handler might be called
+    view_manager::mainView.NumberEdit()->set_value(value, frac_digits, units, name, min, max, step, step_big);
+    view_manager::mainView.NumberEdit()->set_visible(true);
+    view_manager::mainView.NumberEdit()->set_focus(true);
+}
+
+template <typename T>
+void open_keypad(T value, const char *units, const char *name, uint8_t frac_digits, bool with_multipliers, std::function<void(T)> on_changed, T min, T max) {
+
+    view_manager::keypadView.set_value(value, frac_digits, units, name, min, max);
+    view_manager::keypadView.with_multipliers(with_multipliers);
+    view_manager::keypadView.on_changed = on_changed;
+    view_manager::push(&view_manager::keypadView);
+}
 
 template <typename T> void open(numberPrompt<T> &prompt) {
 
