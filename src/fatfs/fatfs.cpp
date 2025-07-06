@@ -75,24 +75,44 @@ void sdcard_loop() {
     }
 }
 
-bool lock_sd_card() {
+bool try_lock_sd_card() {
+    bool b;
     if (sd_card_locked || usb_msc_active) {
-        return false;
+        b = false;
     } else {
         sd_card_locked = true;
-        SDIO_PowerState_ON(SDIO_HANDLE.Instance);
-        return true;
+        if (SDIO_GetPowerState(SDIO_HANDLE.Instance) == 0) {
+            SDIO_PowerState_ON(SDIO_HANDLE.Instance);
+        }
+        b = true;
     }
+
+    //    LOG("SDcard locked: %d, state: %d\n", b, sd_card_locked);
+    return b;
+}
+
+bool lock_sd_card(uint32_t timeout_ms) {
+    uint32_t start = HAL_GetTick();
+    while (!try_lock_sd_card()) {
+        if ((HAL_GetTick() - start) > timeout_ms) {
+            return false; // timeout
+        }
+    }
+    return true;
 }
 
 bool unlock_sd_card() {
+    bool b;
     if (sd_card_locked) {
         SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
         sd_card_locked = false;
-        return true;
+        b = true;
     } else {
-        return false;
+        b = false;
     }
+
+    // LOG("SDcard UNlocked: %d, state: %d\n", b, sd_card_locked);
+    return b;
 }
 
 FRESULT check_sd_card_health(void) {

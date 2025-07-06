@@ -36,6 +36,7 @@
 #include "printf.h"
 
 void dsp_loop();
+void dsp_stop();
 namespace dsp {
 os::periodic_task task(50, dsp_loop);
 
@@ -44,7 +45,7 @@ Task *current_task;
 DspProcessor *current_processor;
 buffer_t<complex_t> *current_buffer;
 dsp::st_dsp_command pending_command{DSP_COMMAND_NONE};
-
+DSP_STATUS dspstatus;
 #if !EXECUTE_TASKS_ON_INTERRUPT
 volatile bool execute_task = false;
 #endif
@@ -96,28 +97,29 @@ void dsp_init(dsp::st_dsp_config &config) {
     restart_callback(nullptr, nullptr);                     // First time, in case we start in DSP mode and miss initial signals
 }
 
-void dsp_stop_tasks() {
-    LOG("dsp_stop_tasks");
-    if (current_task) {
-        LOG(": stopping current task\n");
-        current_task->stop();
-        //   current_task = nullptr;
-        if (on_event) {
-            on_event(dsp::dsp_status);
-        }
-    } else {
-        LOG(": no current task\n");
-    }
-}
+// void dsp_stop_tasks() {
+//     LOG("dsp_stop_tasks");
+//     if (current_task) {
+//         LOG(": stopping current task\n");
+//         current_task->stop();
+//         //   current_task = nullptr;
+//         if (on_event) {
+//             on_event(dsp::dsp_status);
+//         }
+//     } else {
+//         LOG(": no current task\n");
+//     }
+// }
 
 uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_status *)> cb) {
 
-    // LOG("dsp_command: cmd:%d, id:%d\n", (int)command.command, command.id);
+    LOG("dsp_command: cmd:%d, id:%d\n", (int)command.command, command.id);
     Task *task = command.task ? command.task : dsp::tasks[command.id];
     if (current_task == task) {
         DSP_STATUS s = current_task->status.status;
         if ((command.command == DSP_COMMAND_START && s == DSP_STATUS_RUNNING) || (command.command == DSP_COMMAND_STOP && s == DSP_STATUS_STOPPED) ||
             s == DSP_STATUS_PENDING) {
+            LOG("Skipping command\n");
             return 1;
         }
     }
@@ -126,6 +128,7 @@ uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_statu
     pending_command = command;
     current_task = task;
     current_task->status.status = DSP_STATUS_PENDING;
+    current_processor->status.status = DSP_STATUS_PENDING;
     current_task->status.id = pending_command.id;
 
     // FIXME: Ugly
@@ -178,15 +181,19 @@ void dsp_start_task() {
             // Link the start of the processor with the 1st block processed event of the task to prevent false underruns
             current_task->on_first_block = []() {
                 //     LOG("On first block\n");
+
                 current_processor->start();
             };
         }
 
         //  LOG("dsp_start_task: starting task\n");
+        current_task->status.reset();
         current_task->start();
 
         // TODO: Ugly!
         current_processor->status.block_size_bytes = current_task->status.block_size_bytes;
+        current_processor->status.bandwidth = current_task->status.bandwidth;
+        current_processor->status.sample_rate = current_task->status.sample_rate;
         current_processor->status.decimation_factor = current_task->status.decimation_factor;
         current_processor->status.decimated_block_size = current_task->status.decimated_block_size;
         current_processor->status.decimated_block_size_bytes = current_task->status.decimated_block_size_bytes;
@@ -219,14 +226,14 @@ void dsp_loop() {
 
             case DSP_COMMAND_STOP:
 
-                dsp_stop_tasks();
+                dsp_stop();
                 break;
             default:
                 assert(pending_command.command != DSP_COMMAND_NONE);
                 break;
         }
 
-        if (pending_command == command) {
+        if (pending_command == command) { // Another command may have been queued
             pending_command.command = DSP_COMMAND_NONE;
         }
     }
@@ -267,6 +274,7 @@ inline void adc_work() {
         dc_block_q.filter(bb, 2, 1);
 
         if (fft_params.decimation_factor > 1) {
+            // TODO: Decimate here vs in both FFT and current DSP task?
         }
 
         dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, current_buffer->count);
@@ -342,43 +350,57 @@ void dsp_test_cb(st_dsp_status *) {
 
 #include "../ui/menu.h"
 
-void dspStop() {
+void dsp_stop() {
 
-    // Clear DAC buffer.
-    // TODO: If we don't clear it first thing after the process is done and before DMA interrupts cease, a repeating buffer will appear at the DAC. However,
-    // there are other approaches I need to explore. E.g. flushing a "zero tail" in the output buffer so the constraints over the timing of the
-    // multiple objects that are stopped is not that critical
-    for (int i = 0; i < DSP_BLOCK * 2; i++) {
-        dac_buff[i] = {{(adc_type)config.hw.dac_offset, (adc_type)config.hw.dac_offset}};
-    }
+    if (dspstatus != DSP_STATUS_STOPPING) {
 
-    //  LOG("dspStop\n");
-    if (current_processor) {
-        current_processor->stop();
-    }
+        dspstatus = DSP_STATUS_STOPPING;
+        // Clear DAC buffer.
+        // TODO: If we don't clear it first thing after the process is done and before DMA interrupts cease, a repeating buffer will appear at the DAC. However,
+        // there are other approaches I need to explore. E.g. flushing a "zero tail" in the output buffer so the constraints over the timing of the
+        // multiple objects that are stopped is not that critical
 
-    if (current_task) {
-        current_task->stop();
-    }
+        for (int i = 0; i < DSP_BLOCK * 2; i++) {
+            dac_buff[i] = {{(adc_type)config.hw.dac_offset, (adc_type)config.hw.dac_offset}};
+        }
 
-    current_task = NULL;
-    current_processor = NULL;
+        //  LOG("dspStop\n");
+        if (current_processor) {
+            LOG("dspStop:processor stop\n");
+            current_processor->stop();
+        }
+
+        if (current_task) {
+            LOG("dspStop:task stop\n");
+            current_task->stop();
+        }
+
+        current_task = NULL;
+        current_processor = NULL;
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
-    execute_task = false;
+        execute_task = false;
 #endif
 
-    if (on_event) {
-        //  LOG("dspStop: onEvent\n");
-        on_event(dsp::dsp_status);
-    }
+        if (on_event) {
+            //  LOG("dspStop: onEvent\n");
+            on_event(dsp::dsp_status);
+        }
 
-    dsp::dsp_status = NULL;
+        dsp::dsp_status = NULL;
+
+        dspstatus = DSP_STATUS_STOPPED;
+
+        if (!ISANALOG) {
+            // TODO: This forces the receive task to start again. But its ugly
+            fft_config(fft_params.span);
+        }
+    }
 }
 
 void dspSuccess() {
     // LOG("dspSuccess\n");
-    dspStop();
+    dsp_stop();
 }
 
 void dspError(DSP_ERROR err) {
@@ -414,5 +436,5 @@ void dspError(DSP_ERROR err) {
             break;
     }
 
-    dspStop();
+    dsp_stop();
 }

@@ -25,7 +25,6 @@
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
-#include "dsp/decimation/dsp_decimators.h"
 #include <cstddef>
 #include <memory>
 #include <sys/_stdint.h>
@@ -50,7 +49,7 @@ void ReceiveTaskBase::work() {
 
         if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
 
-            this->status.processed_blocks++;
+            status.processed_blocks++;
             av = DSP_FIFO_BLOCK_BYTES;
 
             in_start = in_p;

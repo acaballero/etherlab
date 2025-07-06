@@ -105,6 +105,8 @@ bool ReplayTask::start() {
     // Read the header info block
     WaveInfo wi;
 
+    status.reset();
+
     fres = m_file->open(wi);
 
     if (fres != FR_OK) {

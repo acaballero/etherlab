@@ -28,7 +28,6 @@
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
-#include "dsp/decimation/dsp_decimators.h"
 #include <cstddef>
 #include <memory>
 #include <sys/_stdint.h>

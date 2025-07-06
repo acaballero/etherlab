@@ -182,7 +182,7 @@ bool AFSKTXTask::start() {
     status.direction = DSP_DIRECTION_OUT;
     status.sample_rate = config.fft.sample_rate;
     status.decimation_factor = 1;
-    status.decimated_block_size = DSP_BLOCK;
+
     status.block_size_bytes = DSP_BLOCK * 2 * 2;
     status.n_channels = 2;
     status.bandwidth = fft_params.span;

@@ -4,6 +4,7 @@
 
 #include "capture_task.h"
 #include "dsp/dsp_buffers.h"
+#include "stm32f4xx_hal.h"
 
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
@@ -19,39 +20,45 @@ File *CaptureTask::getFile() {
 void CaptureTask::work() {
     char *p;
 
-    uint16_t av = input_stream.available(&p);
-
-    if (av >= DSP_FIFO_BLOCK_BYTES) {
-        while (av >= DSP_FIFO_BLOCK_BYTES) {
-            this->status.processed_blocks++;
-
-            FRESULT fres = FR_OK;
-
-            fres = file->write(p, DSP_FIFO_BLOCK_BYTES);
-
-            // Free the FIFO
-            input_stream.consume(DSP_FIFO_BLOCK_BYTES, &p);
-
-            if (this->status.status == DSP_STATUS_RUNNING) { // Maybe there was an error in the ADC thread while writing
-                if (fres == FR_OK) {
-                    if (FatFSFileHandle.fsize > DSP_MAX_CAPTURE_SIZE) {
-                        this->stop();
-                    }
-                } else if (fres != FR_DISK_ERR || this->status.status == DSP_STATUS_RUNNING) {
-                    // We check again for the status because the ADC interrupt could've stopped the capture before
-                    // TODO:
-                    this->halt(DSP_ERR_FILEWRITE);
-                }
-            }
-
-            av = input_stream.available(&p);
-        }
-    } else {
-        this->status.fifo_underruns++;
+    if (status.status != DSP_STATUS_RUNNING) {
+        return;
     }
+
+    // GPIOD->BSRR |= GPIO_PIN_9;
+
+    uint16_t av = input_stream.available(&p);
+    uint32_t bytes_in = DSP_FIFO_BLOCK_BYTES;
+
+    av = input_stream.available(&p);
+
+    if (av >= bytes_in) {
+
+        status.processed_blocks++;
+
+        FRESULT fres = FR_OK;
+        auto t = HAL_GetTick();
+        fres = file->write(p, bytes_in);
+        t = HAL_GetTick() - t;
+
+        input_stream.consume(bytes_in, &p);
+
+        if (status.status == DSP_STATUS_RUNNING) { // Maybe there was an error in the ADC thread while writing
+            if (fres == FR_OK) {
+                if (FatFSFileHandle.fsize > DSP_MAX_CAPTURE_SIZE) {
+                    stop();
+                }
+            } else if (fres != FR_DISK_ERR || status.status == DSP_STATUS_RUNNING) {
+                // We check again for the status because the ADC interrupt could've stopped the capture before
+                // TODO:
+                halt(DSP_ERR_FILEWRITE);
+            }
+        }
+    }
+
+    // GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }
 
-void CaptureTask::configureDsp() {
+void CaptureTask::init() {
 
 #ifdef __STM32F3xx_HAL_H
     // Capture only 1 channel due to the limitations of the STM32F303
@@ -97,20 +104,24 @@ bool CaptureTask::start() {
 #ifdef LCD_DISABLE_ON_DSP
     lcd.setEnabled(false);
 #endif
+    init();
 
     input_stream.reset();
+    status.reset();
 
     this->status.direction = DSP_DIRECTION_IN;
     this->status.bandwidth = config.fft.span;
     this->status.sample_rate = config.fft.sample_rate;
     this->status.decimation_factor = fft_params.decimation_factor;
-    this->status.decimated_block_size = DSP_BLOCK * 2 / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->status.decimated_block_size = DSP_BLOCK / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
     this->status.bits_per_sample = 16;
     this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
     this->status.decimated_block_size_bytes = this->status.block_size_bytes / this->status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
-    while (!lock_sd_card()) {
-        ; // prevent other tasks to use the sd_card
+    if (!lock_sd_card(5000)) {
+        // prevent other tasks to use the sd_card
+        this->halt(DSP_ERR);
+        return false;
     }
 
     FRESULT fres; // Result after operations
@@ -129,21 +140,20 @@ bool CaptureTask::start() {
         return false;
     } else {
 
+        dsp::enable_frequency_shift(false); // Capture/Replay wont apply frequency shifts for DC issues mitigation
+
         // Update FFT and sample rate parameters
         fft_config(config.fft.span);
 
-        IIRDecimator_I.config(config.fft.sample_rate, this->status.bandwidth, this->status.decimation_factor);
-        IIRDecimator_Q.config(config.fft.sample_rate, this->status.bandwidth, this->status.decimation_factor);
-
-        dsp::enable_frequency_shift(false); // Capture/Replay wont apply frequency shifts for DC issues mitigation
+        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
 
         // Start media write processing timer
         HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
         // Se the fifo consumer frequency
-        update_timer(TASKS_TIMER_TYPEDEF, 2, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000);
+        update_timer(TASKS_TIMER_TYPEDEF, 2, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000); // /10000 = N*100 microseconds
 
-        this->status.status = DSP_STATUS_RUNNING;
+        status.status = DSP_STATUS_RUNNING;
     }
 
     return true;
@@ -173,8 +183,6 @@ void CaptureTask::stop() {
         dsp::set_max_sample_freq(false);
 
         dsp::enable_frequency_shift(true);
-
-        fft_config(config.fft.span);
 
 #if LCD_DISABLE_ON_DSP
         lcd.setEnabled(true);

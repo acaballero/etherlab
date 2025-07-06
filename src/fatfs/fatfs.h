@@ -46,7 +46,7 @@ extern volatile uint8_t usb_msc_active; /* Defined in usb.cpp */
 void sdcard_loop(void);
 void sdcard_init();
 void test_sd_card();
-bool lock_sd_card();
+bool lock_sd_card(uint32_t timeout_ms = 0);
 bool unlock_sd_card();
 
 /* USER CODE BEGIN Prototypes */

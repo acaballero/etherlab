@@ -66,11 +66,11 @@ USBPrint usb;
 unsigned long t1, t2;
 
 void view_loop();
-GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
+// GPIOPin ledPin(LED_0_PIN, LED_0_GPIO_PORT, GPIO_MODE_INPUT);
 MCP23017Pin powPin(GPIOEXP_FPANEL_STBY_LED, MCP23017_PORTB, &hmcp03, GPIO_MODE_OUTPUT_PP);
 
 os::periodic_task blink_task(1000, []() {
-    ledPin.toggle();
+    //  ledPin.toggle();
     powPin.toggle();
 });
 
@@ -118,7 +118,7 @@ void blink(uint32_t period_ms) {
 }
 
 void stop_blink() {
-    ledPin.set(GPIO_PIN_RESET);
+    //   ledPin.set(GPIO_PIN_RESET);
     powPin.set(GPIO_PIN_SET);
     blink_task.set_enabled(false);
 }
@@ -170,10 +170,10 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-    //    nav.doNav(Menu::navCmd(Menu::idxCmd, 0));
+    //   nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
     nav.doNav(Menu::navCmd(Menu::enterCmd));
-    //   nav.doNav(Menu::navCmd(Menu::idxCmd, 2));
-    //   nav.doNav(Menu::navCmd(Menu::enterCmd));
+    // nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
+    //  nav.doNav(Menu::navCmd(Menu::enterCmd));
 
     // status::handleError(status::ST_ERROR, "test error");
     //   Put focus over number editor

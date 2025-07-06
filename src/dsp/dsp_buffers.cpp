@@ -12,11 +12,10 @@ complex_t adc_buff[DSP_BLOCK * 2];
 complex_t dac_buff[DSP_BLOCK * 2];
 
 //__attribute__((section(".fccmram"))) // Can't be in CCM RAM if DMA is used
-uint8_t dsp_output_fifo_buff[DSP_FIFO_SIZE / 2];
-
+uint8_t dsp_output_fifo_buff[DSP_OUTPUT_FIFO_SIZE];
 uint8_t dsp_input_fifo_buff[DSP_FIFO_SIZE];
 
-FIFO output_stream((char *)dsp_output_fifo_buff, DSP_FIFO_SIZE / 2);
+FIFO output_stream((char *)dsp_output_fifo_buff, DSP_OUTPUT_FIFO_SIZE);
 FIFO input_stream((char *)dsp_input_fifo_buff, DSP_FIFO_SIZE);
 
 // Buffers wrapping to the ADC/DAC vectors

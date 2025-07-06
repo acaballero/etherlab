@@ -85,7 +85,6 @@ Menu::result on_menu_event(Menu::eventMask e) {
             capture_w.setTaskStatus(&((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->status);
 
             dsp_set_real_time(true);
-            task->configureDsp();
 
             // Don't try to set the file name before configuring dsp params
             fname = WAVEFILE_DEFAULT_FOLDER;

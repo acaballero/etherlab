@@ -6,7 +6,7 @@
 #define __FM_SQUELCH_H__
 
 #include "dsp/buffer.hpp"
-#include "dsp/decimation/dsp_decimators.h"
+#include "dsp/decimation/dsp_iir_decimator.h"
 #include <cstdint>
 #include <cstddef>
 #include <sys/_stdint.h>

@@ -18,26 +18,29 @@
 #include "status.h"
 #include "ui/lcd.h"
 #include "dsp/dsp_buffers.h"
-#include "dsp/decimation/dsp_decimators.h"
+#include "dsp/decimation/dsp_fir_decimator_float.h"
 #include "../../../lib/utils/utils.hpp"
 #include "io/file_factory.h"
+#include "dsp/blocks/dc_block.h"
 
 class CaptureTask : public Task {
   public:
     using Task::Task;
+
     void work() override;
 
     bool start() override;
 
     void stop() override;
 
-    void configureDsp();
-
     void setFile(std::unique_ptr<File> file);
+
     File *getFile();
 
   private:
     std::unique_ptr<File> file;
+
+    void init();
 };
 
 #endif // TRX_FRONTEND_CAPTURE_TASK_H

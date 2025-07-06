@@ -943,8 +943,8 @@ void adquireFFTAsync() {
         fft_dcremoval(fft_slice_buffer);
     }
 #else
-    if (config.fft.removeDC && ISANALOG) {
-        // In digital mode, the DC is removed in the DSP processor
+    if (config.fft.removeDC && !dsp::get_freq_shift_enabled()) {
+        // In digital mode, the DC is removed in the DSP processor in some cases
         fft_dcremoval(fft_slice_buffer);
     }
 #endif

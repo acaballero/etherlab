@@ -16,17 +16,9 @@ void CaptureWidget::paint_callback() {
     if (this->task_status) {
         float seconds_elapsed = 0;
 
-        if (this->task_status->status == DSP_STATUS_RUNNING) {
-            seconds_elapsed = (HAL_GetTick() - this->task_status->start_ms) / 1000.0;
-        } else {
-            seconds_elapsed = (this->task_status->stop_ms - this->task_status->start_ms) / 1000.0;
-        }
-
-        float drop_rate = this->processor_status->processed_blocks
-                              ? (((float)this->processor_status->fifo_overruns / (float)this->processor_status->processed_blocks) * 100.0)
-                              : 0;
+        seconds_elapsed = this->task_status->elapsed_ms() / 1000.0;
+        float drop_rate = this->processor_status->drop_rate() * 100;
         float bytes_processed = (this->processor_status->processed_blocks) * this->processor_status->block_size_bytes;
-
         float bytes_stored = (this->task_status->processed_blocks) * DSP_FIFO_BLOCK_BYTES;
 
         uint16_t c = C565_WHITE;
