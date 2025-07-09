@@ -3,6 +3,7 @@
 
 #include "stm32f4xx.h"
 #include "string.h"
+#include "ui/ui_types.h"
 #include <stdint.h>
 
 #define DEBUG_LCD 1
@@ -23,6 +24,11 @@
 #include "ips_font.h"
 #include <stm32f4xx.h>
 
+#define RGB888_TO_RGB565(rgb) ((((rgb >> 19) & 0x1f) << 11) | (((rgb >> 10) & 0x3f) << 5) | (((rgb >> 3) & 0x1f)))
+#define RGB565_TO_BGR565(rgb) (((rgb)&0x07E0) | (((rgb)&0xF800) >> 11) | (((rgb)&0x001F) << 11))
+
+#define SWAP_BYTES(w) (uint16_t)(w >> 8 | w << 8)
+
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 
 // Reduced color depth params
@@ -40,7 +46,7 @@
 
 // BGR565
 #define C565_BLACK 0x0000
-#define C565_DARKEST 0x4208
+#define C565_DARKEST 0x4008
 #define C565_GREY_DARKER 0xC739
 #define C565_GREY_DARK 0xEF7B
 #define C565_GREY_LIGHT 0xF39C
@@ -79,24 +85,6 @@
 using Color = uint16_t;
 
 extern Color palette16[16];
-
-#define RGB888_TO_RGB565(rgb) ((((rgb >> 19) & 0x1f) << 11) | (((rgb >> 10) & 0x3f) << 5) | (((rgb >> 3) & 0x1f)))
-
-#define SWAP_BYTES(w) (uint16_t)(w >> 8 | w << 8)
-
-struct Box {
-
-    int16_t x{0}, y{0};
-    uint16_t width{0}, height{0};
-};
-
-struct Area {
-
-    Box box;
-    uint16_t size{0};
-    bool show_fps{false};
-    float fps{0};
-};
 
 struct DisplayPoint {
     uint32_t x, y;
@@ -299,6 +287,8 @@ class Display {
     void set_trim_enabled(bool b);
 
     void set_transparency(uint8_t v);
+
+    Size get_text_size(const std::string &str);
 
     uint8_t get_transparency();
 

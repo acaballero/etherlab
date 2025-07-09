@@ -29,7 +29,7 @@ int command = DSP_COMMAND_START;
 bool loop = false;
 SignalToken signal_token;
 WaveInfo wi;
-ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 10, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 10}, &lcd};
+ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 4, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 6}, &lcd};
 
 void on_freq_signal(void *thisptr, void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
@@ -208,10 +208,12 @@ Menu::result on_filepicker(eventMask e) {
         fres = file->open(wi);
     }
 
+    filePicker.disable_selection();
+    filePicker.disable_deletion();
+
     if (fres == FR_INVALID_NAME) {
         replay_w.setWaveInfo({FSTATUS_NONE});
         if (e != updateEvent) {
-            filePicker.disable_selection();
             filePicker.enable_deletion();
         } else {
             replayToggle.disable();

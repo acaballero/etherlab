@@ -876,7 +876,7 @@ uint16_t Display::getY() {
 
 void Display::gotoCharXY(int16_t x, int16_t y) {
     px = this->padding_x + (x * font->width);
-    py = this->verticalSpacing + (y * (font->height + (this->verticalSpacing * 2)));
+    py = this->padding_y + this->verticalSpacing + (y * (font->height + (this->verticalSpacing * 2)));
 }
 
 uint8_t Display::getVerticalLineSpacing() {
@@ -1076,6 +1076,33 @@ void Display::set_wrap_text(bool wrap_text) {
     Display::wrap_text = wrap_text;
 }
 
+Size Display::get_text_size(const std::string &text) {
+
+    if (text.empty()) {
+        return {0, 0};
+    }
+
+    int max_width = 0;
+    int current_width = 0;
+    int line_count = 1; // Start with 1 line
+
+    for (char c : text) {
+        if (c == '\n') {
+            // End of line - update max width and start new line
+            max_width = std::max(max_width, current_width);
+            current_width = 0;
+            line_count++;
+        } else {
+            // Regular character
+            current_width += font->width;
+        }
+    }
+
+    // Don't forget the last line if it doesn't end with newline
+    max_width = std::max(max_width, current_width);
+
+    return {max_width, line_count * (font->height + getVerticalLineSpacing() * 2)};
+}
 // Helper function to extract RGB components from RGB565 format
 static inline void extract_rgb565(uint16_t pixel, uint8_t *r, uint8_t *g, uint8_t *b) {
     *r = (pixel >> 11) & 0x1F; // Extract 5-bit red

@@ -5,6 +5,7 @@
 #include "menu_frequency.h"
 #include "menu.h"
 #include "../../lib/utils/utils.hpp"
+#include "menuBase.h"
 
 namespace menu_frequency {
 
@@ -12,7 +13,9 @@ using namespace Menu;
 
 constMEM char freqEditText[] MEMMODE = "Freq";
 
-void FreqEditField::set_frequency(uint64_t f) { frequency = constrain(f, min, max); }
+void FreqEditField::set_frequency(uint64_t f) {
+    frequency = constrain(f, min, max);
+}
 
 void FreqEditField::doNav(Menu::navNode &nav, Menu::navCmd cmd) {
 
@@ -40,7 +43,7 @@ void FreqEditField::doNav(Menu::navNode &nav, Menu::navCmd cmd) {
             } else {
                 if (step_at) {
                     step_at--;
-}
+                }
                 edited = false;
             }
             dirty = true;
@@ -51,7 +54,7 @@ void FreqEditField::doNav(Menu::navNode &nav, Menu::navCmd cmd) {
             } else {
                 if (step_at < (uint8_t)log10((double)frequency)) {
                     step_at++;
-}
+                }
                 edited = false;
             }
             dirty = true;
@@ -87,6 +90,7 @@ Used FreqEditField::printTo(navRoot &root, bool sel, menuOut &out, idx_t idx, id
     out.fmtStart(*this, menuOut::fmtTextField, root.node(), idx);
 #endif
 
+    out.setColor(Menu::valColor, sel, enabled, editing);
     sprintf(buf, "%lu", (long)frequency);
 
     i = strlen(buf) - 1;
@@ -118,7 +122,7 @@ Used FreqEditField::printTo(navRoot &root, bool sel, menuOut &out, idx_t idx, id
         out.fmtStart(*this, menuOut::fmtUnit, root.node(), idx);
 #endif
 
-        out.setColor(unitColor, sel, enabled, editing);
+        out.setColor(Menu::unitColor, sel, enabled, editing);
         l += print_P(out, units(), len);
 #ifdef MENU_FMT_WRAPS
         out.fmtEnd(*this, menuOut::fmtUnit, root.node(), idx);
@@ -128,7 +132,11 @@ Used FreqEditField::printTo(navRoot &root, bool sel, menuOut &out, idx_t idx, id
     return l;
 }
 
-void FreqEditField::set_max_frequency(uint64_t f) { max = f; }
+void FreqEditField::set_max_frequency(uint64_t f) {
+    max = f;
+}
 
-void FreqEditField::set_min_frequency(uint64_t f) { min = f; }
+void FreqEditField::set_min_frequency(uint64_t f) {
+    min = f;
+}
 } // namespace menu_frequency

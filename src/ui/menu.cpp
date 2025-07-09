@@ -283,7 +283,7 @@ MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 const colorDef<uint16_t> menuColors[8] MEMMODE = {
     {{C565_TRANSPARENT, C565_TRANSPARENT}, {C565_BLACK, C565_TRANSPARENT, C565_TRANSPARENT}}, // bgColor
     {{C565_GREY_DARK, C565_GREY_DARK}, {C565_WHITE, C565_WHITE, C565_BLACK}},                 // fgColor
-    {{C565_GREY_LIGHT, C565_GREY_LIGHT}, {C565_YELLOW, C565_YELLOW, C565_RED}},               // valColor
+    {{C565_GREY_LIGHT, C565_GREY_LIGHT}, {C565_CYAN_DARK, C565_CYAN_DARK, C565_RED}},         // valColor
     {{C565_GREY_LIGHT, C565_GREY_LIGHT}, {C565_WHITE, C565_YELLOW, C565_YELLOW}},             // unitColor
     {{C565_TRANSPARENT, C565_BLACK}, {C565_TRANSPARENT, C565_GREY_DARK, C565_WHITE}},         // cursorColor
     {{C565_BLACK, C565_YELLOW}, {C565_BLUE, C565_RED, C565_RED}},                             // titleColor

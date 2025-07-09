@@ -10,6 +10,7 @@
 #include "view.h"
 #include "keypad_view.h"
 #include "main_view.h"
+#include <memory>
 
 namespace view_manager {
 extern KeypadView keypadView;
@@ -23,6 +24,7 @@ void push(View *);
 void init();
 
 void open_aprs();
+void open(std::unique_ptr<View> v);
 } // namespace view_manager
 
 #endif // VIEW_MANAGER_H

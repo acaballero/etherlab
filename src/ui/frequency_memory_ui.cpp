@@ -598,7 +598,6 @@ MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqN
 
 result freqMemorySelectedEvent(eventMask e, navNode &nav);
 
-// Updated FreqMemoryMenu to work with FileBuffer
 FreqMemoryMenu freqMemMenu("Frequency memory", 255, nullptr, freqMemEditMenu, freqMemorySelectedEvent, (eventMask)(enterEvent | exitEvent));
 
 menu_action_st menu_actions[] = {navigation_actions_arr[Menu::UP], navigation_actions_arr[Menu::DOWN], {"Delete", []() {

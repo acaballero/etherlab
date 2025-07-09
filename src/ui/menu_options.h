@@ -30,6 +30,7 @@ struct menu_action_st {
     uint16_t fg_color = C565_TEXT_FG;
     uint16_t bg_color = C565_TEXT_BG;
     std::function<void(void)> fn_writer{nullptr};
+    bool enabled{true};
 };
 
 struct menu_actions_st {

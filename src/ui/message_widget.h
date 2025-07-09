@@ -12,13 +12,10 @@
 #define MESSAGE_WIDGET_TEXT_MAX_LENGTH 256
 
 class MessageWidget : public Widget {
-public:
-
-    MessageWidget(Rect parent_rect, Display *display,
-                  FontDef *title_font, FontDef *text_font,
-                  uint16_t border_color, uint16_t title_color, uint16_t text_color)
-            : Widget(parent_rect, display), border_color{border_color}, title_font{title_font}, text_font{text_font},
-              title_color{title_color}, text_color{text_color} {
+  public:
+    MessageWidget(Rect parent_rect, Display *display, FontDef *title_font, FontDef *text_font, uint16_t border_color, uint16_t title_color, uint16_t text_color)
+        : Widget(parent_rect, display), border_color{border_color}, title_font{title_font}, text_font{text_font}, title_color{title_color}, text_color{
+                                                                                                                                                text_color} {
     }
 
     bool on_input(const st_inputEvent event) override;
@@ -29,8 +26,7 @@ public:
 
     void set_msg(const char *);
 
-protected:
-
+  protected:
     char title[MESSAGE_WIDGET_TITLE_MAX_LENGTH];
     char msg[MESSAGE_WIDGET_TEXT_MAX_LENGTH];
     int border_color;
@@ -42,4 +38,4 @@ protected:
     void before_paint() override;
 };
 
-#endif //TRX_FRONTEND_MESSAGE_WIDGET_H
+#endif // TRX_FRONTEND_MESSAGE_WIDGET_H

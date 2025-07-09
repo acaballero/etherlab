@@ -3,34 +3,36 @@
 //
 
 #include "capture_widget.h"
+#include "Display_afb.h"
 
 void CaptureWidget::paint_callback() {
 
     char buff[30];
-    this->display->clear();
-    this->display->setFont((FontDef *)&Font_Tiny8x8);
-    this->display->gotoCharXY(0, 0);
-    this->display->setColor(C565_WHITE);
-    this->display->setBgColor(C565_TRANSPARENT);
+    this->display->setBgColor(C565_DARKEST);
+    display->clear();
+    display->setFont((FontDef *)&Font_Tiny8x8);
+    display->gotoCharXY(0, 0);
+    display->setColor(C565_WHITE);
+    display->setBgColor(C565_TRANSPARENT);
 
-    if (this->task_status) {
+    if (task_status) {
         float seconds_elapsed = 0;
 
-        seconds_elapsed = this->task_status->elapsed_ms() / 1000.0;
-        float drop_rate = this->processor_status->drop_rate() * 100;
-        float bytes_processed = (this->processor_status->processed_blocks) * this->processor_status->block_size_bytes;
-        float bytes_stored = (this->task_status->processed_blocks) * DSP_FIFO_BLOCK_BYTES;
+        seconds_elapsed = task_status->elapsed_ms() / 1000.0;
+        float drop_rate = processor_status->drop_rate() * 100;
+        float bytes_processed = (processor_status->processed_blocks) * processor_status->block_size_bytes;
+        float bytes_stored = (task_status->processed_blocks) * DSP_FIFO_BLOCK_BYTES;
 
         uint16_t c = C565_WHITE;
 
-        switch (this->task_status->status) {
+        switch (task_status->status) {
             case DSP_STATUS_RUNNING:
                 c = C565_BLUE;
                 sprintf(buff, "Running\n");
                 break;
             case DSP_STATUS_STOPPED:
-                if (this->task_status->error == DSP_ERR_NONE) {
-                    if (this->task_status->stop_ms) {
+                if (task_status->error == DSP_ERR_NONE) {
+                    if (task_status->stop_ms) {
                         c = C565_GREEN;
                         sprintf(buff, "Finished\n");
                     } else {
@@ -50,37 +52,37 @@ void CaptureWidget::paint_callback() {
                 break;
         }
 
-        this->display->print("Status: ");
-        this->display->setColor(c);
-        this->display->print(buff);
+        display->print("Status: ");
+        display->setColor(c);
+        display->print(buff);
 
-        if (this->task_status->error != DSP_ERR_NONE) {
-            this->display->setColor(C565_RED);
-            this->display->print(dsp::dsp_error_names[this->task_status->error]);
-            this->display->print("\n");
+        if (task_status->error != DSP_ERR_NONE) {
+            display->setColor(C565_RED);
+            display->print(dsp::dsp_error_names[task_status->error]);
+            display->print("\n");
         }
 
-        this->display->setColor(C565_WHITE);
+        display->setColor(C565_WHITE);
         sprintf(buff, "%.1f", seconds_elapsed);
-        this->display->print("Elapsed:", buff, " s.\n");
+        display->print("Elapsed:", buff, " s.\n");
         char new_units[5];
         format_eng(buff, bytes_processed, "b.\n", new_units);
-        this->display->print("In:", buff, new_units);
+        display->print("In:", buff, new_units);
         format_eng(buff, bytes_stored, "b.\n", new_units);
-        this->display->print("Out:", buff, new_units);
+        display->print("Out:", buff, new_units);
 
         sprintf(buff, "%.1f", drop_rate);
-        this->display->print("Drop:", buff, "%\n");
+        display->print("Drop:", buff, "%\n");
     } else {
-        this->display->print("NO STATUS");
+        display->print("NO STATUS");
     }
 }
 
 void CaptureWidget::before_paint() {
     uint64_t m = HAL_GetTick();
-    if (m - this->last_refresh_ms > 100 || this->dirty()) {
+    if (m - last_refresh_ms > 100 || dirty()) {
 
-        this->set_dirty();
+        set_dirty();
     }
 }
 

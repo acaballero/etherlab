@@ -4,29 +4,6 @@
 #include "sd_filepicker_menu.h"
 #include "status.h"
 
-Menu::result delete_file(Menu::eventMask e) {
-
-    char path[PATH_SIZE];
-
-    FRESULT res = f_unlink(filePicker.focused_path.c_str());
-
-    if (res == FR_OK) {
-        filePicker.refresh();
-    } else {
-        // Throw error
-        status::handleError(status::ST_ERROR, "Error deleting file");
-    }
-
-    return Menu::quit;
-}
-
 using namespace Menu;
-
-prompt *subData[] = {
-    new prompt("Delete", delete_file, enterEvent),
-
-};
-
-menuNode fileSubmenu = menuNode("Options", sizeof(subData) / sizeof(prompt *), subData);
 
 SDMenuT filePicker("File", "", doNothing, (eventMask)(updateEvent | enterEvent | refreshEvent));

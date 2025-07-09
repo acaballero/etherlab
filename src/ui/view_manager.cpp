@@ -98,7 +98,7 @@ void view_loop() {
     currentView->paint();
 }
 
-std::unique_ptr<dsp_ui::APRSView> view;
+std::unique_ptr<View> view;
 void open_aprs() {
 
     view.reset();
@@ -110,6 +110,21 @@ void open_aprs() {
         view_manager::mainView.remove_child(view_ptr);
         view.reset();
         Menu::menu_exit();
+    };
+
+    view->set_visible(true);
+    view->set_z_index(200);
+    view->set_focus(true);
+    view_manager::mainView.add_child(view.get());
+}
+
+void open(std::unique_ptr<View> v) {
+    view = move(v);
+
+    auto *view_ptr = view.get();
+    view->on_hide_fn = [view_ptr]() {
+        view_manager::mainView.remove_child(view_ptr);
+        view.reset();
     };
 
     view->set_visible(true);

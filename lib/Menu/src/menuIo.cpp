@@ -2,27 +2,46 @@
 
 using namespace Menu;
 
-void menuIn::setFieldMode(bool) {}
+void menuIn::setFieldMode(bool) {
+}
 
-bool menuIn::fieldMode() const { return false; }
+bool menuIn::fieldMode() const {
+    return false;
+}
 
-size_t noInput::write(uint8_t) { return 0; }
+size_t noInput::write(uint8_t) {
+    return 0;
+}
 
-int noInput::available() { return 0; }
+int noInput::available() {
+    return 0;
+}
 
-int noInput::read() { return -1; }
+int noInput::read() {
+    return -1;
+}
 
-int noInput::peek() { return -1; }
+int noInput::peek() {
+    return -1;
+}
 
 #ifdef MENU_ASYNC
-int StringStream::available() { return 0 != *src; }
-int StringStream::read() { return *src++; }
-int StringStream::peek() { return *src ? *src : -1; }
+int StringStream::available() {
+    return 0 != *src;
+}
+int StringStream::read() {
+    return *src++;
+}
+int StringStream::peek() {
+    return *src ? *src : -1;
+}
 void StringStream::flush() {
     while (*src)
         src++;
 }
-size_t StringStream::write(uint8_t) { return 0; }
+size_t StringStream::write(uint8_t) {
+    return 0;
+}
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,10 +60,14 @@ template <typename T> menuOut &menuOut::operator<<(T o) {
 #endif
 
 #ifdef MENU_ASYNC
-bool menuOut::isAsync() { return false; }
+bool menuOut::isAsync() {
+    return false;
+}
 #endif
 
-menuOut &menuOut::fill(int x1, int y1, int x2, int y2, char ch, colorDefs color, bool selected, status stat, bool edit) { return *this; }
+menuOut &menuOut::fill(int x1, int y1, int x2, int y2, char ch, colorDefs color, bool selected, status stat, bool edit) {
+    return *this;
+}
 
 idx_t menuOut::printRaw(const char *at, idx_t len) {
     write(at, len);
@@ -83,8 +106,10 @@ void menuOut::doNav(navCmd cmd, navNode &nav) {
     }
 }
 
-void menuOut::setColor(colorDefs c, colorDefs b, bool selected, status s, bool edit) {}
-void menuOut::setColor(colorDefs c, bool selected, status s, bool edit) {}
+void menuOut::setColor(colorDefs c, colorDefs b, bool selected, status s, bool edit) {
+}
+void menuOut::setColor(colorDefs c, bool selected, status s, bool edit) {
+}
 
 void menuOut::drawCursor(idx_t ln, bool selected, status stat, bool edit, idx_t panelNr) {
     setColor(cursorColor, selected, stat, edit);
@@ -101,15 +126,23 @@ idx_t menuOut::endCursor(navRoot &root, idx_t x, idx_t y, bool charEdit, idx_t p
     return 1;
 }
 
-idx_t menuOut::editCursor(navRoot &root, idx_t x, idx_t y, bool editing, bool charEdit, idx_t panelNr) { return 0; }
+idx_t menuOut::editCursor(navRoot &root, idx_t x, idx_t y, bool editing, bool charEdit, idx_t panelNr) {
+    return 0;
+}
 
-void menuOut::rect(idx_t panelNr, idx_t x, idx_t y, idx_t w, idx_t h, colorDefs c, bool selected, status stat, bool edit) {}
+void menuOut::rect(idx_t panelNr, idx_t x, idx_t y, idx_t w, idx_t h, colorDefs c, bool selected, status stat, bool edit) {
+}
 
-void menuOut::box(idx_t panelNr, idx_t x, idx_t y, idx_t w, idx_t h, colorDefs c, bool selected, status stat, bool edit) {}
+void menuOut::box(idx_t panelNr, idx_t x, idx_t y, idx_t w, idx_t h, colorDefs c, bool selected, status stat, bool edit) {
+}
 
 #ifdef MENU_FMT_WRAPS
-result menuOut::fmtStart(prompt &target, fmtParts part, navNode &nav, idx_t idx) { return proceed; }
-result menuOut::fmtEnd(prompt &target, fmtParts part, navNode &nav, idx_t idx) { return proceed; }
+result menuOut::fmtStart(prompt &target, fmtParts part, navNode &nav, idx_t idx) {
+    return proceed;
+}
+result menuOut::fmtEnd(prompt &target, fmtParts part, navNode &nav, idx_t idx) {
+    return proceed;
+}
 #endif
 
 #if defined(MENU_DEBUG) || defined(MENU_ASYNC)
@@ -369,6 +402,7 @@ Used menuOut::printMenu(navNode &nav, idx_t panelNr) {
                     setColor(titleColor, false);
                     clearLine(0, panelNr, titleColor);
                     setColor(titleColor, true);
+
                     setCursor(0, 0, panelNr);
                     // print('[');
                     nav.target->printTo(*nav.root, true, *this, -1, pan.w - (asPad ? 1 : 2), panelNr);
@@ -446,7 +480,7 @@ Used menuOut::printMenu(navNode &nav, idx_t panelNr) {
                     print("[");
                 else
                     drawCursor(ist, selected, p.enabled, false, panelNr); // assuming only one character
-                    //<------ cursorEnd
+                                                                          //<------ cursorEnd
 #ifdef MENU_FMT_WRAPS
                 fmtEnd(p, fmtCursorOpen, nav, i);
                 // fmtEnd(p,fmtCursor,nav,i);
@@ -507,9 +541,13 @@ Used menuOut::printMenu(navNode &nav, idx_t panelNr) {
     return 0;
 }
 
-void menuOut::clearChanged(navNode &nav) { nav.target->clearChanged(nav, *this, true); }
+void menuOut::clearChanged(navNode &nav) {
+    nav.target->clearChanged(nav, *this, true);
+}
 
-idx_t &menuOut::top(navNode &nav) const { return tops[nav.root->level]; }
+idx_t &menuOut::top(navNode &nav) const {
+    return tops[nav.root->level];
+}
 
 void cursorOut::clear(idx_t panelNr) {
     const panel p = panels[panelNr];

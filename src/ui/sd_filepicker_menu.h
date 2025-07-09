@@ -3,14 +3,29 @@
 
 #include <cstring>
 #include <status.h>
+#include <string>
+#include <sys/_stdint.h>
+#include "Display_afb.h"
 #include "hw/stm32.h"
+#include "menuBase.h"
 #include "ui/menu.h"
 #include "../../lib/Menu/src/menu.h"
 #include "../../lib/FatFs/ff.h"
 #include "../fatfs/fatfs.h"
 #include "../../lib/utils/utils.hpp"
 #include "io/file_types.h"
-extern Menu::menuNode fileSubmenu;
+#include "menu_actions.h"
+#include "ui/ui_types.h"
+#include "ui/view_manager.h"
+#include "ui/modal_view.h"
+
+#define FILES_PER_PAGE 10
+
+typedef struct {
+    char name[FN_SIZE];
+    DWORD size;
+    BYTE attr;
+} st_file_page_entry;
 
 // TODO: Error handling
 
@@ -40,6 +55,50 @@ class FSO {
         f_closedir(&dir);
     }
 
+    st_file_page_entry file_page[FILES_PER_PAGE];
+    int page_top_ix = -1;
+
+    int readDirectoryPage(DIR *dir, int start_ix, st_file_page_entry *buffer, int max_files) {
+        FRESULT fres;
+        FILINFO finfo;
+        TCHAR lfn_buf[FN_SIZE]; // 128 bytes
+        finfo.lfname = lfn_buf;
+        finfo.lfsize = sizeof(lfn_buf);
+
+        int curr_ix = -1;
+        int found = 0;
+
+        fres = f_rewinddir(dir); // Always start from the top
+        if (fres != FR_OK) {
+            return -1;
+        }
+
+        while (found < max_files) {
+            fres = f_readdir(dir, &finfo);
+            if (fres != FR_OK || !finfo.fname[0]) {
+                break; // End of dir
+            }
+
+            curr_ix++;
+            if (curr_ix < start_ix) {
+                continue; // Skip until desired index
+            }
+
+            // Use LFN if available, otherwise fallback to SFN
+            const char *src_name = (finfo.lfname && finfo.lfname[0]) ? finfo.lfname : finfo.fname;
+
+            strncpy(buffer[found].name, src_name, FN_SIZE - 1);
+            buffer[found].name[FN_SIZE - 1] = 0;
+
+            buffer[found].size = finfo.fsize;
+            buffer[found].attr = finfo.fattrib;
+
+            found++;
+        }
+
+        return found; // Number of files loaded
+    }
+
     /**
      * Opens the parent folder of a path
      */
@@ -50,8 +109,10 @@ class FSO {
         FRESULT fres = f_opendir(&dir, folder.c_str());
         //   LOG("Opening folder '%s': Result: %d, index: %d, size: %d\n", folder.c_str(), fres, dir.index, folder.native().size());
 
-        curr_folder_count = -1; // reset folder count
+        // reset everything so it is cached again
+        curr_folder_count = -1;
         curr_ix = -1;
+        page_top_ix = -1;
         return fres;
     }
 
@@ -114,7 +175,7 @@ class FSO {
     }
 
     // count entries on folder (files and dirs)
-    long count() {
+    int count() {
         if (curr_folder_count < 0) {
             curr_folder_count = gotoIndex(-1) + 1;
         }
@@ -156,11 +217,23 @@ class FSO {
     }
 
     // Get folder content entry by index
-    bool entry(long idx, char *buf, size_t size) {
+    bool entry(int idx, char *buf = nullptr, int size = 0) {
+        if (idx < 0) {
+            return false;
+        }
 
-        long l = gotoIndex(idx);
+        int l;
+        if (page_top_ix <= idx && idx <= min2(page_top_ix + FILES_PER_PAGE - 1, count())) {
+            st_file_page_entry entry = file_page[idx - page_top_ix];
+            fileinfo.lfname = entry.name;
+            fileinfo.fattrib = entry.attr;
+            fileinfo.fsize = entry.size;
+            l = idx;
+        } else {
+            l = gotoIndex(idx);
+        }
 
-        if (l == idx) {
+        if (l == idx && buf) {
             TCHAR *fname = fileinfo.lfname[0] ? fileinfo.lfname : fileinfo.fname;
             if (fileinfo.fattrib & AM_DIR) {
                 snprintf(buf, size, "%s", fname);
@@ -180,7 +253,12 @@ class SDMenuT : public Menu::menuNode, public FSO {
     int8_t focused_file_ix = -1;
     bool can_select = true;
     bool can_delete = true;
+    std::vector<int> sel_items;
 
+    Menu::menu_action_st menu_actions_arr[6];
+    Menu::menu_actions_st menu_actions = {menu_actions_arr, 6};
+
+    enum menu_actions_type { UP, DOWN, ENTER, BACK, OPEN, DELETE };
     void enable_selection() {
         this->can_select = true;
     }
@@ -195,6 +273,10 @@ class SDMenuT : public Menu::menuNode, public FSO {
 
     void disable_deletion() {
         this->can_delete = false;
+    }
+
+    bool is_dir(BYTE attr) {
+        return attr & AM_DIR;
     }
 
     // Using menuNode::menuNode
@@ -215,17 +297,85 @@ class SDMenuT : public Menu::menuNode, public FSO {
         // }
     }
 
+    void delete_file() {
+
+        std::string message_str;
+
+        if (sel_items.empty() && nav.node().sel >= 1 && this->can_delete) {
+            char fn[FN_SIZE];
+            SDMenuT::entry(nav.node().sel - 1, fn, sizeof(fn));
+            if (!(is_dir(fileinfo.fattrib))) {
+                toggle_select(nav.node().sel - 1);
+            }
+        }
+
+        if (!sel_items.empty()) {
+            message_str = {"Delete " + std::to_string(sel_items.size()) + " file/s?"};
+            view_manager::open(std::make_unique<ModalView>("Delete", message_str, modal_t::YESNO, [this](bool ok) {
+                if (ok) {
+
+                    for (const auto ix : sel_items) {
+                        char fn[FN_SIZE];
+                        entry(ix, fn, sizeof(fn));
+                        io::path file_path = selected_path.parent_path() / fn;
+
+                        LOG("Deleting file '%s'\n", file_path.c_str());
+                        FRESULT res = f_unlink(file_path.c_str());
+
+                        if (res != FR_OK) {
+                            status::handleError(status::ST_ERROR, "Error deleting file");
+                        }
+                    }
+
+                    clear_selection();
+                    refresh();
+                }
+            }));
+        }
+    }
+
+    void open_file() {
+        if (nav.node().sel >= 1 && this->can_select) {
+            // Select current file and return
+            nav.node().event(Menu::updateEvent);
+            nav.doNav(Menu::upCmd);
+        }
+    }
+
+    void clear_selection() {
+        sel_items.clear();
+    }
+
     FRESULT begin(io::path &path) {
         if (lock_sd_card()) {
 
             FRESULT fres = FSO::openFolder(path);
+
             if (fres == FR_OK) {
                 selected_path = path.parent_path() + "/";
                 // Select the file
                 if (entryIdx(path.filename().c_str())) {
                     selected_path /= path.filename();
                 }
+                readDirectoryPage(&dir, 0, file_page, FILES_PER_PAGE);
+                page_top_ix = 0;
             }
+
+            int i = 0;
+            for (i = 0; i < Menu::navigation_actions.size; i++) {
+                menu_actions_arr[i] = Menu::navigation_actions_arr[i];
+            }
+
+            menu_actions_arr[OPEN] = {"Open", [this]() {
+                                          open_file();
+                                      }};
+            menu_actions_arr[DELETE] = {"Delete", [this]() {
+                                            delete_file();
+                                        }};
+
+            clear_selection();
+            update();
+
             return fres;
         } else {
             status::handleError(status::ST_ERROR, "SD card is locked");
@@ -234,6 +384,7 @@ class SDMenuT : public Menu::menuNode, public FSO {
     }
 
     static void end() {
+        actions_signal.emit(nullptr);
         unlock_sd_card();
     }
 
@@ -264,9 +415,38 @@ class SDMenuT : public Menu::menuNode, public FSO {
         char fn[FN_SIZE];
         SDMenuT::entry(i, fn, sizeof(fn));
         focused_path = selected_path.parent_path() / fn;
-
+        // LOG("focus:%s,%d\n", fn, i);
         focused_file_ix = i;
         nav.node().event(Menu::refreshEvent);
+    }
+
+    void toggle_select(int item) {
+
+        auto it = std::find(sel_items.begin(), sel_items.end(), item);
+        if (it != sel_items.end()) {
+            // Item exists, remove it
+            sel_items.erase(it);
+        } else {
+            // Item doesn't exist, add it
+            sel_items.push_back(item);
+        }
+    }
+
+    bool is_selected(int item) {
+        return std::find(sel_items.begin(), sel_items.end(), item) != sel_items.end();
+    }
+
+    void update() {
+
+        LOG("%d\n", HAL_GetTick());
+        auto sel = nav.node().sel;
+        entry(sel - 1);
+
+        menu_actions_arr[OPEN].enabled = sel && sel_items.empty() && can_select;
+        menu_actions_arr[DELETE].enabled = (!sel_items.empty() || can_delete) && !is_dir(fileinfo.fattrib) && sel;
+
+        actions_signal.emit(&menu_actions);
+        LOG("%d,d:%d\n", HAL_GetTick(), menu_actions_arr[DELETE].enabled);
     }
 
     void doNav(Menu::navNode &nav, Menu::navCmd cmd) override {
@@ -275,7 +455,6 @@ class SDMenuT : public Menu::menuNode, public FSO {
         char fn[FN_SIZE];
         Menu::navCmd bubble_cmd = cmd;
         bool navigate = false;
-        int n;
 
         if (cmd.cmd == Menu::enterCmd && nav.sel == 0) { // [..] has been clicked -> Previous folder
             cmd.cmd = Menu::escCmd;
@@ -283,22 +462,9 @@ class SDMenuT : public Menu::menuNode, public FSO {
 
         switch (cmd.cmd) {
             case Menu::idxCmd: // Options
-
                 // nav.event(enterEvent);
-
                 // Show edit submenu
-                if (nav.sel >= 1 && this->can_delete) {
-
-                    SDMenuT::entry(nav.sel - 1, fn, sizeof(fn));
-
-                    if (fileinfo.fattrib & AM_DIR) {
-                        nav.root->active().dirty = true;
-                        nav.root->level++;
-                        fileSubmenu.shadow->text = focused_path.filename().c_str();
-                        nav.root->navFocus = nav.root->node().target = &fileSubmenu;
-                        nav.root->node().sel = 0;
-                    }
-                }
+                delete_file();
                 break;
             case Menu::enterCmd:
                 if (nav.sel >= 1) {
@@ -306,7 +472,7 @@ class SDMenuT : public Menu::menuNode, public FSO {
                     SDMenuT::entry(nav.sel - 1, fn, sizeof(fn));
                     selected_path = folder / fn;
 
-                    if (fileinfo.fattrib & AM_DIR) {
+                    if (is_dir(fileinfo.fattrib)) {
 
                         // Open folder (reusing the menu)
                         //  LOG("enter: parent %s\n", fn);
@@ -315,12 +481,11 @@ class SDMenuT : public Menu::menuNode, public FSO {
                         SDMenuT::openFolder(selected_path);
                         dirty = true; // Redraw menu
                         nav.sel = 0;
+                        clear_selection();
                     } else {
                         if (this->can_select) {
                             // Select a file and return
-                            nav.root->node().event(Menu::updateEvent);
-                            navigate = true;
-                            bubble_cmd = Menu::escCmd;
+                            toggle_select(nav.sel - 1);
                         }
                     }
                 } else {
@@ -341,6 +506,7 @@ class SDMenuT : public Menu::menuNode, public FSO {
                     SDMenuT::openFolder(selected_path);
                     nav.sel = SDMenuT::entryIdx(folder.filename().c_str()) + 1;
                     dirty = true; // redraw menu
+                    clear_selection();
                 }
 
                 break;
@@ -353,12 +519,14 @@ class SDMenuT : public Menu::menuNode, public FSO {
         if (navigate) {
             menuNode::doNav(nav, bubble_cmd);
         }
+
+        update();
     }
 
     // Print menu and items as this is a virtual data menu
     Menu::Used printTo(Menu::navRoot &root, bool sel, Menu::menuOut &out, Menu::idx_t idx, Menu::idx_t len, Menu::idx_t pn) override {
 
-        char fname[FN_SIZE];
+        bool show_parent = out.tops[root.level] == 0;
 
         if (root.navFocus != this) {
 
@@ -381,29 +549,55 @@ class SDMenuT : public Menu::menuNode, public FSO {
             auto str = selected_path.parent_path().c_str();
             return out.printRaw(str[0] ? str : "/", len);
         } else {
+            int top = out.tops[root.level];
+            top = top < 2 ? 0 : top - 1;
 
-            Menu::idx_t i = out.tops[root.level] + idx;
+            Menu::idx_t i = top + idx;
+            st_file_page_entry *fentry;
+            char buff[FN_SIZE + 4];
 
-            if (i < 1) {
-                out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
-                strcpy(fname, "[..]");
-            } else {
-                entry(i - 1, fname, sizeof(fname));
-                if (fileinfo.fattrib & AM_DIR) {
-                    out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
-                }
+            if (top != page_top_ix) { // update current page
+                readDirectoryPage(&dir, top, file_page, FILES_PER_PAGE);
+                page_top_ix = top;
             }
 
+            int pg_index = i - page_top_ix - (show_parent ? 1 : 0);
+
+            if (show_parent && i == 0) {
+                out.setColor(Menu::valColor, sel, Menu::enabledStatus, false);
+                return out.printRaw("[..]", len);
+            } else {
+                fentry = &file_page[pg_index];
+            }
+
+            i = i - (show_parent ? 1 : 0);
             // Changed focus
             if (sel) {
-                if (i > 0 && (i - 1 != focused_file_ix || strcmp(fname, focused_path.filename().c_str()) != 0)) {
-                    focus(i - 1);
+                LOG("sel,%d,%d\n", i, focused_file_ix);
+                if ((i != focused_file_ix || strcmp(fentry->name, focused_path.filename().c_str()) != 0)) {
+                    LOG("focus\n");
+                    focus(i);
                 }
             }
 
-            fname[len] = 0; // just in case
-            len -= out.printRaw(fname, len);
-            if (fileinfo.fattrib & AM_DIR) {
+            bool is_dir = fentry->attr & AM_DIR;
+            auto color = is_dir ? Menu::valColor : Menu::fgColor;
+
+            if (is_selected(i)) {
+                out.setColor(Menu::titleColor, sel);
+            } else {
+
+                out.setColor(color, sel);
+            }
+
+            snprintf(buff, sizeof(buff), "[%2d] ", i + 1);
+            len -= out.printRaw(buff, len);
+
+            out.setColor(color, sel);
+            snprintf(buff, sizeof(buff), "%s", fentry->name);
+            len -= out.printRaw(buff, len);
+
+            if (is_dir) {
                 len -= out.printRaw("/", len);
             }
         }

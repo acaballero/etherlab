@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include <vector>
-#include "Display_afb.h"
+
 #include "../../lib/Signal/Signal.h"
 
 #define HEADER_HEIGHT 22
@@ -22,6 +22,20 @@
 
 using Coord = int16_t;
 using Dim = int16_t;
+
+struct Box {
+
+    int16_t x{0}, y{0};
+    uint16_t width{0}, height{0};
+};
+
+struct Area {
+
+    Box box;
+    uint16_t size{0};
+    bool show_fps{false};
+    float fps{0};
+};
 
 struct Point {
   private:

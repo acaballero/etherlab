@@ -72,6 +72,8 @@ void StatusWidget::init() {
             pop();
         } else if (params != actions_stack.back()) {
             push((Menu::menu_actions_st *)params);
+        } else {
+            set_actions(actions_stack.back()); // update current actions
         }
     });
 }
@@ -120,6 +122,7 @@ void StatusWidget::set_action(uint8_t index, Menu::menu_action_st &menu_action) 
         button->set_text(menu_action.name.c_str());
         button->fn_writer = nullptr;
     }
+    button->set_enabled(menu_action.enabled);
     button->set_aling(ALIGN_CENTER);
     button->set_visible(true);
 }

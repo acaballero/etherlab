@@ -20,6 +20,8 @@ extern Menu::menuNode fileSubmenu;
 
 extern const char *constMEM alphaNum MEMMODE;
 extern const char *constMEM alphaNumMask[1] MEMMODE;
+extern short dispY;
+extern Menu::menuILI9431Out ili9431Out;
 
 namespace Menu {
 void menu_exit();
@@ -36,6 +38,7 @@ extern optionsPrompt<radio::BAND> bandMenu;
 extern optionsPrompt<radio::BAND> filterMenu;
 extern optionsPrompt<radio::IF_FILTER> IFFilterMenu;
 extern Menu::numberPrompt<float> squelchEditMenu;
+
 void open_gain();
 } // namespace Menu
 

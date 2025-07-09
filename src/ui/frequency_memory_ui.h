@@ -38,7 +38,6 @@ uint8_t toggle_memory_mode();
 bool get_memory_mode();
 void test();
 
-// Custom frequency memory menu (updated for FileBuffer)
 struct FreqMemoryMenu : Menu::UserMenu {
     using UserMenu::UserMenu;
 

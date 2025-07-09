@@ -58,6 +58,7 @@ void Widget::set_parent(Widget *const new_parent) {
     parent_ = new_parent;
 
     if (parent_) {
+
         parent_->on_child_update(this);
     }
 
