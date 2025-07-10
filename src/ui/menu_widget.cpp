@@ -25,6 +25,9 @@ void MenuWidget::paint_callback() {
 }
 
 void MenuWidget::before_paint() {
+    if (nav.active().dirty) {
+        this->set_dirty();
+    }
 }
 
 bool MenuWidget::on_input(const st_inputEvent e) {

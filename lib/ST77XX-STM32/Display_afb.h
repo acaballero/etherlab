@@ -154,7 +154,7 @@ class Display {
 
     uint16_t getColor();
 
-    void clear(uint16_t color = 0x0000);
+    void clear(Color color = C565_BLACK);
 
     void gotoXY(int16_t x, int16_t y);
 
@@ -164,9 +164,9 @@ class Display {
 
     void fill(DisplayPoint p, DisplaySize s, Color c);
 
-    void fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c);
+    void fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, Color c);
 
-    void fillBuffer(uint16_t color);
+    void fillBuffer(Color color);
 
     void writeChar(int16_t x, int16_t y, char ch, const FontDef *font, uint16_t color, uint16_t bgcolor);
 
@@ -178,6 +178,12 @@ class Display {
                               bool bottom_left, bool bottom_right);
 
     void drawRoundedRectangle(int16_t x0, int16_t y0, uint16_t width, uint16_t height, uint16_t radius, bool filled);
+
+    std::string fit_text(const std::string &text, int max_width = -1, int max_height = -1);
+
+    uint32_t get_punctuation_width();
+
+    bool is_punctuation(char c);
 
     size_t write(uint8_t uint8_t);
 

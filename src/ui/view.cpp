@@ -24,7 +24,7 @@ void View::paint_callback() {
     bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
     Box current_offset = display->getOffset();
 
-    display->clear();
+    display->fillBuffer(bg_color);
 
     // To prevent flickr we have to paint all the children in the callback loop.
     // Otherwise the area will be drawn black then the widgets will be drawn

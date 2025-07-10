@@ -38,25 +38,22 @@ void doEncoderA() {
 
         if (rot_last_click_ms > 0) {
 
-            int rate = max2(1, int(1000.0 / (float) (m - rot_last_click_ms))); // clicks per second
+            int rate = max2(1, int(1000.0 / (float)(m - rot_last_click_ms))); // clicks per second
 
             rate = constrain(rate, rot_min_clicks_rate, rot_max_clicks_rate) - rot_min_clicks_rate;
 
             // exponential smoothing
-            rot_rate = (int) ceil((float) rot_rate -
-                                  (0.95f * (float) (rot_rate - rate)));
+            rot_rate = (int)ceil((float)rot_rate - (0.95f * (float)(rot_rate - rate)));
 
             double max_rate = rot_max_clicks_rate - rot_min_clicks_rate;
 
             // cubic acceleration for comfortable use
             double speed = pow(rot_rate, 3) / pow(max_rate, 3);
 
-            int step_lin = (int) (speed * (float) (ROTARY_ENCODER_mAX_STEP - ROTARY_ENCODER_mIN_STEP)) +
-                           ROTARY_ENCODER_mIN_STEP;
-
+            int step_lin = (int)(speed * (float)(ROTARY_ENCODER_mAX_STEP - ROTARY_ENCODER_mIN_STEP)) + ROTARY_ENCODER_mIN_STEP;
 
             // round to log
-            int step = (int) ceil(pow(10, floor(log10(step_lin))));
+            int step = (int)ceil(pow(10, floor(log10(step_lin))));
 
             direction *= step;
 
@@ -76,7 +73,7 @@ void doEncoderA() {
 
         rot_last_click_ms = m;
 
-        onInputEvent({INPUT_EVENT_TYPE_ENCODER, direction});
+        input_controller::queue_input_event({INPUT_EVENT_TYPE_ENCODER, direction});
     }
 }
 
@@ -90,7 +87,7 @@ void doPushButton() {
 
         // If period==0 it's probably because the button was reset and we should skip this  (for example when pressing and rotating the encoder)
         if (period > 0) {
-            onInputEvent({INPUT_EVENT_TYPE_BUTTON_PRESS, BTN_ENCODER, period});
+            input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, BTN_ENCODER, period});
         }
     }
 }

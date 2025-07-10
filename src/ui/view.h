@@ -1,6 +1,8 @@
 #ifndef _DISPLAY_H
 #define _DISPLAY_H
 
+#include "Display_afb.h"
+#include "ui/menu_options.h"
 #include "ui_types.h"
 #include "widget.h"
 #include "lcd.h"

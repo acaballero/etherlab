@@ -31,16 +31,11 @@ class TextWidget : public Widget {
 
     void set_fg(uint16_t fg);
 
-    uint16_t get_bg() const;
-
-    void set_bg(uint16_t bg);
-
     void paint_callback() override;
 
   protected:
     std::string text;
     uint16_t fg_color = C565_GREY_LIGHT;
-    uint16_t bg_color = C565_DARKEST;
 
     void before_paint() override;
 };

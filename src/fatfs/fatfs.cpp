@@ -92,6 +92,7 @@ bool try_lock_sd_card() {
 }
 
 bool lock_sd_card(uint32_t timeout_ms) {
+    // TODO: Save who locked it and prevent other client to unlock
     uint32_t start = HAL_GetTick();
     while (!try_lock_sd_card()) {
         if ((HAL_GetTick() - start) > timeout_ms) {
@@ -103,7 +104,7 @@ bool lock_sd_card(uint32_t timeout_ms) {
 
 bool unlock_sd_card() {
     bool b;
-    if (sd_card_locked) {
+    if (sd_card_locked && sdcard_info.status != MassStorageDeviceActive) { // note: prevent someone powering the sd device off while MSD is on
         SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
         sd_card_locked = false;
         b = true;

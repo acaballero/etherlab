@@ -191,7 +191,6 @@ Menu::result on_filepicker(eventMask e) {
     replay_w.setShowActions(e == Menu::refreshEvent || e == Menu::enterEvent);
 
     if (e == Menu::refreshEvent) {
-
         path = filePicker.focused_path;
         //  LOG("onfile: refresh: %s\n", path.c_str());
     } else {

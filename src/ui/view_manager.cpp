@@ -14,6 +14,7 @@
 #include "os/task_manager.h"
 #include "dsp/aprs/aprs_ui.h"
 #include "ui/ui_types.h"
+#include "ui/view.h"
 
 namespace view_manager {
 
@@ -128,9 +129,10 @@ void open(std::unique_ptr<View> v) {
     };
 
     view->set_visible(true);
+    view_manager::mainView.add_child(view.get());
+
     view->set_z_index(200);
     view->set_focus(true);
-    view_manager::mainView.add_child(view.get());
 }
 
 } // namespace view_manager

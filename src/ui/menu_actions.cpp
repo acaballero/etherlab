@@ -6,30 +6,29 @@
 
 #include "menu_actions.h"
 #include "Display_afb.h"
+#include "input/inputEvent.h"
 #include "menuBase.h"
+#include "ui/button_widget.h"
 #include "ui/view_manager.h"
+#include "input/input_controller.h"
 
 namespace Menu {
 
 menu_action_st navigation_actions_arr[] = {{"<-",
                                             []() {
-                                                nav.doNav(downCmd);
-                                                view_manager::mainView.Menu()->set_dirty();
+                                                input_controller::queue_input_event({INPUT_EVENT_TYPE_ENCODER, -1});
                                             }},
                                            {"->",
                                             []() {
-                                                nav.doNav(upCmd);
-                                                view_manager::mainView.Menu()->set_dirty();
+                                                input_controller::queue_input_event({INPUT_EVENT_TYPE_ENCODER, 1});
                                             }},
                                            {"x",
                                             []() {
-                                                nav.doNav(enterCmd);
-                                                view_manager::mainView.Menu()->set_dirty();
+                                                input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, BTN_ENCODER, 0});
                                             },
                                             C565_GREEN_DARK},
                                            {"Back", []() {
-                                                nav.doNav(escCmd);
-                                                view_manager::mainView.Menu()->set_dirty();
+                                                input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, KEY_BACK, 0});
                                             }}};
 menu_actions_st navigation_actions = {navigation_actions_arr, 4};
 

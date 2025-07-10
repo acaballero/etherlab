@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include "Display_afb.h"
+#include "ui/frequency_memory_ui.h"
+#include "view.h"
 #include "widget.h"
 #include "ui_types.h"
 #include "status.h"
@@ -36,6 +38,10 @@ void Widget::set_parent_rect(const Rect new_parent_rect) {
 
     this->set_area();
     set_dirty();
+}
+
+void Widget::set_bg(Color c) {
+    bg_color = c;
 }
 
 Widget *Widget::parent() const {
@@ -223,6 +229,14 @@ bool Widget::set_focus(bool v) {
         if (!v) {
             this->set_dirty();
             this->on_blur();
+
+            if (get_quick_actions()) {
+                actions_signal.emit(nullptr);
+            }
+        } else {
+            if (get_quick_actions()) {
+                actions_signal.emit(get_quick_actions());
+            }
         }
     }
 

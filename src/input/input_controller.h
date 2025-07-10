@@ -17,10 +17,10 @@
 
 namespace input_controller {
 extern os::periodic_task task;
-}
+void queue_input_event(st_inputEvent e);
+} // namespace input_controller
 extern InputPinController PinController;
 
-void onInputEvent(st_inputEvent e);
 void inputControllerInit();
 void dispatchEvents();
 

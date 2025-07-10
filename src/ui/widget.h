@@ -9,6 +9,7 @@
 #include "lcd.h"
 #include <vector>
 #include <printf.h>
+#include "menu_options.h"
 
 enum Align { ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER };
 
@@ -72,12 +73,18 @@ class Widget : public Painter {
         return false;
     };
 
+    virtual Menu::menu_actions_st *get_quick_actions() {
+        return nullptr;
+    };
+
     virtual bool on_input(const st_inputEvent event);
 
     virtual const std::vector<Widget *> &children() const;
 
     // State management methods.
     virtual void set_dirty();
+
+    void set_bg(Color c);
 
     bool dirty() const;
 
@@ -138,6 +145,7 @@ class Widget : public Painter {
     Widget *parent_{nullptr};
 
     FontDef *font = (FontDef *)&Font_Tiny8x8;
+    Color bg_color{C565_BLACK};
 
     Align align = ALIGN_LEFT;
 

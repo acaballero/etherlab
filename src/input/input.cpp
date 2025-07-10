@@ -29,7 +29,7 @@ void backBtnInterruptCallback() {
 
         // If period==0 it's probably because the button was reset and we should skip this  (for example when pressing and rotating the encoder)
         if (period > 0) {
-            onInputEvent({INPUT_EVENT_TYPE_BUTTON_PRESS, KEY_BACK, period});
+            input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, KEY_BACK, period});
         }
     }
 }
@@ -64,10 +64,10 @@ void frontPanelInterruptCallback() {
 
     if (pin < 16) {
         if (last_pressed_button_id >= 0 && pin == last_pressed_button_id) {
-            onInputEvent({INPUT_EVENT_TYPE_BUTTON_RELEASE, pin});
+            input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_RELEASE, pin});
             last_pressed_button_id = -1;
         } else {
-            onInputEvent({INPUT_EVENT_TYPE_BUTTON_PRESS, pin, 0, HAL_GetTick()});
+            input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, pin, 0, HAL_GetTick()});
             last_pressed_button_id = pin;
         }
     }

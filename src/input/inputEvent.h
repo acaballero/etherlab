@@ -45,7 +45,7 @@ struct st_inputEvent {
     int value{0};
     uint32_t ms{0};      // Milliseconds since last transition
     uint64_t time_us{0}; // Timestamp (microseconds)
-    Point point;
+    Point point{};
 
     bool is_touch() const {
         switch (type) {

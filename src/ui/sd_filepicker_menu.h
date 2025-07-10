@@ -15,6 +15,7 @@
 #include "../../lib/utils/utils.hpp"
 #include "io/file_types.h"
 #include "menu_actions.h"
+#include "ui/menuILI9431Out.h"
 #include "ui/ui_types.h"
 #include "ui/view_manager.h"
 #include "ui/modal_view.h"
@@ -292,12 +293,15 @@ class SDMenuT : public Menu::menuNode, public FSO {
     void refresh() {
         curr_folder_count = -1;
         count();
+        readDirectoryPage(&dir, 0, file_page, FILES_PER_PAGE);
+        clear_selection();
+        update();
         // if (curr_folder_count>=focusedFileIx) {
         //     focusedFileIx = curr_folder_count-1;
         // }
     }
 
-    void delete_file() {
+    void delete_files() {
 
         std::string message_str;
 
@@ -310,8 +314,17 @@ class SDMenuT : public Menu::menuNode, public FSO {
         }
 
         if (!sel_items.empty()) {
-            message_str = {"Delete " + std::to_string(sel_items.size()) + " file/s?"};
-            view_manager::open(std::make_unique<ModalView>("Delete", message_str, modal_t::YESNO, [this](bool ok) {
+
+            if (sel_items.size() == 1) {
+                char fn[FN_SIZE];
+                entry(sel_items[0], fn, sizeof(fn));
+                io::path file_path = selected_path.parent_path() / fn;
+                message_str = {"Delete " + file_path.native() + " file/s?"};
+            } else {
+                message_str = {"Delete " + std::to_string(sel_items.size()) + " files?"};
+            }
+
+            view_manager::open(std::make_unique<ModalView>("Confirmation", message_str, modal_t::YESNO, [this](bool ok) {
                 if (ok) {
 
                     for (const auto ix : sel_items) {
@@ -319,7 +332,7 @@ class SDMenuT : public Menu::menuNode, public FSO {
                         entry(ix, fn, sizeof(fn));
                         io::path file_path = selected_path.parent_path() / fn;
 
-                        LOG("Deleting file '%s'\n", file_path.c_str());
+                        // LOG("Deleting file '%s'\n", file_path.c_str());
                         FRESULT res = f_unlink(file_path.c_str());
 
                         if (res != FR_OK) {
@@ -327,18 +340,14 @@ class SDMenuT : public Menu::menuNode, public FSO {
                         }
                     }
 
-                    clear_selection();
                     refresh();
+                } else {
+                    if (sel_items.size() == 1) {
+
+                        refresh();
+                    }
                 }
             }));
-        }
-    }
-
-    void open_file() {
-        if (nav.node().sel >= 1 && this->can_select) {
-            // Select current file and return
-            nav.node().event(Menu::updateEvent);
-            nav.doNav(Menu::upCmd);
         }
     }
 
@@ -357,7 +366,7 @@ class SDMenuT : public Menu::menuNode, public FSO {
                 if (entryIdx(path.filename().c_str())) {
                     selected_path /= path.filename();
                 }
-                readDirectoryPage(&dir, 0, file_page, FILES_PER_PAGE);
+
                 page_top_ix = 0;
             }
 
@@ -366,15 +375,14 @@ class SDMenuT : public Menu::menuNode, public FSO {
                 menu_actions_arr[i] = Menu::navigation_actions_arr[i];
             }
 
-            menu_actions_arr[OPEN] = {"Open", [this]() {
-                                          open_file();
+            menu_actions_arr[OPEN] = {"Open", []() {
+                                          nav.doNav(Menu::selCmd);
                                       }};
             menu_actions_arr[DELETE] = {"Delete", [this]() {
-                                            delete_file();
+                                            delete_files();
                                         }};
 
-            clear_selection();
-            update();
+            refresh();
 
             return fres;
         } else {
@@ -438,7 +446,6 @@ class SDMenuT : public Menu::menuNode, public FSO {
 
     void update() {
 
-        LOG("%d\n", HAL_GetTick());
         auto sel = nav.node().sel;
         entry(sel - 1);
 
@@ -446,7 +453,6 @@ class SDMenuT : public Menu::menuNode, public FSO {
         menu_actions_arr[DELETE].enabled = (!sel_items.empty() || can_delete) && !is_dir(fileinfo.fattrib) && sel;
 
         actions_signal.emit(&menu_actions);
-        LOG("%d,d:%d\n", HAL_GetTick(), menu_actions_arr[DELETE].enabled);
     }
 
     void doNav(Menu::navNode &nav, Menu::navCmd cmd) override {
@@ -464,7 +470,7 @@ class SDMenuT : public Menu::menuNode, public FSO {
             case Menu::idxCmd: // Options
                 // nav.event(enterEvent);
                 // Show edit submenu
-                delete_file();
+                delete_files();
                 break;
             case Menu::enterCmd:
                 if (nav.sel >= 1) {
@@ -481,7 +487,7 @@ class SDMenuT : public Menu::menuNode, public FSO {
                         SDMenuT::openFolder(selected_path);
                         dirty = true; // Redraw menu
                         nav.sel = 0;
-                        clear_selection();
+                        refresh();
                     } else {
                         if (this->can_select) {
                             // Select a file and return
@@ -506,7 +512,7 @@ class SDMenuT : public Menu::menuNode, public FSO {
                     SDMenuT::openFolder(selected_path);
                     nav.sel = SDMenuT::entryIdx(folder.filename().c_str()) + 1;
                     dirty = true; // redraw menu
-                    clear_selection();
+                    refresh();
                 }
 
                 break;
@@ -514,13 +520,30 @@ class SDMenuT : public Menu::menuNode, public FSO {
             case Menu::upCmd:
                 navigate = true;
                 break;
+            case Menu::selCmd:
+                if (nav.sel >= 1 && this->can_select) {
+                    // Select current file and exit
+                    char fn[FN_SIZE];
+                    SDMenuT::entry(nav.sel - 1, fn, sizeof(fn));
+                    selected_path = selected_path.parent_path() / fn;
+                    nav.event(Menu::updateEvent);
+                    bubble_cmd = Menu::escCmd;
+                    navigate = true;
+                    dirty = true;
+                }
+                break;
         }
 
         if (navigate) {
-            menuNode::doNav(nav, bubble_cmd);
-        }
 
-        update();
+            menuNode::doNav(nav, bubble_cmd);
+
+            if (bubble_cmd == Menu::escCmd) {
+                actions_signal.emit(nullptr); // Will exit: unstack quick actions
+            } else {
+                update();
+            }
+        }
     }
 
     // Print menu and items as this is a virtual data menu
@@ -573,9 +596,9 @@ class SDMenuT : public Menu::menuNode, public FSO {
             i = i - (show_parent ? 1 : 0);
             // Changed focus
             if (sel) {
-                LOG("sel,%d,%d\n", i, focused_file_ix);
+                // LOG("sel,%d,%d\n", i, focused_file_ix);
                 if ((i != focused_file_ix || strcmp(fentry->name, focused_path.filename().c_str()) != 0)) {
-                    LOG("focus\n");
+
                     focus(i);
                 }
             }

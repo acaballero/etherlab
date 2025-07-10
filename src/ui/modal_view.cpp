@@ -6,6 +6,7 @@
 #include "Display_afb.h"
 #include "input/inputEvent.h"
 #include "ips_font.h"
+#include "ui/ui_types.h"
 #include <functional>
 #include <string>
 
@@ -14,9 +15,13 @@ ModalView::ModalView(
     const std::string &title, const std::string &message, modal_t type, std::function<void(bool)> callback)
     : message{message}, type{type}, on_select{callback} {
 
-    Size dim = display->get_text_size(message);
+    set_bg(C565_DARKEST);
 
     int x = 20;
+
+    std::string message_wrapped = display->fit_text(message, DISPLAY_X_PIXELS - x * 2, 40);
+    Size dim = display->get_text_size(message_wrapped);
+
     int w = DISPLAY_X_PIXELS - x * 2;
 
     int button_width = w / 4;
@@ -41,7 +46,7 @@ ModalView::ModalView(
 
     if (type == INFO) {
 
-        button_ok.set_parent_rect({button_width / 2, btn_top, button_width, button_height});
+        button_ok.set_parent_rect({(w - button_width) / 2, btn_top, button_width, button_height});
 
         add_child(&button_ok);
         button_ok.action = [this](Button &, st_inputEvent) {
@@ -73,7 +78,7 @@ ModalView::ModalView(
 
     } else { // ABORT
 
-        button_ok.set_parent_rect({button_width / 2, btn_top, button_width, button_height});
+        button_ok.set_parent_rect({(w - button_width) / 2, btn_top, button_width, button_height});
         add_child(&button_ok);
 
         button_ok.action = [this](Button &, st_inputEvent) {
@@ -85,14 +90,17 @@ ModalView::ModalView(
     }
 
     text_w.set_font((FontDef *)&Font_7x10);
-    text_w.set_parent_rect({(w - dim.width()) / 2, text_top, dim.width(), dim.height()});
-    text_w.set_text(message);
+    text_w.set_parent_rect({(max2(0, w - dim.width()) / 2), text_top, dim.width(), dim.height()});
+    text_w.set_text(message_wrapped);
+    text_w.set_bg(this->bg_color);
     add_child(&text_w);
 
     title_w.set_parent_rect({0, 0, w, title_height});
     title_w.set_aling(Align::ALIGN_CENTER);
     title_w.set_label(title.c_str());
     add_child(&title_w);
+
+    // actions_signal.emit(&quick_actions);
 }
 
 void ModalView::before_paint() {

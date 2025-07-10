@@ -5,7 +5,10 @@
 #ifndef MODAL_VIEW_H
 #define MODAL_VIEW_H
 
+#include "Display_afb.h"
 #include "label_widget.h"
+#include "menu_actions.h"
+#include "menu_options.h"
 #include "text_widget.h"
 #include "view.h"
 #include "button_widget.h"
@@ -19,6 +22,10 @@ class ModalView : public View {
     void on_focus() override;
 
     void before_paint() override;
+
+    Menu::menu_actions_st *get_quick_actions() override {
+        return &quick_actions;
+    };
 
   private:
     const std::string message;
@@ -46,6 +53,8 @@ class ModalView : public View {
         &lcd,
         "NO",
     };
+
+    Menu::menu_actions_st quick_actions = {Menu::navigation_actions.actions, 4};
 };
 
 #endif

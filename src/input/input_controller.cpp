@@ -19,10 +19,6 @@
 #include "ui/view_manager.h"
 #include "../../lib/ST77XX-STM32/XPT2046_touch.h"
 
-namespace input_controller {
-os::periodic_task task(20, dispatchEvents);
-}
-
 InputPinController PinController(INPUT_PIN_CONTROLLER_TIMER);
 
 #define SIZEOFINPUTENVENT (sizeof(st_inputEvent))
@@ -32,8 +28,22 @@ st_inputEvent lastEvent;
 FIFO inputFIFO{(char *)eventQueue, (MAX_EVENTS_IN_QUEUE * SIZEOFINPUTENVENT)};
 #endif
 
+namespace input_controller {
+os::periodic_task task(20, dispatchEvents);
+
+void queue_input_event(st_inputEvent e) {
+
+#if DISPATCH_INMEDIATELY
+    processEvent(&e);
+#else
+    inputFIFO.write_block((char *)&e, SIZEOFINPUTENVENT);
+#endif
+}
+
+} // namespace input_controller
+
 void touch_begin(xpt2046_t *, uint16_t x, uint16_t y) {
-    onInputEvent({.type = INPUT_EVENT_TYPE_TOUCH_START, .value = 0, .ms = 0, .time_us = HAL_GetTick(), .point = Point(x, y)});
+    input_controller::queue_input_event({.type = INPUT_EVENT_TYPE_TOUCH_START, .value = 0, .ms = 0, .time_us = HAL_GetTick(), .point = Point(x, y)});
 }
 
 void touch_end(xpt2046_t *, uint16_t x, uint16_t y) {
@@ -44,7 +54,7 @@ void touch_end(xpt2046_t *, uint16_t x, uint16_t y) {
         ev.ms = ev.time_us - lastEvent.time_us;
     }
 
-    onInputEvent(ev);
+    input_controller::queue_input_event(ev);
 }
 
 void inputControllerInit() {
@@ -200,15 +210,6 @@ void processEvent(st_inputEvent *e) {
     }
 
     memcpy(&lastEvent, e, sizeof(st_inputEvent));
-}
-
-void onInputEvent(st_inputEvent e) {
-
-#if DISPATCH_INMEDIATELY
-    processEvent(&e);
-#else
-    inputFIFO.write_block((char *)&e, SIZEOFINPUTENVENT);
-#endif
 }
 
 void dispatchEvents() {

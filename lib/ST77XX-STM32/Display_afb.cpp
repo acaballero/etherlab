@@ -40,7 +40,7 @@ uint8_t Display::get_transparency() {
     return transparency;
 }
 
-void Display::clear(uint16_t color) {
+void Display::clear(Color color) {
 
     if (ow == 0) {
         // We are drawing in the whole area so we can just memset
@@ -378,7 +378,7 @@ uint16_t Display::getColor() {
     return this->color;
 }
 
-void Display::fillBuffer(uint16_t c) {
+void Display::fillBuffer(Color c) {
 
     if (ow == 0) {
         // No offset, so fill the whole buffer
@@ -394,7 +394,7 @@ void Display::fillBuffer(uint16_t c) {
 void Display::fill(DisplayPoint p, DisplaySize s, Color c) {
     fill(p.x, p.y, p.x + s.w - 1, p.y + s.h - 1, c);
 }
-void Display::fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c) {
+void Display::fill(int16_t x1, int16_t y1, int16_t x2, int16_t y2, Color c) {
 
     x1 += ox;
     y1 += oy;
@@ -808,10 +808,18 @@ void Display::writeChar(int16_t x, int16_t y, char ch, const FontDef *font, uint
     }
 }
 
+uint32_t Display::get_punctuation_width() {
+    return font->width - font->trim_punct_end - font->trim_punct_start;
+}
+
+bool Display::is_punctuation(char c) {
+    return (c == ',' || c == '.' || c == ':' || c == ' ');
+}
+
 void Display::writeString(int16_t x, int16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor) {
     // select();
 
-    uint8_t delta_punct = font->width - font->trim_punct_end - font->trim_punct_start;
+    int delta_punct = get_punctuation_width();
     uint16_t max_width = this->hasOffset() ? ow : this->curr_area->box.width;
     uint16_t max_height = this->hasOffset() ? oh : this->curr_area->box.height;
 
@@ -1076,6 +1084,51 @@ void Display::set_wrap_text(bool wrap_text) {
     Display::wrap_text = wrap_text;
 }
 
+std::string Display::fit_text(const std::string &text, int max_width, int max_height) {
+    int max_chars_per_line = (max_width < 0 ? curr_area->box.width : max_width) / font->width;
+    int max_lines = (max_height < 0 ? curr_area->box.height : max_height) / font->height;
+    int ellipsis_length = 7;
+
+    if (max_chars_per_line <= ellipsis_length || max_lines <= 0) {
+        return "!!!";
+    }
+
+    std::string result;
+    size_t start = 0;
+    int line_count = 0;
+
+    while (start < text.length() && line_count < max_lines) {
+        size_t end = text.find('\n', start);
+        if (end == std::string::npos) {
+            end = text.length();
+        }
+
+        std::string line = text.substr(start, end - start);
+
+        // Truncate line if too long
+        if (line.length() > max_chars_per_line) {
+            int truncate_at = (max_chars_per_line - ellipsis_length) / 2;
+            if (truncate_at > 0) {
+                line = line.substr(0, truncate_at) + " <...> " + line.substr(line.length() - truncate_at);
+            } else {
+                line = line.substr(0, max_chars_per_line);
+            }
+        }
+
+        result += line;
+        line_count++;
+
+        // Add newline if not the last line and we haven't hit the limit
+        if (end < text.length() && line_count < max_lines) {
+            result += '\n';
+        }
+
+        start = end + 1;
+    }
+
+    return result;
+}
+
 Size Display::get_text_size(const std::string &text) {
 
     if (text.empty()) {
@@ -1092,6 +1145,8 @@ Size Display::get_text_size(const std::string &text) {
             max_width = std::max(max_width, current_width);
             current_width = 0;
             line_count++;
+        } else if (is_punctuation(c) && trim_enabled) {
+            current_width += get_punctuation_width();
         } else {
             // Regular character
             current_width += font->width;

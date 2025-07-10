@@ -38,11 +38,3 @@ uint16_t TextWidget::get_fg() const {
 void TextWidget::set_fg(uint16_t fg) {
     fg_color = fg;
 }
-
-uint16_t TextWidget::get_bg() const {
-    return bg_color;
-}
-
-void TextWidget::set_bg(uint16_t bg) {
-    TextWidget::bg_color = bg;
-}
