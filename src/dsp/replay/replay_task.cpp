@@ -31,7 +31,7 @@ void ReplayTask::work() {
 
             // GPIOA->BSRR = GPIO_PIN_12;
 
-            if (FatFSFileHandle.fptr < FatFSFileHandle.fsize) {
+            if (FatFSFileHandle.fptr < FatFSFileHandle.fsize - DSP_FIFO_BLOCK_BYTES) {
 
                 FRESULT fres = m_file->read(p, DSP_FIFO_BLOCK_BYTES);
 
@@ -46,7 +46,7 @@ void ReplayTask::work() {
 
                     // We check again for the status because the ADC interrupt could've stopped the capture before
                     // TODO: do better error handling
-                    if (FatFSFileHandle.fptr < FatFSFileHandle.fsize) {
+                    if (FatFSFileHandle.fptr < FatFSFileHandle.fsize - DSP_FIFO_BLOCK_BYTES) {
                         this->halt(DSP_ERR_FILEREAD);
                     } else {
                         eof = true;
@@ -210,6 +210,8 @@ bool ReplayTask::start() {
 void ReplayTask::stop() {
 
     if (this->status.status != DSP_STATUS_STOPPED) {
+
+        output_stream.close();
 
         this->status.status = DSP_STATUS_STOPPED;
 

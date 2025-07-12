@@ -11,6 +11,14 @@ set print array on
 set print object on 
 set print symbol on
 set non-stop off
+
+# Don't step in toolchain libraries
+skip file /usr/include/*
+skip file /usr/lib/*
+skip file **/arm-none-eabi/*
+skip file **/sys/*
+
+
 maint set target-async off
 file .pio/build/genericSTM32F427VGT/firmware.elf
 

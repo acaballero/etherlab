@@ -18,7 +18,10 @@ class Widget : public Painter {
     Widget() : _parent_rect{}, display{(Display *)&lcd} {
     }
 
-    Widget(Rect parent_rect, Display *display) : _parent_rect{parent_rect}, display{display} {
+    Widget(Rect parent_rect, Display *display, const char *name = nullptr) : _parent_rect{parent_rect}, display{display} {
+        if (name) {
+            set_name(name);
+        }
         this->set_area();
     }
 

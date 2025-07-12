@@ -18,8 +18,6 @@ class ReplayWidget : public Widget {
 
     void setWaveInfo(WaveInfo wi);
 
-    void setFileInfo(FILINFO finfo);
-
     void setProcessorStatus(st_dsp_status *status);
 
     void setTaskStatus(st_dsp_status *status);
@@ -39,7 +37,6 @@ class ReplayWidget : public Widget {
     st_dsp_status *processor_status;
     st_dsp_status *task_status;
     WaveInfo wi;
-    FILINFO finfo;
 };
 
 #endif // TRX_FRONTEND_REPLAY_WIDGET_H

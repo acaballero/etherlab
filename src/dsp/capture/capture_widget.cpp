@@ -4,13 +4,14 @@
 
 #include "capture_widget.h"
 #include "Display_afb.h"
+#include "ips_font.h"
 
 void CaptureWidget::paint_callback() {
 
     char buff[30];
     this->display->setBgColor(C565_DARKEST);
     display->clear();
-    display->setFont((FontDef *)&Font_Tiny8x8);
+    display->setFont((FontDef *)&Font_7x10);
     display->gotoCharXY(0, 0);
     display->setColor(C565_WHITE);
     display->setBgColor(C565_TRANSPARENT);
@@ -28,13 +29,13 @@ void CaptureWidget::paint_callback() {
         switch (task_status->status) {
             case DSP_STATUS_RUNNING:
                 c = C565_BLUE;
-                sprintf(buff, "Running\n");
+                sprintf(buff, "Running (%.1fs)\n", seconds_elapsed);
                 break;
             case DSP_STATUS_STOPPED:
                 if (task_status->error == DSP_ERR_NONE) {
                     if (task_status->stop_ms) {
                         c = C565_GREEN;
-                        sprintf(buff, "Finished\n");
+                        sprintf(buff, "Finished (%.1fs)\n", seconds_elapsed);
                     } else {
                         c = C565_GREY_LIGHT;
                         sprintf(buff, "Stopped\n");
@@ -42,13 +43,13 @@ void CaptureWidget::paint_callback() {
                 } else {
 
                     c = C565_RED;
-                    sprintf(buff, "Error\n");
+                    sprintf(buff, "Error (%.1fs)\n", seconds_elapsed);
                     break;
                 }
                 break;
             case DSP_STATUS_PENDING:
                 c = C565_WHITE;
-                sprintf(buff, "Pending\n");
+                sprintf(buff, "Pending (%.1fs)\n", seconds_elapsed);
                 break;
         }
 
@@ -63,16 +64,14 @@ void CaptureWidget::paint_callback() {
         }
 
         display->setColor(C565_WHITE);
-        sprintf(buff, "%.1f", seconds_elapsed);
-        display->print("Elapsed:", buff, " s.\n");
         char new_units[5];
         format_eng(buff, bytes_processed, "b.\n", new_units);
-        display->print("In:", buff, new_units);
+        display->print("In: ", buff, new_units);
         format_eng(buff, bytes_stored, "b.\n", new_units);
-        display->print("Out:", buff, new_units);
+        display->print("Out: ", buff, new_units);
 
         sprintf(buff, "%.1f", drop_rate);
-        display->print("Drop:", buff, "%\n");
+        display->print("Drop: ", buff, "%\n");
     } else {
         display->print("NO STATUS");
     }

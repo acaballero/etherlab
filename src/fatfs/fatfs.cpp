@@ -23,6 +23,7 @@
 #include "hw/stm32_hal.h"
 #include "../../lib/FatFs/ff.h"
 #include "../../lib/FatFs/diskio.h"
+#include "stm32f4xx_hal.h"
 #include "usb/usbd_msc.h"
 #include <stdio.h>
 
@@ -81,6 +82,7 @@ bool try_lock_sd_card() {
         b = false;
     } else {
         sd_card_locked = true;
+        // LOG("sdcard locked\n");
         if (SDIO_GetPowerState(SDIO_HANDLE.Instance) == 0) {
             SDIO_PowerState_ON(SDIO_HANDLE.Instance);
         }
@@ -92,19 +94,27 @@ bool try_lock_sd_card() {
 }
 
 bool lock_sd_card(uint32_t timeout_ms) {
-    // TODO: Save who locked it and prevent other client to unlock
-    uint32_t start = HAL_GetTick();
+    // TODO: Save who locked it and prevent other client to unlock.
+    // Currently, if someone unlocks the card (and thus shutting power off which, btw, owes to EMI and battery reasons)
+    // and some fatfs file is tried, it will timeout.
+    volatile uint32_t start = HAL_GetTick();
     while (!try_lock_sd_card()) {
-        if ((HAL_GetTick() - start) > timeout_ms) {
+        volatile uint32_t elapsed = (HAL_GetTick() - start);
+        if (elapsed >= timeout_ms) {
             return false; // timeout
+        } else {
+            // HAL_Delay(100);
+            // LOG("Waited %d ms for locking SD card\n", elapsed);
         }
     }
+
     return true;
 }
 
 bool unlock_sd_card() {
     bool b;
     if (sd_card_locked && sdcard_info.status != MassStorageDeviceActive) { // note: prevent someone powering the sd device off while MSD is on
+        // LOG("sdcard unlocked\n");
         SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
         sd_card_locked = false;
         b = true;
@@ -207,9 +217,20 @@ void sdcard_init(void) {
  * @retval Time in DWORD
  */
 DWORD get_fattime(void) {
-    /* USER CODE BEGIN get_fattime */
-    return 0;
-    /* USER CODE END get_fattime */
+    st_datetime now = rtc_get_date_time();
+
+    // Year should be from 1980, FatFs limits year range to 1980–2107
+    uint16_t year = now.date.Year + 2000;
+    if (year < 1980) {
+        year = 1980;
+    }
+
+    return ((DWORD)(year - 1980) << 25)       // Year from 1980 (7 bits)
+           | ((DWORD)now.date.Month << 21)    // Month (1–12, 4 bits)
+           | ((DWORD)now.date.Date << 16)     // Day (1–31, 5 bits)
+           | ((DWORD)now.time.Hours << 11)    // Hour (0–23, 5 bits)
+           | ((DWORD)now.time.Minutes << 5)   // Minute (0–59, 6 bits)
+           | ((DWORD)(now.time.Seconds / 2)); // Second / 2 (0–29, 5 bits)
 }
 
 #if DEBUG_SD_CARD

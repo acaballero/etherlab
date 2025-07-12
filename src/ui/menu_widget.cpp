@@ -4,6 +4,7 @@
 
 #include <menuIO/stringIn.h>
 #include "input/inputEvent.h"
+#include "menuBase.h"
 #include "menu_widget.h"
 #include "menu.h"
 #include "config.h"
@@ -62,8 +63,7 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                     break;
                 // case KEY_BACK:
                 case FPANEL_PAD_BUTTON_5:
-                    strIn.write('/');
-                    nav.doInput(strIn);
+                    nav.doNav(escCmd);
                     break;
                 case BTN_ENCODER:
 

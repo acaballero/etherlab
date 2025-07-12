@@ -32,6 +32,8 @@ class File {
         return path;
     }
 
+    size_t size();
+
     virtual bool is_open();
 
   protected:

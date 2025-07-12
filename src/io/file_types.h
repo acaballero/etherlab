@@ -23,10 +23,11 @@ struct WaveInfo {
     uint32_t sample_rate{0};
     uint16_t bits_sample{16};
     uint32_t byte_rate{0}; // = n_channels * sampling_rate * bits_sample / 8
+    uint32_t file_size{0};
 };
 
 #define WAVEFILE_DEFAULT_FOLDER "captures"
-#define WAVEFILE_DEFAULT_FILENAME "cap_%dsps_%dkhz_%02d%02d%02d_%02d%02d%02d.%s"
+#define WAVEFILE_DEFAULT_FILENAME "cap%d_%dsps_%dkhz.%s"
 
 FileType get_file_type_from_extension(const io::path &);
 WaveInfo get_info_from_file_path(const io::path &);

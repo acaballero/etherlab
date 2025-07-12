@@ -1,6 +1,7 @@
 
 
 #include <algorithm>
+#include <cstring>
 #include "Display_afb.h"
 #include "ui/frequency_memory_ui.h"
 #include "view.h"
@@ -324,8 +325,9 @@ void Widget::paint_overlapped() {
 
     Box current_offset = display->getOffset();
 
-    // printf_("Child %s has %d visible rect/s\n", get_name(), visible_rects.size());
-
+    // if (strcmp("waterfa", get_name()) != 0) {
+    //     printf_("Child %s has %d visible rect/s\n", get_name(), visible_rects.size());
+    // }
     for (auto &rect : visible_rects) {
 
         Rect pr = parent_rect();
@@ -350,14 +352,17 @@ void Widget::paint_overlapped() {
                 display->setOffset(offset);
             }
 
-            // printf_("Painting area (%d,%d,%d,%d), offset (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, offset.x, offset.y,
-            //         offset.width, offset.height, get_name());
-
+            // if (strcmp("waterfa", get_name()) != 0) {
+            //     printf_("Painting area (%d,%d,%d,%d), offset (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, offset.x, offset.y,
+            //             offset.width, offset.height, get_name());
+            // }
             paint(&a);
 
         } else {
-            // status::handleError(status::ST_ERROR, "A child has a 'small' visible part");
-            // printf_("Rect: (%d,%d,%d,%d) of widget %s\n", rect.left(), rect.top(), rect.width(), rect.height(), child->get_name());
+            // if (strcmp("waterfa", get_name()) != 0) {
+            //     LOG("A child has a 'narrow' visible part\n");
+            // }
+            //   printf_("Rect: (%d,%d,%d,%d) of widget %s\n", rect.left(), rect.top(), rect.width(), rect.height(), child->get_name());
         }
 
         display->setOffset(current_offset);

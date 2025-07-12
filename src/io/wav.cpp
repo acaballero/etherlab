@@ -75,6 +75,7 @@ FRESULT WaveFile::open(WaveInfo &wi) {
             info.sample_rate = header.fmt.nSamplesPerSec;
             info.bits_sample = header.fmt.wBitsPerSample;
             info.byte_rate = header.fmt.nAvgBytesPerSec;
+            info.file_size = fil->fsize;
 
             fres = f_lseek(fil, data_start);
 

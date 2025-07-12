@@ -71,15 +71,15 @@ void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
 
         output_stream.consume(bytesToRead, &p);
 
-        // printf("I:", 0);
+        // LOG("I:");
         // for (int i = 0; i < bytesToRead / 2; i += 2) {
-        //    printf("\n%d", ((int16_t *) p)[i]);
-        //}
-        //  printf("\nQ:", 0);
-        //  for (int i = 1; i < bytesToRead / 2; i += 2) {
-        //      printf("%d,", ((uint16_t *) p)[i]);
-        //  }
-        //  printf("\n", 0);
+        //     LOG("%d,", ((int16_t *)p)[i]);
+        // }
+        // LOG("\nQ:");
+        // for (int i = 1; i < bytesToRead / 2; i += 2) {
+        //     LOG("%d,", ((uint16_t *)p)[i]);
+        // }
+        // LOG("\n", 0);
 
     } else {
         if (!output_stream.is_closed()) {

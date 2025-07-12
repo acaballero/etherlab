@@ -70,7 +70,7 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
     FileWrapper() : total_lines_(0), access_counter_(0), cache_start_line_(0) {
     }
 
-    bool load(io::path path, bool create) {
+    bool load(const io::path &path, bool create) {
 
         file_.close();
         path_ = path;

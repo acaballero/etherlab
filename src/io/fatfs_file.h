@@ -41,97 +41,166 @@ struct filesystem_error {
     uint32_t err{FR_OK};
 };
 
-struct path {
+// Compact memory-safe io::path for STM32 (no exceptions)
 
-    using string_type = std::string; // std::u16string;
+struct path {
+    using string_type = std::string;
     using value_type = string_type::value_type;
 
-    static constexpr value_type preferred_separator = '/'; // u'/';
+    static constexpr value_type preferred_separator = '/';
+    static constexpr size_t MAX_PATH_LENGTH = 128; // Smaller limit for embedded
 
-    path() : _s{} {
+    path() = default;
+
+    path(const path &p) : _s(safe_copy(p._s)) {
     }
 
-    path(const path &p) : _s{p._s} {
+    path(path &&p) noexcept : _s(std::move(p._s)) {
     }
 
-    path(path &&p) : _s{std::move(p._s)} {
+    path(const char *s) : _s(s ? safe_copy(std::string(s)) : std::string{}) {
     }
 
-    template <class Source>
-    path(const Source &source, typename std::enable_if<!std::is_array<Source>::value>::type * = nullptr) : path{std::begin(source), std::end(source)} {
+    path(const std::string &s) : _s(safe_copy(s)) {
     }
 
-    template <class InputIt> path(InputIt first, InputIt last) : _s{first, last} {
-    }
-
-    path(const TCHAR *const s) : _s{s} {
-    }
-
+    // Safe assignment
     path &operator=(const path &p) {
-        _s = p._s;
+        if (this != &p) {
+            _s = safe_copy(p._s);
+        }
         return *this;
     }
 
-    path &operator=(path &&p) {
-        _s = std::move(p._s);
+    path &operator=(path &&p) noexcept {
+        if (this != &p) {
+            _s = std::move(p._s);
+        }
         return *this;
     }
 
-    path parent_path() const;
-    path extension() const;
-    path filename() const;
-    path stem() const;
+    path &operator=(const char *s) {
+        _s = s ? safe_copy(std::string(s)) : std::string{};
+        return *this;
+    }
 
+    // Core methods - simplified
+    path parent_path() const {
+        auto pos = _s.find_last_of(preferred_separator);
+        return (pos == std::string::npos) ? path{} : path{_s.substr(0, pos)};
+    }
+
+    path filename() const {
+        auto pos = _s.find_last_of(preferred_separator);
+        return (pos == std::string::npos) ? *this : path{_s.substr(pos + 1)};
+    }
+
+    path extension() const {
+        auto fname = filename()._s;
+        auto pos = fname.find_last_of('.');
+        return (pos == std::string::npos) ? path{} : path{fname.substr(pos)};
+    }
+
+    path stem() const {
+        auto fname = filename()._s;
+        auto pos = fname.find_last_of('.');
+        return (pos == std::string::npos) ? path{fname} : path{fname.substr(0, pos)};
+    }
+
+    // Basic accessors
     bool empty() const {
         return _s.empty();
     }
-
-    const value_type *c_str() const {
-        return native().c_str();
+    const char *c_str() const {
+        return _s.c_str();
     }
-
-    const TCHAR *tchar() const {
-        return reinterpret_cast<const TCHAR *>(native().c_str());
+    const char *tchar() const {
+        return _s.c_str();
     }
-
-    const string_type &native() const {
+    const std::string &native() const {
+        return _s;
+    }
+    std::string string() const {
         return _s;
     }
 
-    std::string string() const;
-
+    // Safe operators
     path &operator+=(const path &p) {
-        _s += p._s;
-        return *this;
-    }
-
-    path &operator+=(const string_type &str) {
-        _s += str;
+        if (_s.length() + p._s.length() <= MAX_PATH_LENGTH) {
+            _s += p._s;
+        }
         return *this;
     }
 
     path &operator/=(const path &p) {
-        if (_s.back() != preferred_separator && p._s.front() != preferred_separator) {
-            _s += preferred_separator;
+        // if (p._s.empty())
+        //     return *this;
+
+        size_t needed = _s.length() + p._s.length();
+        if (!_s.empty() && _s.back() != preferred_separator && p._s.front() != preferred_separator) {
+            needed++;
         }
-        _s += p._s;
+
+        if (needed <= MAX_PATH_LENGTH) {
+            if (!_s.empty() && _s.back() != preferred_separator && p._s.front() != preferred_separator) {
+                _s += preferred_separator;
+            }
+            _s += p._s;
+        }
         return *this;
     }
 
-    path &replace_extension(const path &replacement = path());
-
-    path &append_filename(const string_type &str);
+    path &replace_extension(const path &replacement = path{}) {
+        auto ext = extension()._s;
+        if (_s.length() >= ext.length()) {
+            _s.erase(_s.size() - ext.size());
+            if (!replacement._s.empty()) {
+                if (replacement._s.front() != '.') {
+                    _s += '.';
+                }
+                _s += replacement._s;
+            }
+        }
+        return *this;
+    }
 
   private:
-    string_type _s;
+    std::string _s;
+
+    // Simple length-limited copy
+    static std::string safe_copy(const std::string &src) {
+        return (src.length() > MAX_PATH_LENGTH) ? src.substr(0, MAX_PATH_LENGTH) : src;
+    }
 };
 
-bool operator==(const path &lhs, const path &rhs);
-bool operator!=(const path &lhs, const path &rhs);
-bool operator<(const path &lhs, const path &rhs);
-bool operator>(const path &lhs, const path &rhs);
-path operator+(const path &lhs, const path &rhs);
-path operator/(const path &lhs, const path &rhs);
+// Operators
+inline bool operator==(const path &lhs, const path &rhs) {
+    return lhs.native() == rhs.native();
+}
+
+inline bool operator!=(const path &lhs, const path &rhs) {
+    return !(lhs == rhs);
+}
+
+inline bool operator<(const path &lhs, const path &rhs) {
+    return lhs.native() < rhs.native();
+}
+
+inline bool operator>(const path &lhs, const path &rhs) {
+    return lhs.native() > rhs.native();
+}
+
+inline path operator+(const path &lhs, const path &rhs) {
+    path result = lhs;
+    result += rhs;
+    return result;
+}
+
+inline path operator/(const path &lhs, const path &rhs) {
+    path result = lhs;
+    result /= rhs;
+    return result;
+}
 
 /* Case insensitive path equality on underlying "native" string. */
 bool path_iequal(const path &lhs, const path &rhs);

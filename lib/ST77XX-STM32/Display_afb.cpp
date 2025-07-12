@@ -530,8 +530,8 @@ void Display::writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t
             decInc = (shortLen << 16) / longLen;
         }
 
-        uint16_t ipx = x1;
-        uint16_t ipy = y1;
+        int16_t ipx = x1;
+        int16_t ipy = y1;
 
         if (yLonger) {
             if (longLen > 0) {
@@ -808,8 +808,11 @@ void Display::writeChar(int16_t x, int16_t y, char ch, const FontDef *font, uint
     }
 }
 
-uint32_t Display::get_punctuation_width() {
-    return font->width - font->trim_punct_end - font->trim_punct_start;
+uint32_t Display::get_punctuation_width(const FontDef *font_ptr) {
+    if (!font_ptr) {
+        font_ptr = font;
+    }
+    return font_ptr->width - font_ptr->trim_punct_end - font_ptr->trim_punct_start;
 }
 
 bool Display::is_punctuation(char c) {
@@ -819,7 +822,7 @@ bool Display::is_punctuation(char c) {
 void Display::writeString(int16_t x, int16_t y, const char *str, const FontDef *font, uint16_t color, uint16_t bgcolor) {
     // select();
 
-    int delta_punct = get_punctuation_width();
+    int delta_punct = get_punctuation_width(font);
     uint16_t max_width = this->hasOffset() ? ow : this->curr_area->box.width;
     uint16_t max_height = this->hasOffset() ? oh : this->curr_area->box.height;
 
@@ -931,7 +934,7 @@ size_t Display::print(const char str[]) {
 
 size_t Display::print(const char str[], const char *value, const char units[]) {
 
-    return this->print(str, value, units, C565_GREY_LIGHT, C565_WHITE, C565_GREY_LIGHT);
+    return this->print(str, value, units, C565_WHITE, C565_CYAN_DARK, C565_GREY_LIGHT);
 }
 
 size_t Display::print(const char str[], const char *value, const char units[], uint16_t labelColor, uint16_t valueColor, uint16_t unitsColor) {

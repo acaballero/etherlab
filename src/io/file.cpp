@@ -28,6 +28,7 @@ FRESULT File::open(WaveInfo &wi) {
         fres = f_open(fil, path.c_str(), mode);
 
         wi.format = FSTATUS_OK;
+        wi.file_size = fil->fsize;
 
         return fres;
     }
@@ -43,6 +44,10 @@ FRESULT File::create(WaveInfo wi) {
     FRESULT fres = f_open(fil, path.c_str(), mode);
 
     return fres;
+}
+
+size_t File::size() {
+    return fil->fsize;
 }
 
 FRESULT File::read(char *p, uint32_t count) {

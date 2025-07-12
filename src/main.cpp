@@ -170,10 +170,12 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-    nav.doNav(Menu::navCmd(Menu::enterCmd));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
+    //  nav.doNav(Menu::navCmd(Menu::idxCmd, 0)); // capture
+
     //  nav.doNav(Menu::navCmd(Menu::enterCmd));
+    // nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // select file
+    // nav.doNav(Menu::navCmd(Menu::upCmd, 2));  // third file
+    // nav.doNav(Menu::navCmd(Menu::selCmd));
 
     // status::handleError(status::ST_ERROR, "test error");
     //   Put focus over number editor

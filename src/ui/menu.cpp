@@ -25,6 +25,7 @@
 #include "radio.h"
 #include "rf_coupler.h"
 #include "../../lib/utils/utils.hpp"
+#include "ui/ui_types.h"
 #include "view_manager.h"
 #include "s_strength.h"
 #include <cstddef>
@@ -411,5 +412,5 @@ void menu_size(int w, int h) {
     dispX = w / fontW, dispY = h / (fontH + 2);
     nav.out.outs[0]->panels.panels[0].h = dispY;
     nav.out.outs[0]->panels.panels[0].w = dispX;
-    ((MenuWidget *)view_manager::mainView.Menu())->set_parent_rect({0, MENU_START_Y, w, h});
+    ((MenuWidget *)view_manager::mainView.Menu())->set_parent_rect({0, DISPLAY_Y_PIXELS - STATUS_HEIGHT - h, w, h});
 }

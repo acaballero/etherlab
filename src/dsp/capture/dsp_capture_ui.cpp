@@ -3,8 +3,12 @@
 //
 
 #include <io/file_factory.h>
+#include "dsp/dsp_ui.h"
+#include "dsp/replay/dsp_replay_ui.h"
 #include "dsp_capture_ui.h"
 #include "io/file_types.h"
+#include "items.h"
+#include "menuBase.h"
 #include "ui/menu.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
@@ -19,6 +23,7 @@
 #include "fatfs/fatfs.h"
 #include "status.h"
 #include "ui/view_manager.h"
+#include "io/file_system.h"
 
 namespace dspCaptureUI {
 
@@ -56,19 +61,24 @@ io::path get_file_name() {
 
     if (!filename_is_edited) {
 
-#if ENABLE_RTC
-        RTC_TimeTypeDef time;
-        RTC_DateTypeDef date;
-        HAL_RTC_GetTime(&hrtc, &time, FORMAT_BIN);
-        HAL_RTC_GetDate(&hrtc, &date, FORMAT_BIN);
         uint32_t f = (uint32_t)(radio::get_frequency() / 1000L);
 
-        sprintf(fname_buff, WAVEFILE_DEFAULT_FILENAME, fft_params.sample_freq / fft_params.decimation_factor, f, date.Year, date.Month, date.Date, time.Hours,
-                time.Minutes, time.Seconds, file_type_extensions[ftype]);
+        FSO fso;
+        bool found = false;
+        io::path folder = io::path{WAVEFILE_DEFAULT_FOLDER} + "/";
+        fso.openFolder(folder);
+        int n = fso.count();
 
-#else
-        sprintf(buff, "%s", (char *)DSP_CAPTURE_DEFAULT_FILENAME);
-#endif
+        if (n >= 0) {
+            while (!found) {
+                sprintf(fname_buff, WAVEFILE_DEFAULT_FILENAME, n, fft_params.sample_freq / fft_params.decimation_factor, f, file_type_extensions[ftype]);
+                int ix = fso.entryIdx((folder / fname_buff).c_str());
+                found = ix == 0;
+            }
+        } else {
+            status::handleError(status::ST_ERROR, "Error in get_file_name()");
+            return "capture.wav";
+        }
     }
 
     return io::path{fname_buff};
@@ -84,6 +94,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             capture_w.setProcessorStatus(&((DspCaptureProcessor *)processors[DSP_PROCESSOR_CAPTURE])->status);
             capture_w.setTaskStatus(&((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->status);
 
+            captureMenu[captureMenu.sz() - 1].disable();
             dsp_set_real_time(true);
 
             // Don't try to set the file name before configuring dsp params
@@ -100,7 +111,6 @@ Menu::result on_menu_event(Menu::eventMask e) {
             if (task->status.status == DSP_STATUS_STOPPED) {
 
                 dsp_set_real_time(!ISANALOG);
-
                 menu_size(DISPLAY_X_PIXELS, INFO_HEIGHT);
                 view_manager::mainView.remove_child(&capture_w);
             } else {
@@ -118,13 +128,17 @@ void on_event(st_dsp_status *status) {
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
             command = DSP_COMMAND_STOP;
+            captureMenu[captureMenu.sz() - 2].disable();
             captureMenu[captureMenu.sz() - 1].disable();
             break;
         case DSP_STATUS_STOPPED:
             command = DSP_COMMAND_START;
+            captureMenu[captureMenu.sz() - 2].enable();
             captureMenu[captureMenu.sz() - 1].enable();
             break;
     }
+
+    nav.node().target->dirty = true; // Ugly!
 }
 
 Menu::result change_dsp_status(Menu::eventMask e) {
@@ -153,9 +167,17 @@ result set_sampling_params(eventMask) {
 
 result change_file_type(eventMask) {
     fname = get_file_name();
-
     ((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->setFile(FileFactory::getFile(ftype, fname));
+    return proceed;
+}
 
+result replay(eventMask) {
+    // Open replay menu
+
+    nav.doNav(navCmd(escCmd, 1));
+    nav.doNav(navCmd(idxCmd, 1));
+    // nav.node().target = &dspReplayUI::replayMenu;
+    //  nav.node().selected() = 0;
     return proceed;
 }
 
@@ -170,5 +192,6 @@ TOGGLE(command, captureToggle, "Command: ", change_dsp_status, Menu::anyEvent, M
 
 MENU(captureMenu, "Capture", on_menu_event, (Menu::eventMask)(Menu::enterEvent | Menu::exitEvent), Menu::noStyle, SUBMENU(captureToggle),
      EDIT("File:", fname_buff, Menu::alphaNumMask, on_file_updated, Menu::updateEvent, Menu::noStyle), OBJ(freqEdit),
-     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu))
+     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu),
+     OP("Replay", replay, enterEvent))
 } // namespace dspCaptureUI

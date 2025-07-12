@@ -29,7 +29,7 @@ int command = DSP_COMMAND_START;
 bool loop = false;
 SignalToken signal_token;
 WaveInfo wi;
-ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 4, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 6}, &lcd};
+ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y - 35, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 6 + 35}, &lcd, "replay"};
 
 void on_freq_signal(void *thisptr, void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
@@ -71,7 +71,6 @@ Menu::result on_menu_event(Menu::eventMask e) {
     ReplayTask *task = ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY]);
     io::path start_path;
     FRESULT fres;
-    io::path filename;
 
     switch (e) {
 
@@ -82,21 +81,20 @@ Menu::result on_menu_event(Menu::eventMask e) {
             }
             break;
 
-        case Menu::enterEvent:
-
+        case Menu::enterEvent: {
             signal_token = radio::freq_signal.add(NULL, on_freq_signal);
 
-            // If we have a selected file or a recent saved file, use it as default
+            // Select the last saved file as default
+            io::path base_path = io::path{WAVEFILE_DEFAULT_FOLDER} + "/";
+            FSO fso{base_path};
+            start_path = fso.get_last_updated_file();
+            fso.close();
 
-            filename = filePicker.selected_path.filename();
-            if (filename.empty()) {
-
-                start_path = io::path{"/"} + WAVEFILE_DEFAULT_FOLDER + io::path{"/"};
-
+            if (start_path.empty()) {
+                start_path = io::path{"/"} + base_path;
                 io::check_and_create_folder(start_path.parent_path().c_str());
-
             } else {
-                start_path = filePicker.selected_path;
+                start_path = base_path + start_path;
             }
 
             // TODO: Seriously, this menu system is one of the shittiest piece of code I've come across. Got to get rid of it any time soon
@@ -110,9 +108,10 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
             if (fres == FR_OK) {
 
-                menu_size(DISPLAY_X_PIXELS / 2, INFO_HEIGHT);
+                menu_size(DISPLAY_X_PIXELS / 2, INFO_HEIGHT + 35);
                 view_manager::mainView.add_child(&replay_w);
                 replay_w.set_visible(true);
+                replay_w.set_z_index(100);
                 replay_w.setProcessorStatus(&((DspReplayProcessor *)processors[DSP_PROCESSOR_REPLAY])->status);
                 replay_w.setTaskStatus(&((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->status);
             }
@@ -120,6 +119,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             dsp_set_real_time(true);
 
             break;
+        }
 
         case Menu::exitEvent:
 
@@ -219,10 +219,10 @@ Menu::result on_filepicker(eventMask e) {
             freqEdit.disable();
         }
     } else if (fres == FR_OK) {
-        if (e != enterEvent) {
-            filePicker.enable_selection();
-            filePicker.enable_deletion();
-        }
+
+        filePicker.enable_selection();
+        filePicker.enable_deletion();
+
         if (e == updateEvent) {
             ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->setFile(move(file));
             replayToggle.enable();
@@ -237,7 +237,6 @@ Menu::result on_filepicker(eventMask e) {
             on_freq_updated();
         }
 
-        replay_w.setFileInfo(filePicker.fileinfo);
         replay_w.setWaveInfo(wi);
 
     } else {

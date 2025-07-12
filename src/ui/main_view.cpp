@@ -18,6 +18,7 @@
 MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPLAY_Y_PIXELS + DISPLAY_PADDING * 2}) {
 
     // Set names for debuggin purposes
+    // TODO: Remove when not required if saving a few bytes is worth it (hope not)
     // this->set_name("main");
     // this->tune_w.set_name("tune");
     // this->fft_w.set_name("fft");
@@ -35,13 +36,15 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     // this->header_w.set_name("header");
 
     this->fft_w.set_show_fps(true);
+    this->fft_w.set_z_index(20);
+    this->dbscale_w.set_z_index(10);
     // this->waterfall_w.set_show_fps(true);
     this->tune_w.set_visible(config.debug);
     this->radio_w.set_visible(!config.debug);
     this->info_w.set_visible(config.debug);
     this->info_w.set_show_fps(config.debug);
     this->menu_w.set_show_fps(config.debug);
-    this->menu_w.set_z_index(20);
+    this->menu_w.set_z_index(100);
     this->smeter_w.set_visible(false);
     this->powmeter_w.set_visible(false);
     this->optionButtonsView.set_visible(false);

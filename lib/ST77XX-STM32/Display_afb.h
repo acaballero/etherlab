@@ -181,7 +181,7 @@ class Display {
 
     std::string fit_text(const std::string &text, int max_width = -1, int max_height = -1);
 
-    uint32_t get_punctuation_width();
+    uint32_t get_punctuation_width(const FontDef *font = nullptr);
 
     bool is_punctuation(char c);
 

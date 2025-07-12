@@ -98,11 +98,11 @@ void WaterfallWidget::paint_callback() {
     // WARNING: This widget uses RAW BUFFER WRITES and makes a lot of bad things for the sake of performace
     uint16_t *buffer = display->getBuffer();
     uint16_t buffer_width = display->curr_area->box.width;
-    uint16_t ox = display->getOffset().x;
-    uint16_t oy = display->getOffset().y;
+    int16_t ox = display->getOffset().x;
+    int16_t oy = display->getOffset().y;
 
     // Last line of the waterfall display buffer to display in this paint iteration
-    uint16_t buffer_height = min2(this->size().height() + oy - 1, this->display->current_last_line) - this->display->current_line + 1;
+    int16_t buffer_height = min2(this->size().height() + oy - 1, this->display->current_last_line) - this->display->current_line + 1;
 
     uint16_t delta = buffer_width - width;
 

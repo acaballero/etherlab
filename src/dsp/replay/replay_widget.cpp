@@ -9,36 +9,37 @@
 
 void ReplayWidget::paint_callback() {
 
-    char buff[20];
-    float seconds_elapsed = 0;
+    char buff[40];
 
     display->fillBuffer(C565_DARKEST);
 
     uint16_t c = C565_WHITE;
 
+    int elapsed_s = task_status->elapsed_ms() * 1000;
+
     switch (task_status->status) {
         case DSP_STATUS_RUNNING:
             c = C565_BLUE;
-            sprintf(buff, "Running\n");
+            sprintf(buff, "Running (%.1fs)\n", elapsed_s);
             break;
         case DSP_STATUS_STOPPED:
             if (task_status->error == DSP_ERR_NONE) {
                 if (task_status->stop_ms) {
                     c = C565_GREEN;
-                    sprintf(buff, "Finished\n");
+                    sprintf(buff, "Finished (%.1fs)\n", elapsed_s);
                 } else {
                     c = C565_GREY_LIGHT;
                     sprintf(buff, "Stopped\n");
                 }
             } else {
                 c = C565_RED;
-                sprintf(buff, "Error\n");
+                sprintf(buff, "Error (%.1fs)\n", elapsed_s);
                 break;
             }
             break;
         case DSP_STATUS_PENDING:
             c = C565_WHITE;
-            sprintf(buff, "Pending\n");
+            sprintf(buff, "Pending (%.1fs)\n", elapsed_s);
             break;
     }
 
@@ -60,6 +61,7 @@ void ReplayWidget::paint_callback() {
     switch (wi.format) {
 
         case FSTATUS_NONE:
+
             display->setColor(C565_YELLOW);
             display->print("Select a file\n");
             break;
@@ -82,7 +84,7 @@ void ReplayWidget::paint_callback() {
                 display->print("Freq: ", buff, units);
             }
 
-            format_eng(buff, finfo.fsize, "b\n", units);
+            format_eng(buff, wi.file_size, "b\n", units);
             display->print("Size: ", buff, units);
 
             break;
@@ -90,26 +92,18 @@ void ReplayWidget::paint_callback() {
 
     if (task_status->status == DSP_STATUS_RUNNING || task_status->stop_ms) { // If it's running or just finished
 
-        if (task_status->status == DSP_STATUS_RUNNING) {
-            seconds_elapsed = (HAL_GetTick() - task_status->start_ms) / 1000.0;
-        } else {
-            seconds_elapsed = (task_status->stop_ms - task_status->start_ms) / 1000.0;
-        }
-        float drop_rate =
-            processor_status->processed_blocks ? ((float)processor_status->fifo_underruns / (float)processor_status->processed_blocks) * 100.0 : 0;
         float bytes_processed = (processor_status->processed_blocks - processor_status->fifo_underruns) * processor_status->block_size_bytes;
-
         float bytes_decimated = (processor_status->processed_blocks - processor_status->fifo_underruns) * processor_status->decimated_block_size_bytes;
 
-        char new_units[5];
+        char u1[5], u2[5];
+        char v1[10], v2[10];
         display->setColor(C565_WHITE);
-        sprintf(buff, "%.1f", seconds_elapsed);
-        display->print("Elapsed: ", buff, " s.\n");
-        format_eng(buff, bytes_decimated, "b.\n", new_units);
-        display->print("In: ", buff, new_units);
-        format_eng(buff, bytes_processed, "b.\n", new_units);
-        display->print("Out: ", buff, new_units);
-        sprintf(buff, "%.1f", drop_rate);
+
+        format_eng(v1, bytes_decimated, "b.", u1);
+        format_eng(v2, bytes_processed, "b.", u2);
+        sprintf(buff, "In/out: %s %s / %s %s\n", v1, u1, v2, u2);
+        display->print(buff);
+        sprintf(buff, "%.1f", processor_status->drop_rate() * 100);
         display->print("Drop: ", buff, "%\n");
     }
 }
@@ -131,10 +125,5 @@ void ReplayWidget::setProcessorStatus(st_dsp_status *status) {
 
 void ReplayWidget::setWaveInfo(WaveInfo wi) {
     ReplayWidget::wi = wi;
-    set_dirty();
-}
-
-void ReplayWidget::setFileInfo(FILINFO finfo) {
-    ReplayWidget::finfo = finfo;
     set_dirty();
 }
