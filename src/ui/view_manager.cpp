@@ -131,7 +131,7 @@ void open(std::unique_ptr<View> v) {
     view->set_visible(true);
     view_manager::mainView.add_child(view.get());
 
-    view->set_z_index(200);
+    view_manager::mainView.to_top(view.get());
     view->set_focus(true);
 }
 

@@ -8,7 +8,7 @@
 #include "frequency_memory_ui.h"
 #include "config.h"
 #include "fatfs/fatfs.h"
-#include "io/file_wrapper.hpp"
+#include "io/file_wrapper.h"
 #include "itemsTemplates.hpp"
 #include "main_board.h"
 #include "menuBase.h"
@@ -17,7 +17,6 @@
 #include "ui/menu_actions.h"
 #include "ui/menu_options.h"
 #include "ui/ui_types.h"
-#include "io/file_wrapper.hpp"
 #include "result.h"
 #include <cstddef>
 #include <sstream>
@@ -35,7 +34,7 @@ namespace freq_memory {
     }
 
 // FileBuffer for frequency memory storage
-static std::unique_ptr<FileWrapper<>> db_file = nullptr;
+static std::unique_ptr<io::FileWrapper<>> db_file = nullptr;
 
 static const char *FREQ_MEMORY_FILE = "madrid.db";
 
@@ -286,7 +285,7 @@ bool init_file_buffer() {
         return true; // Already initialized
     }
 
-    auto result = std::unique_ptr<FileWrapper<>>(new FileWrapper<>());
+    auto result = std::unique_ptr<io::FileWrapper<>>(new io::FileWrapper<>());
     if (result->load(FREQ_MEMORY_FILE, true)) {
         db_file = std::move(result);
         sdcard_signal.add(NULL, [](void *, void *) {
@@ -385,7 +384,7 @@ void saveTarget() {
 int find_index(st_freq_mem &data) {
     INIT_OR_ABORT(-1)
 
-    auto res = db_file->binary_search_first(data.freq, extract_freq_func, FindMode::EQ);
+    auto res = db_file->binary_search_first(data.freq, extract_freq_func, io::FindMode::EQ);
 
     if (res.is_error()) {
         return -1;
@@ -402,7 +401,7 @@ int find_index(st_freq_mem &data) {
 
 void save(st_freq_mem &mem) {
 
-    auto res = db_file->binary_search_first(mem.freq, extract_freq_func, GTE);
+    auto res = db_file->binary_search_first(mem.freq, extract_freq_func, io::GTE);
 
     uint32_t line_pos = *res;
 
@@ -544,7 +543,7 @@ st_freq_mem find_closest(uint64_t f, DIRECTION direction = STOP) {
 
     int count = get_freq_mem_count();
 
-    auto res = db_file->binary_search_first(f + (direction == FORWARD ? 1 : -1), extract_freq_func, direction == FORWARD ? GTE : LTE);
+    auto res = db_file->binary_search_first(f + (direction == FORWARD ? 1 : -1), extract_freq_func, direction == FORWARD ? io::GTE : io::LTE);
 
     if (res.is_error()) {
         return {};

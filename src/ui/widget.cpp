@@ -129,6 +129,7 @@ bool Widget::is_point_visible(Point &p) {
         return screen_rect().contains(p);
     }
 
+    // LOG("Checking %s %d visible rects\n", get_name(), visible_rects.size());
     for (auto &r : visible_rects) {
         if (r.contains(p) && r.width() > 2 && r.height() > 2) { // we don't consider thin rectangles
             return true;

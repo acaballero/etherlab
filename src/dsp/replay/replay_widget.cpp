@@ -41,6 +41,8 @@ void ReplayWidget::paint_callback() {
             c = C565_WHITE;
             sprintf(buff, "Pending (%.1fs)\n", elapsed_s);
             break;
+        case DSP_STATUS_STOPPING:
+            break;
     }
 
     display->setFont((FontDef *)&Font_7x10);
@@ -55,6 +57,7 @@ void ReplayWidget::paint_callback() {
     display->print("Status: ");
     display->setColor(c);
     display->print(buff);
+    display->print("\n");
 
     display->gotoCharXY(0, 1);
 
@@ -64,12 +67,14 @@ void ReplayWidget::paint_callback() {
 
             display->setColor(C565_YELLOW);
             display->print("Select a file\n");
+
             break;
         case FSTATUS_ERROR:
         case FSTATUS_INVALID:
         default:
             display->setColor(C565_RED);
             display->print("Invalid format\n");
+
             break;
         case FSTATUS_OK:
             char units[5];
@@ -90,7 +95,7 @@ void ReplayWidget::paint_callback() {
             break;
     }
 
-    if (task_status->status == DSP_STATUS_RUNNING || task_status->stop_ms) { // If it's running or just finished
+    if (wi.format == FSTATUS_OK && (task_status->status == DSP_STATUS_RUNNING || task_status->stop_ms)) { // If it's running or just finished
 
         float bytes_processed = (processor_status->processed_blocks - processor_status->fifo_underruns) * processor_status->block_size_bytes;
         float bytes_decimated = (processor_status->processed_blocks - processor_status->fifo_underruns) * processor_status->decimated_block_size_bytes;

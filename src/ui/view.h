@@ -24,7 +24,7 @@ class View : public Widget {
 
     void add_child(Widget *const widget);
 
-    void to_top(Widget &widget);
+    void to_top(Widget *widget);
 
     void add_children(const std::initializer_list<Widget *> children);
 

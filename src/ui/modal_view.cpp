@@ -15,6 +15,7 @@ ModalView::ModalView(
     const std::string &title, const std::string &message, modal_t type, std::function<void(bool)> callback)
     : message{message}, type{type}, on_select{callback} {
 
+    set_name("modal");
     set_bg(C565_DARKEST);
 
     int x = 20;

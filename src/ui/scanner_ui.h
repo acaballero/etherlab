@@ -8,7 +8,7 @@
 #include <menu.h>
 
 namespace scanner_ui {
-    extern Menu::menu menuScan;
+extern Menu::menu menuScan;
 }
 
-#endif //TRX_FRONTEND_SCANNER_UI_H
+#endif // TRX_FRONTEND_SCANNER_UI_H

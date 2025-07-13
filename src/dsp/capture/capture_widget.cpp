@@ -51,11 +51,14 @@ void CaptureWidget::paint_callback() {
                 c = C565_WHITE;
                 sprintf(buff, "Pending (%.1fs)\n", seconds_elapsed);
                 break;
+            case DSP_STATUS_STOPPING:
+                break;
         }
 
         display->print("Status: ");
         display->setColor(c);
         display->print(buff);
+        display->print("\n");
 
         if (task_status->error != DSP_ERR_NONE) {
             display->setColor(C565_RED);

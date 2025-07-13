@@ -90,7 +90,7 @@ void APRSView::toggle_beacon() {
     actions_signal.emit(&actions);
 }
 void APRSView::start_rx() {
-    LOG("START RX\n");
+    //  LOG("START RX\n");
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, nullptr);
     // To execute a task other than DSP_TASK_RECEIVE, setMode has to be called so
     main_board::setMode(DIGITAL_RX);

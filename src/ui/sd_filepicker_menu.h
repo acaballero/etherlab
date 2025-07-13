@@ -60,7 +60,7 @@ class SDMenuT : public Menu::menuNode {
 
     // Using menuNode::menuNode
     // do not use default constructors as we wont allocate for data
-    SDMenuT(constText *title, const char *at, Menu::action act = Menu::doNothing, Menu::eventMask mask = Menu::noEvent)
+    SDMenuT(constText *title, const char *, Menu::action act = Menu::doNothing, Menu::eventMask mask = Menu::noEvent)
         : menuNode(title, 0, NULL, act, mask, Menu::noStyle, (Menu::systemStyles)(Menu::_menuData | Menu::_canNav)) {
     }
 
@@ -111,12 +111,14 @@ class SDMenuT : public Menu::menuNode {
     void refresh() {
         fso->curr_folder_count = -1;
         fso->count();
+
+        if (nav.navFocus == this && focused_file_ix >= fso->curr_folder_count) {
+            nav.node().sel = fso->curr_folder_count;
+            focus(fso->curr_folder_count - 1);
+        }
         fso->read_page(&fso->dir, 0, fso->file_page, FILES_PER_PAGE);
         clear_selection();
         update_actions();
-        // if (curr_folder_count>=focusedFileIx) {
-        //     focusedFileIx = curr_folder_count-1;
-        // }
     }
 
     void delete_files() {
@@ -178,7 +180,7 @@ class SDMenuT : public Menu::menuNode {
     }
 
     // this requires latest menu version to virtualize data tables
-    Menu::prompt &operator[](Menu::idx_t i) const override {
+    Menu::prompt &operator[](Menu::idx_t) const override {
         return *(Menu::prompt *)this;
     } // this will serve both as menu and as its own prompt
 
@@ -354,7 +356,7 @@ class SDMenuT : public Menu::menuNode {
     }
 
     // Print menu and items as this is a virtual data menu
-    Menu::Used printTo(Menu::navRoot &root, bool sel, Menu::menuOut &out, Menu::idx_t idx, Menu::idx_t len, Menu::idx_t pn) override {
+    Menu::Used printTo(Menu::navRoot &root, bool sel, Menu::menuOut &out, Menu::idx_t idx, Menu::idx_t len, Menu::idx_t) override {
 
         bool show_parent = out.tops[root.level] == 0;
 

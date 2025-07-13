@@ -76,13 +76,13 @@ void restart_callback(void *, void *) {
 
     //  TODO: This assumes the current task is 'receive'
     if (config.mode != DIGITAL_RX && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
-        LOG("restart_callback: sending stop receive commandxs\n");
+        //   LOG("restart_callback: sending stop receive commandxs\n");
         dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, nullptr);
     } else if (config.mode == DIGITAL_RX && !current_task) {
-        LOG("restart_callback: sending start receive command\n");
+        //   LOG("restart_callback: sending start receive command\n");
         dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, nullptr);
     } else {
-        LOG("restart_callback:dsp_restart\n");
+        //   LOG("restart_callback:dsp_restart\n");
         dsp_restart();
     }
 }
@@ -188,24 +188,27 @@ void dsp_start_task() {
 
         //  LOG("dsp_start_task: starting task\n");
         current_task->status.reset();
-        current_task->start();
+        if (current_task->start()) {
 
-        // TODO: Ugly!
-        current_processor->status.block_size_bytes = current_task->status.block_size_bytes;
-        current_processor->status.bandwidth = current_task->status.bandwidth;
-        current_processor->status.sample_rate = current_task->status.sample_rate;
-        current_processor->status.decimation_factor = current_task->status.decimation_factor;
-        current_processor->status.decimated_block_size = current_task->status.decimated_block_size;
-        current_processor->status.decimated_block_size_bytes = current_task->status.decimated_block_size_bytes;
-        current_processor->status.n_channels = current_task->status.n_channels;
+            // TODO: Ugly!
+            current_processor->status.block_size_bytes = current_task->status.block_size_bytes;
+            current_processor->status.bandwidth = current_task->status.bandwidth;
+            current_processor->status.sample_rate = current_task->status.sample_rate;
+            current_processor->status.decimation_factor = current_task->status.decimation_factor;
+            current_processor->status.decimated_block_size = current_task->status.decimated_block_size;
+            current_processor->status.decimated_block_size_bytes = current_task->status.decimated_block_size_bytes;
+            current_processor->status.n_channels = current_task->status.n_channels;
 
-        if (current_processor->status.direction != DSP_DIRECTION_OUT) {
-            current_processor->start();
-        }
+            if (current_processor->status.direction != DSP_DIRECTION_OUT) {
+                current_processor->start();
+            }
 
-        dsp::dsp_status = current_task->status.direction != DSP_DIRECTION_IN ? &current_processor->status : &current_task->status;
-        if (on_event) {
-            on_event(dsp::dsp_status);
+            dsp::dsp_status = current_task->status.direction != DSP_DIRECTION_IN ? &current_processor->status : &current_task->status;
+            if (on_event) {
+                on_event(dsp::dsp_status);
+            }
+        } else {
+            status::handleError(status::ST_ERROR, "Error starting DSP task");
         }
     } else {
         //   LOG(": alerady running task\n");
@@ -366,12 +369,12 @@ void dsp_stop() {
 
         //  LOG("dspStop\n");
         if (current_processor) {
-            LOG("dspStop:processor stop\n");
+            //   LOG("dspStop:processor stop\n");
             current_processor->stop();
         }
 
         if (current_task) {
-            LOG("dspStop:task stop\n");
+            //   LOG("dspStop:task stop\n");
             current_task->stop();
         }
 

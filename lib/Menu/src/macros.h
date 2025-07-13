@@ -10,6 +10,12 @@
 #define MENU_USERAM
 #endif
 #endif
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-braces"
+#endif
+
 #if defined(ESP8266)
 #define MENU_ASYNC
 #define MENU_FMT_WRAPS
@@ -301,3 +307,7 @@
 // use zero length outputs list instead
 //#define NO_INPUTS_NAV (*(Stream*)NULL)
 //#define NO_OUTPUTS_NAV (*(outputsList*)NULL)
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

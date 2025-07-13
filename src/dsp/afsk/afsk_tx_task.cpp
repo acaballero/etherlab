@@ -177,7 +177,7 @@ void AFSKTXTask::set_data(uint16_t *data) {
 
 bool AFSKTXTask::start() {
 
-    LOG("------ [BEGIN] AFSKTX task START------\n");
+    //   LOG("------ [BEGIN] AFSKTX task START------\n");
     status.reset();
     status.direction = DSP_DIRECTION_OUT;
     status.sample_rate = config.fft.sample_rate;
@@ -203,7 +203,7 @@ bool AFSKTXTask::start() {
     main_board::setMute(GPIO_PIN_RESET);
 
     // Se the fifo processing frequency
-    LOG("-- [END] AFSKTX ST --\n");
+    //   LOG("-- [END] AFSKTX ST --\n");
     // Start task processing timer
     // TODO: This should be done by the caller of this method and be generic for all tasks
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);

@@ -2,19 +2,18 @@
 // Created by Angel Dust on 15/06/2025
 //
 
-#ifndef __FILE_H__
-#define __FILE_H__
-
-#include "ff.h"
-#include "result.h"
+#ifndef __FATFS_FILE_H__
+#define __FATFS_FILE_H__
 
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <array>
 #include <memory>
-#include <iterator>
 #include <vector>
+
+#include "ff.h"
+#include "result.h"
 
 namespace io {
 
@@ -371,9 +370,6 @@ class FatFSFile {
     io::filesystem_error append(const io::path &filename);
     io::filesystem_error create(const io::path &filename);
 
-    Result<Size> read(void *data, const Size bytes_to_read);
-    Result<Size> write(const void *data, Size bytes_to_write);
-
     Offset tell() const;
     Result<Offset> seek(uint64_t Offset);
     Result<Offset> truncate();
@@ -383,6 +379,9 @@ class FatFSFile {
     template <size_t N> Result<Size> write(const std::array<uint8_t, N> &data) {
         return write(data.data(), N);
     }
+
+    Result<Size> read(void *data, const Size bytes_to_read);
+    Result<Size> write(const void *data, Size bytes_to_write);
 
     io::filesystem_error write_line(const std::string &s);
 

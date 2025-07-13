@@ -121,6 +121,7 @@ void View::on_child_update(Widget *w) {
         //  overlaps.clear();
 
         widget->visible_rects.clear();
+        //  LOG("Cleared %s visible parts\n", widget->get_name());
 
         // To improve performance, a "sweeping algorightm" can be used (see commented method at the end of the file)
 
@@ -147,9 +148,10 @@ void View::on_child_update(Widget *w) {
                     if (r.contains(widget->screen_rect())) {
                         // printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
                     } else {
-                        // if (strcmp(widget->get_name(), "menu") == 0) {
-                        //     printf_("Widget %s overlapped by %s\n", widget->get_name(), sibling->get_name());
-                        // }
+                        if (strcmp(widget->get_name(), "modal") == 0) {
+                            printf_("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(),
+                                    sibling->get_z_index());
+                        }
                         //  Process the overlap in the widget's childs to see if some can be hidden
                     }
 
@@ -203,15 +205,15 @@ void View::set_area() {
     }
 }
 
-void View::to_top(Widget &widget) {
+void View::to_top(Widget *widget) {
     int max_z_index = 0;
     for (auto w : children()) {
         if (w->get_z_index() > max_z_index) {
             max_z_index = w->get_z_index();
         }
     }
-    widget.set_z_index(max_z_index + 1);
-    widget.set_visible(true);
+    widget->set_z_index(max_z_index + 1);
+    widget->set_visible(true);
 }
 
 const std::vector<Widget *> &View::children() const {

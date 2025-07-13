@@ -19,21 +19,21 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
 
     // Set names for debuggin purposes
     // TODO: Remove when not required if saving a few bytes is worth it (hope not)
-    // this->set_name("main");
-    // this->tune_w.set_name("tune");
-    // this->fft_w.set_name("fft");
-    // this->waterfall_w.set_name("waterfall");
-    // this->radio_w.set_name("radio");
-    // this->info_w.set_name("info");
-    // this->menu_w.set_name("menu");
-    // this->smeter_w.set_name("smeter");
-    // this->powmeter_w.set_name("powmeter");
-    // this->optionButtonsView.set_name("options");
-    // this->numberEditView.set_name("numedt");
-    // this->msg_w.set_name("msg");
-    // this->iqbal_w.set_name("iqbal");
-    // this->status_w.set_name("status");
-    // this->header_w.set_name("header");
+    this->set_name("main");
+    this->tune_w.set_name("tune");
+    this->fft_w.set_name("fft");
+    this->waterfall_w.set_name("waterfall");
+    this->radio_w.set_name("radio");
+    this->info_w.set_name("info");
+    this->menu_w.set_name("menu");
+    this->smeter_w.set_name("smeter");
+    this->powmeter_w.set_name("powmeter");
+    this->optionButtonsView.set_name("options");
+    this->numberEditView.set_name("numedt");
+    this->msg_w.set_name("msg");
+    this->iqbal_w.set_name("iqbal");
+    this->status_w.set_name("status");
+    this->header_w.set_name("header");
 
     this->fft_w.set_show_fps(true);
     this->fft_w.set_z_index(20);
@@ -158,7 +158,7 @@ bool MainView::on_input(const st_inputEvent event) {
             consumed = menu_w.on_input(event); // First try to consume it by the menu
 
             if (consumed) {
-                to_top(menu_w);
+                to_top(&menu_w);
             }
         } else if (!event.is_touch()) {
             consumed = View::on_input(event);

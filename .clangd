@@ -13,7 +13,8 @@ CompileFlags:
      "-mcpu=cortex-m4",
      "-mfpu=fpv4-sp-d16",
      "-mfloat-abi=hard",
-     "-std=c++17"
+     "-std=c++17",
+     "-fgnu-keywords"
     ]
     
   Remove:

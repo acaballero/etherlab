@@ -48,7 +48,7 @@ Menu::result on_freq_updated(Menu::eventMask e) {
 }
 
 Menu::result on_file_updated(Menu::eventMask) {
-    fname = {fname_buff};
+    fname = fname_buff;
     ((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->setFile(FileFactory::getFile(ftype, fname));
     filename_is_edited = true;
     return Menu::proceed;
@@ -118,6 +118,17 @@ Menu::result on_menu_event(Menu::eventMask e) {
                 return Menu::quit;
             }
             break;
+        case Menu::noEvent:
+        case Menu::activateEvent:
+        case Menu::returnEvent:
+        case Menu::focusEvent:
+        case Menu::blurEvent:
+        case Menu::selFocusEvent:
+        case Menu::selBlurEvent:
+        case Menu::updateEvent:
+        case Menu::refreshEvent:
+        case Menu::anyEvent:
+            break;
     }
     return Menu::proceed;
 }
@@ -135,6 +146,8 @@ void on_event(st_dsp_status *status) {
             command = DSP_COMMAND_START;
             captureMenu[captureMenu.sz() - 2].enable();
             captureMenu[captureMenu.sz() - 1].enable();
+            break;
+        case DSP_STATUS_STOPPING:
             break;
     }
 
@@ -187,6 +200,15 @@ prompt *fileTypeValues[] = {new Menu::menuValue<FileType>(file_type_names[FTYPE_
 Menu::select<FileType> &fTypeMenu =
     *new Menu::select<FileType>("File type", ftype, sizeof(fileTypeValues) / sizeof(prompt *), fileTypeValues, change_file_type, exitEvent);
 
+#ifdef __clang__
+#ifndef typeof
+#define typeof __typeof__
+#endif
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-braces"
+
+#endif
+
 TOGGLE(command, captureToggle, "Command: ", change_dsp_status, Menu::anyEvent, Menu::noStyle,
        VALUE("Stop", DSP_COMMAND_STOP, change_dsp_status, Menu::anyEvent), VALUE("Start", DSP_COMMAND_START, change_dsp_status, Menu::anyEvent))
 
@@ -195,3 +217,7 @@ MENU(captureMenu, "Capture", on_menu_event, (Menu::eventMask)(Menu::enterEvent |
      FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu),
      OP("Replay", replay, enterEvent))
 } // namespace dspCaptureUI
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

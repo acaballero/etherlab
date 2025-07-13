@@ -14,6 +14,13 @@
 #define DSP_MIN_TX_GAIN_DB -20
 #define DSP_MAX_TX_GAIN_DB 20
 
+#ifdef __clang__
+// Clang-compatible implementations
+#define __PKHBT(a, b, shift) ((uint32_t)(((uint32_t)(a)&0xFFFFU) | (((uint32_t)(b)&0xFFFFU) << (shift))))
+
+#define __PKHTB(a, b, shift) ((uint32_t)(((uint32_t)(a)&0xFFFF0000U) | (((uint32_t)(b) >> (shift)) & 0xFFFFU)))
+#endif
+
 // FS/4 frequency shift
 // Goals:
 // - Avoid hardware DC issues (flickr noise, DC leakage)

@@ -168,7 +168,7 @@ void CaptureTask::stop() {
         // Stop task work timer
         HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
 
-        if (file->is_open()) {
+        if (file && file->is_open()) {
             FRESULT fres = file->close();
 
             if (fres != FR_OK) {
