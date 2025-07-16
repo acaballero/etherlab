@@ -137,29 +137,6 @@ uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_statu
     return 0;
 }
 
-bool dsp_restart() {
-    // LOG("dsp_restart");
-    if (!ISANALOG && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
-
-        //   LOG(": will restart\n");
-        dsp::dsp_status->status = DSP_STATUS_PENDING;
-        DAC_DMA_Stop(&hdac1);
-        ADC_DMA_Stop(&hadc1);
-        input_stream.reset();
-        output_stream.reset();
-        current_task->start();
-        dsp::dsp_status->reset();
-        return true;
-    } else if (!current_task) {
-        //   LOG(": wont restart: no task\n");
-    } else if (current_task && dsp::dsp_status) {
-        int b = dsp::dsp_status->status == DSP_STATUS_RUNNING ? 0 : 1;
-        //   LOG(": wont restart: current task is running=%d\n", b);
-    }
-
-    return false;
-}
-
 void dsp_start_task() {
     //    LOG("dsp_start_task");
 
@@ -213,6 +190,27 @@ void dsp_start_task() {
     } else {
         //   LOG(": alerady running task\n");
     }
+}
+
+bool dsp_restart() {
+    // LOG("dsp_restart");
+    if (!ISANALOG && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
+
+        //   LOG(": will restart\n");
+        current_task->status.status = DSP_STATUS_PENDING;
+        current_processor->status.status = DSP_STATUS_PENDING;
+        DAC_DMA_Stop(&hdac1);
+        ADC_DMA_Stop(&hadc1);
+        dsp_start_task();
+        return true;
+    } else if (!current_task) {
+        //   LOG(": wont restart: no task\n");
+    } else if (current_task && dsp::dsp_status) {
+        int b = dsp::dsp_status->status == DSP_STATUS_RUNNING ? 0 : 1;
+        //   LOG(": wont restart: current task is running=%d\n", b);
+    }
+
+    return false;
 }
 
 void dsp_loop() {
@@ -367,14 +365,14 @@ void dsp_stop() {
             dac_buff[i] = {{(adc_type)config.hw.dac_offset, (adc_type)config.hw.dac_offset}};
         }
 
-        //  LOG("dspStop\n");
+        LOG("dspStop\n");
         if (current_processor) {
-            //   LOG("dspStop:processor stop\n");
+            LOG("dspStop:processor stop\n");
             current_processor->stop();
         }
 
         if (current_task) {
-            //   LOG("dspStop:task stop\n");
+            LOG("dspStop:task stop\n");
             current_task->stop();
         }
 

@@ -3,6 +3,7 @@
 //
 
 #include "lock_view.h"
+#include "hw/stm32f4xx/usb.h"
 #include "ips_font.h"
 #include "ui/widget.h"
 
@@ -17,13 +18,21 @@ void LockView::init() {
     add_child(&lblTitle);
 
     lblText1.set_font((FontDef *)&Font_Tiny8x8);
-    lblText1.set_color(C565_GREY_LIGHT);
-    lblText1.set_label("Unplug USB to exit");
+    lblText1.set_fg(C565_GREY_LIGHT);
+    lblText1.set_text("Unplug USB or press any key to exit");
     lblText1.set_aling(Align::ALIGN_CENTER);
-    lblText1.set_has_border(false);
 
     add_child(&lblText1);
 }
 
 void LockView::before_paint() {
+}
+
+bool LockView::on_input(const st_inputEvent e) {
+    if (!e.is_touch()) {
+        init_USB_CDC();
+        return true;
+    } else {
+        return false;
+    }
 }

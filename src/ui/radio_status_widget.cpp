@@ -65,13 +65,13 @@ void RadioStatusWidget::on_button(Button &button, st_inputEvent e) {
         Menu::open(Menu::frontendPathMenu);
     } else if (&button == &btnVFO) {
         if (freq_memory::get_memory_mode()) {
-            freq_memory::set_next_prev(BACKWARDS);
+            freq_memory::set_next_prev(BACKWARDS, STATION);
         } else {
             radio::toggle_vfo();
         }
     } else if (&button == &btnRIT) {
         if (freq_memory::get_memory_mode()) {
-            freq_memory::set_next_prev(FORWARD);
+            freq_memory::set_next_prev(FORWARD, STATION);
         } else {
             Menu::open_number_edit<int32_t>(
                 radio::get_rit(), "Hz", "RIT", 0,

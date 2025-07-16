@@ -1133,16 +1133,21 @@ std::string Display::fit_text(const std::string &text, int max_width, int max_he
 }
 
 Size Display::get_text_size(const std::string &text) {
+    return get_text_size(text.c_str());
+}
 
-    if (text.empty()) {
+Size Display::get_text_size(const char *text) {
+
+    if (!text[0]) {
         return {0, 0};
     }
 
     int max_width = 0;
     int current_width = 0;
     int line_count = 1; // Start with 1 line
-
-    for (char c : text) {
+    int i = 0;
+    char c = text[i];
+    while (c) {
         if (c == '\n') {
             // End of line - update max width and start new line
             max_width = std::max(max_width, current_width);
@@ -1154,6 +1159,8 @@ Size Display::get_text_size(const std::string &text) {
             // Regular character
             current_width += font->width;
         }
+
+        c = text[++i];
     }
 
     // Don't forget the last line if it doesn't end with newline

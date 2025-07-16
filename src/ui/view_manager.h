@@ -21,6 +21,7 @@ extern MainView mainView;
 extern View *currentView;
 extern os::periodic_task task;
 void push(View *);
+void pop();
 void init();
 
 void open_aprs();

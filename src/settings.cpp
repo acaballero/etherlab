@@ -70,7 +70,6 @@ uint8_t settings_read(Config *settings) {
 
         // Try to read the config from the SD Card
         ConfigFile<> config_file;
-        ConfigFile<st_freq_mem> mem_file;
 
         memcpy(version, settings->version, 3);
 
@@ -85,7 +84,7 @@ uint8_t settings_read(Config *settings) {
 
         // Read config from flash
 
-        settings = {};
+        *settings = Config();
 
         uint8_t status = flash_read((uint16_t *)version, 2);
 

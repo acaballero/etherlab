@@ -7,9 +7,13 @@
 #include "ui/button_widget.h"
 #include <math.h>
 
-void Label::set_padding(uint16_t p) { padding = p; }
+void Label::set_padding(uint16_t p) {
+    padding = p;
+}
 
-uint16_t Label::get_padding() { return padding; }
+uint16_t Label::get_padding() {
+    return padding;
+}
 
 void Label::set_border_radius(bool top_left, bool top_right, bool bottom_right, bool bottom_left) {
     border_radius[0] = top_left;
@@ -21,9 +25,8 @@ void Label::set_border_radius(bool top_left, bool top_right, bool bottom_right, 
 void Label::paint_callback() {
 
     display->clear(canvas_bg_color);
-
+    display->setFont(font); // Note there's no guarantee paint_callback is called right after 'before_paint', so we set the font again
     display->setBgColor(bg_color);
-    display->setFont(font);
 
     if (has_border) {
         display->setColor(bg_color);
@@ -33,14 +36,8 @@ void Label::paint_callback() {
 
     display->setColor(fg_color);
 
-    uint16_t lw = strlen(label);
-    uint16_t vw = strlen(value);
-    uint16_t uw = strlen(unit);
-    uint16_t w = (lw + vw + uw);
-    // if (lw && vw) w++;
-    // if (uw) w++;
+    uint16_t width = (lw + vw + uw);
 
-    int16_t width = w * (font->width);
     int16_t x;
 
     if (align == ALIGN_CENTER) {
@@ -76,18 +73,29 @@ bool Label::on_touch(const st_inputEvent) {
     return false;
 }
 
-ButtonStyle Label::get_style() const { return style; }
+ButtonStyle Label::get_style() const {
+    return style;
+}
 
-void Label::set_style(ButtonStyle style) { Label::style = style; }
+void Label::set_style(ButtonStyle style) {
+    Label::style = style;
+}
 
-void Label::before_paint() {}
+void Label::before_paint() {
+    display->setFont(font);
+    lw = display->get_text_size(label).width();
+    vw = display->get_text_size(value).width();
+    uw = display->get_text_size(unit).width();
+}
 
 void Label::set_label(const char *t) {
     strncpy(label, t, MAX_CHARS);
     set_dirty();
 }
 
-char *Label::get_label() { return label; }
+char *Label::get_label() {
+    return label;
+}
 
 void Label::set_value(const char *t) {
     strncpy(value, t, MAX_CHARS_VALUE);
@@ -99,7 +107,9 @@ void Label::set_unit(const char *t) {
     set_dirty();
 }
 
-void Label::set_color(uint16_t c) { set_color(c, fg_color_value, fg_color_unit); }
+void Label::set_color(uint16_t c) {
+    set_color(c, fg_color_value, fg_color_unit);
+}
 
 void Label::set_color(uint16_t l, uint16_t v, uint16_t u) {
     fg_color = l;
@@ -107,10 +117,18 @@ void Label::set_color(uint16_t l, uint16_t v, uint16_t u) {
     fg_color_unit = u;
 }
 
-uint16_t Label::get_bg() const { return bg_color; }
+uint16_t Label::get_bg() const {
+    return bg_color;
+}
 
-void Label::set_bg(uint16_t bg) { Label::bg_color = bg; }
+void Label::set_bg(uint16_t bg) {
+    Label::bg_color = bg;
+}
 
-void Label::set_has_border(bool b) { has_border = b; }
+void Label::set_has_border(bool b) {
+    has_border = b;
+}
 
-void Label::set_canvas_bg_color(uint16_t c) { canvas_bg_color = c; }
+void Label::set_canvas_bg_color(uint16_t c) {
+    canvas_bg_color = c;
+}

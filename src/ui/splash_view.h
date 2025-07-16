@@ -26,10 +26,10 @@ class SplashView : public View {
     void before_paint() override;
 
   private:
-    Label lblTitle{{30, TOP + 0, WIDTH - 60, 30}};
-    Label lblText1{{30, TOP + 40, WIDTH - 60, 10}};
-    Label lblText2{{30, TOP + 55, WIDTH - 60, 10}};
-    Label lblText3{{30, TOP + 70, WIDTH - 60, 10}};
+    Label lblTitle{{30, TOP + 0, DISPLAY_X_PIXELS - 60, 30}};
+    Label lblText1{{30, TOP + 40, DISPLAY_X_PIXELS - 60, 10}};
+    Label lblText2{{30, TOP + 55, DISPLAY_X_PIXELS - 60, 10}};
+    Label lblText3{{30, TOP + 70, DISPLAY_X_PIXELS - 60, 10}};
 };
 
 #endif // TRX_FRONTEND_SPLASH_VIEW_H

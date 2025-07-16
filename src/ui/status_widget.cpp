@@ -201,7 +201,7 @@ void StatusWidget::band(Widget *) {
 
         display->setColor(config.band == radio::BAND_AUTO ? fg_color_auto : fg_color);
 
-        display->print(radio::bandNames[radio::get_band()]);
+        display->print(radio::bandNames[radio::get_curr_freq_band()]);
     }
 }
 

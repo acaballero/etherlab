@@ -20,7 +20,7 @@ namespace io {
 
 static constexpr uint32_t BUFFER_SIZE = 512;
 
-enum FindMode { LTE, GTE, EQ };
+enum FindMode { LTE, GTE, GT, LT, EQ };
 
 template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class FileWrapper {
   private:
@@ -265,43 +265,49 @@ Result<uint32_t, io::filesystem_error> FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACH
 
     uint32_t left = 0;
     uint32_t right = total_lines_;
-    uint32_t result = total_lines_; // Not found
-    T result_key;
+    uint32_t result = total_lines_;
+
     while (left < right) {
         uint32_t mid = left + (right - left) / 2;
         std::string line = get_line(mid);
 
         if (line.empty()) {
-            // LOG("FR_INT_ERROR\n");
             return io::filesystem_error{FR_INT_ERR};
         }
 
         T line_key = extract_key(line);
 
-        if (mode == GTE) {
-            if (line_key >= key) {
+        if (mode == EQ) {
+            if (line_key == key) {
                 result = mid;
-                result_key = key;
-                right = mid;
-            } else {
+                right = mid; // Continue searching left for first occurrence
+            } else if (line_key < key) {
                 left = mid + 1;
+            } else {
+                right = mid;
             }
         } else {
-            if (line_key <= key) {
+            bool condition =
+                (mode == LT && line_key < key) || (mode == LTE && line_key <= key) || (mode == GTE && line_key >= key) || (mode == GT && line_key > key);
+
+            if (condition) {
                 result = mid;
-                result_key = key;
-                left = mid + 1;
+                if (mode == LT || mode == LTE) {
+                    left = mid + 1; // Search right for last occurrence
+                } else {
+                    right = mid; // Search left for first occurrence
+                }
             } else {
-                right = mid;
+                if (mode == LT || mode == LTE) {
+                    right = mid;
+                } else {
+                    left = mid + 1;
+                }
             }
         }
     }
 
-    if (mode == EQ && result_key != key) {
-        return (uint32_t)total_lines_;
-    } else {
-        return (uint32_t)result;
-    }
+    return result;
 }
 
 // Generic range search implementation

@@ -74,7 +74,7 @@ uint64_t f_iq = 0;
 uint64_t f_last;
 
 Signal freq_signal;
-
+Signal band_signal;
 mixer mixers[2];
 
 const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
@@ -278,8 +278,16 @@ void change_frequency(int amount) {
 
 // This does not change the frequency immediatelly so it can be called from an IRQhandler.
 // Otherwise, SPI might clash
-void set_frequency(uint64_t f) {
-    config.vfo[config.vfo_ix].freq = f;
+bool set_frequency(uint64_t f) {
+
+    uint64_t min_f = get_min_frequency();
+    uint64_t max_f = get_max_frequency();
+    if (f >= min_f && f <= max_f) {
+        config.vfo[config.vfo_ix].freq = f;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 uint64_t get_vfo_frequency(uint8_t vfo_ix) {
@@ -393,15 +401,33 @@ BAND find_band(unsigned long f) {
     return band;
 }
 
-BAND get_band() {
+BAND get_curr_freq_band() {
     return find_band(config.vfo[config.vfo_ix].freq);
 }
 
-void set_band() {
+BAND get_band() {
+    return config.band;
+}
+
+void set_band(BAND band) {
+    if (band != BAND_NONE) {
+        config.band = band;
+    }
+
     config.f_min = bands[config.band].freq_start;
     config.f_max = bands[config.band].freq_end;
 
     set_frequency(constrain(get_frequency(), config.f_min, config.f_max));
+
+    band_signal.emit(nullptr);
+}
+
+uint64_t get_max_frequency() {
+    return config.f_max;
+}
+
+uint64_t get_min_frequency() {
+    return config.f_min;
 }
 
 IF_FILTER band_if_filter() {
@@ -417,7 +443,7 @@ IF_FILTER band_if_filter() {
             break;
         case FM:
         case WFM:
-            if (get_band() == BAND_FM) {
+            if (get_curr_freq_band() == BAND_FM) {
                 filter = IF_FILTER_150KHZ;
             } else {
                 filter = IF_FILTER_15KHZ;

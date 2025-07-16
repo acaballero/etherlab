@@ -95,6 +95,7 @@ extern const st_filter if_filters[6];
 extern const st_band bands[];
 extern mixer mixers[];
 extern Signal freq_signal;
+extern Signal band_signal;
 // Current quadrature mixer LO frequency
 extern uint64_t f_iq;
 // IF frequency for the DSP board
@@ -107,7 +108,7 @@ extern "C" {
 #endif
 
 void change_frequency(int amount);
-void set_frequency(uint64_t f);
+bool set_frequency(uint64_t f);
 void change_step(int amount);
 uint64_t get_frequency();
 uint64_t get_vfo_frequency(uint8_t);
@@ -118,15 +119,18 @@ void set_rit(int32_t v);
 void update_freq();
 BAND find_band(unsigned long);
 bool tx_enabled();
-void set_band();
+void set_band(BAND band = BAND_NONE);
 void set_vfo(uint8_t);
 uint8_t toggle_vfo();
 uint8_t get_vfo();
+BAND get_curr_freq_band();
 BAND get_band();
 IF_FILTER band_if_filter();
 extern os::periodic_task task;
 bool is_freq_inverted();
 bool is_filter_allowed(IF_FILTER);
+uint64_t get_max_frequency();
+uint64_t get_min_frequency();
 uint32_t get_bandwidth_hz();
 extern const char *modeNames[];
 #ifdef __cplusplus

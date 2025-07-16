@@ -43,11 +43,11 @@ os::periodic_task task(50, sweep);
 
 void start() {
 
-    current_band = config.band;
+    current_band = radio::get_curr_freq_band();
     if (scanner_config.mode != SCANNER_MODE_BAND) {
         // Don't constraint to current band
-        config.band = radio::BAND_ALL;
-        radio::set_band();
+
+        radio::set_band(radio::BAND_ALL);
     }
 }
 
@@ -55,9 +55,8 @@ void stop() {
 
     if (scanner_config.status != SCANNER_STATUS_STOPPED) {
         // Restore the band
-        if (config.band != current_band) {
-            config.band = current_band;
-            radio::set_band();
+        if (radio::get_band() != current_band) {
+            radio::set_band(current_band);
         }
 
         scanner_config.status = SCANNER_STATUS_STOPPED;

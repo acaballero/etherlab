@@ -15,7 +15,7 @@ class TextWidget : public Widget {
   public:
     TextWidget() : Widget(){};
 
-    TextWidget(Rect parent_rect, std::string &t, uint16_t fg_color = C565_TEXT_FG) : Widget(parent_rect, &lcd), fg_color{fg_color} {
+    TextWidget(Rect parent_rect, const std::string &t, uint16_t fg_color = C565_TEXT_FG) : Widget(parent_rect, &lcd), fg_color{fg_color} {
         set_text(t);
     };
 

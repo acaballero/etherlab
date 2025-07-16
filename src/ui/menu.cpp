@@ -57,8 +57,8 @@ optionsPrompt<MODULATION_MODE> modulationMenu((const char *)"Modulation", modula
                                                   main_board::setModulationMode(v, true);
                                               });
 
-optionsPrompt<radio::BAND> bandMenu((const char *)"Band", band_options, config.band, sizeof(band_options) / sizeof(band_options[0]), [](radio::BAND) {
-    radio::set_band();
+optionsPrompt<radio::BAND> bandMenu((const char *)"Band", band_options, config.band, sizeof(band_options) / sizeof(band_options[0]), [](radio::BAND band) {
+    radio::set_band(band);
 });
 
 optionsPrompt<radio::BAND> filterMenu((const char *)"Frontend filter", band_options, config.filter, sizeof(band_options) / sizeof(band_options[0]),
@@ -251,19 +251,30 @@ result set_usb_msc_mode(eventMask) {
     return proceed;
 }
 
+LockView *lock_view;
 void lock() {
-    LockView view;
-    view.paint();
-    fft::fft_task.set_enabled(false);
-    view_manager::task.set_enabled(false);
-    locked = true;
+    if (!locked) {
+
+        if (!lock_view) {
+            lock_view = new LockView();
+        }
+
+        view_manager::push(lock_view);
+        fft::fft_task.set_enabled(false);
+        view_manager::task.set_enabled(false);
+        locked = true;
+    }
 }
 
 void unlock() {
-    fft::fft_task.set_enabled(true);
-    view_manager::task.set_enabled(true);
-    view_manager::mainView.set_dirty();
-    locked = false;
+    if (locked) {
+        view_manager::pop();
+        delete lock_view;
+        fft::fft_task.set_enabled(true);
+        view_manager::task.set_enabled(true);
+        view_manager::mainView.set_dirty();
+        locked = false;
+    }
 }
 
 MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggleMenu), OBJ(powerSavePeriod), OP("Reset defaults", settings_reset, enterEvent),

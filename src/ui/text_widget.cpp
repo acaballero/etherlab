@@ -4,12 +4,11 @@
 
 #include "text_widget.h"
 #include "Display_afb.h"
+#include "ui/widget.h"
 #include <stdint.h>
 
 void TextWidget::set_text(const std::string &t) {
-
     text = t;
-
     set_dirty();
 }
 
@@ -25,7 +24,13 @@ void TextWidget::paint_callback() {
     display->clear();
 
     display->setFont(font);
-    display->gotoXY(0, 0);
+
+    int x = 0;
+    if (align == ALIGN_CENTER) {
+        x = (_parent_rect.width() - display->get_text_size(text).width()) / 2;
+    }
+
+    display->gotoXY(x, 0);
     display->setColor(fg);
     display->setBgColor(bg);
     display->print(text.c_str());

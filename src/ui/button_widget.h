@@ -109,9 +109,15 @@ class Button : public Widget {
 
     ButtonStyle style = BUTTON_STYLE_FLAT;
 
+    uint16_t lw;
+    uint16_t vw;
+    uint16_t uw;
+
     void before_paint() override;
 
     void draw_box(int box_width, uint16_t bg);
+
+    void calc_widths();
 };
 
 #endif // TRX_FRONTEND_BUTTON_WIDGET_H

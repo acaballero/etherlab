@@ -10,13 +10,14 @@ menu_option_st<MODULATION_MODE> modulation_options[] = {{radio::modulation_names
 
 menu_option_st<radio::BAND> band_options[] = {{radio::bandNames[radio::BAND_AUTO], radio::BAND_AUTO}, {radio::bandNames[radio::BAND_70cm], radio::BAND_70cm},
                                               {radio::bandNames[radio::BAND_1m], radio::BAND_1m},     {radio::bandNames[radio::BAND_2m], radio::BAND_2m},
-                                              {radio::bandNames[radio::AIRBAND], radio::AIRBAND},     {radio::bandNames[radio::BAND_6m], radio::BAND_6m},
-                                              {radio::bandNames[radio::BAND_10m], radio::BAND_10m},   {radio::bandNames[radio::BAND_11m], radio::BAND_11m},
-                                              {radio::bandNames[radio::BAND_12m], radio::BAND_12m},   {radio::bandNames[radio::BAND_15m], radio::BAND_15m},
-                                              {radio::bandNames[radio::BAND_17m], radio::BAND_17m},   {radio::bandNames[radio::BAND_20m], radio::BAND_20m},
-                                              {radio::bandNames[radio::BAND_30m], radio::BAND_30m},   {radio::bandNames[radio::BAND_40m], radio::BAND_40m},
-                                              {radio::bandNames[radio::BAND_60m], radio::BAND_60m},   {radio::bandNames[radio::BAND_80m], radio::BAND_80m},
-                                              {radio::bandNames[radio::BAND_160m], radio::BAND_160m}, {radio::bandNames[radio::BAND_ALL], radio::BAND_ALL}};
+                                              {radio::bandNames[radio::AIRBAND], radio::AIRBAND},     {radio::bandNames[radio::BAND_FM], radio::BAND_FM},
+                                              {radio::bandNames[radio::BAND_6m], radio::BAND_6m},     {radio::bandNames[radio::BAND_10m], radio::BAND_10m},
+                                              {radio::bandNames[radio::BAND_11m], radio::BAND_11m},   {radio::bandNames[radio::BAND_12m], radio::BAND_12m},
+                                              {radio::bandNames[radio::BAND_15m], radio::BAND_15m},   {radio::bandNames[radio::BAND_17m], radio::BAND_17m},
+                                              {radio::bandNames[radio::BAND_20m], radio::BAND_20m},   {radio::bandNames[radio::BAND_30m], radio::BAND_30m},
+                                              {radio::bandNames[radio::BAND_40m], radio::BAND_40m},   {radio::bandNames[radio::BAND_60m], radio::BAND_60m},
+                                              {radio::bandNames[radio::BAND_80m], radio::BAND_80m},   {radio::bandNames[radio::BAND_160m], radio::BAND_160m},
+                                              {radio::bandNames[radio::BAND_ALL], radio::BAND_ALL}};
 
 menu_option_st<radio::IF_FILTER> if_filter_options[] = {
     {radio::IFFilterNames[radio::IF_FILTER_AUTO], radio::IF_FILTER_AUTO},     {radio::IFFilterNames[radio::IF_FILTER_300HZ], radio::IF_FILTER_300HZ},

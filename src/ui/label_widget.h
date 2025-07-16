@@ -85,6 +85,11 @@ class Label : public Widget {
     void before_paint() override;
 
     bool on_touch(const st_inputEvent e) override;
+
+    // Widths
+    uint16_t lw;
+    uint16_t vw;
+    uint16_t uw;
 };
 
 #endif // TRX_FRONTEND_LABEL_H

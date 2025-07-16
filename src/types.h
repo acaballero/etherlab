@@ -25,7 +25,7 @@ enum DIRECTION { BACKWARDS, STOP, FORWARD };
 
 enum LO_POWER { LO_POWER_LOW, LO_POWER_MEDIUM, LO_POWER_HIGH };
 
-enum FREQ_TYPE { STATION, BAND_START, BAND_END };
+enum FREQ_TYPE { STATION, BAND_START, BAND_END, ALL };
 /*
  * Frequency station
  */
@@ -72,6 +72,11 @@ struct st_freq_mem {
         width = o.width;
         id = o.id;
         return *this;
+    }
+
+    // Equals
+    bool operator==(const st_freq_mem &o) {
+        return id == o.id;
     }
 };
 

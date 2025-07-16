@@ -53,21 +53,19 @@ os::periodic_task task(2000, sdcard_loop);
 void sdcard_loop() {
     uint64_t t = HAL_GetTick();
 
-    if (usb_msc_active) {
-        if (hUsbDeviceHS.dev_state ==
-            USBD_STATE_CONFIGURED) { // Some hosts (almost all) don't cause a MSC_DeInit when the USB is detacched or unplugged so we also check the dev_state
+    if (usb_msc_active &&
+        (hUsbDeviceHS.dev_state ==
+         USBD_STATE_CONFIGURED)) { // Some hosts (almost all) don't cause a MSC_DeInit when the USB is detacched or unplugged so we also check the dev_state
 
-            // Don't touch the SD card when the host is controlling it as a MSC (mass storage device)
-            sdcard_info.status = MassStorageDeviceActive;
-            sdcard_signal.emit(&sdcard_info);
-        } else {
-            if (hUsbDeviceHS.dev_old_state == USBD_STATE_CONFIGURED && hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED) {
-                sdcard_info.status = Present;
-                unlock_sd_card(); // TODO: This has to be unlocked by the one who locked it (usb MSC initialization in usb.cpp)
-                init_USB_CDC();
-                sdcard_signal.emit(&sdcard_info);
-            }
-        }
+        // Don't touch the SD card when the host is controlling it as a MSC (mass storage device)
+        sdcard_info.status = MassStorageDeviceActive;
+        sdcard_signal.emit(&sdcard_info);
+    } else if ((!usb_msc_active && sdcard_info.status == MassStorageDeviceActive) ||
+               (hUsbDeviceHS.dev_old_state == USBD_STATE_CONFIGURED && hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED)) {
+        sdcard_info.status = Present;
+        unlock_sd_card(); // TODO: This has to be unlocked by the one who locked it (usb MSC initialization in usb.cpp)
+        init_USB_CDC();
+        sdcard_signal.emit(&sdcard_info);
     }
 
     if (!usb_msc_active && t - sdcard_last_check_ms > SDCARD_LOOP_PERIOD_MS) {

@@ -35,7 +35,7 @@ namespace freq_memory {
 
 // FileBuffer for frequency memory storage
 static std::unique_ptr<io::FileWrapper<>> db_file = nullptr;
-
+int curr_index = -1;
 static const char *FREQ_MEMORY_FILE = "madrid.db";
 
 // Serialize frequency memory entry to string
@@ -274,6 +274,20 @@ void fix_db() {
     LOG("Fixed memory database. Count: %d\n", db_file->line_count());
 }
 
+void init_memory_mode() {
+    uint64_t f = radio::get_frequency();
+    DIRECTION d = f == radio::get_max_frequency() ? BACKWARDS : FORWARD;
+
+    st_freq_mem mem = find_closest(f, d);
+
+    if (mem.freq) {
+        freq_memory::set(mem);
+    } else {
+        using namespace status;
+        handleError(ST_ERROR, "Frequency memory empty");
+    }
+}
+
 // Initialize file buffer
 bool init_file_buffer() {
 
@@ -288,11 +302,23 @@ bool init_file_buffer() {
     auto result = std::unique_ptr<io::FileWrapper<>>(new io::FileWrapper<>());
     if (result->load(FREQ_MEMORY_FILE, true)) {
         db_file = std::move(result);
+
         sdcard_signal.add(NULL, [](void *, void *) {
             if (sdcard_info.status != sdcard_STATUS::Mounted) {
                 db_file.reset();
             }
         });
+
+        radio::band_signal.add(NULL, [](void *, void *) {
+            if (get_memory_mode()) {
+                init_memory_mode();
+            }
+        });
+
+        if (get_memory_mode() && curr_index < 0) {
+            init_memory_mode();
+        }
+
         return true;
     } else {
         return false;
@@ -366,7 +392,7 @@ int get_freq_mem_count() {
 // st_freq_mem temporary register
 st_freq_mem tempFreqMem;
 char tempFreqBuf[] = "00 000 000 000";
-int curr_index = -1;
+
 using namespace Menu;
 
 // A function to save the edited data record
@@ -392,8 +418,12 @@ int find_index(st_freq_mem &data) {
 
     uint32_t line_pos = *res;
 
-    if (line_pos < db_file->line_count()) {
-        return line_pos;
+    // Linear search to find exact item (many can have the same frequency if they have different types)
+    for (int32_t pos = line_pos; pos >= 0 && pos < get_freq_mem_count(); pos++) {
+        st_freq_mem mem = get_by_index(pos);
+        if (mem == data) {
+            return pos;
+        }
     }
 
     return -1;
@@ -483,7 +513,7 @@ result edit_freq(eventMask, navNode &) {
             sprintf(tempFreqBuf, "%s", buf);
             saveTarget();
         },
-        config.f_min, config.f_max);
+        radio::get_min_frequency(), radio::get_max_frequency());
 
     return proceed;
 }
@@ -514,49 +544,66 @@ st_freq_mem next_prev(bool next) {
 
 /* Tune the radio to the frequency of a station */
 void set(st_freq_mem &mem) {
-    int ix = find_index(mem);
-
-    if (ix >= 0) {
-        curr_index = ix;
+    if (radio::set_frequency(mem.freq)) {
+        int ix = find_index(mem);
+        if (ix >= 0) {
+            curr_index = ix;
+        }
+        main_board::setModulationMode(mem.mode, false);
+    } else {
+        using namespace status;
+        handleError(ST_ERROR, "radio::set_frequency() was false");
     }
-
-    main_board::setModulationMode(mem.mode, false);
-    radio::set_frequency(mem.freq);
 }
 
 /* Sets the next frequency in a given direction */
-void set_next_prev(DIRECTION d) {
-    if (get_memory_mode() && curr_index >= 0) {
-        st_freq_mem curr_mem = get_by_index(curr_index);
-        st_freq_mem mem = find_closest(curr_mem.freq, d);
-        if (mem.freq) {
-            freq_memory::set(mem);
+void set_next_prev(DIRECTION d, FREQ_TYPE t) {
+    if (get_memory_mode()) {
+        if (curr_index >= 0) {
+            st_freq_mem curr_mem = get_by_index(curr_index);
+            st_freq_mem mem = find_closest(curr_mem.freq, d, t);
+            if (mem == curr_mem) {
+                mem = find_closest(curr_mem.freq + (d == FORWARD ? 1 : -1), d, t);
+            }
+            if (mem.freq) {
+                freq_memory::set(mem);
+            }
+        } else {
+            // Shoudn't happen
         }
     }
 }
 
 /* Finds the closest station to a given frequency and direction */
-st_freq_mem find_closest(uint64_t f, DIRECTION direction = STOP) {
+st_freq_mem find_closest(uint64_t f, DIRECTION direction, FREQ_TYPE t) {
     static st_freq_mem found_mem; // Static to return pointer
 
     INIT_OR_ABORT({})
 
     int count = get_freq_mem_count();
+    io::FindMode mode = direction == FORWARD ? io::GTE : io::LTE;
 
-    auto res = db_file->binary_search_first(f + (direction == FORWARD ? 1 : -1), extract_freq_func, direction == FORWARD ? io::GTE : io::LTE);
+    auto res = db_file->binary_search_first(f, extract_freq_func, mode);
 
     if (res.is_error()) {
         return {};
     }
 
-    int32_t line_pos = *res;
-
-    if (line_pos < count) {
-        found_mem = get_by_index(line_pos);
-        return found_mem;
-    } else {
+    int32_t start_pos = *res;
+    if (start_pos >= count) {
         return {};
     }
+
+    // Now a linear scan from binary search position (to discard unwanted types)
+    int32_t step = (direction == FORWARD) ? 1 : -1;
+    for (int32_t pos = start_pos + step; pos >= 0 && pos < count; pos += step) {
+        st_freq_mem mem = get_by_index(pos);
+        if (t == ALL || mem.type == t) {
+            return mem;
+        }
+    }
+
+    return {};
 }
 
 bool get_memory_mode() {
@@ -567,17 +614,9 @@ uint8_t toggle_memory_mode() {
     bool memory_mode = (get_memory_mode() == 0 ? 1 : 0);
 
     if (memory_mode) {
-        st_freq_mem mem = find_closest(radio::get_frequency());
-
-        if (mem.freq) {
-            freq_memory::set(mem);
-
-        } else {
-            using namespace status;
-            handleError(ST_ERROR, "Frequency memory empty");
-            memory_mode = false;
-            return 1;
-        }
+        init_memory_mode();
+    } else {
+        curr_index = -1;
     }
 
     config.memory_mode = memory_mode;

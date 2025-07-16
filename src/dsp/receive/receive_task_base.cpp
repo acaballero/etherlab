@@ -172,6 +172,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
         }
 
         if (!ret) {
+            LOG("Error configuring decimator for mod:%d, fs:%d, bw:%d, dec:%d\n", mod, stage_fs, next_stage_bandwidth, factor);
             return false;
         }
 
@@ -218,8 +219,14 @@ bool ReceiveTaskBase::start() {
 
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
-    // calculate decimation ratio to get to audio bandwidth
-    while (status.sample_rate > get_audio_bw_hz() * 2 && dec_factor < 32) {
+    status.bandwidth = radio::get_bandwidth_hz();
+
+    // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
+    //(while using decimation factors of 2^n and the minimum signal bandwidth
+
+    uint32_t target_bandwidth = max2(get_audio_bw_hz(), status.bandwidth);
+
+    while (status.sample_rate > target_bandwidth * 2 && dec_factor < 32) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }
@@ -227,8 +234,6 @@ bool ReceiveTaskBase::start() {
     status.direction = DSP_DIRECTION_INOUT;
 
     MODULATION_MODE mod = get_modulation_mode();
-
-    status.bandwidth = radio::get_bandwidth_hz();
 
     status.decimation_factor = dec_factor;
     status.bits_per_sample = sizeof(adc_type) * 8;
@@ -240,6 +245,7 @@ bool ReceiveTaskBase::start() {
     bool ret = init_decimators(mod);
 
     if (!ret) {
+        main_board::setMute(GPIO_PIN_RESET);
         halt(DSP_ERR);
         return false;
     }
@@ -254,6 +260,7 @@ bool ReceiveTaskBase::start() {
                         .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
 
     if (!ret) {
+        main_board::setMute(GPIO_PIN_RESET);
         halt(DSP_ERR);
         return false;
     }
@@ -265,7 +272,7 @@ bool ReceiveTaskBase::start() {
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
     // Se the fifo processing frequency
-    update_timer(TASKS_TIMER_TYPEDEF, 80, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
+    update_timer(TASKS_TIMER_TYPEDEF, 30, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
     status.status = DSP_STATUS_RUNNING;
     return true;
 }

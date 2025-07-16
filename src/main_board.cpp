@@ -426,6 +426,10 @@ MODULATION_MODE getModulationMode() {
 
 void setModulationMode(MODULATION_MODE mod_val, bool force) {
 
+    if (mod_val >= MODULATION_MODE_ALL) {
+        return;
+    }
+
     if (battery::battery_info.status == battery::BATTERY_STATUS_VERY_LOW) { // Disble all if low power
         setGPIOExpPort(&hmcp01, MCP23017_PORTA, 0x00);
         setGPIOExpPort(&hmcp01, MCP23017_PORTB, 0xFF);

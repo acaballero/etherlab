@@ -286,7 +286,7 @@ template <typename T> bool ConfigFile<T>::load(const char *filename, T *cfg) {
     bool b = f_open(file, filename, FA_READ) == FR_OK;
 
     b = b && load(cfg);
-    b = b && f_close(file);
+    b = b && f_close(file) == FR_OK;
 
     unlock_sd_card();
 

@@ -10,18 +10,31 @@
 void Button::set_text(char const *t) {
     strncpy(text, t, MAX_CHARS);
     if (variable_width) {
+        calc_widths();
         set_width();
     }
+
     set_dirty();
 }
 
-char *Button::get_text() { return text; }
+char *Button::get_text() {
+    return text;
+}
 
-void Button::set_two_lines(bool b) { two_lines = b; }
+void Button::set_two_lines(bool b) {
+    two_lines = b;
+}
+
+void Button::calc_widths() {
+    display->setFont(font);
+    lw = display->get_text_size(text).width();
+    vw = display->get_text_size(value).width();
+    uw = display->get_text_size(unit).width();
+}
 
 void Button::before_paint() {
     if (this->dirty()) {
-        display->setFont(font);
+        calc_widths();
     }
 }
 
@@ -48,23 +61,13 @@ void Button::set_width() {
 
     Rect r = parent_rect();
 
-    uint16_t lw = strlen(text);
-    uint16_t vw = strlen(value);
-    uint16_t uw = strlen(unit);
-
     if (two_lines) {
-        uint16_t line1w = lw * font->width;
-        uint16_t line2w = (vw + uw) * font->width;
+        uint16_t line1w = lw;
+        uint16_t line2w = (vw + uw);
         r.set_width(max2(line1w, line2w) + (2 * display->get_padding_x()));
     } else {
         uint16_t w = (lw + vw + uw);
-        if (uw) {
-            w++;
-        }
-
-        int16_t width = w * (font->width);
-
-        r.set_width(width + (2 * display->get_padding_x()));
+        r.set_width(w + (2 * display->get_padding_x()));
     }
 
     set_parent_rect(r);
@@ -96,15 +99,12 @@ void Button::paint_callback() {
         display->gotoXY(display->get_padding_x(), (parent_rect().height() - text_height) / 2);
         fn_writer();
     } else {
-        uint16_t lw = strlen(text);
-        uint16_t vw = strlen(value);
-        uint16_t uw = strlen(unit);
 
         if (two_lines) {
 
-            uint16_t line2w = (vw + uw) * font->width;
+            uint16_t line2w = (vw + uw);
 
-            uint16_t xlabel = (box_width - lw * font->width) >> 1;
+            uint16_t xlabel = (box_width - lw) >> 1;
             uint16_t xval = (box_width - line2w) >> 1;
             uint16_t ylabel = (parent_rect().height() - ((font->height + 1) << 1)) >> 1;
             uint16_t yval = ylabel + font->height + 3;
@@ -121,18 +121,13 @@ void Button::paint_callback() {
         } else {
 
             uint16_t w = (lw + vw + uw);
-            if (uw) {
-                w++;
-            }
-
-            int16_t width = w * (font->width);
 
             int16_t x;
 
             if (align == ALIGN_CENTER) {
-                x = (box_width - width + 1) >> 1;
+                x = (box_width - w + 1) >> 1;
             } else if (align == ALIGN_RIGHT) {
-                x = box_width - width - display->get_padding_x();
+                x = box_width - w - display->get_padding_x();
             } else {
                 x = display->get_padding_x();
             }
@@ -198,9 +193,13 @@ bool Button::on_input(const st_inputEvent event) {
     }
 }
 
-uint16_t Button::get_fg() const { return fg_color; }
+uint16_t Button::get_fg() const {
+    return fg_color;
+}
 
-void Button::set_fg(uint16_t fg) { set_color(fg, fg_color_value, fg_color_unit); }
+void Button::set_fg(uint16_t fg) {
+    set_color(fg, fg_color_value, fg_color_unit);
+}
 
 void Button::set_value(const char *t) {
     strncpy(value, t, MAX_CHARS_VALUE);
@@ -218,20 +217,38 @@ void Button::set_color(uint16_t l, uint16_t v, uint16_t u) {
     fg_color_unit = u;
 }
 
-void Button::set_dimmed(bool b) { dimmed = b; };
+void Button::set_dimmed(bool b) {
+    dimmed = b;
+};
 
-uint16_t Button::get_bg() const { return bg_color; }
+uint16_t Button::get_bg() const {
+    return bg_color;
+}
 
-void Button::set_text_bg(uint16_t c) { text_bg_color = c; }
+void Button::set_text_bg(uint16_t c) {
+    text_bg_color = c;
+}
 
-void Button::set_bg(uint16_t bg) { Button::bg_color = bg; }
+void Button::set_bg(uint16_t bg) {
+    Button::bg_color = bg;
+}
 
-uint16_t Button::get_shadow() const { return shadow; }
+uint16_t Button::get_shadow() const {
+    return shadow;
+}
 
-void Button::set_shadow(uint16_t shadow) { Button::shadow = shadow; }
+void Button::set_shadow(uint16_t shadow) {
+    Button::shadow = shadow;
+}
 
-FontDef *Button::get_font() const { return font; }
+FontDef *Button::get_font() const {
+    return font;
+}
 
-ButtonStyle Button::get_style() const { return style; }
+ButtonStyle Button::get_style() const {
+    return style;
+}
 
-void Button::set_style(ButtonStyle style) { Button::style = style; }
+void Button::set_style(ButtonStyle style) {
+    Button::style = style;
+}

@@ -295,6 +295,7 @@ class Display {
     void set_transparency(uint8_t v);
 
     Size get_text_size(const std::string &str);
+    Size get_text_size(const char *r);
 
     uint8_t get_transparency();
 

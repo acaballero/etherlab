@@ -16,8 +16,8 @@
 // If one task needs,for example, 512 bytes and another 1500, the FIFO block cannot be either 1500 or 3000
 // TODO: This is a consequence of using a FIFO of contiguous memory blocks. A better approach is using a FIFO of memory "buckets", so the fifo contains
 // pointers to memory blocks of arbirary size. However, note that the current implementation ensures all fifo operations are O(1) and very fast.
-#define DSP_FIFO_BLOCK_BYTES (512) * 8         // 512 is the default SD sector size
-#define DSP_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 4 // Must be multiple of DSP_FIFO_BLOCK_BYTES
+#define DSP_FIFO_BLOCK_BYTES (512) * 8 * 2     // 512 is the default SD sector size. Also, this must be more than MAX_DECIMATION_FACTOR*DSP_BLOCK
+#define DSP_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 3 // Must be multiple of DSP_FIFO_BLOCK_BYTES
 #define DSP_OUTPUT_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 2
 // ACD DMA buffer
 extern complex_t adc_buff[DSP_BLOCK * 2];
