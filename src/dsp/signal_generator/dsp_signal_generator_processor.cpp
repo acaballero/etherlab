@@ -7,9 +7,10 @@
 #include "dsp/blocks/signal_generator.h"
 #include "types.h"
 
-void DspSignalGeneratorProcessor::work(const buffer_t<complex_t> *buffer) {
+void DspSignalGeneratorProcessor::work(const buffer_t<adc_type> *buffer) {
     this->status.processed_blocks++;
-    modulator.get_block(const_cast<buffer_t<complex_t> &>(*buffer));
+    buffer_t<complex_t> wrapped_buffer{(complex_t *)buffer->p, buffer->count};
+    modulator.get_block(wrapped_buffer);
 
     int16_t *out_p = (int16_t *)buffer->p;
 

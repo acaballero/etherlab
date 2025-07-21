@@ -76,7 +76,7 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
             compressor.work(buff_out_f32);
         }
         if (deemph_enabled) {
-            deemph_filter.decimate(buff_out_f32, buff_out_f32, 0, 2, 2);
+            deemph_filter.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
         } else {
             // Disabled. Minimal to negligible improvement
             //  buffer_t<float32_t> b = {(float32_t *)bi1_p, (size_t)block_size_out * 2};
@@ -98,7 +98,7 @@ bool ReceiveTask::init() {
 
     if (dsp::dsp_config.deemphasis_enabled && (mod == FM || mod == WFM)) {
         // Init de-emphasis FM filter
-        deemph_filter.config(status.sample_rate, 3000, 1);
+        deemph_filter.config(status.sample_rate, 3000, 1, LPF);
         deemph_enabled = true;
     } else {
         deemph_enabled = false;

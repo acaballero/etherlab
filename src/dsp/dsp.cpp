@@ -43,7 +43,7 @@ os::periodic_task task(50, dsp_loop);
 } // namespace dsp
 Task *current_task;
 DspProcessor *current_processor;
-buffer_t<complex_t> *current_buffer;
+buffer_t<adc_type> *current_buffer;
 dsp::st_dsp_command pending_command{DSP_COMMAND_NONE};
 DSP_STATUS dspstatus;
 #if !EXECUTE_TASKS_ON_INTERRUPT
@@ -278,7 +278,7 @@ inline void adc_work() {
             // TODO: Decimate here vs in both FFT and current DSP task?
         }
 
-        dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, current_buffer->count);
+        dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
     }
 
 #endif
@@ -362,7 +362,7 @@ void dsp_stop() {
         // multiple objects that are stopped is not that critical
 
         for (int i = 0; i < DSP_BLOCK * 2; i++) {
-            dac_buff[i] = {{(adc_type)config.hw.dac_offset, (adc_type)config.hw.dac_offset}};
+            dac_buff[i] = (adc_type)config.hw.dac_offset;
         }
 
         LOG("dspStop\n");

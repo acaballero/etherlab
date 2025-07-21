@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "dsp/buffer.hpp"
+#include "dsp/decimation/dsp_decimator.h"
 #include "dsp/decimation/dsp_iir_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
@@ -20,11 +21,26 @@
 #include "dsp/modulation/dsp_demodulate.h"
 #include "dsp/blocks/dc_block.h"
 #include "dsp/audio/audio_compressor.hpp"
+#include "memory_allocator.h"
 
 class ReceiveTaskBase : public Task {
 
   public:
-    using Task::Task;
+    ReceiveTaskBase(void (*on_success)(), void (*on_error)(DSP_ERROR)) : Task(on_success, on_error) {
+        // Allocate memory
+        tmp_buff_data = (float32_t *)CCMMemoryAllocator::alloc(samples_per_batch * 8 * sizeof(float32_t));
+
+        bi1_p = tmp_buff_data;
+        bq1_p = tmp_buff_data + samples_per_batch;
+        bi2_p = tmp_buff_data + samples_per_batch * 2;
+        bq2_p = tmp_buff_data + samples_per_batch * 3;
+        out_f32_p = tmp_buff_data + samples_per_batch * 4;
+        out_f32_p_2 = tmp_buff_data + samples_per_batch * 6;
+    };
+
+    ~ReceiveTaskBase() override {
+        CCMMemoryAllocator::free(tmp_buff_data);
+    }
 
     static constexpr uint8_t max_decimators = 3; // Max number of cascaded decimators
 
@@ -36,10 +52,11 @@ class ReceiveTaskBase : public Task {
 
   protected:
     // Cascaded decimators
-    DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, complex_t_f32> decimators[max_decimators - 1];
+    std::unique_ptr<DspDecimator<float32_t>>
+        decimators[max_decimators - 1]; // DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, complex_t_f32> decimators[max_decimators - 1];
     // Signal decimators. Last narrowband signal decimators
     // Either complex for assymmetric band-pass filters or real, for symmetric low-pass
-    std::unique_ptr<IDspDecimatorFloat> signal_decimator;
+    std::unique_ptr<DspDecimator<float32_t>> signal_decimator;
 
     DCBlock dc_block_i{0.999};
     DCBlock dc_block_q{0.999};
@@ -49,21 +66,26 @@ class ReceiveTaskBase : public Task {
 
     static constexpr int samples_per_batch =
         DSP_BLOCK; // Note all decimators are configured for a block size of DSP_BLOCK. Don't use bigger blocks or memory will be corrupted
-    static constexpr int bytes_per_batch = samples_per_batch * 2 * 2; // complex int16 samples
+    static constexpr int bytes_per_batch = samples_per_batch * 2 * 2;  // complex int16 samples
+    static constexpr int bytes_per_batch_real = samples_per_batch * 2; // complex int16 samples
 
-    float32_t tmp_buff_data[samples_per_batch * 6];
+    float32_t *tmp_buff_data; // [samples_per_batch * 8];
 
     // 4 temp buffers are used to purposedly avoid overlapping buffers or in-place decimation processing in the hope (is it worth it?) that the compiler
     // is able to fully optimize the loops with instruction reordering
-    float32_t *bi1_p = tmp_buff_data;
-    float32_t *bq1_p = tmp_buff_data + samples_per_batch;
-    float32_t *bi2_p = tmp_buff_data + samples_per_batch * 2;
-    float32_t *bq2_p = tmp_buff_data + samples_per_batch * 3;
-    float32_t *out_f32_p = tmp_buff_data + samples_per_batch * 4;
+    float32_t *bi1_p;
+    float32_t *bq1_p;
+    float32_t *bi2_p;
+    float32_t *bq2_p;
+    float32_t *out_f32_p;
+    float32_t *out_f32_p_2;
 
     bool init_decimators(MODULATION_MODE mod);
     uint8_t n_decimators;
+    uint8_t n_pre_decimators;
 
+    uint32_t demodulation_bandwidth_hz; // Minimum bandwidth for demodulation (double sideband)
+    uint32_t demodulation_sample_rate;
     virtual MODULATION_MODE get_modulation_mode() = 0;
     virtual bool init() = 0;
     virtual void process_audio(buffer_t<float32_t> &buff_out_f32) = 0;

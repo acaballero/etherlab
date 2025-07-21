@@ -17,8 +17,13 @@ template class DspIIRDecimator<1>; // Pre-declared
 template class DspIIRDecimator<2>; // Pre-declared
 
 template <int order> void DspIIRDecimator<order>::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) {
+    // FIXME: Shouldn't this use a different decimator instance for each channel?
     this->decimate(src, dst, 0, 2, 2);
     this->decimate(src, dst, 1, 2, 2);
+}
+
+template <int order> void DspIIRDecimator<order>::decimate(int16_t *src_i, int16_t *src_q, int16_t *dst_i, int16_t *dst_q, size_t n_samples) {
+    status::handleError(status::ST_ERROR, "Not implemented");
 }
 
 /*
@@ -151,7 +156,7 @@ void test_iir_decimator() {
 
     DspIIRDecimator<4> d;
 
-    d.config(10000, 5000, 8);
+    d.config(10000, 5000, 8, LPF);
     int16_t buff[16];
     int16_t buff_o[16];
     buffer_t<int16_t> b(buff, 16);

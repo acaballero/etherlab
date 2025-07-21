@@ -7,6 +7,16 @@
 
 #include "dsp_config.h"
 #include <hw/stm32.h>
+
+#define CCM_SECTION __attribute__((section(".fccmram"))) // 64KB CCM RAM at 0x10000000
+#define RAM_SECTION __attribute__((section(".ram")))     // Main SRAM
+#define ALIGN_32 __attribute__((aligned(32)))            // 32-byte alignment for SIMD
+#define ALIGN_16 __attribute__((aligned(16)))            // 16-byte alignment
+#define ALIGN_8 __attribute__((aligned(8)))              // 8-byte alignment
+#define FORCE_INLINE __attribute__((always_inline)) inline
+#define HOT_FUNCTION __attribute__((hot)) // Frequently called
+#define FLATTEN __attribute__((flatten))  // Inline all calls
+
 #define __FPU_PRESENT 1U
 //#define __FPU_USED 1U
 #define ARM_MATH_CM4 1

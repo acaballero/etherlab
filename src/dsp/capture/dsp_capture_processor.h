@@ -5,6 +5,7 @@
 #ifndef TRX_FRONTEND_DSP_CAPTURE_PROCESSOR_H
 #define TRX_FRONTEND_DSP_CAPTURE_PROCESSOR_H
 
+#include "dsp/dsp_common.h"
 #include "dsp/dsp_processor.h"
 #include "dsp/blocks/dc_block.h"
 #include "dsp/decimation/dsp_fir_decimator_float.h"
@@ -18,7 +19,7 @@ class DspCaptureProcessor : public DspProcessor {
     }
 
     bool start() override;
-    void work(const buffer_t<complex_t> *buffer) override;
+    void work(const buffer_t<adc_type> *buffer) override;
 
   private:
     static constexpr int samples_per_batch =
@@ -31,7 +32,7 @@ class DspCaptureProcessor : public DspProcessor {
     float32_t *bi2_p = tmp_buff_data + samples_per_batch * 2;
     float32_t *bq2_p = tmp_buff_data + samples_per_batch * 3;
 
-    DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, complex_t_f32> decimator;
+    DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS> decimator;
 
     DCBlock dc_blocker_i{.999};
     DCBlock dc_blocker_q{.999};

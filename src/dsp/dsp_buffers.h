@@ -20,10 +20,10 @@
 #define DSP_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 3 // Must be multiple of DSP_FIFO_BLOCK_BYTES
 #define DSP_OUTPUT_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 2
 // ACD DMA buffer
-extern complex_t adc_buff[DSP_BLOCK * 2];
+extern adc_type adc_buff[DSP_BLOCK * 4];
 
 // DAC DMA buffer
-extern complex_t dac_buff[DSP_BLOCK * 2];
+extern adc_type dac_buff[DSP_BLOCK * 4];
 
 extern buffer_t<adc_type> dsp_temp_buf;
 
@@ -32,10 +32,10 @@ extern uint8_t dsp_output_fifo_buff[DSP_OUTPUT_FIFO_SIZE];
 extern uint8_t dsp_input_fifo_buff[DSP_FIFO_SIZE];
 
 // Half-DMA buffer wrappers
-extern buffer_t<complex_t> adc_buffer_1;
-extern buffer_t<complex_t> adc_buffer_2;
-extern buffer_t<complex_t> dac_buffer_1;
-extern buffer_t<complex_t> dac_buffer_2;
+extern buffer_t<adc_type> adc_buffer_1;
+extern buffer_t<adc_type> adc_buffer_2;
+extern buffer_t<adc_type> dac_buffer_1;
+extern buffer_t<adc_type> dac_buffer_2;
 
 extern FIFO output_stream;
 extern FIFO input_stream;

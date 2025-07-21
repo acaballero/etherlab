@@ -14,10 +14,12 @@
 class DspSignalGeneratorProcessor : public DspProcessor {
 
   public:
-    DspSignalGeneratorProcessor() : modulator(&pulse, &sine) { this->status.direction = DSP_DIRECTION_OUT; }
+    DspSignalGeneratorProcessor() : modulator(&pulse, &sine) {
+        this->status.direction = DSP_DIRECTION_OUT;
+    }
 
     void set_config(uint32_t baseband_f, uint32_t mod_f, uint8_t mod_duty, uint32_t sample_rate, adc_type dc_offset);
-    void work(const buffer_t<complex_t> *buffer) override;
+    void work(const buffer_t<adc_type> *buffer) override;
 
   protected:
     SignalGenerator sine;

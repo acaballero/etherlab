@@ -21,15 +21,15 @@ MODULATION_MODE APRSTask::get_modulation_mode() {
 void APRSTask::process_audio(buffer_t<float32_t> &audio) {
 
     // Audio signal processing
-    // NOTE: Expects interleaved IQ samples buffer
+    // NOTE: Expects REAL samples buffer
 
     if (deemph_enabled) {
-        deemph_filter.decimate(audio, audio, 0, 2, 2);
+        deemph_filter.decimate(audio, audio, 0, 1, 1);
     }
 
     float32_t *audio_sample_p = audio.p;
 
-    for (size_t c = 0; c < audio.count; c++) {
+    for (size_t c = 0; c < audio.count; c++, audio_sample_p++) {
         const int32_t sample_int = *audio_sample_p;
         int32_t current_sample = __SSAT(sample_int, 16);
 
@@ -101,8 +101,6 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
                 }
             }
         }
-
-        audio_sample_p += 2;
     }
 }
 
@@ -230,7 +228,7 @@ bool APRSTask::init() {
 
     state = WAIT_FLAG;
 
-    deemph_filter.config(status.sample_rate, 1000, 1);
+    deemph_filter.config(status.sample_rate, 1000, 1, LPF);
 
     return true;
 }

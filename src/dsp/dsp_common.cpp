@@ -7,6 +7,7 @@
 #include "dsp_config.h"
 #include "config.h"
 #include "arm_math.h"
+#include "status.h"
 #include <cstddef>
 
 namespace dsp {
@@ -95,9 +96,24 @@ void s16_to_q15(const adc_type *src, q15_t *dst, size_t size) {
 }
 
 void s16_to_f32(const adc_type *src, float32_t *dst, size_t size) {
-    for (size_t i = 0; i < size; i++) {
-        *(dst++) = *(src++);
+    size_t i = 0;
+
+    // Unrolling for optimization (not needed when -O3 is used, but nice to have for -Og)
+    for (; i + 3 < size; i += 4) {
+        dst[i] = (float32_t)src[i];
+        dst[i + 1] = (float32_t)src[i + 1];
+        dst[i + 2] = (float32_t)src[i + 2];
+        dst[i + 3] = (float32_t)src[i + 3];
     }
+
+    // Handle remainder
+    for (; i < size; i++) {
+        dst[i] = (float32_t)src[i];
+    }
+
+    // for (size_t i = 0; i < size; i++) {
+    //     *(dst++) = *(src++);
+    // }
 }
 
 void q15_to_s16(const q15_t *src, adc_type *dst, size_t size) {
@@ -162,16 +178,45 @@ void zip_c16(const adc_type *__restrict src_i, const adc_type *__restrict src_q,
 }
 
 void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples) {
-    for (uint16_t i = 0; i < n_samples; i++) {
-        *(dst_i++) = *(src++);
+    const float32_t *src_end = src + (2 * n_samples);
 
-        *(dst_q++) = *(src++);
+    // Unroll by 4 complex samples (8 floats)
+    while (src + 8 <= src_end) {
+        *dst_i++ = *src++; // I0
+        *dst_q++ = *src++; // Q0
+        *dst_i++ = *src++; // I1
+        *dst_q++ = *src++; // Q1
+        *dst_i++ = *src++; // I2
+        *dst_q++ = *src++; // Q2
+        *dst_i++ = *src++; // I3
+        *dst_q++ = *src++; // Q3
+    }
+
+    // Handle remainder
+    while (src < src_end) {
+        *dst_i++ = *src++;
+        *dst_q++ = *src++;
     }
 }
 void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_samples) {
-    for (uint16_t i = 0; i < n_samples; i++) {
-        *(dst++) = *(src_i++);
-        *(dst++) = *(src_q++);
+    const float32_t *si_end = src_i + n_samples;
+
+    // Unroll by 4 complex samples
+    while (src_i + 4 <= si_end) {
+        *dst++ = *src_i++; // I0
+        *dst++ = *src_q++; // Q0
+        *dst++ = *src_i++; // I1
+        *dst++ = *src_q++; // Q1
+        *dst++ = *src_i++; // I2
+        *dst++ = *src_q++; // Q2
+        *dst++ = *src_i++; // I3
+        *dst++ = *src_q++; // Q3
+    }
+
+    // Handle remainder
+    while (src_i < si_end) {
+        *dst++ = *src_i++;
+        *dst++ = *src_q++;
     }
 }
 

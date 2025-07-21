@@ -13,7 +13,7 @@
 class DspProcessor : public Task {
 
   public:
-    virtual void work(const buffer_t<complex_t> *buffer) = 0;
+    virtual void work(const buffer_t<int16_t> *buffer) = 0;
 
     bool start() override {
         // LOG("DspProcessor START\n");

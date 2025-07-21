@@ -9,7 +9,7 @@
 #include "dsp_capture_processor.h"
 #include "hw/stm32f4xx/clocks.h"
 
-void DspCaptureProcessor::work(const buffer_t<complex_t> *buffer) {
+void DspCaptureProcessor::work(const buffer_t<adc_type> *buffer) {
 
     // This processor does decimation and some heavy processing, which is usually done in the related taksk. However,
     // decimating here saves memory since the capture task needs to process large blocks for the SD card writes to be efficient, but their size
@@ -20,7 +20,7 @@ void DspCaptureProcessor::work(const buffer_t<complex_t> *buffer) {
     }
 
     auto p = buffer->p;
-    int size = buffer->count;
+    size_t size = buffer->count;
 
     // TODO: Perhaps converting the stream to float for decimation and back is not worth it here. At least using the unzipped version of the decimator
     // does not make much sense for just one decimation step (the f32 interleaved buffer could be wrapped in buffer_t<complex_t_f32> bb = {(complex_t_f32
@@ -30,7 +30,10 @@ void DspCaptureProcessor::work(const buffer_t<complex_t> *buffer) {
 
     dsp::unzip_f32((const float32_t *)bi1_p, bi2_p, bq2_p, size);
 
-    decimator.decimate(bi2_p, bq2_p, bi1_p, bq1_p, size);
+    buffer_t<float32_t> b1{bi2_p, size, 0, COMPLEX_SEQUENTIAL};
+    buffer_t<float32_t> b2{bi1_p, status.decimated_block_size, 0, COMPLEX_SEQUENTIAL};
+
+    decimator.decimate(b1, b2);
 
     dsp::zip_f32(bi1_p, bq1_p, (float32_t *)bi2_p, status.decimated_block_size);
 

@@ -115,14 +115,14 @@ SECTIONS
    */
    .ccmram :
    {
-        . = ALIGN(4);
+        . = ALIGN(32);
         _sccmram = .;       /* create a global symbol at ccmram start */
         *(.ccmram)
         *(.ccmram*)
         *(.fccmram)         /* Another section to allow to put functions and data in this memory. If we use the same, the compiler will complain with a "section conflict error" */
         *(.fccmram*)
 
-        . = ALIGN(4);
+        . = ALIGN(32);
         _eccmram = .;       /* create a global symbol at ccmram end */
    } >CCMRAM AT> FLASH
 

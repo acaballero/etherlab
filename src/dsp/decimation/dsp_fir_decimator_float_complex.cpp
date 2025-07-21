@@ -12,12 +12,57 @@
 #include "dsp/window.h"
 #include <algorithm>
 #include <exception>
+#include "handlers.h"
 #include "printf.h"
 
 template class DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>;
 
-template <int TAPS> void DspFIRDecimatorFloatComplex<TAPS>::decimate(buffer_t<complex_t_f32> &src, buffer_t<complex_t_f32> &dst) {
-    // Not implemented
+template <int TAPS> void DspFIRDecimatorFloatComplex<TAPS>::decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst) {
+
+    if (src.format == COMPLEX_SEQUENTIAL && dst.format == COMPLEX_SEQUENTIAL) {
+        decimate((float32_t *)src.p, (float32_t *)src.p + src.count, (float32_t *)dst.p, (float32_t *)dst.p + dst.count, dst.count);
+    } else if (src.format == REAL && dst.format == REAL) {
+        decimate(src.p, dst.p, src.count);
+    } else {
+        HardFault_Handler();
+    }
+}
+
+template <int TAPS> void DspFIRDecimatorFloatComplex<TAPS>::decimate(float32_t *src, float32_t *dst, size_t n_samples) {
+
+    // When processing real signals with complex filters, we treat the real signal
+    // as a complex signal with zero imaginary part: x[n] = x_real[n] + j*0
+
+    // Apply complex filtering:
+    // y_real[n] = FIR(x_real, h_real) - FIR(0, h_imag) = FIR(x_real, h_real)
+    // y_imag[n] = FIR(x_real, h_imag) + FIR(0, h_real) = FIR(x_real, h_imag)
+
+    // Process real part: x_real * h_real (this becomes the real output)
+    arm_fir_decimate_f32(&fir_xi_hi, src, tmp_buff_i, n_samples);
+
+    // Process imaginary part: x_real * h_imag (this becomes the imaginary output)
+    arm_fir_decimate_f32(&fir_xi_hq, src, tmp_buff_q, n_samples);
+
+    // Output only the real part (magnitude preservation)
+    for (size_t i = 0; i < n_samples / this->factor; ++i) {
+        dst[i] = tmp_buff_i[i]; // Real part only
+    }
+
+    // Output the magnitude
+    // This gives you the envelope/magnitude of the complex filtered signal
+    /*
+    for (size_t i = 0; i < n_samples / this->factor; ++i) {
+        dst[i] = sqrtf(tmp_buff_i[i] * tmp_buff_i[i] + tmp_buff_q[i] * tmp_buff_q[i]);
+    }
+    */
+
+    // Output the phase
+    // This extracts phase information from the complex filtered signal
+    /*
+    for (size_t i = 0; i < n_samples / this->factor; ++i) {
+        dst[i] = atan2f(tmp_buff_q[i], tmp_buff_i[i]);
+    }
+    */
 }
 
 template <int TAPS> void DspFIRDecimatorFloatComplex<TAPS>::decimate(float32_t *src_i, float32_t *src_q, float32_t *dst_i, float32_t *dst_q, size_t n_samples) {

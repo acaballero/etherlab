@@ -21,11 +21,13 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
     DspIIRDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<int16_t>(input_rate, output_rate, factor), type{LPF} {
         this->init();
     };
-
+    bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_frequency = 0) override {
+        config(input_rate, bandwidth, factor, LPF);
+    }
     bool config(uint32_t input_rate, uint32_t cutoff_freq, uint16_t factor = 1, filter_type type = LPF);
 
     void decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) override;
-
+    void decimate(int16_t *src_i, int16_t *src_q, int16_t *dst_i, int16_t *dst_q, size_t n_samples) override;
     void decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, uint8_t channel_n, uint8_t n_channels_in, uint8_t n_channels_out);
 
     void decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst, uint8_t channel_n, uint8_t n_channels_in, uint8_t n_channels_out);

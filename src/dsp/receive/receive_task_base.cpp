@@ -3,8 +3,8 @@
 //
 
 #include "receive_task_base.h"
-#include "arm_math.h"
 #include "dsp/blocks/dc_block.h"
+#include "dsp/buffer.hpp"
 #include "dsp/decimation/dsp_fir_decimator_float.h"
 #include "dsp/decimation/dsp_fir_decimator_float_complex.h"
 #include "dsp/dsp_buffers.h"
@@ -26,15 +26,36 @@
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
 #include <cstddef>
+#include <cstring>
 #include <memory>
 #include <sys/_stdint.h>
-
 #include "printf.h"
 #include "utils.hpp"
 
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
+void log_buff(float32_t *buff, int count, const std::string &title) {
+
+    LOG(title.c_str());
+    LOG(" : ");
+    for (int i = 0; i < count; i++) {
+        LOG("%.3f,", buff[i]);
+    }
+    LOG("\n\n");
+}
+
+void log_buff(adc_type *buff, int count, const std::string &title) {
+
+    LOG(title.c_str());
+    LOG(" : ");
+    for (int i = 0; i < count; i++) {
+        LOG("%d,", buff[i]);
+    }
+    LOG("\n\n");
+}
+
+HOT_FUNCTION
 void ReceiveTaskBase::work() {
     if (status.status == DSP_STATUS_RUNNING) {
 
@@ -45,67 +66,117 @@ void ReceiveTaskBase::work() {
         uint32_t free = output_stream.free(&out_p);
         uint32_t av = input_stream.available(&in_p);
         uint32_t output_samples = 0;
-        float32_t *tmp_out = out_f32_p;
+        uint32_t demod_samples = 0;
+        float32_t *demod_tmp_out = out_f32_p;
+        float32_t *tmp_out = out_f32_p_2;
 
         if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
 
             status.processed_blocks++;
             av = DSP_FIFO_BLOCK_BYTES;
-
             in_start = in_p;
 
             // Process blocks (DSP_BLOCK items each)
             while (av >= bytes_per_batch) {
 
+                int dec_phase = 0; // Decimation phase
+                int curr_dec_factor = 1;
+                int factor = 0;
                 uint16_t block_size_in = samples_per_batch;
-                uint16_t block_size_out = samples_per_batch / status.decimation_factor;
 
                 dsp::s16_to_f32((const adc_type *)in_p, bi2_p, block_size_in << 1);
 
                 dsp::unzip_f32((const float32_t *)bi2_p, bi1_p, bq1_p, block_size_in);
 
-                for (int i = 0; i < n_decimators; i++) {
+                // Pre-demodulation decimation: decimate as much as the demoulation bandwidth allows
 
-                    if (i < n_decimators - 1) {
-                        // Half-band decimators
-                        decimators[i].decimate(bi1_p, bq1_p, bi2_p, bq2_p, block_size_in);
-                        block_size_in /= decimators[i].get_factor();
-                    } else {
+                while (dec_phase < n_pre_decimators) {
+
+                    bool last_of_phase = dec_phase == n_pre_decimators - 1;
+                    bool last = dec_phase == n_decimators - 1;
+                    float32_t *dec_out_i = last_of_phase ? demod_tmp_out : bi2_p;
+                    float32_t *dec_out_q = dec_out_i + samples_per_batch;
+
+                    if (last) {
                         // Output decimator. This is the final nawrrowband decimator
-                        signal_decimator->decimate(bi1_p, bq1_p, tmp_out, tmp_out + samples_per_batch, block_size_in);
+                        signal_decimator->decimate(bi1_p, bq1_p, dec_out_i, dec_out_q, block_size_in);
+                        factor = signal_decimator->get_factor();
+                    } else {
+                        // Half-band decimators
+                        decimators[dec_phase]->decimate(bi1_p, bq1_p, dec_out_i, dec_out_q, block_size_in);
+                        factor = decimators[dec_phase]->get_factor();
                     }
 
                     SWAP_PTR(bi1_p, bi2_p);
                     SWAP_PTR(bq1_p, bq2_p);
+                    dec_phase++;
+                    block_size_in /= factor;
+                    curr_dec_factor *= factor;
                 }
 
-                tmp_out += block_size_out;
-                output_samples += block_size_out;
+                demod_tmp_out += block_size_in;
+                demod_samples += block_size_in;
 
-                if (output_samples == samples_per_batch) {
+                if (demod_samples == samples_per_batch) {
 
-                    tmp_out = out_f32_p;
-                    dsp::zip_f32(tmp_out, tmp_out + samples_per_batch, (float32_t *)bi2_p, samples_per_batch);
+                    demod_tmp_out = out_f32_p;
 
 #if !DSP_FS4_SHIFT
                     // DC block
-                    buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
+                    d buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
                     dc_block_i.filter(bb, 2, 0);
                     dc_block_q.filter(bb, 2, 1);
 #endif
+                    demodulator->work_real(out_f32_p, out_f32_p + samples_per_batch, bi1_p, samples_per_batch);
 
-                    // Wrap the destination buffer
-                    buffer_t<complex_t_f32> buff_out = {(complex_t_f32 *)bi2_p, (size_t)samples_per_batch};
-                    buffer_t<float32_t> buff_out_f32 = {(float32_t *)bi1_p, (size_t)samples_per_batch << 1, status.sample_rate};
+                    if (dec_phase < n_decimators) {
 
-                    demodulator->work(buff_out, (float32_t *)buff_out_f32.p);
+                        // Post-demoulation decimation
+                        // Note these are decimated as real-typed buffers
+                        // (vs the complex-typed done before demodulation)
 
-                    process_audio(buff_out_f32);
+                        block_size_in = samples_per_batch;
 
-                    dsp::f32_to_s16((const float32_t *)bi1_p, (adc_type *)out_p, samples_per_batch << 1);
+                        while (dec_phase < n_decimators) {
 
-                    out_p += bytes_per_batch;
-                    output_samples = 0;
+                            buffer_t<float32_t> b1 = {bi1_p, block_size_in, REAL};
+
+                            if (dec_phase < n_decimators - 1) {
+
+                                buffer_t<float32_t> b2 = {bi2_p, block_size_in, REAL};
+                                decimators[dec_phase]->decimate(b1, b2);
+                                block_size_in /= decimators[dec_phase]->get_factor();
+
+                            } else {
+                                buffer_t<float32_t> b2 = {tmp_out, block_size_in, 0, REAL};
+                                // Output decimator. This is the final nawrrowband decimator
+                                signal_decimator->decimate(b1, b2);
+                            }
+
+                            SWAP_PTR(bi1_p, bi2_p);
+                            dec_phase++;
+                        }
+                    }
+
+                    uint16_t block_size_out = samples_per_batch / (status.decimation_factor / curr_dec_factor); // account for the already decimated factor
+                    tmp_out += block_size_out;
+                    output_samples += block_size_out;
+
+                    if (output_samples == samples_per_batch) {
+
+                        tmp_out = n_pre_decimators == n_decimators ? bi1_p : out_f32_p_2;
+
+                        buffer_t<float32_t> buff_out_f32 = {tmp_out, (size_t)samples_per_batch, status.sample_rate, REAL};
+
+                        process_audio(buff_out_f32);
+
+                        dsp::f32_to_s16((const float32_t *)tmp_out, (adc_type *)out_p, samples_per_batch);
+
+                        out_p += bytes_per_batch_real;
+                        output_samples = 0;
+                    }
+
+                    demod_samples = 0;
                 }
 
                 in_p += bytes_per_batch;
@@ -115,7 +186,7 @@ void ReceiveTaskBase::work() {
             uint32_t processed = DSP_FIFO_BLOCK_BYTES - av;
 
             input_stream.consume(processed, &in_start);
-            output_stream.feed(processed / status.decimation_factor);
+            output_stream.feed(processed / 2 / status.decimation_factor); // /2 since we output a real signal
 
         } else {
             if (free < (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
@@ -133,9 +204,11 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
     uint8_t factor;
     uint8_t dec = status.decimation_factor;
 
-    int32_t next_stage_bandwidth;
-    uint32_t stage_fs = config.fft.sample_rate;
+    uint32_t stage_sr = config.fft.sample_rate;
+    uint32_t next_stage_bandwidth = stage_sr;
     n_decimators = 0;
+    n_pre_decimators = 0;
+    demodulation_sample_rate = 0;
 
     bool ret;
     while (dec > 1) {
@@ -144,44 +217,78 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
 
             // Final narrowband signal decimator
             factor = dec;
-            next_stage_bandwidth = status.bandwidth;
+            next_stage_bandwidth = 4500;
 
             switch (mod) {
                 case SSB_USB:
                 case SSB_LSB:
 
                     signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
-                    ret = signal_decimator->config(stage_fs, next_stage_bandwidth, factor);
+                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor);
                     break;
                 case CW:
                     signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
                     // TODO: Select pitch (offset center freq)
-                    ret = signal_decimator->config(stage_fs, next_stage_bandwidth, factor, max2(CW_PITCH_HZ - (next_stage_bandwidth / 2), 0));
+                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor, max2(CW_PITCH_HZ - (next_stage_bandwidth / 2), 0));
                     break;
                 default:
-                    signal_decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS, complex_t_f32>>();
-                    ret = signal_decimator->config(stage_fs, next_stage_bandwidth / 2, factor);
+                    signal_decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
+                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth,
+                                                   factor); // This considers complex double sideband signal and so is next_stage_bandwidth/2
 
                     break;
             }
 
+            LOG("ReceiveTask::init_decimators: Signal decimator: ");
+
         } else {
-            factor = dec > 16 ? 8 : (dec > 8 ? 4 : 2);
-            next_stage_bandwidth = (stage_fs / (factor * 2));
-            ret = decimators[n_decimators].config(stage_fs, next_stage_bandwidth, factor);
+
+            if (stage_sr >= demodulation_bandwidth_hz * 4 && demodulation_bandwidth_hz > status.bandwidth) {
+                // When the demodulation bandwidth is higher than the target bandwidth and the current sample is still higher, it is
+                // better to apply a smaller factor if it leaves the bandwidth closer to the optimum demodulation bandwidth
+                factor = 1;
+                uint32_t next_stage_fs = stage_sr;
+                while (next_stage_fs >= demodulation_bandwidth_hz * 4) {
+                    factor <<= 1;
+                    next_stage_fs >>= 1;
+                }
+                demodulation_sample_rate = next_stage_fs;
+
+                n_pre_decimators++;
+                LOG("ReceiveTask::init_decimators: Pre-demod decimator: ");
+
+            } else {
+
+                // Prefer larger factors first
+                factor = dec > 16 ? 8 : (dec > 8 ? 4 : 2);
+
+                LOG("ReceiveTask::init_decimators: Decimation step: ");
+            }
+
+            decimators[n_decimators] = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS>>();
+
+            next_stage_bandwidth = (stage_sr / (factor * 2)); // Low pass fiter to 1/4 sample rate
+            ret = decimators[n_decimators]->config(stage_sr, next_stage_bandwidth, factor);
         }
 
         if (!ret) {
-            LOG("Error configuring decimator for mod:%d, fs:%d, bw:%d, dec:%d\n", mod, stage_fs, next_stage_bandwidth, factor);
+            LOG("Error configuring decimator for mod:%d, fs:%d, bw:%d, dec:%d\n", mod, stage_sr, next_stage_bandwidth, factor);
             return false;
         }
 
-        dec /= factor;
         n_decimators++;
-        stage_fs = stage_fs / factor;
+
+        LOG("sr:%d %d->%d,%d\n", stage_sr, dec, factor, next_stage_bandwidth);
+        dec /= factor;
+        stage_sr = stage_sr / factor;
     }
 
-    dec = dec / factor;
+    LOG("ReceiveTask::init_decimators -> n_decimators: %d\n", n_decimators);
+    if (demodulation_sample_rate == 0) { // All decimation is done before demodulation
+        demodulation_sample_rate = status.sample_rate;
+        n_pre_decimators = n_decimators;
+    }
+
     return true;
 }
 
@@ -197,11 +304,11 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
             return std::make_unique<dsp::ssb_demodulator>();
         case FM:
             demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(status.sample_rate, 2500);
+            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, 2500);
             return demod;
         case WFM:
             demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(status.sample_rate, 75000);
+            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, 75000);
             return demod;
         default:
             return std::make_unique<dsp::ssb_demodulator>();
@@ -219,21 +326,25 @@ bool ReceiveTaskBase::start() {
 
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
-    status.bandwidth = radio::get_bandwidth_hz();
+    status.bandwidth = get_audio_bw_hz();
+
+    demodulation_bandwidth_hz = radio::get_bandwidth_hz();
+
+    MODULATION_MODE mod = get_modulation_mode();
+
+    if (mod != SSB_USB && mod != SSB_LSB && mod != CW) {
+        demodulation_bandwidth_hz /= 2; // Double sideband modulation
+    }
 
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
-    //(while using decimation factors of 2^n and the minimum signal bandwidth
+    //(while using decimation factors of 2^n
 
-    uint32_t target_bandwidth = max2(get_audio_bw_hz(), status.bandwidth);
-
-    while (status.sample_rate > target_bandwidth * 2 && dec_factor < 32) {
+    while (status.sample_rate > status.bandwidth * 2 && dec_factor < 32) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
     }
 
     status.direction = DSP_DIRECTION_INOUT;
-
-    MODULATION_MODE mod = get_modulation_mode();
 
     status.decimation_factor = dec_factor;
     status.bits_per_sample = sizeof(adc_type) * 8;
@@ -272,7 +383,7 @@ bool ReceiveTaskBase::start() {
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
     // Se the fifo processing frequency
-    update_timer(TASKS_TIMER_TYPEDEF, 30, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
+    update_timer(TASKS_TIMER_TYPEDEF, 20, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
     status.status = DSP_STATUS_RUNNING;
     return true;
 }

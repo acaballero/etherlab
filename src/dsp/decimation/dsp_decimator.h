@@ -18,6 +18,10 @@ template <typename T> class DspDecimator {
 
     DspDecimator(uint32_t input_rate, uint32_t bandwidth, uint16_t factor) : input_rate(input_rate), bandwidth(bandwidth), factor(factor){};
 
+    virtual ~DspDecimator() = default;
+
+    virtual bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_frequency = 0) = 0;
+    virtual void decimate(T *src_i, T *src_q, T *dst_i, T *dst_q, size_t n_samples) = 0;
     virtual void decimate(buffer_t<T> &src, buffer_t<T> &dst) = 0;
 
     uint16_t get_factor() const {
@@ -26,13 +30,13 @@ template <typename T> class DspDecimator {
 
     virtual void set_factor(uint16_t factor);
 
-    uint32_t getInputRate() const;
+    uint32_t get_input_rate() const;
 
-    void setInputRate(uint32_t inputRate);
+    void set_input_rate(uint32_t input_rate);
 
-    uint32_t getBandwidth() const;
+    uint32_t get_bandwidth() const;
 
-    void setBandwidth(uint32_t outputRate);
+    void set_bandwidth(uint32_t output_rate);
 
   protected:
     uint32_t input_rate;

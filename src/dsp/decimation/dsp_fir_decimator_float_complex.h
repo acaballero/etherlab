@@ -13,22 +13,23 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft_types.h"
 
-template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloatComplex : public DspDecimator<complex_t_f32>, public IDspDecimatorFloat {
+template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloatComplex : public DspDecimator<float32_t> {
 
   public:
-    DspFIRDecimatorFloatComplex() : DspDecimator<complex_t_f32>(0){};
+    DspFIRDecimatorFloatComplex() : DspDecimator<float32_t>(0){};
 
     DspFIRDecimatorFloatComplex(uint32_t input_rate, uint32_t start_freq, uint32_t end_freq, uint16_t factor)
-        : DspDecimator<complex_t_f32>(input_rate, end_freq, factor), start_frequency{start_freq} {
+        : DspDecimator<float32_t>(input_rate, end_freq, factor), start_frequency{start_freq} {
         this->init();
     };
 
-    void decimate(buffer_t<complex_t_f32> &src, buffer_t<complex_t_f32> &dst) override;
+    void decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst) override;
     void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples) override;
-
+    void decimate(float32_t *src, float32_t *dst, size_t n_samples);
     bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0) override;
     virtual void clear_state();
     bool get_initialized() const;
+
     void set_factor(uint16_t factor) override;
 
   protected:

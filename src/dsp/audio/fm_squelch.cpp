@@ -12,12 +12,10 @@ bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
         return false;
     }
 
-    // Expects interleaved IQ.
-    // TODO: Make it work with real signals so one single DAC is feed
-    size_t n = audio.count >> 1;
+    size_t n = audio.count;
     float32_t high_freq_samples[n];
     buffer_t<float32_t> high_freq_buffer{high_freq_samples, n};
-    high_pass_filter.decimate(audio, high_freq_buffer, 0, 2, 1);
+    high_pass_filter.decimate(audio, high_freq_buffer, 0, 1, 1);
 
     float high_freq_magnitude = 0;
 

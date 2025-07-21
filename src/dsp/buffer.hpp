@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include "dsp_common.h"
 
+enum buffer_format { REAL, COMPLEX_INTERLEAVED, COMPLEX_SEQUENTIAL };
+
 template <typename T> struct buffer_t {
 
     T *const p;
@@ -14,6 +16,7 @@ template <typename T> struct buffer_t {
     uint32_t decimation_factor = 1;
     uint32_t decimated_size_bytes = 0;
     size_t size_bytes = 0;
+    buffer_format format{REAL};
 
     constexpr buffer_t() : p{nullptr}, count{0}, sample_rate{0}, timestamp{}, decimation_factor{1} {
         size_bytes = count * sizeof(p[0]);
@@ -25,9 +28,9 @@ template <typename T> struct buffer_t {
           decimated_size_bytes{other.decimated_size_bytes}, size_bytes{other.size_bytes} {
     }
 
-    constexpr buffer_t(T *const p, const size_t count, const uint32_t sampling_rate = 0, const dsp::st_timestamp timestamp = {},
+    constexpr buffer_t(T *const p, const size_t count, const uint32_t sampling_rate = 0, const buffer_format fmt = REAL, const dsp::st_timestamp timestamp = {},
                        const uint32_t decimation_factor = 1)
-        : p{p}, count{count}, sample_rate{sampling_rate}, timestamp{timestamp}, decimation_factor{decimation_factor} {
+        : p{p}, count{count}, sample_rate{sampling_rate}, timestamp{timestamp}, decimation_factor{decimation_factor}, format{fmt} {
         size_bytes = count * sizeof(p[0]);
         decimated_size_bytes = size_bytes / decimation_factor;
     }

@@ -13,8 +13,6 @@
 #include "../lib/printf/printf.h"
 
 #if DEBUG_MSGS
-
-#if SWO_ENABLED
 #define LOG_NOARGS(msg)                                                                                                                                        \
     { printf_(msg); }
 #define LOG_VARS(msg, ...)                                                                                                                                     \
@@ -31,8 +29,6 @@
 
 // Dispatch macro: handles 1–7 args (add more if needed)
 #define LOG(...) LOG_GET_MACRO(__VA_ARGS__, LOG_VARS, LOG_VARS, LOG_VARS, LOG_VARS, LOG_NOARGS)(__VA_ARGS__)
-
-#endif
 
 namespace status {
 

@@ -14,7 +14,7 @@
 SignalGenerator sig_gen(1000, 346666);
 #endif
 
-void DspReplayProcessor::work(const buffer_t<complex_t> *buffer) {
+void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
     if (this->status.status != DSP_STATUS_RUNNING) {
         return;

@@ -16,7 +16,7 @@ class DspReceiveProcessor : public DspProcessor {
         this->status.direction = DSP_DIRECTION_INOUT;
     }
 
-    void work(const buffer_t<complex_t> *buffer) override;
+    void work(const buffer_t<adc_type> *buffer) override;
 
   protected:
 };

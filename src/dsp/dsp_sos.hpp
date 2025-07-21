@@ -20,7 +20,7 @@ template <size_t N> class SOSFilter {
     }
 
   private:
-    DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, float> filters[N];
+    DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> filters[N];
 };
 
 #endif /*__DSP_SOS_H__*/

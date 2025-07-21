@@ -11,15 +11,11 @@
 
 class DspReplayProcessor : public DspProcessor {
 
-public:
-
+  public:
     DspReplayProcessor() {
         this->status.direction = DSP_DIRECTION_OUT;
     }
 
-
-    void work(const buffer_t<complex_t> *buffer) override;
-
-
+    void work(const buffer_t<adc_type> *buffer) override;
 };
-#endif //TRX_FRONTEND_DSP_REPLAY_PROCESSOR_H
+#endif // TRX_FRONTEND_DSP_REPLAY_PROCESSOR_H

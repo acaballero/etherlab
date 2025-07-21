@@ -39,8 +39,7 @@ st_fft_params fft_params;
 uint8_t fft_slice_n;
 
 __attribute__((section(".fccmram"))) fft_type fft_output[FFT_N];
-//__attribute__((section(".fccmram")))
-complex_t_f32 fft_slice_buff[FFT_N];
+__attribute__((section(".fccmram"))) complex_t_f32 fft_slice_buff[FFT_N];
 // Wrapper over the fft_slice_vector
 buffer_t<float32_t> fft_slice_buffer = {(float32_t *const)(fft_slice_buff), FFT_N * 2};
 

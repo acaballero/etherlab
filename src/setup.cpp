@@ -6,6 +6,7 @@
 #include "hw/stm32.h"
 #include "hw/hw_config.h"
 #include "hw/stm32f4xx/eeprom.h"
+#include "memory_allocator.h"
 #include "stm32f4xx_hal.h"
 #include "ui/menu.h"
 #include "settings.h"
@@ -49,6 +50,8 @@ void setup() {
     //  SWO_Init(0x1, CPU_CORE_FREQUENCY_HZ);
 
     HAL_Init();
+
+    CCMMemoryAllocator::init();
 
     SystemClock_Config();
 
