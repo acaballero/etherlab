@@ -42,7 +42,7 @@ result changeCMX973Gain(eventMask e, navNode &nav, Menu::prompt &item) {
         config.hw.cmx973_vgb = gain;
     }
 
-    if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);
+    // if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb); // Comment-out for immediate effect. Otherwise it is controlled in agc.cpp
     return proceed;
 }
 

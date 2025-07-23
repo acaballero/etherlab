@@ -34,8 +34,8 @@ class ReceiveTaskBase : public Task {
         bq1_p = tmp_buff_data + samples_per_batch;
         bi2_p = tmp_buff_data + samples_per_batch * 2;
         bq2_p = tmp_buff_data + samples_per_batch * 3;
-        out_f32_p = tmp_buff_data + samples_per_batch * 4;
-        out_f32_p_2 = tmp_buff_data + samples_per_batch * 6;
+        half_accum_buff_f32_p = tmp_buff_data + samples_per_batch * 4;
+        out_accum_buff_f32_p = tmp_buff_data + samples_per_batch * 6;
     };
 
     ~ReceiveTaskBase() override {
@@ -77,18 +77,20 @@ class ReceiveTaskBase : public Task {
     float32_t *bq1_p;
     float32_t *bi2_p;
     float32_t *bq2_p;
-    float32_t *out_f32_p;
-    float32_t *out_f32_p_2;
+    float32_t *half_accum_buff_f32_p; // Pre-modulation accumulator buffer
+    float32_t *out_accum_buff_f32_p;  // Output accumulator buffer
 
     bool init_decimators(MODULATION_MODE mod);
     uint8_t n_decimators;
     uint8_t n_pre_decimators;
 
-    uint32_t demodulation_bandwidth_hz; // Minimum bandwidth for demodulation (double sideband)
+    uint32_t modulation_bandwidth_hz; // Minimum bandwidth for demodulation (measured as double sideband)
     uint32_t demodulation_sample_rate;
+
     virtual MODULATION_MODE get_modulation_mode() = 0;
     virtual bool init() = 0;
     virtual void process_audio(buffer_t<float32_t> &buff_out_f32) = 0;
+
     virtual uint32_t get_audio_bw_hz() const {
         return 12000;
     };

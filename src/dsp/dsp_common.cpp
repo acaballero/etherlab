@@ -95,6 +95,46 @@ void s16_to_q15(const adc_type *src, q15_t *dst, size_t size) {
     }
 }
 
+adc_type s16_to_f32_and_max_s16(const adc_type *src, float32_t *dst, size_t size) {
+    adc_type max;
+    size_t i = 0;
+    adc_type v1, v2, v3, v4;
+
+    // Unrolling for optimization (not needed when -O3 is used, but nice to have for -Og)
+    for (; i + 3 < size; i += 4) {
+        v1 = src[i];
+        v2 = src[i + 1];
+        v3 = src[i + 2];
+        v4 = src[i + 3];
+        dst[i] = (float32_t)v1;
+        dst[i + 1] = (float32_t)v2;
+        dst[i + 2] = (float32_t)v3;
+        dst[i + 3] = (float32_t)v4;
+        if (v1 > max) {
+            max = v1;
+        }
+        if (v2 > max) {
+            max = v2;
+        }
+        if (v3 > max) {
+            max = v3;
+        }
+        if (v4 > max) {
+            max = v4;
+        }
+    }
+
+    // Handle remainder
+    for (; i < size; i++) {
+        dst[i] = (float32_t)src[i];
+        if (src[i] > max) {
+            max = src[i];
+        }
+    }
+
+    return max;
+}
+
 void s16_to_f32(const adc_type *src, float32_t *dst, size_t size) {
     size_t i = 0;
 
@@ -223,6 +263,7 @@ void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_
 /*
  * Sample frequency/4 rotation (frequency shift)
  */
+
 void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
     const uint32_t *src32 = (const uint32_t *)src;
     uint32_t *dst32 = (uint32_t *)dst;

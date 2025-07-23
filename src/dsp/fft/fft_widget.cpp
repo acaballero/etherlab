@@ -4,6 +4,7 @@
 
 #include "Display_afb.h"
 #include "config.h"
+#include "dsp/dsp.h"
 #include "dsp/fft/fft_ui.h"
 #include "fft_widget.h"
 #include "fft.h"
@@ -38,7 +39,7 @@ void FFTWidget::draw_bandwidth() {
 
     bm_m = DISPLAY_X_PIXELS >> 1;
 
-    std::pair<int, int> bw_bins = fft::get_bandwidth_bin_limits();
+    std::pair<int, int> bw_bins = fft::get_bandwidth_pixel_range();
     bm_s = bw_bins.first;
     bm_e = bw_bins.second;
 
@@ -220,7 +221,8 @@ void FFTWidget::draw_spectrum() {
 
     display->setBgColor(C565_BLACK);
 
-    if (fft_mag_overload) {
+    if (dsp::adc_overload) {
+
         display->gotoXY(10, FFT_HEIGHT - 20);
         display->setColor(C565_RED);
 

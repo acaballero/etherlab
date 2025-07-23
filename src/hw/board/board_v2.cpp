@@ -307,7 +307,7 @@ void if_setup() {
         status::handleError(status::ST_ERROR, "Error updating CMX973");
     }
 
-    if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);
+    // if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);
 
     if_direction(RF_DIRECTION_RX); // Receive
 

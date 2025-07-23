@@ -8,11 +8,12 @@
 #include "dsp_config.h"
 #include <hw/stm32.h>
 
-#define CCM_SECTION __attribute__((section(".fccmram"))) // 64KB CCM RAM at 0x10000000
-#define RAM_SECTION __attribute__((section(".ram")))     // Main SRAM
-#define ALIGN_32 __attribute__((aligned(32)))            // 32-byte alignment for SIMD
-#define ALIGN_16 __attribute__((aligned(16)))            // 16-byte alignment
-#define ALIGN_8 __attribute__((aligned(8)))              // 8-byte alignment
+#define CCM_SECTION __attribute__((section(".ccmram")))   // 64KB CCM RAM at 0x10000000
+#define FCCM_SECTION __attribute__((section(".fccmram"))) // Contiguous CCM RAM for functions
+#define RAM_SECTION __attribute__((section(".ram")))      // Main SRAM
+#define ALIGN_32 __attribute__((aligned(32)))             // 32-byte alignment for SIMD
+#define ALIGN_16 __attribute__((aligned(16)))             // 16-byte alignment
+#define ALIGN_8 __attribute__((aligned(8)))               // 8-byte alignment
 #define FORCE_INLINE __attribute__((always_inline)) inline
 #define HOT_FUNCTION __attribute__((hot)) // Frequently called
 #define FLATTEN __attribute__((flatten))  // Inline all calls
@@ -257,6 +258,7 @@ void set_tx_gain_db(int8_t gain_db);
 
 void s16_to_q15(const adc_type *src, q15_t *dst, size_t size);
 void s16_to_f32(const adc_type *src, float32_t *dst, size_t size);
+adc_type s16_to_f32_and_max_s16(const adc_type *src, float32_t *dst, size_t size);
 
 void q15_to_s16(const q15_t *src, adc_type *dst, size_t size);
 void f32_to_s16(const float32_t *src, adc_type *dst, size_t size);

@@ -24,6 +24,8 @@ struct st_dsp_command {
 };
 
 extern os::periodic_task task;
+extern bool adc_overload;
+
 } // namespace dsp
 
 #ifdef __cplusplus

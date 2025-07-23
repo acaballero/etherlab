@@ -121,7 +121,7 @@ float update_s_strength() {
 
         s_level = get_s_strength(false, S_STRENGTH_ADC_CHANNEL);
     } else {
-        s_level = db_to_s_strength(fft::dbm_raw);
+        s_level = db_to_s_strength(fft::dbm_instant);
     }
     return s_level;
 }

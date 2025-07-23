@@ -6,6 +6,7 @@
 #include "Signal.h"
 #include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
+#include "hw/board/board_v2.h"
 #include "s_strength.h"
 #include "rf_coupler.h"
 #include "config.h"
@@ -338,7 +339,10 @@ bool _setMode(MODE mode, bool force) {
             setGPIO();
 
             // Restore configured gain of the quadrature demodulator
-            if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);
+            // if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);
+
+            // Start at minimum gain and let it raise from there (agc.cpp)
+            if_gain(RF_DIRECTION_RX, MIN_VGA_GAIN, MIN_VGB_GAIN);
 
             if (ISANALOG) { // Restore analog span (in digital mode it is set by the current dsp task)
                 fft_config(config.fft.span);

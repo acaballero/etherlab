@@ -38,8 +38,8 @@ st_fft_params fft_params;
 // Current slice
 uint8_t fft_slice_n;
 
-__attribute__((section(".fccmram"))) fft_type fft_output[FFT_N];
-__attribute__((section(".fccmram"))) complex_t_f32 fft_slice_buff[FFT_N];
+CCM_SECTION fft_type fft_output[FFT_N];
+CCM_SECTION complex_t_f32 fft_slice_buff[FFT_N];
 // Wrapper over the fft_slice_vector
 buffer_t<float32_t> fft_slice_buffer = {(float32_t *const)(fft_slice_buff), FFT_N * 2};
 
@@ -105,8 +105,11 @@ unsigned long fft_last_noise_floor_calculation_ms;
 namespace fft {
 float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
 float snr = 1e-40f;
-float dbm = FFT_MIN_DB;     // Power in the baseband (low-pass filtered)
-float dbm_raw = FFT_MIN_DB; // Raw (unfiltered) power
+float dbm = FFT_MIN_DB;         // Power in the baseband (low-pass filtered)
+float dbm_instant = FFT_MIN_DB; // Raw (unfiltered) power
+float dbm_peak = FFT_MIN_DB;
+// FFT magnitude ADC overload threshold
+adc_type adc_max_ampl;
 
 uint8_t current_max_slices = config.fft.max_slices;
 
@@ -119,7 +122,7 @@ void set_max_slices(uint8_t n) {
     }
 }
 
-std::pair<int, int> get_bandwidth_bin_limits() {
+std::pair<int, int> get_bandwidth_pixel_range() {
     int bm_s, bm_e, bm_m;
     bm_m = DISPLAY_X_PIXELS / 2;
 
@@ -152,7 +155,7 @@ std::pair<int, int> get_bandwidth_bin_limits() {
  */
 void calc_snr() {
 
-    std::pair<int, int> bin_limits = get_bandwidth_bin_limits();
+    std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
 
     float sigplusnoise = 0; // Singal plus noise
 
@@ -171,8 +174,12 @@ void calc_snr() {
     float curr_snr = 10.0f * fasterlog(signal / noise);
 
     snr = (snr - (0.3f * (snr - curr_snr)));
-    dbm_raw = 10.0f * fasterlog(sigplusnoise);
-    dbm = (dbm - (0.3f * (dbm - dbm_raw)));
+    dbm_instant = 10.0f * fasterlog(sigplusnoise);
+    dbm = (dbm - (0.3f * (dbm - dbm_instant)));
+
+    float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft_params.span;
+    float papr_db = 3.0f + 10.0f * bandwidth_ratio; // PAPR: Peak to average power ratio (rough estimation to avoid calculating the peak power)
+    dbm_peak = dbm + papr_db;
 }
 
 } // namespace fft
@@ -181,16 +188,11 @@ using namespace fft;
 
 fft_type fft_peak_v = FFT_MIN_DB;
 
-/* ----------- */
-#define FFT_MAX_AMPL_FACTOR 0.9f;
-
 // Max FFT magnitude. Dependent on the ADC range
 // float fft_range;
 float fft_mag_conv_factor = V_REF / (float)FFT_N / (float)0xFFF;
 float fft_radio_gain_factor;
-// FFT magnitude ADC overload threshold
-adc_type adc_max_ampl;
-bool fft_mag_overload = false;
+
 volatile FFT_STATUS fft_status = FFT_STATUS_IDLE;
 FFTIQBalancer fftIQBalancer;
 float window[FFT_N];
@@ -234,9 +236,12 @@ void st_fft_params::calc() {
         span = sample_freq / ((float)decimation_factor / n_slices / USABLE_BW_FACTOR);
     }
 
-    // Ceil to nearest factor of 19200, which is 16*1200, so the sample frequency is decimable by 16
-    // and, after that, contain an integer number of bits at any multiple of 1200 bauds (for symbol synchronization in audio processing)
-    sample_freq = ((sample_freq + 19199) / 19200) * 19200;
+    if (n_slices == 1) {
+        // Ceil to nearest factor of 19200, which is 16*1200, so the sample frequency is decimable by 16
+        // and, after that, is still a multiple of 1200 bauds, which is required for   symbol synchronization in many audio processing modes
+        // This can only be done when we have one slice (which is the case for real-time DSP processing)
+        sample_freq = ((sample_freq + 19199) / 19200) * 19200;
+    }
 
     // Resolution bandwidth (per FFT bin)
     rbw = sample_freq / size / decimation_factor;
@@ -331,7 +336,7 @@ void calcFFTRange() {
     // fft_range = (float) ((config.fft.maxAmpl * FFT_N) << (FFT_SCALE_FACTOR ? (FFT_SCALE_FACTOR - 6) : 0));
 
     // Overload threshold
-    adc_max_ampl = (float)config.fft.maxAmpl * FFT_MAX_AMPL_FACTOR;
+    adc_max_ampl = (float)config.fft.maxAmpl * 0.8; // FIXME: Remove the correction factor
 }
 
 /*
@@ -853,29 +858,20 @@ void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
 
     // We decimate in DSP_BLOCK block sizes to save memory, at the expense of speed, since we need two buffers
     // to process the signal (one of DSP_BLOCK length and one of DSP_BLOCK / fft_decimation_factor length)
-    complex_t_f32 signal[DSP_BLOCK];
-    buffer_t<float> src((float *)signal, DSP_BLOCK * 2);
+    float32_t signal[DSP_BLOCK << 1];
+    buffer_t<float32_t> src(signal, DSP_BLOCK * 2);
     uint16_t ix = 0;
     uint16_t ixOut = 0;
 
     while (ix < size) {
 
         // Transform to float
-        for (int i = 0, j = ix; i < DSP_BLOCK; j++, i++) {
-
-            signal[i].i = f_buff[j].i;
-            signal[i].r = f_buff[j].r;
-
-            if (f_buff[j].r > adc_max_ampl) {
-                fft_mag_overload = true;
-            }
-        }
+        dsp::s16_to_f32((adc_type *)f_buff + ix, signal, DSP_BLOCK << 1);
 
         buffer_t<float> dst((float *)(fft_slice_buff + ixOut), decimated_block_size);
         dst.decimated_size_bytes = decimated_block_size;
 
         decimator_i.decimate(src, dst, 0, 2);
-
         decimator_q.decimate(src, dst, 1, 2);
 
         // Skip the first blocks to account for the delay group of the filter
@@ -913,6 +909,7 @@ void adquireFFTAsync() {
     uint16_t chunk_size = fft_buff_size * sizeof(complex_t);
     uint64_t timeout = HAL_GetTick() + 1000;
 
+    // Wait for ADC data
     while (fft_fifo.available(&data.c) < chunk_size && HAL_GetTick() < timeout) {
     }
 
@@ -924,14 +921,7 @@ void adquireFFTAsync() {
             decimateComplexFFTBuffer((complex_t *)data.c, fft_buff_size);
         } else {
             // Transform to float
-            for (int i = 0; i < fft_buff_size; i++) {
-                fft_slice_buff[i].i = data.f[i].i;
-                fft_slice_buff[i].r = data.f[i].r;
-
-                if (data.f[i].r > adc_max_ampl) {
-                    fft_mag_overload = true;
-                }
-            }
+            dsp::s16_to_f32((adc_type *)data.f, (float32_t *)fft_slice_buff, fft_buff_size << 1);
         }
 
         fft_fifo.consume(chunk_size, &data.c);
@@ -1044,8 +1034,6 @@ void updateFFT() {
     }
 
     unsigned long f;
-
-    fft_mag_overload = false;
 
     // GPIOA->BSRR= GPIO_PIN_15;
     for (fft_slice_n = 0; fft_slice_n < slices; fft_slice_n++) {

@@ -12,12 +12,14 @@
 #include "handlers.h"
 #include "radio.h"
 #include "status.h"
+#include "stm32f4xx_hal.h"
 #include "types.h"
 #include "ui/lcd.h"
 #include "hw/stm32f4xx/timers.h"
 #include <cstddef>
 #include <cstring>
 #include <functional>
+#include <sys/_stdint.h>
 
 #if ENABLE_SD_CARD
 
@@ -37,15 +39,19 @@
 
 void dsp_loop();
 void dsp_stop();
+
 namespace dsp {
 os::periodic_task task(50, dsp_loop);
-
+bool adc_overload{false};
 } // namespace dsp
+
 Task *current_task;
 DspProcessor *current_processor;
 buffer_t<adc_type> *current_buffer;
 dsp::st_dsp_command pending_command{DSP_COMMAND_NONE};
 DSP_STATUS dspstatus;
+uint32_t overload_history{0};
+bool check_overload_pending{false};
 #if !EXECUTE_TASKS_ON_INTERRUPT
 volatile bool execute_task = false;
 #endif
@@ -213,6 +219,16 @@ bool dsp_restart() {
     return false;
 }
 
+inline void check_overload() {
+    adc_type max;
+    uint32_t max_ix;
+    // Get the max for overload detection
+    arm_max_q15((q15_t *)current_buffer->p, current_buffer->count, &max, &max_ix);
+
+    overload_history = (overload_history << 1) | (max > fft::adc_max_ampl ? 1 : 0);
+    dsp::adc_overload = overload_history > 0;
+}
+
 void dsp_loop() {
 
     dsp::st_dsp_command command = pending_command;
@@ -238,6 +254,8 @@ void dsp_loop() {
             pending_command.command = DSP_COMMAND_NONE;
         }
     }
+
+    check_overload_pending = true; // Check ADC overload in next adquisition
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
     if (execute_task) {
@@ -266,6 +284,12 @@ inline void dac_work() {
 
 inline void adc_work() {
     // GPIOD->BSRR |= GPIO_PIN_9;
+
+    if (check_overload_pending) {
+        check_overload(); // This has to be done here since this buffer can be quickly dc-blocked in-place and the overload reference range is only positive
+        check_overload_pending = false;
+    }
+
 #if DSP_FS4_SHIFT
 
     if (dsp::get_freq_shift_enabled()) {

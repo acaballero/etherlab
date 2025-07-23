@@ -95,8 +95,10 @@ extern os::periodic_task waterfall_task;
 extern float fft_noise_floor_db; // Noise floor in dB
 extern float snr;                // Signal to noise in the baseband
 extern float dbm;                // Power in the baseband
-extern float dbm_raw;
-std::pair<int, int> get_bandwidth_bin_limits();
+extern float dbm_instant;
+extern float dbm_peak;
+extern adc_type adc_max_ampl;
+std::pair<int, int> get_bandwidth_pixel_range();
 extern Signal signal;
 } // namespace fft
 
@@ -120,8 +122,6 @@ extern bool fft_min_db_auto;
 extern bool fft_estimateIQBalance;
 extern uint16_t fft_calc_noise_floor_period_ms;
 
-// extern float fft_range;
-extern bool fft_mag_overload;
 extern volatile FFT_STATUS fft_status;
 extern fft_type fft_peak_v;
 

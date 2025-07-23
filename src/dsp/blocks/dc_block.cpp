@@ -4,27 +4,28 @@
 
 #include "dc_block.h"
 #include "dsp/buffer.hpp"
+#include "dsp/dsp_common.h"
 
-inline int16_t DCBlock::filter(int16_t input) {
+inline int16_t DCBlock::filter(const int16_t input) {
 
     last_y = input - last_x + pole_radius * last_y;
     last_x = input;
     return last_y;
 }
 
-inline float32_t DCBlock::filter(float32_t input) {
+inline float32_t DCBlock::filter(const float32_t input) {
     last_y = input - last_x + pole_radius * last_y;
     last_x = input;
     return last_y;
 }
 
-void DCBlock::filter(buffer_t<int16_t> &src, uint8_t n_channels, uint8_t channel_n) {
+void DCBlock::filter(const buffer_t<int16_t> &src, uint8_t n_channels, uint8_t channel_n) {
     for (size_t i = channel_n; i < src.count; i += n_channels) {
         src.p[i] = filter(src.p[i]);
     }
 }
 
-void DCBlock::filter(buffer_t<float32_t> &src, uint8_t n_channels, uint8_t channel_n) {
+void DCBlock::filter(const buffer_t<float32_t> &src, uint8_t n_channels, uint8_t channel_n) {
     for (size_t i = channel_n; i < src.count; i += n_channels) {
         src.p[i] = filter(src.p[i]);
     }

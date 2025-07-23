@@ -21,10 +21,10 @@ class DCBlock {
     }
     explicit DCBlock(float pole_radius) : pole_radius{pole_radius} {
     }
-    int16_t filter(int16_t sample);
-    float32_t filter(float32_t input);
-    void filter(buffer_t<int16_t> &src, uint8_t n_channels, uint8_t channel);
-    void filter(buffer_t<float32_t> &src, uint8_t n_channels, uint8_t channel_n);
+    int16_t filter(const int16_t sample);
+    float32_t filter(const float32_t input);
+    void filter(const buffer_t<int16_t> &src, uint8_t n_channels, uint8_t channel);
+    void filter(const buffer_t<float32_t> &src, uint8_t n_channels, uint8_t channel_n);
 
   private:
     float32_t pole_radius;
