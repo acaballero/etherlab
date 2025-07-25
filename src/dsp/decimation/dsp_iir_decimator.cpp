@@ -36,7 +36,8 @@ template <int order> void DspIIRDecimator<order>::decimate(int16_t *src_i, int16
  */
 //__attribute__((section(".ccmram")))
 template <int order>
-void DspIIRDecimator<order>::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, uint8_t channel_n, uint8_t n_channels_in, uint8_t n_channels_out) {
+void DspIIRDecimator<order>::decimate(const buffer_t<int16_t> &src, buffer_t<int16_t> &dst, const uint8_t channel_n, const uint8_t n_channels_in,
+                                      const uint8_t n_channels_out) {
 
     uint8_t n = src.count / n_channels_in;
 
@@ -55,7 +56,8 @@ void DspIIRDecimator<order>::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> 
 }
 
 template <int order>
-void DspIIRDecimator<order>::decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst, uint8_t channel_n, uint8_t n_channels_in, uint8_t n_channels_out) {
+void DspIIRDecimator<order>::decimate(const buffer_t<float32_t> &src, buffer_t<float32_t> &dst, const uint8_t channel_n, const uint8_t n_channels_in,
+                                      uint8_t n_channels_out) {
 
     uint8_t n = src.count / n_channels_in;
 

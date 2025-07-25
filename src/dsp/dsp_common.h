@@ -98,8 +98,8 @@ union complex_t {
 };
 
 typedef struct {
-    float32_t i;
     float32_t r;
+    float32_t i;
 } complex_t_f32;
 
 #define SWAP_PTR(a, b)                                                                                                                                         \
@@ -130,6 +130,7 @@ enum DSP_ERROR {
 // transition band of the low pass filter
 #define USABLE_BW_FACTOR 0.80
 #define MAX_DECIMATION_FACTOR 8
+#define MAX_DSP_DECIMATION_FACTOR 8
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
 #define FIR_DECIMATOR_1ST_HALFBAND_TAPS 23

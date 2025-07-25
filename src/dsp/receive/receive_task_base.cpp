@@ -254,12 +254,12 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
                     next_stage_fs >>= 1;
                 }
 
-                // save the output sample rate of this decimator as the demodulation sample rate so we configure the demodulator accordingly
+                // assign the output sample rate of this decimator as the demodulation sample rate so we configure the demodulator accordingly
                 demodulation_sample_rate = next_stage_fs;
                 next_stage_bandwidth = modulation_bandwidth_hz; // Low pass fiter to 1/4 sample rate
                 n_pre_decimators++;
-                decimators[n_decimators] = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
-                LOG("ReceiveTask::init_decimators: Pre-demod decimator: ");
+                decimators[n_decimators] = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS>>();
+                LOG("ReceiveTask::init_decimators: Pre-demodulation decimator: ");
 
             } else {
 
@@ -281,7 +281,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
 
         n_decimators++;
 
-        LOG("sr:%d %d->%d,%d\n", stage_sr, dec, factor, next_stage_bandwidth);
+        LOG("Rate %d:%d -> %d (filter: %d)\n", stage_sr, factor, stage_sr / factor, next_stage_bandwidth);
         dec /= factor;
         stage_sr = stage_sr / factor;
     }

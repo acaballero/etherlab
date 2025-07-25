@@ -262,6 +262,7 @@ void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_
 
 /*
  * Sample frequency/4 rotation (frequency shift)
+ * Expects complex interleaved buffer (
  */
 
 void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {

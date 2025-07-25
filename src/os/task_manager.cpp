@@ -51,18 +51,64 @@ periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
     return task;
 }
 
+// void TaskManager::run() {
+
+//     size_t i = 0;
+//     while (i < tasks.size()) {
+
+//         tasks[i]->run();
+
+//         if (tasks[i]->finished()) {
+//             remove(tasks[i].get());
+//         } else {
+//             i++;
+//         }
+//     }
+// }
+
 void TaskManager::run() {
 
-    size_t i = 0;
-    while (i < tasks.size()) {
+    uint64_t current_time = HAL_GetTick();
+    static size_t round_robin_index = 0;
+    static uint32_t last_normal_execution = current_time;
+    const uint32_t MAX_STARVATION_MS = 100; // Guarantee service of low priority tasks every 100ms to prevent starvation
 
-        tasks[i]->run();
+    bool force_normal_task = (current_time - last_normal_execution) >= MAX_STARVATION_MS;
 
-        if (tasks[i]->finished()) {
-            remove(tasks[i].get());
-        } else {
-            i++;
+    if (!force_normal_task) {
+        // Check high-priority tasks first (only if we're not forcing normal tasks)
+        for (const auto &task : tasks) {
+            if (task->is_high_priority() && task->ready_to_run(current_time)) {
+                task->run();
+                if (task->finished()) {
+                    remove(task.get());
+                }
+                return;
+            }
         }
+    }
+
+    // Execute one normal-priority task (round-robin)
+    size_t attempts = 0;
+    while (attempts < tasks.size()) {
+        if (round_robin_index >= tasks.size()) {
+            round_robin_index = 0;
+        }
+
+        const auto &task = tasks[round_robin_index];
+        if (!task->is_high_priority() && task->ready_to_run(current_time)) {
+            task->run();
+            last_normal_execution = current_time; // Reset starvation timer
+            if (task->finished()) {
+                remove(task.get());
+            } else {
+                round_robin_index++;
+            }
+            return;
+        }
+
+        round_robin_index++;
+        attempts++;
     }
 }
 

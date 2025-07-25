@@ -61,7 +61,6 @@ class fm_demodulator : public demodulator {
     float32_t prev_i_f32, prev_q_f32; // Same for the unzipped version
     complex_t_f32 zcf32_{0, 0};       // Same, but for float version
     float kf{0};
-    float ks16{0};
 };
 
 } /* namespace dsp */

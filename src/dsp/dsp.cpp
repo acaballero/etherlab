@@ -16,6 +16,7 @@
 #include "types.h"
 #include "ui/lcd.h"
 #include "hw/stm32f4xx/timers.h"
+#include "utils.hpp"
 #include <cstddef>
 #include <cstring>
 #include <functional>
@@ -50,7 +51,7 @@ DspProcessor *current_processor;
 buffer_t<adc_type> *current_buffer;
 dsp::st_dsp_command pending_command{DSP_COMMAND_NONE};
 DSP_STATUS dspstatus;
-uint32_t overload_history{0};
+uint64_t overload_history{0};
 bool check_overload_pending{false};
 #if !EXECUTE_TASKS_ON_INTERRUPT
 volatile bool execute_task = false;
@@ -226,6 +227,9 @@ inline void check_overload() {
     arm_max_q15((q15_t *)current_buffer->p, current_buffer->count, &max, &max_ix);
 
     overload_history = (overload_history << 1) | (max > fft::adc_max_ampl ? 1 : 0);
+    // char buff[65];
+    // int_to_binary(overload_history, buff, 64);
+    // LOG("ADC overload history:%s\n", buff);
     dsp::adc_overload = overload_history > 0;
 }
 
@@ -311,11 +315,10 @@ inline void adc_work() {
 
         // If the direction is input or bidirectional...
 
-        // Fill the FFT FIFO. Here we don't care if we overrun as the FFT doesn't need to be processed in real-time
+        // Fill the FFT FIFO. Here we don't care if we overrun (returns error) as the FFT doesn't need to be processed in real-time
         // TODO: write to the FFT FIFO in a separate DspProcessor
 
-        FIFO_ERROR err = fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
-        UNUSED(err);
+        fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
     }
 
     if (current_processor && (current_processor->status.direction == DSP_DIRECTION_IN || current_processor->status.direction == DSP_DIRECTION_INOUT)) {

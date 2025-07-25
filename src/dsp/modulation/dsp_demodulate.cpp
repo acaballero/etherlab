@@ -353,8 +353,8 @@ void fm_demodulator::work_real(const float32_t *src_i, const float32_t *src_q, f
         const float32_t imag1 = curr_q1 * curr_i0 - curr_i1 * curr_q0;
 
         // Sequential writes - much better for cache and memory bandwidth
-        dst_p[i] = atan2f(imag0, real0) * kf * 10.0f;
-        dst_p[i + 1] = atan2f(imag1, real1) * kf * 10.0f;
+        dst_p[i] = atan2f(imag0, real0) * kf * 30.0f;
+        dst_p[i + 1] = atan2f(imag1, real1) * kf * 30.0f;
 
         prev_i = curr_i1;
         prev_q = curr_q1;
@@ -370,8 +370,7 @@ void fm_demodulator::configure(const float sampling_rate, const float deviation_
      * Maximum delta-theta (output of atan2) at maximum deviation frequency:
      * delta_theta_max = 2 * pi * deviation / sampling_rate
      */
-    kf = static_cast<float>(1.0f / (2.0 * PI * deviation_hz / sampling_rate));
-    ks16 = 32767.0f * kf;
+    kf = static_cast<float>((1.0f / (2.0 * PI * deviation_hz / sampling_rate)) * 6);
 }
 
 } // namespace dsp

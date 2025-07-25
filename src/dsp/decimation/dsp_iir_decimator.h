@@ -28,9 +28,9 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
 
     void decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) override;
     void decimate(int16_t *src_i, int16_t *src_q, int16_t *dst_i, int16_t *dst_q, size_t n_samples) override;
-    void decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst, uint8_t channel_n, uint8_t n_channels_in, uint8_t n_channels_out);
+    void decimate(const buffer_t<int16_t> &src, buffer_t<int16_t> &dst, const uint8_t channel_n, const uint8_t n_channels_in, const uint8_t n_channels_out);
 
-    void decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst, uint8_t channel_n, uint8_t n_channels_in, uint8_t n_channels_out);
+    void decimate(const buffer_t<float32_t> &src, buffer_t<float32_t> &dst, const uint8_t channel_n, const uint8_t n_channels_in, const uint8_t n_channels_out);
 
   private:
     void init();

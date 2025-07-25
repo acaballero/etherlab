@@ -901,3 +901,11 @@ bool parse_int(const char *str, int &result) {
     }
     return true;
 }
+
+void int_to_binary(uint64_t num, char *binary, int bits) {
+    binary[bits] = '\0'; // Null terminate first
+
+    for (int i = 0; i < bits; i++) {
+        binary[bits - 1 - i] = ((num >> i) & 1) ? '1' : '0';
+    }
+}

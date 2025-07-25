@@ -50,6 +50,17 @@ class periodic_task {
     uint64_t get_last_time();
     uint64_t get_end_time();
     uint64_t get_start_time();
+
+    void set_high_priority(bool b) {
+        _is_high_priority = b;
+    }
+    bool is_high_priority() const {
+        return _is_high_priority;
+    }
+
+    bool ready_to_run(uint64_t current_time) const {
+        return _period_ms && enabled && current_time >= _next_ms;
+    }
     char *get_log(char *buf);
 
     bool finished();
@@ -78,6 +89,8 @@ class periodic_task {
 
     // Callback function implementing the task work
     callback_t _callback;
+
+    bool _is_high_priority{0};
 };
 } // namespace os
 #endif // TRX_FRONTEND_PERIODIC_TASK_H

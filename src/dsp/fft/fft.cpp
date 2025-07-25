@@ -103,6 +103,7 @@ uint16_t fft_calc_noise_floor_period_ms = 200; // 0 = noise floor disabled
 unsigned long fft_last_noise_floor_calculation_ms;
 
 namespace fft {
+
 float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
 float snr = 1e-40f;
 float dbm = FFT_MIN_DB;         // Power in the baseband (low-pass filtered)
@@ -128,6 +129,7 @@ std::pair<int, int> get_bandwidth_pixel_range() {
 
     int16_t px_if_width = (int16_t)(radio::get_bandwidth_hz() / fft_params.display_rbw) >> 1;
     if (config.modulation == SSB_USB) {
+
         bm_s = bm_m + 1;
         bm_e = bm_m + (px_if_width << 1) - 1;
     } else if (config.modulation == CW) {
@@ -147,22 +149,88 @@ std::pair<int, int> get_bandwidth_pixel_range() {
     return std::pair<int, int>{bm_s, bm_e};
 }
 
-/**
- * Calculates signal to noise ratio
- * Note this contains slow math and so is intended to run at low rates.
- * If faster SNR calculation is required, either the magnitude of the FFT
- * has to be preserved or the SNR calculated in the FFT processing loop
- */
+void calc_snr_2() {
+    const std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
+    const int bin_start = bin_limits.first;
+    const int bin_end = bin_limits.second;
+    const int start_bin = fft_params.start_bin;
+    const int end_bin = start_bin + fft_params.nbins;
+
+    float sigplusnoise = 0.0f;
+    float total_signal = 0.0f;
+
+    const float inv_ten = 0.1f;
+    const float *fft_ptr = &fft_display_db[start_bin];
+
+    // Process 4 elements at a time for better instruction pipeline usage
+    int i = start_bin;
+    const int unroll_end = end_bin - 3;
+
+    for (; i < unroll_end; i += 4) {
+        // Calculate 4 power values
+        const float p0 = powf(10.0f, fft_ptr[0] * inv_ten);
+        const float p1 = powf(10.0f, fft_ptr[1] * inv_ten);
+        const float p2 = powf(10.0f, fft_ptr[2] * inv_ten);
+        const float p3 = powf(10.0f, fft_ptr[3] * inv_ten);
+
+        // Accumulate signal+noise conditionally
+        if (i >= bin_start && i <= bin_end)
+            sigplusnoise += p0;
+        if ((i + 1) >= bin_start && (i + 1) <= bin_end)
+            sigplusnoise += p1;
+        if ((i + 2) >= bin_start && (i + 2) <= bin_end)
+            sigplusnoise += p2;
+        if ((i + 3) >= bin_start && (i + 3) <= bin_end)
+            sigplusnoise += p3;
+
+        // Accumulate total signal
+        total_signal += p0 + p1 + p2 + p3;
+
+        fft_ptr += 4;
+    }
+
+    // Handle remaining elements
+    for (; i < end_bin; i++) {
+        const float p = powf(10.0f, (*fft_ptr) * inv_ten);
+        if (i >= bin_start && i <= bin_end) {
+            sigplusnoise += p;
+        }
+        total_signal += p;
+        fft_ptr++;
+    }
+
+    // Rest of calculation identical to original
+    const float noise_floor_mag = powf(10.0f, fft_noise_floor_db * inv_ten);
+    const float noise = noise_floor_mag * (float)(bin_end - bin_start + 1);
+    const float signal = max2(sigplusnoise - noise, 1e-14f);
+    const float curr_snr = 10.0f * fasterlog(signal / noise);
+
+    snr = snr - 0.3f * (snr - curr_snr);
+
+    dbm_instant = 10.0f * fasterlog(sigplusnoise);
+    const float total_dbm_instant = 10.0f * fasterlog(total_signal);
+    dbm = dbm - 0.3f * (dbm - dbm_instant);
+
+    const float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft_params.span;
+    const float papr_db = 3.0f + 10.0f * bandwidth_ratio;
+    dbm_peak = total_dbm_instant + papr_db;
+}
+
 void calc_snr() {
 
     std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
 
-    float sigplusnoise = 0; // Singal plus noise
+    float sigplusnoise = 0; // Singal plus noise in the current bandwidth
+    float total_signal = 0; // Total power in the FFT
 
-    for (int i = bin_limits.first; i <= bin_limits.second; i++) {
+    for (int i = fft_params.start_bin; i < fft_params.start_bin + fft_params.nbins; i++) {
 
-        // Power has to be converted to magnitude here
-        sigplusnoise += powf(10.0f, fft_display_db[i] / 10.0f);
+        float p = powf(10.0f, fft_display_db[i] / 10.0f);
+        if (i >= bin_limits.first && i <= bin_limits.second) {
+            // Power has to be converted to magnitude here
+            sigplusnoise += p;
+        }
+        total_signal += p;
     }
 
     float noise_floor_mag = powf(10.0f, fft_noise_floor_db / 10.0f);
@@ -175,11 +243,12 @@ void calc_snr() {
 
     snr = (snr - (0.3f * (snr - curr_snr)));
     dbm_instant = 10.0f * fasterlog(sigplusnoise);
+    float total_dbm_instant = 10.0f * fasterlog(total_signal);
     dbm = (dbm - (0.3f * (dbm - dbm_instant)));
 
     float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft_params.span;
     float papr_db = 3.0f + 10.0f * bandwidth_ratio; // PAPR: Peak to average power ratio (rough estimation to avoid calculating the peak power)
-    dbm_peak = dbm + papr_db;
+    dbm_peak = total_dbm_instant + papr_db;
 }
 
 } // namespace fft
@@ -921,12 +990,18 @@ void adquireFFTAsync() {
             decimateComplexFFTBuffer((complex_t *)data.c, fft_buff_size);
         } else {
             // Transform to float
-            dsp::s16_to_f32((adc_type *)data.f, (float32_t *)fft_slice_buff, fft_buff_size << 1);
+            //  dsp::s16_to_f32((adc_type *)data.f, (float32_t *)fft_slice_buff, fft_buff_size << 1);
+
+            // This is weird, i have to invert the components here for the frequency to have the expected direction. It wasn't necessary before and I'm sure
+            // I dind't swap them in other places
+            for (int i = 0; i < fft_buff_size; i++) {
+                fft_slice_buff[i].i = data.f[i].r;
+                fft_slice_buff[i].r = data.f[i].i;
+            }
         }
 
         fft_fifo.consume(chunk_size, &data.c);
     }
-
 #if !DSP_FS4_SHIFT
     if (config.fft.removeDC) {
         fft_dcremoval(fft_slice_buffer);

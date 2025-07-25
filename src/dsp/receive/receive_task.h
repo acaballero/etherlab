@@ -27,6 +27,8 @@ class ReceiveTask : public ReceiveTaskBase {
   public:
     using ReceiveTaskBase::ReceiveTaskBase;
 
+    ~ReceiveTask() override;
+
   private:
     // De-empth filter
     DspIIRDecimator<1> deemph_filter;
@@ -40,6 +42,9 @@ class ReceiveTask : public ReceiveTaskBase {
     FMSquelch squelch;
     bool squelch_enabled = false;
 
+    SignalToken squelch_signal_token{0};
+
+    void set_squelch();
     bool init() override;
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;
     MODULATION_MODE get_modulation_mode() override;

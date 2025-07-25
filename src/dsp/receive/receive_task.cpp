@@ -31,6 +31,7 @@
 #include <cstddef>
 #include <memory>
 #include <sys/_stdint.h>
+#include "s_strength.h"
 
 #include "printf.h"
 #include "utils.hpp"
@@ -75,6 +76,7 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
         if (compressor_enabled) {
             compressor.work(buff_out_f32);
         }
+
         if (deemph_enabled) {
             deemph_filter.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
         } else {
@@ -87,6 +89,20 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
 
 MODULATION_MODE ReceiveTask::get_modulation_mode() {
     return main_board::getModulationMode();
+}
+
+void ReceiveTask::set_squelch() {
+    MODULATION_MODE m = get_modulation_mode();
+    if ((m == FM || m == WFM) && config.squelch_level) {
+
+        float threshold = max2(0, 10 - config.squelch_level);
+
+        squelch.config(threshold, status.sample_rate);
+        squelch_enabled = true;
+
+    } else {
+        squelch_enabled = false;
+    }
 }
 
 bool ReceiveTask::init() {
@@ -111,13 +127,17 @@ bool ReceiveTask::init() {
         compressor_enabled = false;
     }
 
-    MODULATION_MODE m = get_modulation_mode();
-    if ((m == FM || m == WFM) && config.squelch_level) {
-        squelch.config(4, status.sample_rate);
-        squelch_enabled = true;
-    } else {
-        squelch_enabled = false;
-    }
+    squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
+        set_squelch();
+    });
+
+    set_squelch();
 
     return true;
+}
+
+ReceiveTask::~ReceiveTask() {
+    if (squelch_signal_token) {
+        sstrength::squelch_signal.remove(squelch_signal_token);
+    }
 }
