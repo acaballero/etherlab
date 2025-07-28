@@ -71,12 +71,12 @@ void TaskManager::run() {
     uint64_t current_time = HAL_GetTick();
     static size_t round_robin_index = 0;
     static uint32_t last_normal_execution = current_time;
-    const uint32_t MAX_STARVATION_MS = 100; // Guarantee service of low priority tasks every 100ms to prevent starvation
+    const uint32_t MAX_STARVATION_MS = 100;
 
     bool force_normal_task = (current_time - last_normal_execution) >= MAX_STARVATION_MS;
 
     if (!force_normal_task) {
-        // Check high-priority tasks first (only if we're not forcing normal tasks)
+        // Check high-priority tasks first
         for (const auto &task : tasks) {
             if (task->is_high_priority() && task->ready_to_run(current_time)) {
                 task->run();
@@ -89,8 +89,7 @@ void TaskManager::run() {
     }
 
     // Execute one normal-priority task (round-robin)
-    size_t attempts = 0;
-    while (attempts < tasks.size()) {
+    for (size_t i = 0; i < tasks.size(); i++) {
         if (round_robin_index >= tasks.size()) {
             round_robin_index = 0;
         }
@@ -98,9 +97,10 @@ void TaskManager::run() {
         const auto &task = tasks[round_robin_index];
         if (!task->is_high_priority() && task->ready_to_run(current_time)) {
             task->run();
-            last_normal_execution = current_time; // Reset starvation timer
+            last_normal_execution = current_time;
             if (task->finished()) {
                 remove(task.get());
+                // Don't increment round_robin_index since task was removed
             } else {
                 round_robin_index++;
             }
@@ -108,7 +108,6 @@ void TaskManager::run() {
         }
 
         round_robin_index++;
-        attempts++;
     }
 }
 

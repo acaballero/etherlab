@@ -173,9 +173,9 @@ void test() {
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // replay/capture
 
     // nav.doNav(Menu::navCmd(Menu::enterCmd));
-    //  nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // select file
-    //   nav.doNav(Menu::navCmd(Menu::upCmd, 2));  // third file
-    //   nav.doNav(Menu::navCmd(Menu::selCmd));
+    // nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // select file
+    // nav.doNav(Menu::navCmd(Menu::upCmd, 2));  // third file
+    // nav.doNav(Menu::navCmd(Menu::selCmd));
 
     // status::handleError(status::ST_ERROR, "test error");
     //   Put focus over number editor
@@ -206,6 +206,8 @@ int main() {
     for (auto task : tasks) {
         os::task_manager.add(task);
     }
+
+    fft::fft_task.set_high_priority(true);
 
     os::task_manager.add(&blink_task);
     blink_task.set_enabled(false);

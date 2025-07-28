@@ -18,7 +18,8 @@ __attribute__((section(".fccmram"))) uint8_t waterfallBuffer[DISPLAY_X_PIXELS * 
 
 WaterfallWidget::WaterfallWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
 
-    this->display->convertPalette888to565(this->waterfall_palette_rgb256, this->waterfall_palette_rgb565, 16);
+    this->display->convertPalette888to565(this->show_fps ? this->waterfall_palette_rgb256_debug : this->waterfall_palette_rgb256,
+                                          this->waterfall_palette_rgb565, 16);
 
     memset(waterfallBuffer, FFT_WATERFALL_DEFAULT_COLOR_INDEX + (FFT_WATERFALL_DEFAULT_COLOR_INDEX << 4), sizeof(waterfallBuffer));
 
@@ -124,19 +125,7 @@ void WaterfallWidget::paint_callback() {
 
                 byte >>= 4;
 
-                if (show_fps) {
-                    /* Black and white are forzed to be 0x0000 and 0xFFFF even if they're not in the palette, to be able to see the debug messages */
-
-                    if (colorIndex == 1) {
-                        b565_color = 0xFFFF;
-                    } else if (colorIndex == 0) {
-                        b565_color = 0x0000;
-                    } else {
-                        b565_color = waterfall_palette_rgb565[colorIndex];
-                    }
-                } else {
-                    b565_color = waterfall_palette_rgb565[colorIndex];
-                }
+                b565_color = waterfall_palette_rgb565[colorIndex];
 
                 *(buffer++) = b565_color;
             }
