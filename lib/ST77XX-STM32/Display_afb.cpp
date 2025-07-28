@@ -227,7 +227,7 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                     }
                     // GPIOD->BSRR |= GPIO_PIN_5<<16;
                     DMAHalfTransferCompleted = false;
-                    HAL_SPI_Transmit_DMA(spi_port, ((uint8_t *)b565_buffer), dma_transfer_length);
+                    HAL_SPI_Transmit_DMA(spi_port, ((uint8_t *)b565_buffer), dma_transfer_length >> 1); // 16-bit transfers
                 }
             } else {
 

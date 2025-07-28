@@ -9,18 +9,24 @@ struct adf4350_platform_data platdata;
                                                                                * @brief assert SPI LE
                                                                                * This set the IO pins to zero..
                                                                                *******************************************************************************/
-void SPI_assert_LE() { HAL_GPIO_WritePin(ADF4351_LE_GPIO_PORT, ADF4351_LE_PIN, GPIO_PIN_RESET); }
+void SPI_assert_LE() {
+    HAL_GPIO_WritePin(ADF4351_LE_GPIO_PORT, ADF4351_LE_PIN, GPIO_PIN_RESET);
+}
 
 /***************************************************************************/ /**
                                                                                * @brief assert SPI LE
                                                                                * This sets the IO pins to one..
                                                                                *******************************************************************************/
-void SPI_deassert_LE() { HAL_GPIO_WritePin(ADF4351_LE_GPIO_PORT, ADF4351_LE_PIN, GPIO_PIN_SET); }
+void SPI_deassert_LE() {
+    HAL_GPIO_WritePin(ADF4351_LE_GPIO_PORT, ADF4351_LE_PIN, GPIO_PIN_SET);
+}
 
 /************************
  *  @brief write 8 bits of data on SPI interface MOSI pin..
  */
-void SPI_Write(uint8_t data) { HAL_SPI_Transmit(&ADF4351_SPI_HANDLE, &data, 1, 1000); }
+void SPI_Write(uint8_t data) {
+    HAL_SPI_Transmit(&ADF4351_SPI_HANDLE, &data, 1, 1000);
+}
 
 /******************************************************************************/
 /************************ Local variables and types ***************************/
@@ -312,7 +318,9 @@ int32_t adf4350_setup(adf4350_init_param init_param) {
                                                                                *
                                                                                * @return Returns the selected frequency.
                                                                                *******************************************************************************/
-int64_t adf4350_out_frequency(int64_t Hz) { return adf4350_set_freq(&adf4350_st, Hz); }
+int64_t adf4350_out_frequency(int64_t Hz) {
+    return adf4350_set_freq(&adf4350_st, Hz);
+}
 
 /***************************************************************************/ /**
                                                                                * @brief Stores PLL 0 frequency resolution/channel spacing in Hz.

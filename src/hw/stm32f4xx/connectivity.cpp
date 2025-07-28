@@ -200,8 +200,8 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
         hdma_spi2_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
         hdma_spi2_tx.Init.PeriphInc = DMA_PINC_DISABLE;
         hdma_spi2_tx.Init.MemInc = DMA_MINC_ENABLE;
-        hdma_spi2_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-        hdma_spi2_tx.Init.MemDataAlignment = DMA_PDATAALIGN_BYTE;
+        hdma_spi2_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+        hdma_spi2_tx.Init.MemDataAlignment = DMA_PDATAALIGN_HALFWORD;
         hdma_spi2_tx.Init.Mode = DMA_NORMAL;
         hdma_spi2_tx.Init.Priority = DMA_PRIORITY_LOW;
 
@@ -314,7 +314,7 @@ void MX_SPI2_Init(void) {
     hspi2.Instance = SPI2;
     hspi2.Init.Mode = SPI_MODE_MASTER;
     hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-    hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+    hspi2.Init.DataSize = SPI_DATASIZE_16BIT;
     hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
     hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
     hspi2.Init.NSS = SPI_NSS_SOFT;
