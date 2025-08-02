@@ -64,7 +64,7 @@ class Button : public Widget {
     void set_shadow(uint16_t shadow);
 
     // START Painter overrides
-    void paint_callback() override;
+    bool paint_callback() override;
 
     // END Painter overrides
 

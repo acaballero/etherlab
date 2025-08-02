@@ -6,7 +6,7 @@
 #include "Display_afb.h"
 #include "ips_font.h"
 
-void CaptureWidget::paint_callback() {
+bool CaptureWidget::paint_callback() {
 
     char buff[30];
     this->display->setBgColor(C565_DARKEST);
@@ -78,6 +78,8 @@ void CaptureWidget::paint_callback() {
     } else {
         display->print("NO STATUS");
     }
+
+    return true;
 }
 
 void CaptureWidget::before_paint() {

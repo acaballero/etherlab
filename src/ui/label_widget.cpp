@@ -22,7 +22,7 @@ void Label::set_border_radius(bool top_left, bool top_right, bool bottom_right, 
     border_radius[3] = bottom_left;
 }
 
-void Label::paint_callback() {
+bool Label::paint_callback() {
 
     display->clear(canvas_bg_color);
     display->setFont(font); // Note there's no guarantee paint_callback is called right after 'before_paint', so we set the font again
@@ -61,6 +61,8 @@ void Label::paint_callback() {
 
     display->gotoXY(x, y);
     display->print(label, value, unit, fg_color, fg_color_value, fg_color_unit);
+
+    return true;
 }
 
 bool Label::on_touch(const st_inputEvent) {

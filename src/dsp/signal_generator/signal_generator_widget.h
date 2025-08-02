@@ -14,7 +14,7 @@ class SignalGeneratorWidget : public Widget {
   public:
     using Widget::Widget;
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     void setProcessorStatus(st_dsp_status *status);
 

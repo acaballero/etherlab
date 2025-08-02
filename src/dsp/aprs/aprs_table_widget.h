@@ -42,7 +42,7 @@ class APRSTableWidget : public Widget {
         init();
     }
 
-    void paint_callback() override;
+    bool paint_callback() override;
     int on_packet(dsp::APRSPacket *packet);
     bool on_touch(const st_inputEvent) override;
     bool on_input(const st_inputEvent e) override;

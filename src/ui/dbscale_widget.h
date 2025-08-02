@@ -15,7 +15,7 @@ class DbScaleWidget : public Widget {
   public:
     using Widget::Widget;
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
   protected:
     st_scale current_scale;

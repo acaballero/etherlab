@@ -16,9 +16,13 @@ void Field::set_text(char const *t) {
     set_dirty();
 }
 
-void Field::set_size(uint8_t s) { size = min2(MAX_SIZE, s); }
+void Field::set_size(uint8_t s) {
+    size = min2(MAX_SIZE, s);
+}
 
-char *Field::get_text() { return text; }
+char *Field::get_text() {
+    return text;
+}
 
 void Field::before_paint() {
     if (this->dirty()) {
@@ -26,7 +30,7 @@ void Field::before_paint() {
     }
 }
 
-void Field::paint_callback() {
+bool Field::paint_callback() {
 
     uint16_t fg = fg_color, bg = bg_color;
     display->clear();
@@ -84,6 +88,8 @@ void Field::paint_callback() {
 
     // Cursor
     display->fill(x + cursor_x - 1, y + font->height + 1, x + cursor_x + font->width, y + font->height + 2, C565_BLACK);
+
+    return true;
 }
 
 void Field::set_cursor(uint32_t new_pos) {
@@ -203,12 +209,22 @@ bool Field::on_input(const st_inputEvent event) {
     return consumed;
 }
 
-uint16_t Field::get_fg() const { return fg_color; }
+uint16_t Field::get_fg() const {
+    return fg_color;
+}
 
-void Field::set_fg(uint16_t fg) { fg_color = fg; }
+void Field::set_fg(uint16_t fg) {
+    fg_color = fg;
+}
 
-uint16_t Field::get_bg() const { return bg_color; }
+uint16_t Field::get_bg() const {
+    return bg_color;
+}
 
-void Field::set_bg(uint16_t bg) { Field::bg_color = bg; }
+void Field::set_bg(uint16_t bg) {
+    Field::bg_color = bg;
+}
 
-FontDef *Field::get_font() const { return font; }
+FontDef *Field::get_font() const {
+    return font;
+}

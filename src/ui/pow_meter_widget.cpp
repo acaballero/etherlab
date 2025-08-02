@@ -24,13 +24,15 @@ PowerMeterWidget::PowerMeterWidget(Rect parent_rect, Display *display) : Widget(
     swr_block_size = f_swr_block_size;
 }
 
-void PowerMeterWidget::paint_callback() {
+bool PowerMeterWidget::paint_callback() {
     display->clear();
     display->setFont((FontDef *)&Font_Fixed5x7);
     display->setBgColor(C565_BLACK);
 
     paint_power();
     paint_swr();
+
+    return true;
 }
 
 void PowerMeterWidget::paint_power() {

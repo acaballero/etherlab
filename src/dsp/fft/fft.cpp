@@ -174,14 +174,18 @@ void calc_snr_2() {
         const float p3 = powf(10.0f, fft_ptr[3] * inv_ten);
 
         // Accumulate signal+noise conditionally
-        if (i >= bin_start && i <= bin_end)
+        if (i >= bin_start && i <= bin_end) {
             sigplusnoise += p0;
-        if ((i + 1) >= bin_start && (i + 1) <= bin_end)
+        }
+        if ((i + 1) >= bin_start && (i + 1) <= bin_end) {
             sigplusnoise += p1;
-        if ((i + 2) >= bin_start && (i + 2) <= bin_end)
+        }
+        if ((i + 2) >= bin_start && (i + 2) <= bin_end) {
             sigplusnoise += p2;
-        if ((i + 3) >= bin_start && (i + 3) <= bin_end)
+        }
+        if ((i + 3) >= bin_start && (i + 3) <= bin_end) {
             sigplusnoise += p3;
+        }
 
         // Accumulate total signal
         total_signal += p0 + p1 + p2 + p3;

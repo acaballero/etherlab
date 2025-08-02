@@ -12,7 +12,7 @@
 #include "view_manager.h"
 #include "menu_prompts.h"
 
-void SMeterWidget::paint_callback() {
+bool SMeterWidget::paint_callback() {
 
     char buf[6];
     int padding = 15;
@@ -95,6 +95,8 @@ void SMeterWidget::paint_callback() {
         display->gotoXY(max_x - (display->getFont()->width * 3) - 5, y1 + (((y2 - y1) - display->getFont()->height + 1) / 2));
         display->print("AGC");
     }
+
+    return true;
 }
 
 float SMeterWidget::get_s_level(float current, float smooth_factor) {

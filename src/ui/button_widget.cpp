@@ -73,7 +73,7 @@ void Button::set_width() {
     set_parent_rect(r);
 }
 
-void Button::paint_callback() {
+bool Button::paint_callback() {
 
     uint16_t fg = fg_color, bg = bg_color;
 
@@ -142,6 +142,8 @@ void Button::paint_callback() {
             }
         }
     }
+
+    return true;
 }
 
 void Button::on_blur() {

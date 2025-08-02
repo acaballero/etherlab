@@ -18,7 +18,7 @@ void TextWidget::before_paint() {
     }
 }
 
-void TextWidget::paint_callback() {
+bool TextWidget::paint_callback() {
 
     uint16_t fg = fg_color, bg = bg_color;
     display->clear();
@@ -34,6 +34,8 @@ void TextWidget::paint_callback() {
     display->setColor(fg);
     display->setBgColor(bg);
     display->print(text.c_str());
+
+    return true;
 }
 
 uint16_t TextWidget::get_fg() const {

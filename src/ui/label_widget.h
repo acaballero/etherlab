@@ -42,7 +42,7 @@ class Label : public Widget {
         set_color(fg_color);
     }
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     void set_label(char const *);
     void set_value(char const *);

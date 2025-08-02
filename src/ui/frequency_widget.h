@@ -15,8 +15,9 @@
 
 class FrequencyWidgetInner : public Widget {
   public:
-    FrequencyWidgetInner(Rect parent_rect, Display *display) : Widget(parent_rect, display) {}
-    void paint_callback() override;
+    FrequencyWidgetInner(Rect parent_rect, Display *display) : Widget(parent_rect, display) {
+    }
+    bool paint_callback() override;
 
   protected:
     void before_paint() override;
@@ -24,7 +25,9 @@ class FrequencyWidgetInner : public Widget {
 
 class FrequencyWidget : public View {
   public:
-    FrequencyWidget(Rect parent_rect) : View(parent_rect) { init(); }
+    FrequencyWidget(Rect parent_rect) : View(parent_rect) {
+        init();
+    }
 
   protected:
     static constexpr uint8_t MARGIN = 3;

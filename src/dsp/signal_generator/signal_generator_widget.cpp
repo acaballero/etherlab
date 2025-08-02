@@ -6,7 +6,7 @@
 #include "../../../lib/utils/utils.hpp"
 #include "dsp/dsp_common.h"
 
-void SignalGeneratorWidget::paint_callback() {
+bool SignalGeneratorWidget::paint_callback() {
 
     char buff[20];
 
@@ -41,6 +41,8 @@ void SignalGeneratorWidget::paint_callback() {
             sprintf(buff, "Stopping\n");
             break;
     }
+
+    return true;
 }
 
 void SignalGeneratorWidget::before_paint() {

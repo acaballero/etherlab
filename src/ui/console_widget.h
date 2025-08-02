@@ -11,7 +11,7 @@
 class ConsoleWidget : public Widget {
   public:
     ConsoleWidget(Rect parent_rect, Display *display);
-    void paint_callback() override;
+    bool paint_callback() override;
 
     void write(const std::string &message);
     void writeln(const std::string &message);

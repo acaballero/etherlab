@@ -87,7 +87,7 @@ void WaterfallWidget::moveSpectrum(int16_t bin_offset) {
     }
 }
 
-void WaterfallWidget::paint_callback() {
+bool WaterfallWidget::paint_callback() {
 
     uint8_t colorIndex;
     uint8_t *pbyte;
@@ -135,6 +135,8 @@ void WaterfallWidget::paint_callback() {
 
         buffer += delta;
     }
+
+    return true;
 }
 
 #if WATERFALL_LINEAR

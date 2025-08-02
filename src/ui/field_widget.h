@@ -57,7 +57,7 @@ class Field : public Widget {
 
     void set_bg(uint16_t bg);
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     FontDef *get_font() const;
 

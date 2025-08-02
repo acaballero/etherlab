@@ -31,7 +31,7 @@ class TextWidget : public Widget {
 
     void set_fg(uint16_t fg);
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
   protected:
     std::string text;

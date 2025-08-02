@@ -44,7 +44,7 @@ void NumberField::set_step(const int32_t new_step) {
     step = new_step;
 }
 
-void NumberField::paint_callback() {
+bool NumberField::paint_callback() {
     char buf[length];
     format_long(value, buf, length);
 
@@ -53,6 +53,8 @@ void NumberField::paint_callback() {
     display->gotoXY(0, 0);
     display->setColor(c);
     display->write(buf);
+
+    return true;
 }
 
 void NumberField::before_paint() {

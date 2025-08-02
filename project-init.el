@@ -174,3 +174,26 @@ for debug echo." (interactive)
 	 
        
  ))
+
+(setq lsp-file-watch-ignored-files
+      '("toolchain-gccarmnoneeabi" "vendor" ".cargo" "site-packages" ".venv"))
+
+(with-eval-after-load 'lsp-mode
+  ;; Only watch files in the current project
+  (setq lsp-file-watch-threshold 1000)  ; Reduce if needed
+  
+  ;; Ignore directories globally
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\.platformio\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]toolchain-.*\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\.cache\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]build\\'")
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\.pio\\'")
+  
+  ;; Only enable LSP for files under specific directories
+  (setq lsp-file-watch-ignored-files
+        (append lsp-file-watch-ignored-files
+                '(;; Ignore everything outside your project
+                  "[/\\\\]\\.platformio/.*"
+                  "[/\\\\]toolchain-.*/.*"
+                  ;; But allow your project
+                  "!/home/ahcr/dev/trx/.*"))))

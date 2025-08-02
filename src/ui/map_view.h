@@ -118,7 +118,7 @@ class Map : public Widget {
 
     Map(Rect parent_rect);
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     bool on_input(const st_inputEvent event) override;
 

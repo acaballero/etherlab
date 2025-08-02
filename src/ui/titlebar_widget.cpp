@@ -31,7 +31,7 @@ TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *displa
     main_board::mode_signal.add(this, TitleBarWidgetInner::signal_static_callback);
 }
 
-void TitleBarWidgetInner::paint_callback() {
+bool TitleBarWidgetInner::paint_callback() {
 
     FontDef *font = (FontDef *)&Font_Tiny8x8;
 
@@ -97,6 +97,8 @@ void TitleBarWidgetInner::paint_callback() {
     }
 
     display->setFont((FontDef *)&Font_Icons9x8);
+
+    return true;
 
 #if ENABLE_SD_CARD
 

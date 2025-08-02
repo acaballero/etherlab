@@ -9,16 +9,15 @@
 #include "types.h"
 
 class MenuWidget : public Widget {
-public:
-
+  public:
     using Widget::Widget;
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     bool on_input(const st_inputEvent event) override;
 
-protected:
+  protected:
     void before_paint() override;
 };
 
-#endif //TRX_FRONTEND_MENU_WIDGET_H
+#endif // TRX_FRONTEND_MENU_WIDGET_H

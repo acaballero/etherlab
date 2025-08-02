@@ -18,7 +18,7 @@ class WaterfallWidget : public Widget {
   public:
     WaterfallWidget(const Rect &parentRect, Display *display);
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     void centerSpectrum();
 

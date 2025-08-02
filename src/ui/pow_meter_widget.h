@@ -16,7 +16,7 @@ class PowerMeterWidget : public Widget {
   public:
     using Widget::Widget;
     PowerMeterWidget(Rect parent_rect, Display *display);
-    void paint_callback() override;
+    bool paint_callback() override;
 
   protected:
     static constexpr int margin_top = 12;

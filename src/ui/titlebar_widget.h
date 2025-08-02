@@ -18,8 +18,10 @@ class TitleBarWidgetInner : public Widget {
     TitleBarWidgetInner(const Rect &parentRect, Display *display);
 
     void on_info_changed_signal(void *params);
-    void paint_callback() override;
-    static void signal_static_callback(void *thisptr, void *args) { ((TitleBarWidgetInner *)thisptr)->on_info_changed_signal(args); }
+    bool paint_callback() override;
+    static void signal_static_callback(void *thisptr, void *args) {
+        ((TitleBarWidgetInner *)thisptr)->on_info_changed_signal(args);
+    }
 
   protected:
     void before_paint() override;
@@ -33,7 +35,9 @@ class TitleBarWidget : public View {
 
   public:
     static constexpr uint8_t MARGIN = 3;
-    TitleBarWidget(Rect parent_rect) : View(parent_rect) { init(); }
+    TitleBarWidget(Rect parent_rect) : View(parent_rect) {
+        init();
+    }
 
   protected:
     void before_paint() override;

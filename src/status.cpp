@@ -12,7 +12,7 @@ namespace status {
 Status systemStatus;
 Signal status_signal;
 
-inline void debug_print(const char *str, ...) {
+void debug_print(const char *str, ...) {
     va_list argptr;
     va_start(argptr, str);
 #if SWO_ENABLED

@@ -8,16 +8,13 @@
 #include "../../ui/widget.h"
 #include "../../types.h"
 
-class IQBalanceWidget: public Widget {
-public:
-
+class IQBalanceWidget : public Widget {
+  public:
     using Widget::Widget;
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     void before_paint() override;
 };
 
-
-
-#endif //TRX_FRONTEND_IQBALANCE_WIDGET_H
+#endif // TRX_FRONTEND_IQBALANCE_WIDGET_H

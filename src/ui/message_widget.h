@@ -20,7 +20,7 @@ class MessageWidget : public Widget {
 
     bool on_input(const st_inputEvent event) override;
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     void set_title(const char *, uint16_t color);
 

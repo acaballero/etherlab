@@ -20,13 +20,11 @@ void lcd_init() {
 #if DEBUG
         debug_print("Error initializing display");
 #endif
-
     }
 
 #endif
 }
 
-void lcd_sleep()
-{
+void lcd_sleep() {
     lcd.stop();
 }

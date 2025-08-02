@@ -11,7 +11,7 @@
 #include "s_strength.h"
 #include "view.h"
 
-void TuneWidget::paint_callback() {
+bool TuneWidget::paint_callback() {
 
     char buf[50];
 
@@ -107,9 +107,13 @@ void TuneWidget::paint_callback() {
         // display->print(" ");
         // display->print(sstrength::s_strength);
     }
+
+    return true;
 }
 
-void TuneWidget::before_paint() { this->set_dirty(); }
+void TuneWidget::before_paint() {
+    this->set_dirty();
+}
 
 bool TuneWidget::on_touch(const st_inputEvent e) {
     if (e.ms > LONG_PRESS_MS) {

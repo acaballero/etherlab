@@ -21,7 +21,7 @@ class FFTWidget : public Widget {
     FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s);
     void set_style(FFT_SPECTRUM_STYLE style);
     void set_colors(uint16_t line, uint16_t fill);
-    void paint_callback() override;
+    bool paint_callback() override;
 
   protected:
     void before_paint() override;

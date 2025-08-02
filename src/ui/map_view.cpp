@@ -306,7 +306,7 @@ void Map::draw_map_grid() {
     }
 }
 
-void Map::paint_callback() {
+bool Map::paint_callback() {
 
     const auto r = parent_rect();
     std::array<Color, map_rect_width> map_line_buffer;
@@ -372,6 +372,8 @@ void Map::paint_callback() {
     if (!manual_panning && !hide_center_marker) {
         draw_marker(r.center() + Point(zoom_pixel_offset, zoom_pixel_offset), angle, tag, C565_RED, C565_WHITE, C565_BLACK);
     }
+
+    return true;
 }
 
 void Map::pan(const int dx, const int dy) {

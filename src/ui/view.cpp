@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <vector>
 
-void View::paint_callback() {
+bool View::paint_callback() {
 
     bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
     Box current_offset = display->getOffset();
@@ -48,6 +48,8 @@ void View::paint_callback() {
     }
 
     display->setOffset(current_offset);
+
+    return true;
 }
 
 void View::set_parent_rect(Rect r) {
@@ -58,7 +60,7 @@ void View::set_parent_rect(Rect r) {
     }
 }
 
-void View::paint(Area *a) {
+void View::paint(Area *) {
 
     bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
 
@@ -108,7 +110,7 @@ void View::add_child(Widget *const widget) {
     }
 }
 
-void View::on_child_update(Widget *w) {
+void View::on_child_update(Widget *) {
     // Sort by z-index (ascending order)
     std::sort(children_.begin(), children_.end(), [](const Widget *a, const Widget *b) {
         return a->get_z_index() < b->get_z_index(); // Ascending order

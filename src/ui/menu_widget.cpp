@@ -16,13 +16,15 @@ using namespace Menu;
 
 stringIn<1> strIn;
 
-void MenuWidget::paint_callback() {
+bool MenuWidget::paint_callback() {
 
     display->clear();
 
     display->setFont((FontDef *)&Font_7x10);
 
     nav.doOutput();
+
+    return true;
 }
 
 void MenuWidget::before_paint() {

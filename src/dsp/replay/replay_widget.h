@@ -14,7 +14,7 @@ class ReplayWidget : public Widget {
   public:
     using Widget::Widget;
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     void setWaveInfo(WaveInfo wi);
 

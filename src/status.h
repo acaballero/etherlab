@@ -60,7 +60,7 @@ struct st_status {
 };
 
 extern Status systemStatus;
-inline void debug_print(const char *str, ...);
+void debug_print(const char *str, ...);
 void clearError();
 void handleError(StatusCode code, const char *msg);
 } // namespace status

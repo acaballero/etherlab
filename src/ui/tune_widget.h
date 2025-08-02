@@ -12,7 +12,7 @@ class TuneWidget : public Widget {
   public:
     TuneWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display){};
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
     bool on_touch(const st_inputEvent e) override;
 

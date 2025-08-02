@@ -5,12 +5,12 @@
 #include "message_widget.h"
 #include "input/inputEvent.h"
 
-void MessageWidget::paint_callback() {
+bool MessageWidget::paint_callback() {
 
     display->clear();
 
     if (!this->visible()) { // We clear this area once when it hides since not all its area is overwritten by other widgets
-        return;
+        return true;
     }
 
     display->fillBuffer(C565_BLACK);
@@ -35,6 +35,8 @@ void MessageWidget::paint_callback() {
     display->setColor(text_color);
     display->setBgColor(C565_BLACK);
     display->print(msg);
+
+    return true;
 }
 
 bool MessageWidget::on_input(const st_inputEvent e) {

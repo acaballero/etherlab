@@ -8,15 +8,14 @@
 #include "ui/widget.h"
 #include "types.h"
 
-class InfoWidget: public Widget {
-public:
-
+class InfoWidget : public Widget {
+  public:
     using Widget::Widget;
 
-    void paint_callback() override;
+    bool paint_callback() override;
 
-protected:
+  protected:
     void before_paint() override;
 };
 
-#endif //TRX_FRONTEND_INFO_WIDGET_H
+#endif // TRX_FRONTEND_INFO_WIDGET_H

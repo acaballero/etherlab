@@ -15,7 +15,7 @@
 
 namespace dsp_ui {
 
-void APRSTableWidget::paint_callback() {
+bool APRSTableWidget::paint_callback() {
 
     char buf[26];
 
@@ -54,6 +54,8 @@ void APRSTableWidget::paint_callback() {
     }
 
     display->set_trim_enabled(true);
+
+    return true;
 }
 
 void APRSTableWidget::before_paint(){};

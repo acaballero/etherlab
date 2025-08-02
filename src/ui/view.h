@@ -50,7 +50,7 @@ class View : public Widget {
 
     // Those methods are no longer public
 
-    void paint_callback() final;
+    bool paint_callback() final;
 
     void set_area() override;
 };

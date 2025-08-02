@@ -13,7 +13,7 @@ bool DbScaleWidget::on_touch(const st_inputEvent) {
     return true;
 }
 
-void DbScaleWidget::paint_callback() {
+bool DbScaleWidget::paint_callback() {
 
     int maxNticks = 6;
     int step = 0;
@@ -54,6 +54,8 @@ void DbScaleWidget::paint_callback() {
         display->gotoXY(px, py - 3); // -3 to center vertically center the text
         display->write(buf);
     }
+
+    return true;
 }
 
 void DbScaleWidget::before_paint() {

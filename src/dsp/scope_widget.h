@@ -9,12 +9,11 @@
 #include "../types.h"
 
 class ScopeWidget : public Widget {
-public:
+  public:
+    bool paint_callback() override;
 
-    void paint_callback() override;
-
-protected:
+  protected:
     void before_paint() override;
 };
 
-#endif //TRX_FRONTEND_SCOPE_WIDGET_H
+#endif // TRX_FRONTEND_SCOPE_WIDGET_H

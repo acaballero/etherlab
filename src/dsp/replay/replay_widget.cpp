@@ -7,7 +7,7 @@
 #include "Display_afb.h"
 #include "ips_font.h"
 
-void ReplayWidget::paint_callback() {
+bool ReplayWidget::paint_callback() {
 
     char buff[40];
 
@@ -111,6 +111,8 @@ void ReplayWidget::paint_callback() {
         sprintf(buff, "%.1f", processor_status->drop_rate() * 100);
         display->print("Drop: ", buff, "%\n");
     }
+
+    return true;
 }
 
 void ReplayWidget::before_paint() {

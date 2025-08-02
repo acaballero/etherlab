@@ -10,6 +10,6 @@
 class Painter {
 
   public:
-    virtual void paint_callback() = 0;
+    virtual bool paint_callback() = 0;
 };
 #endif // TRX_FRONTEND_PAINTER_HPP

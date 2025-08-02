@@ -8,7 +8,7 @@
 #include "status.h"
 #include "agc.h"
 
-void InfoWidget::paint_callback() {
+bool InfoWidget::paint_callback() {
 
     uint8_t buf_size = 30;
     char buf[buf_size];
@@ -76,6 +76,9 @@ void InfoWidget::paint_callback() {
         display->setColor(C565_RED);
         display->print(status::systemStatus.msg);
     }
+
+    return true;
 }
 
-void InfoWidget::before_paint() {}
+void InfoWidget::before_paint() {
+}

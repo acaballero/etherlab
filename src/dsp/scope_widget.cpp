@@ -4,7 +4,7 @@
 
 #include "scope_widget.h"
 
-void ScopeWidget::paint_callback() {
+bool ScopeWidget::paint_callback() {
 
     /* lcd.clear();
 
@@ -26,6 +26,8 @@ void ScopeWidget::paint_callback() {
 #endif
 
    }*/
+    return true;
 }
 
-void ScopeWidget::before_paint() {}
+void ScopeWidget::before_paint() {
+}

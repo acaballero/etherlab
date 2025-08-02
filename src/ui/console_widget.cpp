@@ -16,7 +16,7 @@ ConsoleWidget::ConsoleWidget(Rect parent_rect, Display *display) : Widget(parent
     line_buffer.fill("");
 }
 
-void ConsoleWidget::paint_callback() {
+bool ConsoleWidget::paint_callback() {
     display->clear();
     display->setFont(this->font);
     display->setBgColor(C565_BLACK);
@@ -47,6 +47,8 @@ void ConsoleWidget::paint_callback() {
 
         y += font->height + display->getVerticalLineSpacing();
     }
+
+    return true;
 }
 
 void ConsoleWidget::before_paint() {

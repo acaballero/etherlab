@@ -32,7 +32,7 @@ class NumberField : public Widget {
     void set_step(const int32_t new_step);
 
     void add(int32_t v);
-    void paint_callback() override;
+    bool paint_callback() override;
     void before_paint() override;
     bool on_input(const st_inputEvent event) override;
 

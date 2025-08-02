@@ -236,7 +236,7 @@ void FFTWidget::draw_spectrum() {
     }
 }
 
-void FFTWidget::paint_callback() {
+bool FFTWidget::paint_callback() {
 
     display->clear();
 
@@ -255,6 +255,8 @@ void FFTWidget::paint_callback() {
     if (refresh_x_axis) {
         draw_h_labels();
     }
+
+    return true;
 }
 
 void FFTWidget::before_paint() {

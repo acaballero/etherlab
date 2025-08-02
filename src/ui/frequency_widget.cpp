@@ -117,7 +117,7 @@ bool FrequencyWidget::on_touch(const st_inputEvent e) {
     return true;
 }
 
-void FrequencyWidgetInner::paint_callback() {
+bool FrequencyWidgetInner::paint_callback() {
 
     char buf[20];
 
@@ -156,6 +156,8 @@ void FrequencyWidgetInner::paint_callback() {
     display->writeRect(start_line + 2, 16, start_line + 2, 17);
     display->writeRect(start_line + 1, 17, start_line + 3, 17);
     display->writeRect(start_line, 18, start_line + 4, 18);
+
+    return true;
 }
 
 void FrequencyWidgetInner::before_paint() {

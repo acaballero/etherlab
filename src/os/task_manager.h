@@ -27,14 +27,6 @@ class TaskManager {
     std::vector<std::unique_ptr<periodic_task>> tasks{};
     int last_id = 0;
     int round_robin_index = 0;
-
-    bool is_high_priority() const {
-        return _is_high_priority;
-    }
-
-    bool ready_to_run(uint64_t current_time) const {
-        return enabled && current_time >= _next_ms;
-    }
 };
 
 extern TaskManager task_manager;

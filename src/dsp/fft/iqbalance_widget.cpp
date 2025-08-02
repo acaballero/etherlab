@@ -7,7 +7,7 @@
 #include "FFTIQBalancer.h"
 #include "../../../lib/utils/utils.hpp"
 
-void IQBalanceWidget::paint_callback() {
+bool IQBalanceWidget::paint_callback() {
 
     float phaseY, gainY = 0;
 
@@ -57,6 +57,9 @@ void IQBalanceWidget::paint_callback() {
             }
         }
     }
+
+    return true;
 }
 
-void IQBalanceWidget::before_paint() {}
+void IQBalanceWidget::before_paint() {
+}
