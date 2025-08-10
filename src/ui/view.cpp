@@ -77,6 +77,7 @@ void View::paint(Area *) {
             }
 
             // TODO: Take into account if we've received another 'Area' as parameter, other than the full widget's area
+            // LOG("Drawing view %s\n", get_name());
             display->drawArea(&this->area, this, apply_pad);
 
             for (const auto child : this->children()) {

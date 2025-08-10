@@ -7,6 +7,7 @@
 #include "ILI9341_fb.h"
 #include "Painter.hpp"
 #include "stm32f4xx_hal_def.h"
+#include "../utils/utils.hpp"
 
 #define min2(a, b) ((a) < (b) ? (a) : (b))
 #define max2(a, b) ((a) > (b) ? (a) : (b))
@@ -14,9 +15,9 @@
 #define SETPIXEL(x, y, c) (*(this->curr_buffer + x + (y >> 16)) = c)
 
 /* RGB565 buffer for transferring pixels to the display using DMA */
-static const uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * 12;
+static const uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * DISPLAY_SLICE_HEIGHT;
 
-uint16_t b565_buffer[b565_buffer_size] __attribute__((aligned(4)));
+__attribute__((aligned(2))) uint16_t b565_buffer[b565_buffer_size];
 
 uint16_t palette16[16] = {C565_WHITE, C565_RED,  C565_GOLD,       C565_GREY_DARKER, C565_BLUE, C565_PURPLE, C565_GREY_DARK, C565_GREY_LIGHT,
                           C565_PINK,  C565_NAVY, C565_GREEN_DARK, C565_CYAN_DARK,   C565_BLUE, C565_GREEN,  C565_CYAN,      C565_RED};
@@ -87,7 +88,65 @@ bool Display::drawArea(Area *area, Painter *painter) {
     return drawArea(area, painter, true);
 }
 
+uint32_t Display::calculate_buffer_checksum() {
+    // Enable CRC peripheral clock if not already enabled
+    __HAL_RCC_CRC_CLK_ENABLE();
+
+    // Reset CRC calculation
+    CRC->CR = CRC_CR_RESET;
+
+    // Calculate CRC32 of current buffer
+    uint32_t *buffer32 = (uint32_t *)curr_buffer;
+    uint32_t words = (chunk_height * curr_area->box.width + 1) / 2; // Convert 16-bit pixels to 32-bit words
+
+    for (uint32_t i = 0; i < words; i++) {
+        CRC->DR = buffer32[i];
+    }
+
+    return CRC->DR; // Read final CRC32 result
+}
+
+void Display::check_dma_transfer_length() {
+    // The last chunk may need fewer bytes to transfer
+    if (curr_area->box.height - current_line < chunk_height << 1) {
+        uint16_t dma_buffer_size = (curr_area->box.height - current_line) * curr_area->box.width;
+        dma_transfer_length = dma_buffer_size << 1;
+    }
+}
+
+void Display::spi_transfer(uint16_t size) {
+    // Transfer the buffer without DMA
+    // Experimental: Just to see if I manage to share one SPI bus with two devices, one of which transfers within an interrupt
+    for (uint32_t i = 0; i < size; i++) {
+
+        // HAL_TIM_Base_Stop_IT(&htim15);
+        DISP_CE_PORT->BSRR |= DISP_CE_PIN << 16;
+
+        if ((spi_port->Instance->CR1 & SPI_CR1_SPE) != SPI_CR1_SPE) {
+            spi_port->Instance->CR1 |= SPI_CR1_SPE; // enable SPI
+        }
+        *(__IO uint8_t *)&spi_port->Instance->DR = *((__IO uint8_t *)curr_buffer + i); // Write data to be transmitted to the SPI data register
+        // while (!(spi_port->Instance->SR & (SPI_SR_TXE)));     // Wait until transmit complete
+        // while (!(spi_port->Instance->SR & (SPI_SR_RXNE)));    // Wait until receive complete
+        while (spi_port->Instance->SR & (SPI_SR_BSY)) {
+            ; // Wait until SPI is not busy anymore
+        }
+        uint8_t rxDat = *(__IO uint8_t *)&spi_port->Instance->DR; // Return received data from SPI data register
+        UNUSED(rxDat);
+        DISP_CE_PORT->BSRR |= DISP_CE_PIN;
+        //  HAL_TIM_Base_Start_IT(&htim15);
+    }
+}
+
 bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
+
+#define END_DMA_TRANSFER                                                                                                                                       \
+    {                                                                                                                                                          \
+        while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {                                                                                            \
+            ;                                                                                                                                                  \
+        }                                                                                                                                                      \
+        EndDisplayDataTransfer();                                                                                                                              \
+    }
 
     if (this->enabled) {
 
@@ -113,7 +172,7 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         // We set the buffer size to be a whole number of lines of the area so we can easily determine whether we can write
         // or not, depending on the relative position of the buffer in the area
 
-        // integer floor of buffer_size/2/width (half buffer lines)
+        // chunk_height = integer floor of buffer_size/2/width (half buffer lines)
         uint16_t w = area->box.width;
 
         uint16_t a = b565_buffer_size / 2;
@@ -136,11 +195,9 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
         dma_buffer_size = min2(dma_buffer_size, area->size); // But we won't transfer more than the area size
 
-        uint16_t dma_transfer_length = dma_buffer_size * 2; // 2 bytes per pixel
+        dma_transfer_length = dma_buffer_size * 2; // 2 bytes per pixel
 
-        HAL_StatusTypeDef ret = setAddressWindow(x, y, x + area->box.width - 1, y + area->box.height - 1);
-
-        if (ret != HAL_OK) {
+        if (setAddressWindow(x, y, x + area->box.width - 1, y + area->box.height - 1) != HAL_OK) {
             return false;
         }
 
@@ -162,12 +219,14 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         }
 #endif
 
+        bool address_window_set = true;
+
         while (current_line < area->box.height) {
 
             current_last_line = min2(current_line + chunk_height, area->box.height) - 1;
 
             // Prevent any interruption of the paint callback
-            // NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn); // Disabled, since I'm checking the 'busy' flag from outside
+            //  NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn); // Disabled, since I'm checking the 'busy' flag from outside
             busy = true; // Not fully atomic. Disable interrupt for proper atomic behavior
 
             painter->paint_callback();
@@ -186,31 +245,53 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
             busy = false;
             // NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
 
+            if (curr_buffer == b565_buffer) {
+                int16_t slice_index = find_zone(area->box.x, area->box.y, current_line);
+                uint32_t current_checksum = calculate_buffer_checksum();
+
+                if (slice_index >= 0 && slice_checksums[slice_index].checksum == current_checksum) {
+                    // Zone unchanged - skip DMA transfer
+
+                    // NOTE: This optimization does not have much impact on the performance. The current buffer still needs to be painted to calculate the
+                    // checksum and that, except for the first half slice, is done in parallel with the DMA transfer. Also, when a slice is skipped, we need to
+                    // wait for a current transfer to stop and then start a new DMA transfer. All in all, the performance gain is probably not worth the added
+                    // Also, we are only skipping the first half buffers (curr_buffer == b565_buffer)
+                    // complexity. This "slice skipping" approach has been implemented for widgets that, albeit dirty, only update a small portion of their area
+                    // (e.g. plots, fft...)
+
+                    address_window_set = false;
+
+                    current_line += chunk_height;
+
+                    check_dma_transfer_length();
+
+                    continue;
+                }
+
+                // Store new checksum for this zone
+                if (slice_index >= 0) {
+                    slice_checksums[slice_index].checksum = current_checksum;
+                } else {
+                    slice_checksums[next_slice_index] = {area->box.x, area->box.y, current_line, current_checksum};
+                    next_slice_index = (next_slice_index + 1) % MAX_SLICES;
+                }
+            }
+
+            // Set address window for this zone
+            if (!address_window_set) {
+                // First transfer - set window for remaining area
+                END_DMA_TRANSFER
+                //  printf_("Last zone was skipped: Setting window(%d,%d,%d,%d)\n", x, y + current_line, x + area->box.width - 1, y + area->box.height - 1);
+                setAddressWindow(x, y + current_line, x + area->box.width - 1, y + area->box.height - 1);
+
+                InitDisplayDataTransfer();
+                address_window_set = true;
+            }
+
             current_line += chunk_height;
-            // dy += this->chunk_height;
 
             if (!use_dma) {
-                // Transfer the buffer without DMA
-                // Experimental: Just to see if I manage to share one SPI bus with two devices, one of which transfers within an interrupt
-                for (uint32_t i = 0; i < dma_buffer_size; i++) {
-
-                    // HAL_TIM_Base_Stop_IT(&htim15);
-                    DISP_CE_PORT->BSRR |= DISP_CE_PIN << 16;
-
-                    if ((spi_port->Instance->CR1 & SPI_CR1_SPE) != SPI_CR1_SPE) {
-                        spi_port->Instance->CR1 |= SPI_CR1_SPE; // enable SPI
-                    }
-                    *(__IO uint8_t *)&spi_port->Instance->DR = *((__IO uint8_t *)curr_buffer + i); // Write data to be transmitted to the SPI data register
-                    // while (!(spi_port->Instance->SR & (SPI_SR_TXE)));     // Wait until transmit complete
-                    // while (!(spi_port->Instance->SR & (SPI_SR_RXNE)));    // Wait until receive complete
-                    while (spi_port->Instance->SR & (SPI_SR_BSY)) {
-                        ; // Wait until SPI is not busy anymore
-                    }
-                    uint8_t rxDat = *(__IO uint8_t *)&spi_port->Instance->DR; // Return received data from SPI data register
-                    UNUSED(rxDat);
-                    DISP_CE_PORT->BSRR |= DISP_CE_PIN;
-                    //  HAL_TIM_Base_Start_IT(&htim15);
-                }
+                spi_transfer(dma_buffer_size);
             }
 
             if (curr_buffer == b565_buffer) {
@@ -221,13 +302,14 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                 curr_buffer = b565_buffer + half_dma_buffer_size;
 
                 if (use_dma) {
-                    // GPIOD->BSRR |= GPIO_PIN_5;
+
                     while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {
-                        ;
+                        // Wait for previous DMA finished
                     }
-                    // GPIOD->BSRR |= GPIO_PIN_5<<16;
+
                     DMAHalfTransferCompleted = false;
-                    HAL_SPI_Transmit_DMA(spi_port, ((uint8_t *)b565_buffer), dma_transfer_length >> 1); // 16-bit transfers
+
+                    HAL_SPI_Transmit_DMA(spi_port, ((uint8_t *)b565_buffer), dma_transfer_length);
                 }
             } else {
 
@@ -238,24 +320,16 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
                 if (use_dma) {
                     while (!DMAHalfTransferCompleted) {
-                        ;
                     }
                 }
 
                 // The last chunk may need fewer bytes to transfer
-                if (area->box.height - current_line < chunk_height << 1) {
-                    dma_buffer_size = (area->box.height - current_line) * area->box.width;
-                    dma_transfer_length = dma_buffer_size << 1;
-                }
+                check_dma_transfer_length();
             }
         }
 
         if (use_dma) {
-            while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {
-                ;
-            }
-            EndDisplayDataTransfer();
-
+            END_DMA_TRANSFER
         } else {
             DISP_DC_PORT->BSRR |= DISP_DC_PIN << 16; // DC PIN UNSET
         }

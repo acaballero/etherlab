@@ -7,6 +7,7 @@
 
 #include "stm32f4xx.h"
 #include <stdio.h>
+#include "printf.h"
 
 #define ENABLE_LOGGER 1
 
@@ -177,5 +178,111 @@ float mv_to_adc(int millivolts, float adc_vref, int adc_max);
  * Double to ASCII
  */
 char *dtoa(char *s, double n);
+
+/***** PROFILING *******/
+
+// DWT (Data Watchpoint and Trace) registers
+#define DWT_CTRL (*(volatile uint32_t *)0xE0001000)
+#define DWT_CYCCNT (*(volatile uint32_t *)0xE0001004)
+#define DWT_CPICNT (*(volatile uint32_t *)0xE0001008)
+#define DWT_EXCCNT (*(volatile uint32_t *)0xE000100C)
+
+// CoreDebug registers for enabling DWT
+#define CoreDebug_DEMCR (*(volatile uint32_t *)0xE000EDFC)
+
+// DWT Control register bit definitions
+#define DWT_CTRL_CYCCNTENA_Pos 0U
+#define DWT_CTRL_CYCCNTENA_Msk (1UL << DWT_CTRL_CYCCNTENA_Pos)
+
+// CoreDebug DEMCR register bit definitions
+#define CoreDebug_DEMCR_TRCENA_Pos 24U
+#define CoreDebug_DEMCR_TRCENA_Msk (1UL << CoreDebug_DEMCR_TRCENA_Pos)
+
+/**
+ * @brief Get current cycle count
+ * @return Current cycle count value
+ */
+static inline uint32_t DWT_GetCycles(void) {
+    return DWT_CYCCNT;
+}
+
+/**
+ * @brief Reset cycle counter to zero
+ */
+static inline void DWT_ResetCycles(void) {
+    DWT_CYCCNT = 0;
+}
+
+/**
+ * @brief Convert cycles to microseconds
+ * @param cycles: Number of CPU cycles
+ * @param cpu_freq_mhz: CPU frequency in Hz
+ * @return Time in microseconds
+ */
+static inline float DWT_CyclesToUs(uint32_t cycles, uint32_t cpu_freq_hz) {
+    return (float)cycles / ((float)cpu_freq_hz / 100000.0f);
+}
+
+/**
+ * @brief Convert cycles to milliseconds
+ * @param cycles: Number of CPU cycles
+ * @param cpu_freq_mhz: CPU frequency in Hz
+ * @return Time in milliseconds
+ */
+static inline float DWT_CyclesToMs(uint32_t cycles, uint32_t cpu_freq_hz) {
+    return (float)cycles / ((float)(cpu_freq_hz) / 1000.0f);
+}
+
+typedef struct {
+    uint32_t start_cycles;
+    const char *name;
+} profile_context_t;
+
+// Stack-based profiler for automatic scope management
+typedef struct {
+    profile_context_t contexts[8]; // Max 8 nested levels
+    uint8_t depth;
+    uint32_t cpu_freq_mhz;
+} profile_stack_t;
+
+static profile_stack_t g_profile_stack = {0};
+
+static inline void profile_stack_init(uint32_t cpu_freq_mhz) {
+    g_profile_stack.depth = 0;
+    g_profile_stack.cpu_freq_mhz = cpu_freq_mhz;
+}
+
+static inline void profile_stack_push(const char *name) {
+    if (g_profile_stack.depth < 8) {
+        profile_context_t *ctx = &g_profile_stack.contexts[g_profile_stack.depth];
+        ctx->start_cycles = DWT_GetCycles();
+        ctx->name = name;
+        g_profile_stack.depth++;
+
+        // Print indented start message
+        for (int i = 0; i < g_profile_stack.depth - 1; i++)
+            printf_("  ");
+        printf_("-> %s\n", name);
+    }
+}
+
+static inline void profile_stack_pop(void) {
+    if (g_profile_stack.depth > 0) {
+        g_profile_stack.depth--;
+        profile_context_t *ctx = &g_profile_stack.contexts[g_profile_stack.depth];
+        uint32_t end_cycles = DWT_GetCycles();
+        uint32_t elapsed = end_cycles - ctx->start_cycles;
+
+        // Print indented result
+        for (int i = 0; i < g_profile_stack.depth; i++)
+            printf_("  ");
+        printf_("<- %s: %lu cycles (%.2f us)\n", ctx->name, elapsed, DWT_CyclesToUs(elapsed, g_profile_stack.cpu_freq_mhz));
+    }
+}
+
+#define PROFILE_PUSH(name) profile_stack_push(name)
+#define PROFILE_POP() profile_stack_pop()
+
+void DWT_Init(void);
 
 #endif // UTILS_H

@@ -11,6 +11,7 @@
 #include "printf.h"
 #include <cstddef>
 #include <memory>
+#include "status.h"
 
 namespace os {
 int TaskManager::add(periodic_task *t) {
@@ -65,49 +66,77 @@ periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
 //         }
 //     }
 // }
-
 void TaskManager::run() {
-
     uint64_t current_time = HAL_GetTick();
     static size_t round_robin_index = 0;
-    static uint32_t last_normal_execution = current_time;
-    const uint32_t MAX_STARVATION_MS = 100;
+    const uint32_t MAX_STARVATION_MS = 200;
 
-    bool force_normal_task = (current_time - last_normal_execution) >= MAX_STARVATION_MS;
+    // Helper to check if a task is starving
+    auto is_starving = [current_time](const auto &task) {
+        return !task->is_high_priority() && task->ready_to_run(current_time) && (current_time - task->get_last_time()) >= MAX_STARVATION_MS;
+    };
 
-    if (!force_normal_task) {
-        // Check high-priority tasks first
-        for (const auto &task : tasks) {
-            if (task->is_high_priority() && task->ready_to_run(current_time)) {
+    // Generic task execution loop with predicate
+    auto execute_tasks = [&](auto predicate, const char *log_prefix = "") {
+        size_t i = 0;
+        while (i < tasks.size()) {
+            auto task = tasks[i].get();
+            if (predicate(task, i)) {
+                // if (task->get_name()) {
+                //     int elapsed = current_time - task->get_last_time();
+                //     LOG("%llu: Executing %s task %s", current_time, log_prefix, task->get_name());
+                //     LOG(": %llu ms, e: %d ms\n", task->get_period(), elapsed);
+                // }
                 task->run();
                 if (task->finished()) {
-                    remove(task.get());
+                    remove(task);
+                    // Don't increment i since task was removed
+                } else {
+                    i++;
                 }
-                return;
+            } else {
+                i++;
             }
         }
+    };
+
+    // Check if any normal tasks are starving
+    bool has_starving_tasks = std::any_of(tasks.begin(), tasks.end(), is_starving);
+
+    if (has_starving_tasks) {
+        // Execute all starving tasks
+        execute_tasks(
+            [&](const auto &task, size_t) {
+                return is_starving(task);
+            },
+            "STARVING ");
+        return;
     }
 
-    // Execute one normal-priority task (round-robin)
-    for (size_t i = 0; i < tasks.size(); i++) {
-        if (round_robin_index >= tasks.size()) {
-            round_robin_index = 0;
-        }
+    // Execute high-priority tasks
+    execute_tasks(
+        [&](const auto &task, size_t) {
+            return task->is_high_priority() && task->ready_to_run(current_time);
+        },
+        "PRIORITY ");
 
-        const auto &task = tasks[round_robin_index];
-        if (!task->is_high_priority() && task->ready_to_run(current_time)) {
-            task->run();
-            last_normal_execution = current_time;
-            if (task->finished()) {
-                remove(task.get());
-                // Don't increment round_robin_index since task was removed
-            } else {
-                round_robin_index++;
+    for (size_t i = 0; i < tasks.size() && !tasks.empty(); i++) {
+        round_robin_index %= tasks.size();
+        if (!tasks[round_robin_index]->is_high_priority() && tasks[round_robin_index]->ready_to_run(current_time)) {
+
+            // Use the same execution pattern
+            size_t target_index = round_robin_index;
+            execute_tasks([target_index](const auto &, size_t i) {
+                return i == target_index;
+            });
+
+            // Handle round-robin advancement
+            if (target_index < tasks.size()) {
+                round_robin_index = (target_index + 1) % tasks.size();
             }
             return;
         }
-
-        round_robin_index++;
+        round_robin_index = (round_robin_index + 1) % tasks.size();
     }
 }
 

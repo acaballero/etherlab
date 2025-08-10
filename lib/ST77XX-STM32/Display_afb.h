@@ -8,6 +8,8 @@
 
 #define DEBUG_LCD 1
 
+#define DISPLAY_SLICE_HEIGHT 16
+
 #ifndef DISPLAY_X_PIXELS
 #if USING_HORIZONAL == 0 || USING_HORIZONAL == 1
 #define DISPLAY_PADDING 8
@@ -332,6 +334,17 @@ class Display {
     uint8_t verticalSpacing = 2;
     uint16_t *curr_buffer = 0;
 
+    struct Slice {
+        int16_t area_x, area_y;
+        uint16_t slice_y;
+        uint32_t checksum{0}; // 0 = invalid
+    };
+
+    static const uint16_t MAX_SLICES = 100;
+    Slice slice_checksums[MAX_SLICES];
+    uint8_t next_slice_index = 0;
+    uint32_t dma_transfer_length;
+
     // Clipping rectangle
     Box clip_box;
 
@@ -349,7 +362,23 @@ class Display {
 
     size_t printFloat(double, uint8_t);
 
+    uint32_t calculate_buffer_checksum();
+
     void drawCorner(int16_t centerX, int16_t centerY, uint8_t radius, uint8_t quadrant, bool filled);
+
+    int find_zone(int16_t area_x, int16_t area_y, uint16_t slice_y) {
+        for (int i = 0; i < MAX_SLICES; i++) {
+            Slice *slice = &slice_checksums[i];
+            if (slice->checksum != 0 && slice->area_x == area_x && slice->area_y == area_y && slice->slice_y == slice_y) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    void check_dma_transfer_length();
+
+    void spi_transfer(uint16_t size);
 };
 
 #endif

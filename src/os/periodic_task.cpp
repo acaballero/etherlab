@@ -9,9 +9,13 @@
 #include "hw/stm32_hal.h"
 
 namespace os {
-void periodic_task::set_enabled(bool b) { enabled = b; }
+void periodic_task::set_enabled(bool b) {
+    enabled = b;
+}
 
-void periodic_task::set_next(uint64_t ms) { _next_ms = ms; }
+void periodic_task::set_next(uint64_t ms) {
+    _next_ms = ms;
+}
 
 void periodic_task::run() {
     if (_period_ms && enabled) {
@@ -19,20 +23,22 @@ void periodic_task::run() {
 
         if (ms >= _next_ms) {
 
+            _last_ms = ms;
             _callback();
 
             // float instant_rate = 1000.0 / (float)(ms - _last_ms);
             //_rate = _rate - (0.1 * (_rate - instant_rate));
 
-            _last_ms = ms;
             if (!_start_ms) {
                 _start_ms = ms;
             }
 
-            uint64_t next = _next_ms + _period_ms;
+            // uint64_t next = _next_ms + _period_ms; // Next time this had to execute
+            uint64_t next = _last_ms + _period_ms; // Next time this had to execute
             ms = HAL_GetTick();
-            // int t = ms - _last_ms;
+            //  int t = ms - _last_ms;
             _next_ms = next > ms ? next : ms;
+            //_next_ms = _last_ms + _period_ms;
 
             // float expected_rate = 1000.0 / (float)_period_ms;
             // float difference = expected_rate - _rate;
@@ -45,14 +51,24 @@ void periodic_task::run() {
     }
 }
 
-uint64_t periodic_task::get_duration() { return _duration_ms; }
-uint64_t periodic_task::get_last_time() { return _last_ms; }
-uint64_t periodic_task::get_end_time() { return _end_ms; }
-uint64_t periodic_task::get_start_time() { return _start_ms; }
+uint64_t periodic_task::get_duration() {
+    return _duration_ms;
+}
+uint64_t periodic_task::get_last_time() {
+    return _last_ms;
+}
+uint64_t periodic_task::get_end_time() {
+    return _end_ms;
+}
+uint64_t periodic_task::get_start_time() {
+    return _start_ms;
+}
 
 char *periodic_task::get_log(char *buf) {
     // sprintf(buf, "start: %llu, end: %llu, last: %llu, duration: %llu, period: %llu", _start_ms, _end_ms, _last_ms, _duration_ms, _period_ms);
     return buf;
 }
-bool periodic_task::finished() { return _end_ms && _last_ms >= _end_ms; }
+bool periodic_task::finished() {
+    return _end_ms && _last_ms >= _end_ms;
+}
 } // namespace os

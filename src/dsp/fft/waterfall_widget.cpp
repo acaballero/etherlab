@@ -94,8 +94,6 @@ bool WaterfallWidget::paint_callback() {
     uint16_t b565_color;
     uint16_t width = this->size().width();
 
-    display->clear();
-
     // WARNING: This widget uses RAW BUFFER WRITES and makes a lot of bad things for the sake of performace
     uint16_t *buffer = display->getBuffer();
     uint16_t buffer_width = display->curr_area->box.width;
@@ -144,11 +142,13 @@ bool WaterfallWidget::paint_callback() {
 void WaterfallWidget::before_paint() {
 
     if (this->dirty()) {
+
         uint16_t width = this->size().width();
 
         // Scroll buffer down by a pixel. Remember there's 4-bit by pixel, so we divide the displacement by log2(bits per pixels) = PIXELS_BYTE
 
         uint16_t delta = step * width / PIXELS_BYTE;
+
         memmove(waterfallBuffer + delta, waterfallBuffer, (width * (FFT_WATERFALL_HEIGHT / PIXELS_BYTE)) - delta);
 
         int min = config.fft.min_db;
@@ -156,7 +156,6 @@ void WaterfallWidget::before_paint() {
 
         float range_inv = 1.0 / (max - min); // Precompute division
 
-        // Set the first row of pixels
         uint16_t ix = 0;
         for (uint16_t i = 0; i < width; i++) {
 

@@ -77,13 +77,17 @@ void DMA1_Stream5_IRQHandler(void) {
  * Half transfer complete callback
  * @param hspi
  */
-void HAL_SPI_TxHalfCpltCallback(SPI_HandleTypeDef *hspi) { lcd.DMATxHalfCpltCallback(); }
+void HAL_SPI_TxHalfCpltCallback(SPI_HandleTypeDef *hspi) {
+    lcd.DMATxHalfCpltCallback();
+}
 
 /**
  * Transfer complete callback
  * @param hspi
  */
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) { lcd.DMATxCpltCallback(); }
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+    lcd.DMATxCpltCallback();
+}
 
 void MX_DMA_Init(void) {
 

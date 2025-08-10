@@ -316,6 +316,7 @@ void Widget::paint(Area *area) {
 
         bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
 
+        // LOG("Drawing widget %s\n", get_name());
         display->drawArea(area, this, apply_pad);
 
         refresh_fps();

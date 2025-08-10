@@ -98,8 +98,6 @@ bool TitleBarWidgetInner::paint_callback() {
 
     display->setFont((FontDef *)&Font_Icons9x8);
 
-    return true;
-
 #if ENABLE_SD_CARD
 
     switch (sdcard_info.status) {
@@ -194,6 +192,8 @@ bool TitleBarWidgetInner::paint_callback() {
         display->setFont((FontDef *)&Font_Icons9x8);
         display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
     }
+
+    return true;
 }
 
 void TitleBarWidgetInner::before_paint() {

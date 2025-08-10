@@ -170,7 +170,7 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-    // nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // replay/capture
+    nav.doNav(Menu::navCmd(Menu::idxCmd, 3)); // replay/capture
 
     // nav.doNav(Menu::navCmd(Menu::enterCmd));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // select file
@@ -208,6 +208,13 @@ int main() {
     }
 
     fft::fft_task.set_high_priority(true);
+    input_controller::task.set_high_priority(true);
+
+    // DEBUG
+    // fft::fft_task.set_name("FFT");
+    // radio::task.set_name("RDIO");
+    // board::task.set_name("BRD");
+    // DEBUG
 
     os::task_manager.add(&blink_task);
     blink_task.set_enabled(false);
@@ -224,7 +231,7 @@ int main() {
 #if DEBUG_SD_CARD
             test_sd_card();
 #endif
-            //  test();
+            // test();
 
             dsptested = true;
         }

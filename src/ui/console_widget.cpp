@@ -24,10 +24,10 @@ bool ConsoleWidget::paint_callback() {
     bool escape = false;
 
     uint16_t color = C565_WHITE;
-
-    uint16_t y = 0;
+    uint16_t line_height = font->height + display->getVerticalLineSpacing();
+    uint16_t y = (rows - line_count) * line_height;
     for (size_t i = 0; i < line_count; ++i) {
-        size_t idx = (line_head + i) % rows;
+        size_t idx = (line_head - line_count + i + rows) % rows;
         const std::string &line = line_buffer[idx];
 
         display->gotoXY(0, y);
@@ -45,7 +45,7 @@ bool ConsoleWidget::paint_callback() {
             }
         }
 
-        y += font->height + display->getVerticalLineSpacing();
+        y += line_height;
     }
 
     return true;
@@ -56,6 +56,7 @@ void ConsoleWidget::before_paint() {
     if (m - this->last_refresh_ms < this->update_period_ms && this->dirty()) {
         this->set_clean();
     } else {
+        display->setVerticalLineSpacing(2);
         this->cols = area.box.width / font->width;
         this->rows = min2(area.box.height / (font->height + display->getVerticalLineSpacing()), max_lines);
     }

@@ -434,6 +434,8 @@ void fft_init() {
     // Make sure the sample rate is between hardware bounds (may have been saved before)
     config.fft.min_sample_rate = max2(FFT_MIN_SAMPLE_RATE, config.fft.min_sample_rate);
 
+    fft_task.set_period(max2(MIN_FFT_REFRESH_PERIOD, config.fft.refresh_period_ms));
+
     set_max_slices(config.fft.max_slices);
 
     min_max_f32((float32_t *)config.fft.iq_balance_precZ, FFT_IQ_BALANCER_FILTER_SIZE, &minPrecZ, &maxPrecZ);

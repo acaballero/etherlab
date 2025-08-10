@@ -7,6 +7,7 @@
 
 #include "stdio.h"
 #include "stdint.h"
+#include <cstring>
 #include <functional>
 #include <stm32f4xx.h>
 
@@ -35,6 +36,10 @@ class periodic_task {
     }
     void set_enabled(bool b);
 
+    void set_name(char *str) {
+        strncpy(name, str, 4);
+    }
+
     void set_id(int id) {
         this->id = id;
     };
@@ -50,6 +55,9 @@ class periodic_task {
     uint64_t get_last_time();
     uint64_t get_end_time();
     uint64_t get_start_time();
+    char *get_name() {
+        return name[0] ? name : nullptr;
+    }
 
     void set_high_priority(bool b) {
         _is_high_priority = b;
@@ -91,6 +99,8 @@ class periodic_task {
     callback_t _callback;
 
     bool _is_high_priority{0};
+
+    char name[5] = "";
 };
 } // namespace os
 #endif // TRX_FRONTEND_PERIODIC_TASK_H

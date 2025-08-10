@@ -63,6 +63,8 @@ enum FFT_WINDOW_TYPES { FFT_WINDOW_NONE, FFT_WINDOW_HAMMING };
 
 enum FFT_VIEW_MODE { FFT_VIEW_SPECTRUM, FFT_VIEW_TIME_DOMAIN };
 
+#define MIN_FFT_REFRESH_PERIOD 33
+
 typedef struct {
 
     uint8_t max_slices = FFT_MAX_SLICES;
@@ -84,7 +86,7 @@ typedef struct {
 
     uint8_t conversion_time_us = 3; // Conversion time of the ADCs
     bool enabled = true;
-    uint8_t refresh_period_ms = 25; // Aim for 40 fps
+    uint8_t refresh_period_ms = 33; // Aim for 30 fps
     uint16_t waterfall_pixels_per_second = 1000 / (FFT_WATERFALL_MIN_REFRESH_PERIOD_MS + 10);
 
     int16_t DCOffset_I = 0;

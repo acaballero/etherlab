@@ -909,3 +909,17 @@ void int_to_binary(uint64_t num, char *binary, int bits) {
         binary[bits - 1 - i] = ((num >> i) & 1) ? '1' : '0';
     }
 }
+
+/**
+ * @brief Initialize DWT cycle counter for profiling
+ */
+void DWT_Init(void) {
+    // Enable trace and debug blocks
+    CoreDebug_DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+
+    // Reset cycle counter
+    DWT_CYCCNT = 0;
+
+    // Enable cycle counter
+    DWT_CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}

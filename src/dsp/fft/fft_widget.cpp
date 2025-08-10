@@ -260,6 +260,7 @@ bool FFTWidget::paint_callback() {
 }
 
 void FFTWidget::before_paint() {
+
     if (this->dirty()) {
         refresh_x_axis = f_start != fft_params.span_f_start || fft_span != fft_params.span;
     }
