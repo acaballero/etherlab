@@ -109,7 +109,7 @@ void TaskManager::run() {
             [&](const auto &task, size_t) {
                 return is_starving(task);
             },
-            "STARVING ");
+            "STARVING");
         return;
     }
 

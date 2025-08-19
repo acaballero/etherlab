@@ -206,7 +206,7 @@ static inline uint32_t DWT_GetCycles(void) {
     return DWT_CYCCNT;
 }
 
-/**
+/*
  * @brief Reset cycle counter to zero
  */
 static inline void DWT_ResetCycles(void) {

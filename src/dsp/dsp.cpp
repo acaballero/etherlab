@@ -42,7 +42,7 @@ void dsp_loop();
 void dsp_stop();
 
 namespace dsp {
-os::periodic_task task(50, dsp_loop);
+os::periodic_task task(50, dsp_loop, 0, 0, "loop");
 bool adc_overload{false};
 } // namespace dsp
 
@@ -184,7 +184,11 @@ void dsp_start_task() {
             current_processor->status.n_channels = current_task->status.n_channels;
 
             if (current_processor->status.direction != DSP_DIRECTION_OUT) {
-                current_processor->start();
+                bool ok = current_processor->start();
+                if (!ok) {
+                    status::handleError(status::ST_ERROR, "Error starting DSP processor");
+                    return;
+                }
             }
 
             dsp::dsp_status = current_task->status.direction != DSP_DIRECTION_IN ? &current_processor->status : &current_task->status;
@@ -355,8 +359,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
     // Prevent interrupting the LCD drawing phase or the display DMA will overrun
     // TODO: Consider a different approach, as (also) lowering the refresh ratio while doing any critical DSP task, or
     // disabling EXECUTE_TASKS_ON_INTERRUPT
-    if (!lcd.busy) {
-
+    if (lcd.can_interrupt()) {
         if (current_task) {
 #if EXECUTE_TASKS_ON_INTERRUPT
             current_task->work();
@@ -364,6 +367,8 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
             execute_task = true;
 #endif
         }
+    } else {
+        // LOG("Task interrupt skipped\n");
     }
 
     HAL_TIM_IRQHandler(&TASKS_TIMER_HANDLE);

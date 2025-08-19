@@ -5,6 +5,7 @@
 #include "capture_task.h"
 #include "dsp/dsp_buffers.h"
 #include "stm32f4xx_hal.h"
+#include "utils.hpp"
 
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
@@ -29,16 +30,16 @@ void CaptureTask::work() {
     uint16_t av = input_stream.available(&p);
     uint32_t bytes_in = DSP_FIFO_BLOCK_BYTES;
 
-    av = input_stream.available(&p);
-
+    PROFILE_PUSH("work");
     if (av >= bytes_in) {
 
         status.processed_blocks++;
 
         FRESULT fres = FR_OK;
-        auto t = HAL_GetTick();
+
+        PROFILE_PUSH("fwrite");
         fres = file->write(p, bytes_in);
-        t = HAL_GetTick() - t;
+        PROFILE_POP();
 
         input_stream.consume(bytes_in, &p);
 
@@ -54,6 +55,7 @@ void CaptureTask::work() {
             }
         }
     }
+    PROFILE_POP();
 
     // GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }
@@ -110,7 +112,7 @@ bool CaptureTask::start() {
     status.reset();
 
     this->status.direction = DSP_DIRECTION_IN;
-    this->status.bandwidth = config.fft.span;
+    this->status.bandwidth = fft_params.bw;
     this->status.sample_rate = config.fft.sample_rate;
     this->status.decimation_factor = fft_params.decimation_factor;
     this->status.decimated_block_size = DSP_BLOCK / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);

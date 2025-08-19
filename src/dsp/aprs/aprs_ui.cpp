@@ -57,6 +57,7 @@ void APRSView::init() {
 
     previous_mode = config.mode;
 
+    radio::set_band(radio::BAND_AUTO); // must do this in case we are band-limited
     radio::set_frequency(EU_APRS_FREQ);
 
     start_rx();

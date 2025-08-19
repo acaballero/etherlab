@@ -922,4 +922,6 @@ void DWT_Init(void) {
 
     // Enable cycle counter
     DWT_CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+
+    profile_stack_init(HSE_VALUE);
 }

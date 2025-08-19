@@ -84,6 +84,14 @@
 #define C565_BG_FOCUS C565_WHITE
 #define C565_BG_ENABLED C565_WHITE
 
+#define END_DMA_TRANSFER                                                                                                                                       \
+    {                                                                                                                                                          \
+        while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {                                                                                            \
+            ;                                                                                                                                                  \
+        }                                                                                                                                                      \
+        EndDisplayDataTransfer();                                                                                                                              \
+    }
+
 using Color = uint16_t;
 
 extern Color palette16[16];
@@ -301,12 +309,20 @@ class Display {
 
     uint8_t get_transparency();
 
+    bool can_interrupt() {
+        return !busy || curr_buffer == b565_buffer;
+        // if (!ok) {
+        //     interrupted = true;
+        // }
+        // return true;
+    }
+
     uint16_t current_line = 0;
     uint16_t chunk_height = 0;
     uint16_t current_last_line = 0;
     volatile bool DMAHalfTransferCompleted = false;
     volatile bool busy = false;
-    bool drawing = false;
+    //    volatile bool interrupted = false;
     bool use_dma = true;
     // Display buffer area
     Area *curr_area = 0;
@@ -334,16 +350,12 @@ class Display {
     uint8_t verticalSpacing = 2;
     uint16_t *curr_buffer = 0;
 
-    struct Slice {
-        int16_t area_x, area_y;
-        uint16_t slice_y;
-        uint32_t checksum{0}; // 0 = invalid
-    };
-
-    static const uint16_t MAX_SLICES = 100;
-    Slice slice_checksums[MAX_SLICES];
-    uint8_t next_slice_index = 0;
     uint32_t dma_transfer_length;
+
+    /* RGB565 buffer for transferring pixels to the display using DMA */
+    static constexpr uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * DISPLAY_SLICE_HEIGHT;
+
+    __attribute__((aligned(2))) uint16_t b565_buffer[b565_buffer_size];
 
     // Clipping rectangle
     Box clip_box;
@@ -366,6 +378,18 @@ class Display {
 
     void drawCorner(int16_t centerX, int16_t centerY, uint8_t radius, uint8_t quadrant, bool filled);
 
+#if LCD_ENABLE_BUFFER_SKIP
+
+    struct Slice {
+        int16_t area_x, area_y;
+        uint16_t slice_y;
+        uint32_t checksum{0}; // 0 = invalid
+    };
+
+    static const uint16_t MAX_SLICES = 100;
+    Slice slice_checksums[MAX_SLICES];
+    uint8_t next_slice_index = 0;
+
     int find_zone(int16_t area_x, int16_t area_y, uint16_t slice_y) {
         for (int i = 0; i < MAX_SLICES; i++) {
             Slice *slice = &slice_checksums[i];
@@ -375,7 +399,7 @@ class Display {
         }
         return -1;
     }
-
+#endif
     void check_dma_transfer_length();
 
     void spi_transfer(uint16_t size);

@@ -48,9 +48,9 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->smeter_w.set_visible(false);
     this->powmeter_w.set_visible(false);
     this->optionButtonsView.set_visible(false);
-    this->optionButtonsView.set_z_index(30);
+    this->optionButtonsView.set_z_index(300);
     this->numberEditView.set_visible(false);
-    this->numberEditView.set_z_index(30);
+    this->numberEditView.set_z_index(300);
     this->msg_w.set_z_index(1000);
     this->msg_w.set_visible(false);
     this->msg_w.get_display()->setPadding(8, 8);
@@ -159,6 +159,7 @@ bool MainView::on_input(const st_inputEvent event) {
 
             if (consumed) {
                 to_top(&menu_w);
+                menu_w.set_focus(true);
             }
         } else if (!event.is_touch()) {
             consumed = View::on_input(event);

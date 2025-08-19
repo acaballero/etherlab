@@ -13,6 +13,7 @@
 #include "view_manager.h"
 #include <cstdint>
 #include <functional>
+#include "status.h"
 
 namespace Menu {
 
@@ -41,6 +42,7 @@ template <typename T> void open_option_buttons(menu_options_t<T> options, const 
         view->set_enabled(i, option.enabled);
     }
 
+    view_manager::mainView.to_top(view);
     view->set_title(title);
     view->set_visible(true);
     view->set_focus(true);
@@ -85,6 +87,7 @@ template <typename T> class optionsPrompt : public Menu::prompt {
                   styles s = noStyle, systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)))
         : prompt(text, static_cast<action>([](Menu::eventMask, Menu::navNode &, Menu::prompt &item) {
                      optionsPrompt<T> prompt = static_cast<optionsPrompt<T> &>(item);
+
                      open(prompt);
                      return proceed;
                  }),
@@ -121,8 +124,12 @@ template <typename T>
 void open_number_edit(T value, const char *units, const char *name, uint8_t frac_digits, std::function<void(T)> on_changed, T min, T max, T step, T step_big) {
 
     view_manager::mainView.NumberEdit()->on_changed = on_changed; // note this must be assigned before setting the value or a previous handler might be called
+
+    if (on_changed) {
+        LOG("open_number_edit on_changed has value\n");
+    }
     view_manager::mainView.NumberEdit()->set_value(value, frac_digits, units, name, min, max, step, step_big);
-    view_manager::mainView.NumberEdit()->set_visible(true);
+    view_manager::mainView.to_top(view_manager::mainView.NumberEdit());
     view_manager::mainView.NumberEdit()->set_focus(true);
 }
 
@@ -137,12 +144,15 @@ void open_keypad(T value, const char *units, const char *name, uint8_t frac_digi
 
 template <typename T> void open(numberPrompt<T> &prompt) {
 
+    auto on_s = prompt.on_select;
+    LOG("open %d\n", &on_s);
     if (prompt.step > 0) {
         Menu::open_number_edit<T>(
             *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals,
             [&prompt](T v) {
                 *(prompt.value) = v;
                 if (prompt.on_select) {
+                    LOG("calling prompt.on_select on %x\n", &prompt.on_select);
                     prompt.on_select(v);
                 }
             },
@@ -171,16 +181,16 @@ template <typename T> class numberPrompt : public Menu::prompt {
     T max;
     T step;
     T step_big;
-    std::function<void(T)> on_select;
+    std::function<void(T)> on_select = nullptr;
 
     numberPrompt(const char *text, T *value, uint8_t decimals = 0, char thow_separator = ' ', char dec_separator = '.', const char *unit = nullptr,
                  std::function<void(T)> on_select = nullptr, T min = T{}, T max = T{}, T step = T{}, T step_big = T{}, eventMask e = enterEvent,
                  styles s = noStyle, systemStyles ss = ((Menu::systemStyles)(Menu::_parentDraw)))
         : prompt(text, static_cast<action>([](Menu::eventMask e, Menu::navNode &, Menu::prompt &item) {
-                     numberPrompt<T> prompt = static_cast<numberPrompt<T> &>(item);
+                     numberPrompt<T> &p = static_cast<numberPrompt<T> &>(item);
 
                      if (e == Menu::enterEvent) {
-                         open(prompt);
+                         open(p);
                      }
 
                      return proceed;

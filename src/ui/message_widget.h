@@ -27,8 +27,8 @@ class MessageWidget : public Widget {
     void set_msg(const char *);
 
   protected:
-    char title[MESSAGE_WIDGET_TITLE_MAX_LENGTH];
-    char msg[MESSAGE_WIDGET_TEXT_MAX_LENGTH];
+    char title[MESSAGE_WIDGET_TITLE_MAX_LENGTH + 1];
+    char msg[MESSAGE_WIDGET_TEXT_MAX_LENGTH + 1];
     int border_color;
     const FontDef *title_font;
     const FontDef *text_font;

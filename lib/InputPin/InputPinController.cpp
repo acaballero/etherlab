@@ -5,6 +5,7 @@
 #include "InputPinController.h"
 #include "../../lib/utils/utils.hpp"
 #include <stdint.h>
+#include "printf.h"
 
 InputPinController::InputPinController(TIM_TypeDef *timer) {
 
@@ -69,17 +70,18 @@ void InputPinController::handleTimerInterrupt() {
 void InputPinController::handlePinEXTI(uint16_t GPIO_Pin) {
 
     InputPin *pin = NULL;
+    int i;
 
     // Search for the pin who fired the interrupt
-    for (int i = 0; i < this->npins && pin == NULL; i++) {
-
+    for (i = 0; i < this->npins && pin == NULL; i++) {
         if (this->pins[i]->getPin() == GPIO_Pin) {
-
             pin = this->pins[i];
         }
     }
 
     if (pin) {
+
+        // printf_("Pin %d int\n", i);
 
         // Let the pin handle the transition
         pin->handleTransition();

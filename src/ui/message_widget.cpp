@@ -75,6 +75,6 @@ void MessageWidget::set_title(const char *str, uint16_t color) {
 }
 
 void MessageWidget::set_msg(const char *str) {
-    strncpy(msg, str, MESSAGE_WIDGET_TITLE_MAX_LENGTH);
+    strncpy(msg, str, MESSAGE_WIDGET_TEXT_MAX_LENGTH);
     set_dirty();
 }

@@ -108,6 +108,8 @@ Widget *processTouch(Widget *w, st_inputEvent *e) {
 
 void processEvent(st_inputEvent *e) {
 
+    // LOG("processEvent %d\n", e->type);
+
     if (e->type == INPUT_EVENT_TYPE_BUTTON_RELEASE || e->type == INPUT_EVENT_TYPE_TOUCH_START || e->type == INPUT_EVENT_TYPE_ENCODER) {
         if (standby::power_mode != standby::POWER_MODE_ON) {
             standby::wakeup();

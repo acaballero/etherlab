@@ -25,12 +25,16 @@ template class DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>;
  * This function is intended to be called either for the I or Q half of the buffer
  * @param Start: 0: Process I samples; 1: Process Q samples
  */
-template <int TAPS> void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst, uint8_t start, uint8_t n_channels) {
+template <int TAPS>
+void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst, uint8_t start, uint8_t n_channels, int start_dst) {
 
     // TODO: Consider skipping the first processed blocks to account for the delay group of the filter
 
     uint16_t n_samples = src.count / n_channels;
     uint16_t decimated_block_size = n_samples / this->factor; // DMA buffer size (DSP_BLOCK) / decimation factor
+    if (start_dst == -1) {
+        start_dst = start;
+    }
 
     // Extract the signal from the interleaved IQ buffer
     for (uint16_t i = start, j = 0; j < n_samples; i += n_channels, j++) {
@@ -40,7 +44,7 @@ template <int TAPS> void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<float32_t
     arm_fir_decimate_f32(&this->dsp_fir_decimate_instance, this->tmp_buff_in, this->tmp_buff_out, n_samples);
 
     // Write to the final adc_buffer in interleaved IQ format
-    for (uint16_t i = start, j = 0; j < decimated_block_size; i += n_channels, j++) {
+    for (uint16_t i = start_dst, j = 0; j < decimated_block_size; i += n_channels, j++) {
         dst.p[i] = this->tmp_buff_out[j];
     }
 }

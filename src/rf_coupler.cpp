@@ -23,17 +23,25 @@ os::periodic_task task(50, calculate_power);
 Signal rf_coupler_signal;
 struct rf_coupler_info info;
 
-void enable() { task.set_enabled(true); }
-
-void disable() {
-    task.set_enabled(false);
-    info = {0, 0, 0, 0, 0};
-    rf_coupler_signal.emit(&info);
+void enable() {
+    task.set_enabled(true);
 }
 
-void set_offset(uint16_t offset_mv) { cpl_offset = offset_mv; }
+void disable() {
+    if (enabled) {
+        task.set_enabled(false);
+        info = {0, 0, 0, 0, 0};
+        rf_coupler_signal.emit(&info);
+    }
+}
 
-uint16_t get_offset() { return cpl_offset; }
+void set_offset(uint16_t offset_mv) {
+    cpl_offset = offset_mv;
+}
+
+uint16_t get_offset() {
+    return cpl_offset;
+}
 
 /*
  * Calculates forward and reflected power
@@ -109,5 +117,7 @@ void calculate_power() {
     }
 }
 
-float toWatts(float dbm) { return dbm == -FLT_MAX ? 0 : pow(10, ((dbm - 30.0) / 10.0)); }
+float toWatts(float dbm) {
+    return dbm == -FLT_MAX ? 0 : pow(10, ((dbm - 30.0) / 10.0));
+}
 } // namespace rf_coupler

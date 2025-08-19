@@ -13,6 +13,7 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/task.h"
+#include "radio.h"
 #include "types.h"
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
@@ -91,8 +92,14 @@ class ReceiveTaskBase : public Task {
     virtual bool init() = 0;
     virtual void process_audio(buffer_t<float32_t> &buff_out_f32) = 0;
 
+    /* Bandwidth of the output audio stream */
     virtual uint32_t get_audio_bw_hz() const {
         return 12000;
+    };
+
+    /* Bandwidth of the modulation */
+    virtual uint32_t get_modulation_bw_hz() const {
+        return radio::get_bandwidth_hz();
     };
 };
 

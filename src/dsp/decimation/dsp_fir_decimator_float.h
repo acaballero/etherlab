@@ -68,7 +68,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloat : publ
 
     void decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst) override;
     void decimate(float32_t *src_i, float32_t *src_q, float32_t *dst_i, float32_t *dst_q, size_t n_samples) override;
-    void decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst, uint8_t start, uint8_t n_channels);
+    void decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst, uint8_t start, uint8_t n_channels, int start_dst = -1);
     void decimate(buffer_t<complex_t_f32> &src, float *dst_i, float *dst_q);
     void decimate(float *src_i, float *src_q, buffer_t<float32_t> &dst, size_t n_samples);
 

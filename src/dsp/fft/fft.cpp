@@ -128,6 +128,8 @@ std::pair<int, int> get_bandwidth_pixel_range() {
     bm_m = DISPLAY_X_PIXELS / 2;
 
     int16_t px_if_width = (int16_t)(radio::get_bandwidth_hz() / fft_params.display_rbw) >> 1;
+    px_if_width = max2(px_if_width, 1);
+
     if (config.modulation == SSB_USB) {
 
         bm_s = bm_m + 1;
@@ -227,7 +229,7 @@ void calc_snr() {
     float sigplusnoise = 0; // Singal plus noise in the current bandwidth
     float total_signal = 0; // Total power in the FFT
 
-    for (int i = fft_params.start_bin; i < fft_params.start_bin + fft_params.nbins; i++) {
+    for (int i = fft_params.start_bin; i < fft_params.start_bin + fft_params.total_bins; i++) {
 
         float p = powf(10.0f, fft_display_db[i] / 10.0f);
         if (i >= bin_limits.first && i <= bin_limits.second) {
@@ -409,7 +411,7 @@ void calcFFTRange() {
     // fft_range = (float) ((config.fft.maxAmpl * FFT_N) << (FFT_SCALE_FACTOR ? (FFT_SCALE_FACTOR - 6) : 0));
 
     // Overload threshold
-    adc_max_ampl = (float)config.fft.maxAmpl * 0.8; // FIXME: Remove the correction factor
+    adc_max_ampl = (float)config.fft.maxAmpl * 0.9; // FIXME: Remove the correction factor
 }
 
 /*
@@ -941,13 +943,13 @@ void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
     while (ix < size) {
 
         // Transform to float
-        dsp::s16_to_f32((adc_type *)f_buff + ix, signal, DSP_BLOCK << 1);
+        dsp::s16_to_f32((adc_type *)(f_buff + ix), signal, DSP_BLOCK << 1);
 
         buffer_t<float> dst((float *)(fft_slice_buff + ixOut), decimated_block_size);
         dst.decimated_size_bytes = decimated_block_size;
 
-        decimator_i.decimate(src, dst, 0, 2);
-        decimator_q.decimate(src, dst, 1, 2);
+        decimator_i.decimate(src, dst, 0, 2, 1); // Invert I/Q
+        decimator_q.decimate(src, dst, 1, 2, 0);
 
         // Skip the first blocks to account for the delay group of the filter
         if (ix >= FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft_params.decimation_factor) {
@@ -998,11 +1000,9 @@ void adquireFFTAsync() {
             // Transform to float
             //  dsp::s16_to_f32((adc_type *)data.f, (float32_t *)fft_slice_buff, fft_buff_size << 1);
 
-            // This is weird, i have to invert the components here for the frequency to have the expected direction. It wasn't necessary before and I'm sure
-            // I dind't swap them in other places
             for (int i = 0; i < fft_buff_size; i++) {
-                fft_slice_buff[i].i = data.f[i].r;
-                fft_slice_buff[i].r = data.f[i].i;
+                fft_slice_buff[i].r = data.f[i].r;
+                fft_slice_buff[i].i = data.f[i].i;
             }
         }
 

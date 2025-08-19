@@ -59,7 +59,7 @@ class APRSView : public View {
     APRSTableWidget table_view{{0, title_height + panel_sep, table_width - panel_sep / 2, 90 + title_height}, max_sources};
     ConsoleWidget console{{table_width + panel_sep / 2, title_height + panel_sep, console_width - panel_sep, 90 + title_height}, &lcd};
 
-    Menu::menu_action_st menu_actions[5] = {{"Pause",
+    Menu::menu_action_st menu_actions[6] = {{"Pause",
                                              [this]() {
                                                  if (!paused) {
                                                      stop();
@@ -79,6 +79,10 @@ class APRSView : public View {
                                             {"Text",
                                              [this]() {
                                                  settings();
+                                             }},
+                                            {"Gain",
+                                             []() {
+                                                 Menu::open(Menu::frontendPathMenu);
                                              }},
                                             {"Exit", [this]() {
                                                  exit();

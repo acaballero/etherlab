@@ -17,7 +17,7 @@ typedef std::function<void()> callback_t;
 
 class periodic_task {
   public:
-    periodic_task(uint64_t period_ms, callback_t f, uint64_t duration_ms = 0, uint32_t delay_ms = 0)
+    periodic_task(uint64_t period_ms, callback_t f, uint64_t duration_ms = 0, uint32_t delay_ms = 0, const char *name = nullptr)
         : _period_ms(period_ms), _duration_ms(duration_ms), _callback(f) {
         if (_duration_ms) {
             _end_ms = HAL_GetTick() + _duration_ms;
@@ -25,6 +25,10 @@ class periodic_task {
 
         if (delay_ms) {
             _next_ms = HAL_GetTick() + delay_ms;
+        }
+
+        if (name) {
+            set_name(name);
         }
     };
     void set_period(uint64_t period) {
@@ -36,7 +40,7 @@ class periodic_task {
     }
     void set_enabled(bool b);
 
-    void set_name(char *str) {
+    void set_name(const char *str) {
         strncpy(name, str, 4);
     }
 

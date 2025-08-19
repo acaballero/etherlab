@@ -161,7 +161,11 @@ Menu::numberPrompt<uint16_t> waterfallSpeedMenu((const char *)"Waterfall speed",
                                                 },
                                                 2, (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 5);
 
-Menu::numberPrompt<int16_t> minDbMenu((const char *)"DB Min", &config.fft.min_db, 0, ' ', '.', "dB", nullptr, FFT_MIN_DB, FFT_MAX_DB, 1, 5);
+Menu::numberPrompt<int16_t> minDbMenu((const char *)"DB Min", &config.fft.min_db, 0, ' ', '.', "dB",
+                                      [](int16_t) {
+                                          fft_min_db_auto = false;
+                                      },
+                                      FFT_MIN_DB, FFT_MAX_DB, 1, 5);
 
 Menu::numberPrompt<int16_t> maxDbMenu((const char *)"DB Max", &config.fft.max_db, 0, ' ', '.', "dB", nullptr, FFT_MIN_DB, FFT_MAX_DB, 1, 5);
 

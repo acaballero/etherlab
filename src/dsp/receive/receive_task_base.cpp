@@ -331,7 +331,7 @@ bool ReceiveTaskBase::start() {
     status.sample_rate = config.fft.sample_rate;
     status.bandwidth = get_audio_bw_hz();
 
-    modulation_bandwidth_hz = radio::get_bandwidth_hz();
+    modulation_bandwidth_hz = get_modulation_bw_hz();
 
     MODULATION_MODE mod = get_modulation_mode();
 

@@ -59,7 +59,7 @@ void setup() {
 
     MX_GPIO_Init();
 
-    // DWT_Init(); // Enable hardware profiling
+    DWT_Init(); // Enable hardware profiling
 
 #if USB_ENABLED
     // Set the USB enabled pin to drive the pullup in DP (D+) line

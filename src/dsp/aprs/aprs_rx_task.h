@@ -34,6 +34,7 @@ class APRSTask : public ReceiveTaskBase {
     using ReceiveTaskBase::ReceiveTaskBase;
 
   private:
+    static constexpr uint32_t bandwidth = 24000;
     static constexpr size_t baudrate = 1200;
     static constexpr size_t buffer_size = 256;
     static constexpr size_t delay_line_length = 64; // Note: Must be a power of 2 so the index can be ANDded
@@ -73,7 +74,11 @@ class APRSTask : public ReceiveTaskBase {
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;
     MODULATION_MODE get_modulation_mode() override;
     uint32_t get_audio_bw_hz() const override {
-        return 24000;
+        return bandwidth;
+    };
+
+    uint32_t get_modulation_bw_hz() const override {
+        return bandwidth;
     };
 };
 } // namespace dsp

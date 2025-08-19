@@ -16,7 +16,7 @@
 #define LOG_NOARGS(msg)                                                                                                                                        \
     { printf_(msg); }
 #define LOG_VARS(msg, ...)                                                                                                                                     \
-    { status::debug_print(msg, __VA_ARGS__); }
+    { ::status::debug_print(msg, __VA_ARGS__); }
 #else
 #define LOG_NOARGS(msg)                                                                                                                                        \
     {}

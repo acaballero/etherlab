@@ -14,11 +14,6 @@
 
 #define SETPIXEL(x, y, c) (*(this->curr_buffer + x + (y >> 16)) = c)
 
-/* RGB565 buffer for transferring pixels to the display using DMA */
-static const uint16_t b565_buffer_size = DISPLAY_TOTAL_WIDTH * DISPLAY_SLICE_HEIGHT;
-
-__attribute__((aligned(2))) uint16_t b565_buffer[b565_buffer_size];
-
 uint16_t palette16[16] = {C565_WHITE, C565_RED,  C565_GOLD,       C565_GREY_DARKER, C565_BLUE, C565_PURPLE, C565_GREY_DARK, C565_GREY_LIGHT,
                           C565_PINK,  C565_NAVY, C565_GREEN_DARK, C565_CYAN_DARK,   C565_BLUE, C565_GREEN,  C565_CYAN,      C565_RED};
 
@@ -140,17 +135,7 @@ void Display::spi_transfer(uint16_t size) {
 
 bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 
-#define END_DMA_TRANSFER                                                                                                                                       \
-    {                                                                                                                                                          \
-        while (HAL_SPI_GetState(spi_port) != HAL_SPI_STATE_READY) {                                                                                            \
-            ;                                                                                                                                                  \
-        }                                                                                                                                                      \
-        EndDisplayDataTransfer();                                                                                                                              \
-    }
-
     if (this->enabled) {
-
-        this->drawing = true;
 
         this->curr_area = area;
 
@@ -226,7 +211,9 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
             current_last_line = min2(current_line + chunk_height, area->box.height) - 1;
 
             // Prevent any interruption of the paint callback
-            //  NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn); // Disabled, since I'm checking the 'busy' flag from outside
+
+            // interrupted = false;
+            //  NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn);
             busy = true; // Not fully atomic. Disable interrupt for proper atomic behavior
 
             painter->paint_callback();
@@ -245,6 +232,10 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
             busy = false;
             // NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
 
+            // if (interrupted) {
+            //     continue;
+            // }
+#if ENABLE_BUFFER_SKIP
             if (curr_buffer == b565_buffer) {
                 int16_t slice_index = find_zone(area->box.x, area->box.y, current_line);
                 uint32_t current_checksum = calculate_buffer_checksum();
@@ -287,7 +278,7 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
                 InitDisplayDataTransfer();
                 address_window_set = true;
             }
-
+#endif
             current_line += chunk_height;
 
             if (!use_dma) {
@@ -333,8 +324,6 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         } else {
             DISP_DC_PORT->BSRR |= DISP_DC_PIN << 16; // DC PIN UNSET
         }
-
-        this->drawing = false;
     }
 
     // DMA is the default write mode. When disabled, it is enabled again after every redraw and must be set again before the next

@@ -91,8 +91,8 @@ typedef uint32_t adc_type_complex_union;
 
 union complex_t {
     struct {
+        adc_type i; // Mind the ordering of these fields must match the ADCs I,Q lines
         adc_type r;
-        adc_type i;
     };
     adc_type_complex_union _rep;
 };

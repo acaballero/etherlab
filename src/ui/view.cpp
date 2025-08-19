@@ -111,12 +111,13 @@ void View::add_child(Widget *const widget) {
     }
 }
 
-void View::on_child_update(Widget *) {
+void View::on_child_update(Widget *w) {
     // Sort by z-index (ascending order)
     std::sort(children_.begin(), children_.end(), [](const Widget *a, const Widget *b) {
         return a->get_z_index() < b->get_z_index(); // Ascending order
     });
 
+    // LOG("on_child_update(%s)\n", w->get_name());
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];
 
@@ -149,12 +150,12 @@ void View::on_child_update(Widget *) {
                     // visible_parts = merge_rectangles(visible_parts);
 
                     if (r.contains(widget->screen_rect())) {
-                        // printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
+                        //   printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
                     } else {
-                        if (strcmp(widget->get_name(), "modal") == 0) {
-                            printf_("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(),
-                                    sibling->get_z_index());
-                        }
+                        // if (strcmp(widget->get_name(), "numedt") == 0) {
+                        //     printf_("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(),
+                        //             sibling->get_z_index());
+                        // }
                         //  Process the overlap in the widget's childs to see if some can be hidden
                     }
 

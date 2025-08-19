@@ -2,7 +2,7 @@
 #include "version.h"
 
 const char* get_build_version() {
-    return "20250810224640 - 1b23c7c";
+    return "20250819173601 - 928548f";
 }
 
 const char* get_build_time() {

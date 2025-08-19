@@ -7,22 +7,16 @@
 
 #include <stm32f4xx.h>
 
-enum PinMode {
-    PINMODE_IT,
-    PINMODE_POLL
-};
+enum PinMode { PINMODE_IT, PINMODE_POLL };
 
-enum InterruptMode {
-    INTERRUPTMODE_FALLING_RISING,
-    INTERRUPTMODE_FALLING
-};
+enum InterruptMode { INTERRUPTMODE_FALLING_RISING, INTERRUPTMODE_FALLING };
 
 class InputPin {
 
-public:
-
-    InputPin(PinMode mode, uint16_t debounce_ms, void (*onChange)()) : debounce_period_ms(debounce_ms),mode(mode),onChange(onChange) {};
-    InputPin(InterruptMode mode, uint16_t debounce_ms, void (*onChange)()) : debounce_period_ms(debounce_ms),mode(PINMODE_IT),int_mode(mode),onChange(onChange) {};
+  public:
+    InputPin(PinMode mode, uint16_t debounce_ms, void (*onChange)()) : debounce_period_ms(debounce_ms), mode(mode), onChange(onChange){};
+    InputPin(InterruptMode mode, uint16_t debounce_ms, void (*onChange)())
+        : debounce_period_ms(debounce_ms), mode(PINMODE_IT), int_mode(mode), onChange(onChange){};
 
     virtual void init() = 0;
     virtual GPIO_PinState read() = 0;
@@ -46,23 +40,18 @@ public:
 
     void reset();
 
-protected:
-
+  protected:
     uint16_t debounce_period_ms;
     PinMode mode;
     InterruptMode int_mode;
     GPIO_PinState state;
 
-private:
-
-
-
+  private:
     void (*onChange)();
 
     GPIO_PinState current_transition;
     uint32_t last_transition_ms;
     uint32_t last_state_change_ms;
     uint32_t last_period_ms;
-
 };
-#endif //TRX_FRONTEND_INPUTPIN_H
+#endif // TRX_FRONTEND_INPUTPIN_H

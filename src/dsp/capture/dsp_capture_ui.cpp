@@ -4,6 +4,7 @@
 
 #include <io/file_factory.h>
 #include "dsp/dsp_ui.h"
+#include "dsp/fft/fft.h"
 #include "dsp/replay/dsp_replay_ui.h"
 #include "dsp_capture_ui.h"
 #include "io/file_types.h"
@@ -105,11 +106,16 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
             freqEdit.set_frequency(radio::get_frequency());
 
+            // Remove fft update priority
+            fft::fft_task.set_high_priority(false);
+
             break;
         case Menu::exitEvent:
 
             if (task->status.status == DSP_STATUS_STOPPED) {
 
+                // Remove fft update priority
+                fft::fft_task.set_high_priority(true);
                 dsp_set_real_time(!ISANALOG);
                 menu_size(DISPLAY_X_PIXELS, INFO_HEIGHT);
                 view_manager::mainView.remove_child(&capture_w);
