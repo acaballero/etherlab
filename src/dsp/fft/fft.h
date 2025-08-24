@@ -69,7 +69,7 @@ typedef struct st_fft_params {
     uint16_t slice_w_px = 0;
 
     // Start bin of each FFT
-    uint8_t start_bin = 0;
+    uint16_t start_bin = 0;
 
     // Resolution bandwidth at the display
     float display_rbw = 0;

@@ -87,7 +87,9 @@ Menu::result on_menu_event(Menu::eventMask e) {
             // Select the last saved file as default
             io::path base_path = io::path{WAVEFILE_DEFAULT_FOLDER} + "/";
             FSO fso{base_path};
+
             start_path = fso.get_last_updated_file();
+
             fso.close();
 
             if (start_path.empty()) {
@@ -105,6 +107,8 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
             // Update (select) it
             on_filepicker(Menu::updateEvent);
+
+            LOG("after on filepicker\n");
 
             if (fres == FR_OK) {
 
@@ -192,10 +196,10 @@ Menu::result on_filepicker(eventMask e) {
 
     if (e == Menu::refreshEvent) {
         path = filePicker.focused_path;
-        //  LOG("onfile: refresh: %s\n", path.c_str());
+        // LOG("onfile: refresh: %s\n", path.c_str());
     } else {
         path = filePicker.selected_path;
-        //   LOG("onfile: select: %s\n", path.c_str());
+        // LOG("onfile: select: %s\n", path.c_str());
     }
 
     // Check file format. Files are not deeply analyzed to determine their type. It is inferred from the extension

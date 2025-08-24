@@ -42,8 +42,8 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
         // Naive interpolation
         // Output channel number is always 2
-        // uint8_t d = 0;
-        for (size_t i = 0, j = 0; i < buffer->count * 2; i += 2) {
+        // Expects buffer to be complex interleaved
+        for (size_t i = 0, j = 0; i < buffer->count; i += 2) {
 
             if ((i >> 1) & (this->status.decimation_factor - 1)) {
                 // if (d > 0) {
@@ -71,15 +71,15 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
         output_stream.consume(bytesToRead, &p);
 
-        // LOG("I:");
-        // for (int i = 0; i < bytesToRead / 2; i += 2) {
-        //     LOG("%d,", ((int16_t *)p)[i]);
+        // LOG_RAW("I:");
+        // for (size_t i = 0; i < buffer->count; i += 2) {
+        //     LOG_RAW("%d,", ((adc_type *)p)[i]);
         // }
-        // LOG("\nQ:");
-        // for (int i = 1; i < bytesToRead / 2; i += 2) {
-        //     LOG("%d,", ((uint16_t *)p)[i]);
+        // LOG_RAW("\nQ:");
+        // for (size_t i = 1; i < buffer->count; i += 2) {
+        //     LOG_RAW("%d,", ((adc_type *)p)[i]);
         // }
-        // LOG("\n", 0);
+        // LOG_RAW("\n", 0);
 
     } else {
         if (!output_stream.is_closed()) {

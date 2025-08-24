@@ -598,7 +598,7 @@ bool fft_config(uint32_t span) {
 //__attribute__((section(".ccmram")))
 void doFFT() {
 
-    //  calibrateFFT(); // To measure max2 bin value
+    //  calibrateFFT(); // To measure max bin value
 
     if (config.fft.window != FFT_WINDOW_NONE && config.fft.view_mode != FFT_VIEW_TIME_DOMAIN) {
 

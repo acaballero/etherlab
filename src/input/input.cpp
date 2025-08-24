@@ -10,6 +10,7 @@
 #include "../lib/ST77XX-STM32/XPT2046_touch.h"
 #include "mcp23017.h"
 #include "stm32f4xx_hal_gpio.h"
+#include "status.h"
 
 int8_t last_pressed_button_id = -1;
 GPIOInputPin FrontPanelInterruptPin(FRONT_PANEL_INTERRUPT_PIN_A, FRONT_PANEL_INTERRUPT_PIN_A_PORT, PINMODE_IT, GPIO_NOPULL, 0, frontPanelInterruptCallback);
@@ -58,8 +59,9 @@ uint8_t get_front_panel_int_pin() {
 
 void frontPanelInterruptCallback() {
     // Note this will be called twice since the interrupt fires also on rising edges
-    // and we're using an MCP23017 (one pulse per button change). The second time pin will be set to 16 so it has no
-    // effect
+    // and we're using an MCP23017 which makes the interrupt pin go down when the line changes
+    // and up when the value is read. On the rising edge, get_front_panel_int_pin wont find a pin value
+    // and 'pin' will be set to 16, having no effect
     uint8_t pin = get_front_panel_int_pin();
 
     if (pin < 16) {
@@ -70,11 +72,15 @@ void frontPanelInterruptCallback() {
             input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, pin, 0, HAL_GetTick()});
             last_pressed_button_id = pin;
         }
-    }
 
-    uint8_t reg = 0;
-    mcp23017_read(&hmcp03, REGISTER_INTCAPA, &reg);
-    mcp23017_read(&hmcp03, REGISTER_INTCAPB, &reg);
+        // LOG("Resetting front panel interrupt: Pin: %d\n", pin);
+
+        uint8_t reg = 0;
+        mcp23017_read(&hmcp03, REGISTER_INTCAPA, &reg);
+        mcp23017_read(&hmcp03, REGISTER_INTCAPB, &reg);
+
+        HAL_Delay(2); // Let the interrupt pin go up before we check its state again
+    }
 }
 
 /*void analogKeyboardInterruptCallback() {

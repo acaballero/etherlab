@@ -126,7 +126,7 @@ uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_statu
         DSP_STATUS s = current_task->status.status;
         if ((command.command == DSP_COMMAND_START && s == DSP_STATUS_RUNNING) || (command.command == DSP_COMMAND_STOP && s == DSP_STATUS_STOPPED) ||
             s == DSP_STATUS_PENDING) {
-            LOG("Skipping command\n");
+            LOG("WARN: Skipping command %d: current task status: %d\n", command.command, s);
             return 1;
         }
     }
@@ -189,6 +189,8 @@ void dsp_start_task() {
                     status::handleError(status::ST_ERROR, "Error starting DSP processor");
                     return;
                 }
+            } else {
+                current_processor->status.status = DSP_STATUS_PENDING;
             }
 
             dsp::dsp_status = current_task->status.direction != DSP_DIRECTION_IN ? &current_processor->status : &current_task->status;

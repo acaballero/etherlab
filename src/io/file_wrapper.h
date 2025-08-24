@@ -316,6 +316,12 @@ template <typename T, typename ExtractKey>
 FRESULT FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_range(const T &min_key, const T &max_key, ExtractKey extract_key, std::vector<uint32_t> &results,
                                                                      uint32_t max) {
 
+    auto ready = file_.ready();
+
+    if (ready.is_error()) {
+        return FR_LOCKED;
+    }
+
     // Find first line >= min_key
     auto res = binary_search_first(min_key, extract_key, GTE);
     if (res.is_error()) {

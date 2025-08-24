@@ -11,7 +11,7 @@
 
 void DspCaptureProcessor::work(const buffer_t<adc_type> *buffer) {
 
-    // This processor does decimation and some heavy processing, which is usually done in the related taksk. However,
+    // This processor does decimation and some heavy processing, which is usually done in the related task. However,
     // decimating here saves memory since the capture task needs to process large blocks for the SD card writes to be efficient, but their size
     // would be multiplied by the decimation factor
 
@@ -35,12 +35,12 @@ void DspCaptureProcessor::work(const buffer_t<adc_type> *buffer) {
 
         decimator.decimate(b1, b2);
 
-        dsp::zip_f32(bi1_p, bq1_p, (float32_t *)bi2_p, status.decimated_block_size);
+        dsp::zip_f32(bi1_p, bi1_p + status.decimated_block_size, (float32_t *)bi2_p, status.decimated_block_size << 1);
 
         dsp::f32_to_s16((const float32_t *)bi2_p, (adc_type *)p, status.decimated_block_size << 1);
     }
 
-    buffer_t<adc_type> bb = {(adc_type *)p, size};
+    buffer_t<adc_type> bb = {(adc_type *)p, static_cast<size_t>(status.decimated_block_size << 1)};
     dc_blocker_i.filter(bb, status.n_channels, 0);
     dc_blocker_q.filter(bb, status.n_channels, 1);
 

@@ -157,12 +157,12 @@ class FSO {
      */
     FRESULT openFolder(const io::path &path) {
         //   LOG("FSO: open folder %s\n", path.c_str());
-        if (opened || lock_sd_card(5000)) {
+        if (opened || lock_sd_card(5000, "FSO:openFolder")) {
 
             io::path folder = path.parent_path();
 
             FRESULT fres = f_opendir(&dir, folder.c_str());
-            //    LOG("Opening folder '%s': Result: %d, index: %d, size: %d\n", folder.c_str(), fres, dir.index, folder.native().size());
+            //   LOG("Opening folder '%s': Result: %d, index: %d, size: %d\n", folder.c_str(), fres, dir.index, folder.native().size());
 
             // reset everything so it is cached again
             curr_folder_count = -1;
@@ -173,7 +173,7 @@ class FSO {
 
             return fres;
         } else {
-            status::handleError(status::ST_ERROR, "Error adquiring file system lock");
+            //     status::handleError(status::ST_ERROR, "Error adquiring file system lock");
             return FR_LOCKED;
         }
     }

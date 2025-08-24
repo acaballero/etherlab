@@ -307,7 +307,7 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
             return std::make_unique<dsp::ssb_demodulator>();
         case FM:
             demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, 2500);
+            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, 4000);
             return demod;
         case WFM:
             demod = std::make_unique<dsp::fm_demodulator>();

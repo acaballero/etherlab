@@ -30,16 +30,16 @@ void CaptureTask::work() {
     uint16_t av = input_stream.available(&p);
     uint32_t bytes_in = DSP_FIFO_BLOCK_BYTES;
 
-    PROFILE_PUSH("work");
+    // PROFILE_PUSH("work");
     if (av >= bytes_in) {
 
         status.processed_blocks++;
 
         FRESULT fres = FR_OK;
 
-        PROFILE_PUSH("fwrite");
+        // PROFILE_PUSH("fwrite");
         fres = file->write(p, bytes_in);
-        PROFILE_POP();
+        // PROFILE_POP();
 
         input_stream.consume(bytes_in, &p);
 
@@ -55,7 +55,7 @@ void CaptureTask::work() {
             }
         }
     }
-    PROFILE_POP();
+    // PROFILE_POP();
 
     // GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }
@@ -142,7 +142,7 @@ bool CaptureTask::start() {
         return false;
     } else {
 
-        dsp::enable_frequency_shift(false); // Capture/Replay wont apply frequency shifts for DC issues mitigation
+        dsp::enable_frequency_shift(false); // Capture/Replay wont apply frequency shifts
 
         // Update FFT and sample rate parameters
         fft_config(config.fft.span);

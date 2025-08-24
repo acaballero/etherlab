@@ -23,8 +23,11 @@ typedef struct {
      * by biasing each DAC channel in the board, but it is not :(. It happens that the common mode of the
      * DAC output (I and Q) gets biased at whatever level the signal has after DSP processing and, to drive it
      * to the proper common mode (that of the voltage divider biasing the negative input), we have to apply an offset here
-     * TODO: Hack the board to bias the I/Q DAC channels coupling them to voltage dividers */
-    uint16_t dac_offset = 560;
+     * TODO: Hack the board to bias the I/Q DAC channels coupling them to voltage dividers
+     * EDIT: Did I do this already?
+     * FIXME: The problem (in addition) is that the adc_type is int16 and DAC cannot be fed with negative values so a shift is needed
+     */
+    uint16_t dac_offset = 1000;
 
 } st_hw_config;
 

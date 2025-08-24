@@ -80,25 +80,30 @@ bool try_lock_sd_card() {
         b = false;
     } else {
         sd_card_locked = true;
-        // LOG("sdcard locked\n");
+
         if (SDIO_GetPowerState(SDIO_HANDLE.Instance) == 0) {
             SDIO_PowerState_ON(SDIO_HANDLE.Instance);
+            HAL_Delay(10);
         }
         b = true;
     }
 
-    //    LOG("SDcard locked: %d, state: %d\n", b, sd_card_locked);
+    // LOG("SD card locked: %d, state: %d\n", b, sd_card_locked);
     return b;
 }
 
-bool lock_sd_card(uint32_t timeout_ms) {
+bool lock_sd_card(uint32_t timeout_ms, const char *id) {
     // TODO: Save who locked it and prevent other client to unlock.
     // Currently, if someone unlocks the card (and thus shutting power off which, btw, owes to EMI and battery reasons)
     // and some fatfs file is tried, it will timeout.
+    // LOG("%s tries to lock SD card\n", id ? id : "unknown");
     volatile uint32_t start = HAL_GetTick();
     while (!try_lock_sd_card()) {
         volatile uint32_t elapsed = (HAL_GetTick() - start);
         if (elapsed >= timeout_ms) {
+            if (timeout_ms) {
+                LOG("Timeout locking SD card after %d ms: ID %s\n", timeout_ms, id ? id : "unknown");
+            }
             return false; // timeout
         } else {
             // HAL_Delay(100);
@@ -112,7 +117,7 @@ bool lock_sd_card(uint32_t timeout_ms) {
 bool unlock_sd_card() {
     bool b;
     if (sd_card_locked && sdcard_info.status != MassStorageDeviceActive) { // note: prevent someone powering the sd device off while MSD is on
-        // LOG("sdcard unlocked\n");
+
         SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
         sd_card_locked = false;
         b = true;
@@ -120,7 +125,7 @@ bool unlock_sd_card() {
         b = false;
     }
 
-    // LOG("SDcard UNlocked: %d, state: %d\n", b, sd_card_locked);
+    // LOG("SDcard unlocked: %d, state: %d\n", b, sd_card_locked);
     return b;
 }
 
@@ -140,7 +145,7 @@ void sdcard_init(void) {
     /* Link the USER driver */
     // uint8_t retUSER;
 
-    if (lock_sd_card()) {
+    if (lock_sd_card(0, "init")) {
 
         sdcard_st_info new_status;
         // TODO: check for presence

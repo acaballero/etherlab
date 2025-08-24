@@ -47,8 +47,10 @@ void ReplayTask::work() {
                     // We check again for the status because the ADC interrupt could've stopped the capture before
                     // TODO: do better error handling
                     if (FatFSFileHandle.fptr < FatFSFileHandle.fsize - DSP_FIFO_BLOCK_BYTES) {
+
                         this->halt(DSP_ERR_FILEREAD);
                     } else {
+
                         eof = true;
                     }
                 }

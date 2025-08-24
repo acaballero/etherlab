@@ -13,10 +13,15 @@
 #include "../lib/printf/printf.h"
 
 #if DEBUG_MSGS
-#define LOG_NOARGS(msg)                                                                                                                                        \
-    { printf_(msg); }
-#define LOG_VARS(msg, ...)                                                                                                                                     \
-    { ::status::debug_print(msg, __VA_ARGS__); }
+#define LOG_NOARGS(with_timestamp, msg)                                                                                                                        \
+    {                                                                                                                                                          \
+        if (with_timestamp) {                                                                                                                                  \
+            printf_("%d: ", HAL_GetTick());                                                                                                                    \
+        }                                                                                                                                                      \
+        printf_("%s", msg);                                                                                                                                    \
+    }
+#define LOG_VARS(with_timestamp, msg, ...)                                                                                                                     \
+    { ::status::debug_print(msg, with_timestamp, __VA_ARGS__); }
 #else
 #define LOG_NOARGS(msg)                                                                                                                                        \
     {}
@@ -28,7 +33,8 @@
 #define LOG_GET_MACRO(_1, _2, _3, _4, _5, NAME, ...) NAME
 
 // Dispatch macro: handles 1–7 args (add more if needed)
-#define LOG(...) LOG_GET_MACRO(__VA_ARGS__, LOG_VARS, LOG_VARS, LOG_VARS, LOG_VARS, LOG_NOARGS)(__VA_ARGS__)
+#define LOG(...) LOG_GET_MACRO(__VA_ARGS__, LOG_VARS, LOG_VARS, LOG_VARS, LOG_VARS, LOG_NOARGS)(true, __VA_ARGS__)
+#define LOG_RAW(...) LOG_GET_MACRO(__VA_ARGS__, LOG_VARS, LOG_VARS, LOG_VARS, LOG_VARS, LOG_NOARGS)(false, __VA_ARGS__)
 
 namespace status {
 
@@ -60,7 +66,7 @@ struct st_status {
 };
 
 extern Status systemStatus;
-void debug_print(const char *str, ...);
+void debug_print(const char *str, int timestamp, ...);
 void clearError();
 void handleError(StatusCode code, const char *msg);
 } // namespace status

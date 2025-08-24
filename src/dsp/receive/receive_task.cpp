@@ -127,9 +127,11 @@ bool ReceiveTask::init() {
         compressor_enabled = false;
     }
 
-    squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
-        set_squelch();
-    });
+    if (!squelch_signal_token) {
+        squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
+            set_squelch();
+        });
+    }
 
     set_squelch();
 

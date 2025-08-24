@@ -5,6 +5,7 @@
 #include "status.h"
 #include "Signal.h"
 #include "hw/hw_config.h"
+#include "stm32f4xx_hal.h"
 #include <printf.h>
 
 namespace status {
@@ -12,12 +13,19 @@ namespace status {
 Status systemStatus;
 Signal status_signal;
 
-void debug_print(const char *str, ...) {
+void debug_print(const char *str, int timestamp, ...) {
     va_list argptr;
-    va_start(argptr, str);
+    va_start(argptr, timestamp);
+    auto t = HAL_GetTick();
 #if SWO_ENABLED
+    if (timestamp) {
+        printf_("%d: ", t);
+    }
     vprintf_(str, argptr);
 #elif USB_PRINT_ENABLED
+    if (timestamp) {
+        usb.print("%d: ", t);
+    }
     usb.print(str, argptr);
 #endif
     va_end(argptr);

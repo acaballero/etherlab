@@ -373,8 +373,9 @@ class FatFSFile {
     Offset tell() const;
     Result<Offset> seek(uint64_t Offset);
     Result<Offset> truncate();
+    Result<bool> ready(uint16_t timeout_ms = 0);
     Size size() const;
-    Result<bool> eof();
+    bool eof();
 
     template <size_t N> Result<Size> write(const std::array<uint8_t, N> &data) {
         return write(data.data(), N);

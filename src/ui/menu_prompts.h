@@ -145,14 +145,14 @@ void open_keypad(T value, const char *units, const char *name, uint8_t frac_digi
 template <typename T> void open(numberPrompt<T> &prompt) {
 
     auto on_s = prompt.on_select;
-    LOG("open %d\n", &on_s);
+
     if (prompt.step > 0) {
         Menu::open_number_edit<T>(
             *prompt.value, prompt.unit, prompt.shadow->text, prompt.decimals,
             [&prompt](T v) {
                 *(prompt.value) = v;
                 if (prompt.on_select) {
-                    LOG("calling prompt.on_select on %x\n", &prompt.on_select);
+
                     prompt.on_select(v);
                 }
             },

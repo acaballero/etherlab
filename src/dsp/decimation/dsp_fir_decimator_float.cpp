@@ -94,7 +94,7 @@ template <int TAPS> void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<float32_t
 
         dsp::zip_f32(tmp_buff_out, tmp_buff_out_q, (float32_t *)dst.p, decimated_block_size);
     } else if (src.format == COMPLEX_SEQUENTIAL && dst.format == COMPLEX_SEQUENTIAL) {
-        decimate((float32_t *)src.p, (float32_t *)src.p + src.count, (float32_t *)dst.p, (float32_t *)dst.p + dst.count / this->factor, src.count);
+        decimate((float32_t *)src.p, (float32_t *)src.p + src.count, (float32_t *)dst.p, (float32_t *)dst.p + src.count / this->factor, src.count);
     } else if (src.format == COMPLEX_SEQUENTIAL && dst.format == COMPLEX_INTERLEAVED) {
         decimate((float32_t *)src.p, (float32_t *)src.p + src.count, dst, dst.count);
     } else if (src.format == REAL && dst.format == REAL) {

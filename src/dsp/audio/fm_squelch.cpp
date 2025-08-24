@@ -41,9 +41,12 @@ bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
 }
 
 void FMSquelch::config(const float mag_threshold, uint32_t sample_rate) {
+
     this->threshold = 5 * mag_threshold * mag_threshold; // square the peak magnitude
 
-    high_pass_filter.config(sample_rate, 4000, 1, HPF);
+    if (high_pass_filter.get_input_rate() != sample_rate) {
+        high_pass_filter.config(sample_rate, 4000, 1, HPF);
+    }
 }
 
 bool FMSquelch::enabled() const {

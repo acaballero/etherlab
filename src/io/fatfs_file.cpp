@@ -94,14 +94,16 @@ FatFSFile::Offset FatFSFile::tell() const {
     return f_tell(&f);
 }
 
-FatFSFile::Result<bool> FatFSFile::eof() {
+bool FatFSFile::eof() {
     return f_eof(&f);
 }
 
 FatFSFile::Result<FatFSFile::Offset> FatFSFile::seek(Offset new_position) {
     /* NOTE: Returns *old* position, not new position */
     const auto old_position = tell();
-    lock_sd_card();
+    if (!lock_sd_card()) {
+        return FR_LOCKED;
+    };
     const auto result = f_lseek(&f, new_position);
     unlock_sd_card();
     if (result != FR_OK) {
@@ -113,9 +115,20 @@ FatFSFile::Result<FatFSFile::Offset> FatFSFile::seek(Offset new_position) {
     return {static_cast<FatFSFile::Offset>(old_position)};
 }
 
+FatFSFile::Result<bool> FatFSFile::ready(uint16_t timeout_ms) {
+    if (!lock_sd_card(timeout_ms)) {
+        return {static_cast<Error>(FR_LOCKED)};
+    };
+    unlock_sd_card();
+
+    return true;
+}
+
 FatFSFile::Result<FatFSFile::Offset> FatFSFile::truncate() {
     const auto position = f_tell(&f);
-    lock_sd_card();
+    if (!lock_sd_card()) {
+        return FR_LOCKED;
+    };
     auto result = f_truncate(&f);
     result = result == FR_OK ? f_sync(&f) : result;
     unlock_sd_card();
@@ -144,7 +157,9 @@ io::filesystem_error FatFSFile::write_line(const std::string &s) {
 }
 
 io::filesystem_error FatFSFile::sync() {
-    lock_sd_card();
+    if (!lock_sd_card()) {
+        return FR_LOCKED;
+    };
     const auto result = f_sync(&f);
     unlock_sd_card();
     if (result == FR_OK) {
