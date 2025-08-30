@@ -18,7 +18,7 @@
 
 namespace io {
 
-static constexpr uint32_t BUFFER_SIZE = 512;
+static constexpr uint32_t BUFFER_SIZE = 256;
 
 enum FindMode { LTE, GTE, GT, LT, EQ };
 
@@ -83,12 +83,12 @@ template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class
         if (res.ok()) {
 
             invalidate_all_caches();
+
             scan_file();
 
-            // LOG("**** INIT\n");
-            for (int i = 0; i < newline_cache_.size(); i++) {
-                // LOG("lc:%d:%d:%d\n", i, newline_cache_[i].offset, newline_cache_[i].line_number);
-            }
+            // for (int i = 0; i < newline_cache_.size(); i++) {
+            //  LOG("lc:%d:%d:%d\n", i, newline_cache_[i].offset, newline_cache_[i].line_number);
+            //}
             return true;
         }
 
@@ -267,46 +267,65 @@ Result<uint32_t, io::filesystem_error> FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACH
     uint32_t right = total_lines_;
     uint32_t result = total_lines_;
 
+    // LOG("** binary search: %d, mode:%u\n", key, (int)mode);
+
     while (left < right) {
+
         uint32_t mid = left + (right - left) / 2;
         std::string line = get_line(mid);
-
+        // LOG("left:%d,right:%d,mid:%d | line:%s | ", left, right, mid, line.c_str());
         if (line.empty()) {
+            // LOG_RAW("empty key!!\n");
             return io::filesystem_error{FR_INT_ERR};
         }
 
         T line_key = extract_key(line);
 
+        // LOG_RAW("key: %d | ", line_key);
+
         if (mode == EQ) {
             if (line_key == key) {
+
                 result = mid;
                 right = mid; // Continue searching left for first occurrence
+                // LOG_RAW("condition TRUE (EQ) right=mid, result=mid -> %d\n", right);
             } else if (line_key < key) {
+
                 left = mid + 1;
+                // LOG_RAW("condition FALSE (EQ) left=mid+1 -> %d\n", left);
             } else {
                 right = mid;
+                // LOG_RAW("condition FALSE (EQ) right=mid -> %d\n", right);
             }
         } else {
             bool condition =
                 (mode == LT && line_key < key) || (mode == LTE && line_key <= key) || (mode == GTE && line_key >= key) || (mode == GT && line_key > key);
 
             if (condition) {
+
                 result = mid;
                 if (mode == LT || mode == LTE) {
+
                     left = mid + 1; // Search right for last occurrence
+                    // LOG_RAW("condition TRUE (lt,lte) left -> %d\n", left);
                 } else {
                     right = mid; // Search left for first occurrence
+                    // LOG_RAW("condition TRUE (gt,gte) right -> %d\n", right);
                 }
             } else {
                 if (mode == LT || mode == LTE) {
+
                     right = mid;
+                    // LOG_RAW("condition FALSE (lt,lte) rigth -> %d\n", right);
                 } else {
                     left = mid + 1;
+                    // LOG_RAW("condition FALSE (gt,gte) left -> %d\n", left);
                 }
             }
         }
     }
 
+    // LOG("Result:%d\n", result);
     return result;
 }
 
@@ -701,8 +720,9 @@ uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_line_start_offse
     }
 
     // Fallback: ensure cache covers this line, then try again
+    // LOG("ensure_newline_cache_covers %d\n", line_number);
     ensure_newline_cache_covers(line_number);
-
+    // LOG("END ensure_newline_cache_covers %d\n", line_number);
     if (!newline_cache_.empty()) {
         uint32_t cache_end_line = cache_start_line_ + newline_cache_.size();
         if (line_number >= cache_start_line_ && line_number < cache_end_line) {
@@ -712,6 +732,7 @@ uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_line_start_offse
     }
 
     // Final fallback: scan from beginning (should rarely happen)
+    // LOG("Scan to line!!!!!\n");
     return scan_to_line(line_number);
 }
 
@@ -767,6 +788,7 @@ uint32_t FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::find_line_end_offset(
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
 std::string FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::read_line_from_file(uint32_t line_number) {
+
     if (line_number >= total_lines_) {
         return {};
     }
@@ -796,7 +818,7 @@ std::string FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::read_line_from_fil
         result.append(work_buffer_, *read_result);
         remaining -= *read_result;
     }
-
+    // LOG("Reading line %d (%d,%d): %s\n", line_number, start_offset, end_offset, result.c_str());
     return result;
 }
 

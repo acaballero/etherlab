@@ -138,7 +138,7 @@ const char *StatusWidget::modulation() {
 char *StatusWidget::frontend() {
     if (!ISTX) {
 
-        switch (config.frontend_path) {
+        switch (main_board::get_frontend_path()) {
             case radio::FRONTEND_PATH_THRU:
                 sprintf(buf, "ATT:0");
                 break;
@@ -209,7 +209,7 @@ void StatusWidget::before_paint() {
 
     radio::BAND band = config.band == radio::BAND_AUTO ? radio::find_band(radio::get_frequency()) : config.band;
 
-    status::st_status status = {config.modulation, ISTX, band, radio::filter, radio::if_filter, config.frontend_path, config.agc_enabled,
+    status::st_status status = {config.modulation, ISTX, band, radio::filter, radio::if_filter, main_board::get_frontend_path(), config.agc_enabled,
                                 _status.f_carrier, // we won't show the frequency in the status bar, so use current_status value
                                 Menu::menuStatus
 
@@ -255,6 +255,11 @@ void StatusWidget::before_paint() {
         const char *modulation_str = modulation();
         buttons[MODULATION].set_text(modulation_str);
         buttons[FRONTEND].set_text(frontend());
+        if (config.frontend_path == radio::FRONTEND_PATH_AUTO) {
+            buttons[FRONTEND].set_fg(fg_color_auto);
+        } else {
+            buttons[FRONTEND].set_fg(fg_color);
+        }
         buttons[AGC].set_text(agc_alc());
 
         for (auto &btn : buttons) {

@@ -200,11 +200,11 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 #if DEBUG_LCD
         char str[10];
         if (area->show_fps) {
-            sprintf(str, "%d.%d", (int)area->fps, (int)(area->fps * 10) % 10);
+            sprintf(str, "%2d.%d", (int)area->fps, (int)(area->fps * 10) % 10);
         }
 #endif
 
-        bool address_window_set = true;
+        // bool address_window_set = true;
 
         while (current_line < area->box.height) {
 

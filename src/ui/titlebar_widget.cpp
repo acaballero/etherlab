@@ -6,6 +6,7 @@
 #include <rf_coupler.h>
 #include <stdint.h>
 #include "Display_afb.h"
+#include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
 #include "hw/stm32f4xx/rtc.h"
 #include "input/inputEvent.h"
@@ -17,6 +18,7 @@
 #include "power_amp.h"
 #include "fatfs/fatfs.h"
 #include "main_board.h"
+#include "types.h"
 #include "utils.hpp"
 #include "status.h"
 
@@ -269,9 +271,9 @@ void TitleBarWidget::before_paint() {
 
             dsp::dsp_status->reset();
             char buf[20];
-            bool space = dsp::dsp_config.audio_compressor_enabled || dsp::dsp_config.deemphasis_enabled;
-            sprintf(buf, "%s%s%s%s%s", "DSP", space ? " " : "", dsp::dsp_config.audio_compressor_enabled ? "C" : "",
-                    dsp::dsp_config.deemphasis_enabled ? "D" : "", error ? " !" : "");
+            MODULATION_MODE mod = main_board::getModulationMode();
+            bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod);
+            sprintf(buf, "%s%s%s%s%s", "DSP", space ? " " : "", dsp::apply_compression(mod) ? "C" : "", dsp::apply_deemph(mod) ? "D" : "", error ? " !" : "");
             trim(buf);
             btnDSP.set_text(buf);
         }

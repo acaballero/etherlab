@@ -47,6 +47,14 @@ class Widget : public Painter {
 
     virtual void set_parent_rect(const Rect new_parent_rect);
 
+    void set_width(int w);
+
+    void set_height(int h);
+
+    void set_top(int y);
+
+    void set_left(int x);
+
     Widget *parent() const;
 
     Widget *focused_widget() const;

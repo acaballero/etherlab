@@ -9,6 +9,7 @@
 #include "main_board.h"
 #include "stdio.h"
 #include "stm32f4xx_hal.h"
+#include "s_strength.h"
 
 namespace dsp {
 
@@ -101,6 +102,25 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
                 }
             }
         }
+    }
+
+    if (squelch_enabled && squelch.is_noise(audio)) {
+        // Ouput silence
+        memset(audio.p, 0, audio.size_bytes);
+    }
+}
+
+void APRSTask::set_squelch() {
+
+    if (config.squelch_level) {
+
+        float threshold = max2(0, 10 - config.squelch_level);
+
+        squelch.config(threshold, status.sample_rate);
+        squelch_enabled = true;
+
+    } else {
+        squelch_enabled = false;
     }
 }
 
@@ -224,7 +244,21 @@ bool APRSTask::init() {
 
     deemph_filter.config(status.sample_rate, 1000, 1, LPF);
 
+    if (!squelch_signal_token) {
+        squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
+            set_squelch();
+        });
+    }
+
+    set_squelch();
+
     return true;
+}
+
+APRSTask::~APRSTask() {
+    if (squelch_signal_token) {
+        sstrength::squelch_signal.remove(squelch_signal_token);
+    }
 }
 
 } // namespace dsp

@@ -82,23 +82,35 @@ template <int order> void DspIIRDecimator<order>::init() {
     Dsp::Cascade::Stage *dg;
 
     if (type == LPF) {
-        Dsp::SimpleFilter<Dsp::ChebyshevI::LowPass<order>, 1, Dsp::DirectFormI> f;
+        Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> f;
 
-        f.setup(order,                     // order
-                this->input_rate,          // sample rate
-                ((double)this->bandwidth), // cutoff frequency
-                1);                        // ripple dB
+        f.setup(order,                    // order
+                this->input_rate,         // sample rate
+                ((double)this->bandwidth) // cutoff frequency
+        );                                // ripple dB
+
+        Dsp::Cascade::Storage st = f.getCascadeStorage();
+        dg = st.stageArray;
+    } else if (type == HPF) {
+        Dsp::SimpleFilter<Dsp::Butterworth::HighPass<order>, 1, Dsp::DirectFormI> f;
+
+        f.setup(order,                    // order
+                this->input_rate,         // sample rate
+                ((double)this->bandwidth) // cutoff frequency
+                                          // Ripple
+        );                                // Rolloff
 
         Dsp::Cascade::Storage st = f.getCascadeStorage();
         dg = st.stageArray;
     } else {
-        Dsp::SimpleFilter<Dsp::Elliptic::HighPass<order>, 1, Dsp::DirectFormI> f;
+        Dsp::SimpleFilter<Dsp::Butterworth::BandPass<order>, 1, Dsp::DirectFormI> f;
+        uint32_t bw = bandwidth - start_frequency; // I know, bandwidth is such a bad naming for the cutoff freq when it comes to band-pass
 
-        f.setup(order,                     // order
-                this->input_rate,          // sample rate
-                ((double)this->bandwidth), // cutoff frequency
-                4,                         // Ripple
-                -1);                       // Rolloff
+        f.setup(order,                      // order
+                this->input_rate,           // sample rate
+                start_frequency + (bw / 2), // center frequency
+                bw                          // center frequency
+        );                                  // Rolloff
 
         Dsp::Cascade::Storage st = f.getCascadeStorage();
         dg = st.stageArray;
@@ -110,7 +122,7 @@ template <int order> void DspIIRDecimator<order>::init() {
     LOG("IIR Filter : type %d\n", type);
     LOG("a=[%f,%f,%f]\n", dg[0].m_a0, dg[0].m_a1, dg[0].m_a2);
     LOG("b=[%f,%f,%f]\n", dg[0].m_b0, dg[0].m_b1, dg[0].m_b2);
-    LOG("rate %d, bw: %d\n", input_rate, bandwidth);
+    LOG("rate %d, bw: %d, start_freq:%d\n", input_rate, bandwidth, start_frequency);
 
     coeffs[0] = dg[0].m_b0;
     coeffs[1] = dg[0].m_b1;
@@ -144,12 +156,14 @@ template <int order> void DspIIRDecimator<order>::init() {
 
 template <int order> bool DspIIRDecimator<order>::config(uint32_t input_rate, uint32_t cutoff_freq, uint16_t factor, filter_type type) {
 
-    this->input_rate = input_rate;
-    this->bandwidth = cutoff_freq;
-    this->factor = factor;
-    this->type = type;
+    if (input_rate != this->input_rate || cutoff_freq != this->bandwidth || factor != this->factor || type != this->type) {
+        this->input_rate = input_rate;
+        this->bandwidth = cutoff_freq;
+        this->factor = factor;
+        this->type = type;
 
-    this->init();
+        this->init();
+    }
 
     return true;
 }

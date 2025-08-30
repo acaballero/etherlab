@@ -13,6 +13,8 @@
 #include "main_board.h"
 #include "menuBase.h"
 #include "radio.h"
+#include "status.h"
+#include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "ui/menu_actions.h"
 #include "ui/menu_options.h"
@@ -300,6 +302,13 @@ bool init_file_buffer() {
     }
 
     auto result = std::unique_ptr<io::FileWrapper<>>(new io::FileWrapper<>());
+
+    // Mute to avoid SD card EMI. There's a TODO in some place to address this (new board design)
+    main_board::setMute(GPIO_PIN_SET);
+    status::handleError(status::ST_INFO, "Initializing memory");
+
+    bool res = true;
+
     if (result->load(FREQ_MEMORY_FILE, true)) {
         db_file = std::move(result);
 
@@ -319,10 +328,12 @@ bool init_file_buffer() {
             init_memory_mode();
         }
 
-        return true;
     } else {
-        return false;
+        res = false;
     }
+
+    main_board::setMute(GPIO_PIN_RESET);
+    return res;
 }
 
 // Get frequency memory entry by index (line number)
@@ -353,13 +364,15 @@ auto extract_freq_func = [](const std::string &line) {
 
 void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories) {
 
+    //  LOG("find_in_freq_range %d, %d\n", freq_min, freq_max);
     INIT_OR_ABORT()
     out_memories.clear();
 
     std::vector<uint32_t> line_numbers;
 
+    //  LOG("find_range %d, %d\n", freq_min, freq_max);
     FRESULT res = db_file->find_range(freq_min, freq_max, extract_freq_func, line_numbers, MAX_RETRIEVED_ITEMS_PER_RANGE);
-
+    //  LOG("end find:  %d\n", res);
     if (res != FR_OK) {
         // TODO: Remove this once this is stable
         // fix_db();
@@ -368,7 +381,6 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
 
     out_memories.reserve(line_numbers.size());
 
-    // Prefetch for efficiency
     if (!line_numbers.empty()) {
         uint32_t min_line = *std::min_element(line_numbers.begin(), line_numbers.end());
         uint32_t max_line = *std::max_element(line_numbers.begin(), line_numbers.end());
@@ -410,6 +422,7 @@ void saveTarget() {
 int find_index(st_freq_mem &data) {
     INIT_OR_ABORT(-1)
 
+    //   LOG("Finding index for %s (%d) id:%d\n", data.name, data.freq, data.id);
     auto res = db_file->binary_search_first(data.freq, extract_freq_func, io::FindMode::EQ);
 
     if (res.is_error()) {
@@ -420,6 +433,7 @@ int find_index(st_freq_mem &data) {
 
     // Linear search to find exact item (many can have the same frequency if they have different types)
     for (int32_t pos = line_pos; pos >= 0 && pos < get_freq_mem_count(); pos++) {
+        //    LOG("find_index: get by index %d\n", pos);
         st_freq_mem mem = get_by_index(pos);
         if (mem == data) {
             return pos;
@@ -539,6 +553,7 @@ st_freq_mem next_prev(bool next) {
     int16_t step = next ? 1 : -1;
     int count = get_freq_mem_count();
     uint16_t ix = curr_index >= 0 ? constrain(curr_index + step, 0, count) : 0;
+    // LOG("next_prev: %d, getting index  %d\n", next, ix);
     return get_by_index(ix);
 }
 
@@ -583,6 +598,7 @@ st_freq_mem find_closest(uint64_t f, DIRECTION direction, FREQ_TYPE t) {
     int count = get_freq_mem_count();
     io::FindMode mode = direction == FORWARD ? io::GTE : io::LTE;
 
+    //   LOG("find_closest to %d mode: %d, type: %d, type: %d\n", f, mode);
     auto res = db_file->binary_search_first(f, extract_freq_func, mode);
 
     if (res.is_error()) {

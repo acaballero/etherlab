@@ -11,6 +11,7 @@
 #include "dsp_common.h"
 #include "os/periodic_task.h"
 #include "task.h"
+#include "types.h"
 
 namespace dsp {
 
@@ -25,7 +26,9 @@ struct st_dsp_command {
 
 extern os::periodic_task task;
 extern bool adc_overload;
-
+bool apply_audio_bpf();
+bool apply_deemph(MODULATION_MODE mod);
+bool apply_compression(MODULATION_MODE mod);
 } // namespace dsp
 
 #ifdef __cplusplus

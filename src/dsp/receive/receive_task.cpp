@@ -10,6 +10,7 @@
 #include "dsp/buffer.hpp"
 #include "dsp/decimation/dsp_fir_decimator_float.h"
 #include "dsp/decimation/dsp_fir_decimator_float_complex.h"
+#include "dsp/dsp.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft.h"
 #include "dsp/fft/fft_types.h"
@@ -69,7 +70,7 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
 
 #endif
 
-    if (squelch.is_noise(buff_out_f32)) {
+    if (squelch_enabled && squelch.is_noise(buff_out_f32)) {
         // Ouput silence
         memset(buff_out_f32.p, 0, buff_out_f32.size_bytes);
     } else {
@@ -79,10 +80,11 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
 
         if (deemph_enabled) {
             deemph_filter.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
-        } else {
-            // Disabled. Minimal to negligible improvement
+        }
+
+        if (audio_bpf_enabled) {
             //  buffer_t<float32_t> b = {(float32_t *)bi1_p, (size_t)block_size_out * 2};
-            // audio_lpf.decimate(b, b, 0, 2, 2);
+            audio_bpf.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
         }
     }
 }
@@ -109,10 +111,14 @@ bool ReceiveTask::init() {
 
     MODULATION_MODE mod = main_board::getModulationMode();
 
-    // Init audio low-pass filter
-    // audio_lpf.config(status.sample_rate, 3000, 1);
+    if (dsp::apply_audio_bpf()) {
+        audio_bpf.config(status.sample_rate, 6000, 1, 300);
+        audio_bpf_enabled = true;
+    } else {
+        audio_bpf_enabled = false;
+    }
 
-    if (dsp::dsp_config.deemphasis_enabled && (mod == FM || mod == WFM)) {
+    if (dsp::apply_deemph(mod)) {
         // Init de-emphasis FM filter
         deemph_filter.config(status.sample_rate, 3000, 1, LPF);
         deemph_enabled = true;
@@ -120,7 +126,7 @@ bool ReceiveTask::init() {
         deemph_enabled = false;
     }
 
-    if (dsp::dsp_config.audio_compressor_enabled && (mod == AM || mod == SSB_USB || mod == SSB_LSB)) {
+    if (dsp::apply_compression(mod)) {
         compressor_enabled = true;
         compressor.config(status.sample_rate, dsp::dsp_config.audio_compressor_threshold);
     } else {

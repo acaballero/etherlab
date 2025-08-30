@@ -44,6 +44,16 @@ void dsp_stop();
 namespace dsp {
 os::periodic_task task(50, dsp_loop, 0, 0, "loop");
 bool adc_overload{false};
+
+bool apply_audio_bpf() {
+    return dsp::dsp_config.audio_bpf_enabled;
+}
+bool apply_deemph(MODULATION_MODE mod) {
+    return dsp::dsp_config.deemphasis_enabled && (mod == FM || mod == WFM);
+}
+bool apply_compression(MODULATION_MODE mod) {
+    return dsp::dsp_config.audio_compressor_enabled && (mod == AM || mod == SSB_USB || mod == SSB_LSB);
+}
 } // namespace dsp
 
 Task *current_task;
@@ -145,13 +155,13 @@ uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_statu
 }
 
 void dsp_start_task() {
-    //    LOG("dsp_start_task");
+    LOG("dsp_start_task");
 
     //  current_task = tasks[pending_command.id];
     //  dsp_status = &current_task->status;
     if (!dsp::dsp_status || dsp::dsp_status->status != DSP_STATUS_RUNNING) {
 
-        //   LOG(": not running, will start\n");
+        LOG_RAW(": not running, will start\n");
 
         input_stream.reset();
         output_stream.reset();

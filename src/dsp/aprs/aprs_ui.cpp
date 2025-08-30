@@ -24,7 +24,9 @@
 #include <string>
 #include "dsp/protocols/aprs.hpp"
 #include "ui/map_view.h"
+#include "ui/ui_types.h"
 #include "ui/view_manager.h"
+#include "ui/widget.h"
 
 namespace dsp_ui {
 
@@ -38,7 +40,28 @@ void APRSView::init() {
     set_font((FontDef *)&Font_7x10);
     title_widget.set_label("APRS");
 
-    add_children({&table_view, &console, &title_widget});
+    button_collapse.set_aling(ALIGN_CENTER);
+
+    button_collapse.action = [&](Button &, st_inputEvent) {
+        collapsed = !collapsed;
+
+        console.set_visible(!collapsed);
+
+        if (collapsed) {
+            set_width(METER_WIDTH);
+            button_collapse.set_text(">>");
+            button_collapse.set_left(METER_WIDTH - button_collapse_width);
+            title_widget.set_width(METER_WIDTH - button_collapse_width);
+
+        } else {
+            set_width(DISPLAY_X_PIXELS);
+            button_collapse.set_text("<<");
+            button_collapse.set_left(DISPLAY_X_PIXELS - button_collapse_width - 1);
+            title_widget.set_width(DISPLAY_X_PIXELS - button_collapse_width);
+        }
+    };
+
+    add_children({&table_view, &console, &title_widget, &button_collapse});
 
     console.set_font(this->font);
     table_view.set_font(this->font);

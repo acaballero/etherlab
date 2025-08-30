@@ -167,11 +167,11 @@ int16_t if_gain_to_db(IF_GAIN if_gain) {
 int calc_max_input_dbm() {
     // Based on estimations from the datasheet of the CMX973
     if (vga_gain == IF_GAIN_0 && vgb_gain == IF_GAIN_0) {
-        return -42;
+        return -56;
     } else if (vga_gain <= IF_GAIN_MINUS18 && vgb_gain == IF_GAIN_0) {
-        return -36 + if_gain_to_db(vga_gain) / 2;
+        return -56 - if_gain_to_db(vga_gain) / 2;
     } else {
-        return -46 - (if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain)) / 2;
+        return -56 - (if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain)) / 2;
     }
 }
 

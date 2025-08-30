@@ -103,29 +103,31 @@ bool WaterfallWidget::paint_callback() {
     // Last line of the waterfall display buffer to display in this paint iteration
     int16_t buffer_height = min2(this->size().height() + oy - 1, this->display->current_last_line) - this->display->current_line + 1;
 
-    uint16_t delta = buffer_width - width;
+    uint16_t delta = buffer_width > width ? buffer_width - width : 0; // container buffer bigger than ours
 
     pbyte = waterfallBuffer + ((this->display->current_line - oy) * (width >> 1));
 
     uint8_t byte;
 
-    buffer += ox;
+    buffer += delta ? ox : 0;
 
     for (int y = 0; y < buffer_height; y++) {
 
-        for (int x = 0; x < (width >> 1); x++) {
+        for (int x = 0, px = 0; x < (width >> 1); x++, px += 2) {
 
-            byte = *pbyte;
+            if (!delta || (px >= -ox && px < -ox + buffer_width)) {
+                byte = *pbyte;
 
-            for (uint8_t j = 0; j < PIXELS_BYTE; j++) {
+                for (uint8_t j = 0; j < PIXELS_BYTE; j++) {
 
-                colorIndex = byte & 0x000FU;
+                    colorIndex = byte & 0x000FU;
 
-                byte >>= 4;
+                    byte >>= 4;
 
-                b565_color = waterfall_palette_rgb565[colorIndex];
+                    b565_color = waterfall_palette_rgb565[colorIndex];
 
-                *(buffer++) = b565_color;
+                    *(buffer++) = b565_color;
+                }
             }
 
             pbyte++;

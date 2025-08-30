@@ -44,6 +44,12 @@ void setMute(GPIO_PinState);
 
 GPIO_PinState getMute();
 
+void set_frontend_path(radio::FRONTEND_PATH path);
+
+bool change_frontend_gain(int direction);
+
+radio::FRONTEND_PATH get_frontend_path();
+
 void set_if_filter(radio::IF_FILTER filter);
 
 bool setGPIOExpPin(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort, uint8_t pin, bool set);

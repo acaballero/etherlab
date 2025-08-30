@@ -41,6 +41,8 @@ GPIO_PinState mute = GPIO_PIN_RESET;
 Signal mode_signal{"mode_signal"};
 Signal if_filter_signal{"if_filter_signal"};
 
+radio::FRONTEND_PATH frontend_path = radio::FRONTEND_PATH_LNA;
+
 st_modulation_mode modes[] = {{CW, false}};
 
 battery::BATTERY_STATUS battery_status = battery::BATTERY_STATUS_UNDEFINED;
@@ -49,15 +51,6 @@ void s_strength_callback(void *, void *args) {
     sstrength::st_sstrength_info info = *((sstrength::st_sstrength_info *)args);
 
     setMute(info.in_squelch && info.level > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
-}
-
-void s_level_callback(void *, void *args) {
-    if (false) { // TODO: If frontend amplification is set to AUTO
-        float s_level = *((float *)args);
-        if (s_level > 11 && config.frontend_path != radio::FRONTEND_PATH_ATT) {
-            config.frontend_path = (radio::FRONTEND_PATH)(config.frontend_path - 1);
-        }
-    }
 }
 
 void on_dsp_event(st_dsp_status *status) {
@@ -134,13 +127,39 @@ void init() {
     rf_coupler::rf_coupler_signal.add(NULL, rf_coupler_info_callback);
     rf_coupler::set_offset(config.coupler_0db_mv);
     sstrength::squelch_signal.add(NULL, s_strength_callback);
-    sstrength::s_strength_signal.add(NULL, s_level_callback);
     battery::battery_signal.add(NULL, battery_callback);
     main_board::if_filter_signal.add(nullptr, if_filter_signal_callback);
     setModulationMode(config.modulation, true);
 
     // Standby led
     setGPIOExpPin(&hmcp03, MCP23017_PORTB, GPIOEXP_FPANEL_STBY_LED, true, true);
+
+    set_frontend_path(config.frontend_path);
+}
+
+void set_frontend_path(radio::FRONTEND_PATH path) {
+    if (path != radio::FRONTEND_PATH_AUTO) {
+        frontend_path = path;
+    } else {
+        frontend_path = radio::FRONTEND_PATH_LNA;
+    }
+    update();
+}
+
+radio::FRONTEND_PATH get_frontend_path() {
+    return frontend_path;
+}
+
+bool change_frontend_gain(int direction) {
+    if (config.frontend_path == radio::FRONTEND_PATH_AUTO) {
+        radio::FRONTEND_PATH current_path = get_frontend_path();
+        if ((current_path > radio::FRONTEND_PATH_ATT && direction < 0) || (current_path < radio::FRONTEND_PATH_LNA && direction > 0)) {
+            set_frontend_path((radio::FRONTEND_PATH)(current_path + direction));
+
+            return true;
+        }
+    }
+    return false;
 }
 
 void setGPIO() {
@@ -153,11 +172,11 @@ void setGPIO() {
     changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_5VIF_TX, ISTX, false);
 
     // Set the +5v (60 ma.) for the LNA in RX (inverted logic)
-    changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_LNA, !(!ISTX && config.frontend_path == radio::FRONTEND_PATH_LNA), false);
+    changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_LNA, !(!ISTX && get_frontend_path() == radio::FRONTEND_PATH_LNA), false);
     // Frontend pass-thru path
-    changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FRONT_THRU, !ISTX && config.frontend_path == radio::FRONTEND_PATH_THRU, false);
+    changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FRONT_THRU, !ISTX && get_frontend_path() == radio::FRONTEND_PATH_THRU, false);
     // Frontend attenuator path
-    changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FRONT_ATTENUATOR, !ISTX && config.frontend_path == radio::FRONTEND_PATH_ATT, false);
+    changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FRONT_ATTENUATOR, !ISTX && get_frontend_path() == radio::FRONTEND_PATH_ATT, false);
 
     // Set digital TX or analog RX&TX signal between the 1st and 2nd mixers
     changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTA, GPIOEXP_ANALOG_RXTX_DIGITAL_TX_SWITCH, config.mode != DIGITAL_TX, false);

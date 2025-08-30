@@ -25,6 +25,8 @@
 #include "status.h"
 #include "ui/view_manager.h"
 #include "io/file_system.h"
+#include "main_board.h"
+#include "os/task_manager.h"
 
 namespace dspCaptureUI {
 
@@ -34,7 +36,7 @@ io::path fname;
 char fname_buff[PATH_SIZE];
 bool filename_is_edited = false;
 CaptureWidget capture_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 10, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 10}, &lcd};
-
+MODE previous_mode;
 Menu::result on_freq_updated(Menu::eventMask e); // Forward declaration
 io::path get_file_name();                        // Forward declaration
 
@@ -109,6 +111,8 @@ Menu::result on_menu_event(Menu::eventMask e) {
             // Remove fft update priority
             fft::fft_task.set_high_priority(false);
 
+            previous_mode = config.mode;
+
             break;
         case Menu::exitEvent:
 
@@ -152,6 +156,15 @@ void on_event(st_dsp_status *status) {
             command = DSP_COMMAND_START;
             captureMenu[captureMenu.sz() - 2].enable();
             captureMenu[captureMenu.sz() - 1].enable();
+
+            // Set the previous mode
+            os::task_manager.set_timeout(1, []() {
+                if (previous_mode == DIGITAL_RX) {
+                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, nullptr);
+                }
+                main_board::setMode(previous_mode);
+            });
+
             break;
         case DSP_STATUS_STOPPING:
             break;

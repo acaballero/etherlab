@@ -13,6 +13,7 @@
 #include "../../lib/Menu/src/plugin/userMenu.h"
 #include "menuBase.h"
 #include "mixer.h"
+#include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "ui/menuILI9431Out.h"
 #include "dsp/dsp_ui.h"
@@ -31,6 +32,7 @@
 #include <cstddef>
 #include <cstring>
 #include <memory>
+#include <stm32f4xx.h>
 #include "settings.h"
 #include "menu_options.h"
 #include "menu_prompts.h"
@@ -88,17 +90,16 @@ void open_gain() {
     nav.doNav(navCmd(idxCmd, 4));
 }
 
-menu_option_st<radio::FRONTEND_PATH> frontend_path_options[] = {
-    {"Att. (-10 dB)", radio::FRONTEND_PATH_ATT}, {"Pass-thru (0 dB)", radio::FRONTEND_PATH_THRU}, {"LNA (20 dB)", radio::FRONTEND_PATH_LNA}
+menu_option_st<radio::FRONTEND_PATH> frontend_path_options[] = {{"Att. (-10 dB)", radio::FRONTEND_PATH_ATT},
+                                                                {"Pass-thru (0 dB)", radio::FRONTEND_PATH_THRU},
+                                                                {"LNA (20 dB)", radio::FRONTEND_PATH_LNA},
+                                                                {"Auto", radio::FRONTEND_PATH_AUTO}
 
 };
 
-radio::FRONTEND_PATH frontend_path = config.frontend_path;
-
-optionsPrompt<radio::FRONTEND_PATH> frontendPathMenu((const char *)"Frontend", frontend_path_options, frontend_path,
+optionsPrompt<radio::FRONTEND_PATH> frontendPathMenu((const char *)"Frontend", frontend_path_options, config.frontend_path,
                                                      sizeof(frontend_path_options) / sizeof(frontend_path_options[0]), [](radio::FRONTEND_PATH) {
-                                                         config.frontend_path = frontend_path;
-                                                         main_board::update();
+                                                         main_board::set_frontend_path(config.frontend_path);
                                                      });
 
 Menu::numberPrompt<float> squelchEditMenu((const char *)"Squelch", &config.squelch_level, 2, ' ', '.', nullptr,
@@ -247,6 +248,7 @@ result settings_reset(eventMask) {
 
 bool locked = false;
 result set_usb_msc_mode(eventMask) {
+    main_board::setMute(GPIO_PIN_SET); // TODO: SD card generates big EMI. Pending new board with integrated SD card
     init_USB_MSC();
     return proceed;
 }
@@ -262,6 +264,7 @@ void lock() {
         view_manager::push(lock_view);
         fft::fft_task.set_enabled(false);
         view_manager::task.set_enabled(false);
+
         locked = true;
     }
 }
@@ -273,6 +276,8 @@ void unlock() {
         fft::fft_task.set_enabled(true);
         view_manager::task.set_enabled(true);
         view_manager::mainView.set_dirty();
+        main_board::setMute(GPIO_PIN_RESET);
+        // TODO: Maybe this is not good and the previous mute state has to be set. Also, it is muted in set_usb_msc_mode and unmuted here, which is ugly.
         locked = false;
     }
 }

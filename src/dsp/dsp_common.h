@@ -133,8 +133,8 @@ enum DSP_ERROR {
 #define MAX_DSP_DECIMATION_FACTOR 8
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
-#define FIR_DECIMATOR_1ST_HALFBAND_TAPS 23
-#define FIR_DECIMATOR_SIGNAL_TAPS 31
+#define FIR_DECIMATOR_1ST_HALFBAND_TAPS 31
+#define FIR_DECIMATOR_SIGNAL_TAPS 47
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
 // A LCD SPI DMA transfer and cause problems
@@ -227,6 +227,7 @@ struct st_dsp_config {
     int8_t gain = DSP_MIN_TX_GAIN_DB;
     bool audio_compressor_enabled = true;
     bool deemphasis_enabled = false;
+    bool audio_bpf_enabled = true;
     int32_t audio_compressor_threshold = -30;
     st_test_signal_params test_signal;
 };

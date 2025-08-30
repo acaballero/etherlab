@@ -21,8 +21,9 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
     DspIIRDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<int16_t>(input_rate, output_rate, factor), type{LPF} {
         this->init();
     };
-    bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_frequency = 0) override {
-        config(input_rate, bandwidth, factor, LPF);
+    bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_f = 0) override {
+        start_frequency = start_f;
+        config(input_rate, bandwidth, factor, start_f ? BPF : LPF);
     }
     bool config(uint32_t input_rate, uint32_t cutoff_freq, uint16_t factor = 1, filter_type type = LPF);
 
@@ -41,6 +42,7 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
     int n_stages;
     float state[8];
     filter_type type;
+    uint32_t start_frequency; // Start frequency for the band-pass case
 };
 
 void test_iir_decimator();

@@ -108,8 +108,6 @@ Menu::result on_menu_event(Menu::eventMask e) {
             // Update (select) it
             on_filepicker(Menu::updateEvent);
 
-            LOG("after on filepicker\n");
-
             if (fres == FR_OK) {
 
                 menu_size(DISPLAY_X_PIXELS / 2, INFO_HEIGHT + 35);

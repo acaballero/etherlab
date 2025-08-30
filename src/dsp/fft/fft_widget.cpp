@@ -100,19 +100,19 @@ void FFTWidget::draw_span_marks() {
     char buf[10];
 
     uint8_t y0 = 2;
-    uint16_t x2 = FFT_ZONE_WIDTH - 30;
+    uint16_t x2 = FFT_ZONE_WIDTH - 40;
     uint16_t span = fft_params.span / 1000 / 2;
-    display->setFont((FontDef *)&Font_Fixed5x7);
-    display->setColor(C565_GREY_LIGHT);
-    display->setBgColor(C565_GREY_DARKER);
+    display->setFont((FontDef *)&Font_7x10);
+    display->setColor(C565_WHITE);
+    display->setBgColor(C565_DARKEST);
     display->setVerticalLineSpacing(2);
-    display->fill(0, y0, 5 * 6, y0 + 9, C565_GREY_DARKER);
-    display->fill(x2, y0, x2 + 5 * 6, y0 + 9, C565_GREY_DARKER);
+    display->fill(0, y0, 5 * 8, y0 + 13, C565_DARKEST);
+    display->fill(x2, y0, x2 + 5 * 8, y0 + 13, C565_DARKEST);
 
-    display->gotoXY(3, y0 + 2);
+    display->gotoXY(3, y0 + 3);
     sprintf(buf, "-%3dk", span);
     display->print(buf);
-    display->gotoXY(x2 + 3, y0 + 2);
+    display->gotoXY(x2 + 3, y0 + 3);
     sprintf(buf, "+%3dk", span);
     display->print(buf);
     display->setFont((FontDef *)&Font_7x10);

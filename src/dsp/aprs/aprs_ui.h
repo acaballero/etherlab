@@ -44,6 +44,7 @@ class APRSView : public View {
 
   private:
     static constexpr int title_height = 20;
+    static constexpr int button_collapse_width = 30;
     static constexpr int panel_sep = 4;
     static constexpr int max_sources = 7;
     static constexpr int table_width = DISPLAY_X_PIXELS / 2 - 66;
@@ -54,10 +55,13 @@ class APRSView : public View {
 
     std::unique_ptr<LogFile> logger;
 
-    Label title_widget{{0, 0, DISPLAY_X_PIXELS, title_height}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
+    Label title_widget{{0, 0, DISPLAY_X_PIXELS - button_collapse_width - 2, title_height}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
 
     APRSTableWidget table_view{{0, title_height + panel_sep, table_width - panel_sep / 2, 90 + title_height}, max_sources};
     ConsoleWidget console{{table_width + panel_sep / 2, title_height + panel_sep, console_width - panel_sep, 90 + title_height}, &lcd};
+
+    Button button_collapse{{DISPLAY_X_PIXELS - button_collapse_width - 1, 0, button_collapse_width, title_height}, display, "<<"};
+    bool collapsed{false};
 
     Menu::menu_action_st menu_actions[6] = {{"Pause",
                                              [this]() {

@@ -33,8 +33,9 @@ class ReceiveTask : public ReceiveTaskBase {
     // De-empth filter
     DspIIRDecimator<1> deemph_filter;
     bool deemph_enabled = false;
-    // Audio low-pass filter
-    // DspIIRDecimator<1> audio_lpf;
+    // Audio bandpass filter
+    DspIIRDecimator<2> audio_bpf;
+    bool audio_bpf_enabled = true;
 
     FeedForwardCompressor compressor;
     bool compressor_enabled = false;

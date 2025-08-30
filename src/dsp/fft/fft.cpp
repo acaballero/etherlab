@@ -229,7 +229,7 @@ void calc_snr() {
     float sigplusnoise = 0; // Singal plus noise in the current bandwidth
     float total_signal = 0; // Total power in the FFT
 
-    for (int i = fft_params.start_bin; i < fft_params.start_bin + fft_params.total_bins; i++) {
+    for (int i = 0; i < DISPLAY_X_PIXELS; i++) {
 
         float p = powf(10.0f, fft_display_db[i] / 10.0f);
         if (i >= bin_limits.first && i <= bin_limits.second) {

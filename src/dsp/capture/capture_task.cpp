@@ -142,8 +142,6 @@ bool CaptureTask::start() {
         return false;
     } else {
 
-        dsp::enable_frequency_shift(false); // Capture/Replay wont apply frequency shifts
-
         // Update FFT and sample rate parameters
         fft_config(config.fft.span);
 
@@ -183,8 +181,6 @@ void CaptureTask::stop() {
         Task::stop(); // Let the base class do its common finish
 
         dsp::set_max_sample_freq(false);
-
-        dsp::enable_frequency_shift(true);
 
 #if LCD_DISABLE_ON_DSP
         lcd.setEnabled(true);

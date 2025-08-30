@@ -235,7 +235,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
                     break;
                 default:
                     signal_decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
-                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth / 2, factor); // Here the bandwidth is halved for double sideband modulations
+                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor); // Here the bandwidth is halved for double sideband modulations
 
                     break;
             }
@@ -307,7 +307,7 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
             return std::make_unique<dsp::ssb_demodulator>();
         case FM:
             demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, 4000);
+            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, 3500);
             return demod;
         case WFM:
             demod = std::make_unique<dsp::fm_demodulator>();
@@ -335,8 +335,10 @@ bool ReceiveTaskBase::start() {
 
     MODULATION_MODE mod = get_modulation_mode();
 
+    main_board::setModulationMode(mod, false);
+
     if (mod != SSB_USB && mod != SSB_LSB && mod != CW) {
-        modulation_bandwidth_hz /= 2; // Halved for double sideband modulations (
+        modulation_bandwidth_hz /= 2; // Halved for double sideband modulations since modulation bandwidth represents the double sideband bandwidth
     }
 
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth

@@ -169,6 +169,13 @@ struct Rect {
         _size = {w, _size.height()};
     }
 
+    void set_left(int x) {
+        _pos = {x, _pos.y()};
+    }
+    void set_top(int y) {
+        _pos = {_pos.x(), y};
+    }
+
     Point center() const {
         return {_pos.x() + _size.width() / 2, _pos.y() + _size.height() / 2};
     }

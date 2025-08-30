@@ -8,6 +8,7 @@
 #include "aprs_packet.h"
 #include "dsp/modulation/dsp_demodulate.h"
 #include "dsp/receive/receive_task_base.h"
+#include "dsp/audio/fm_squelch.h"
 
 namespace dsp {
 
@@ -32,6 +33,8 @@ extern Signal aprs_signal;
 class APRSTask : public ReceiveTaskBase {
   public:
     using ReceiveTaskBase::ReceiveTaskBase;
+
+    ~APRSTask() override;
 
   private:
     static constexpr uint32_t bandwidth = 24000;
@@ -70,6 +73,13 @@ class APRSTask : public ReceiveTaskBase {
     bool parse_bit(const uint8_t bit);
     void parse_ax25();
 
+    FMSquelch squelch;
+    bool squelch_enabled = false;
+
+    SignalToken squelch_signal_token{0};
+
+    void set_squelch();
+
     bool init() override;
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;
     MODULATION_MODE get_modulation_mode() override;
@@ -78,7 +88,7 @@ class APRSTask : public ReceiveTaskBase {
     };
 
     uint32_t get_modulation_bw_hz() const override {
-        return bandwidth;
+        return 10000;
     };
 };
 } // namespace dsp

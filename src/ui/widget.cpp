@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <sys/_stdint.h>
 #include "Display_afb.h"
 #include "ui/frequency_memory_ui.h"
 #include "view.h"
@@ -39,6 +40,31 @@ void Widget::set_parent_rect(const Rect new_parent_rect) {
 
     this->set_area();
     set_dirty();
+}
+
+void Widget::set_width(int w) {
+    auto pr = parent_rect();
+    pr.set_width(w);
+    set_parent_rect(pr);
+}
+
+void Widget::set_height(int h) {
+
+    auto pr = parent_rect();
+    pr.set_height(h);
+    set_parent_rect(pr);
+}
+
+void Widget::set_top(int y) {
+    auto pr = parent_rect();
+    pr.set_top(y);
+    set_parent_rect(pr);
+}
+
+void Widget::set_left(int x) {
+    auto pr = parent_rect();
+    pr.set_left(x);
+    set_parent_rect(pr);
 }
 
 void Widget::set_bg(Color c) {
@@ -336,7 +362,7 @@ void Widget::paint_overlapped() {
         Rect sr = screen_rect();
 
         // Currenty only full width rects are considered
-        if (rect.width() == pr.width()) {
+        if (rect.width() > pr.width() / 3) {
 
             Area a = to_area(rect);
 

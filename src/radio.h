@@ -82,7 +82,7 @@ enum IF_FILTER_2 { IF_FILTER_2_AUTO, IF_FILTER_2_AUTO_THRU, IF_FILTER_2_NONE };
 // Repeater modes
 enum RPT_MODE { RPT_MODE_POSITIVE, RPT_MODE_NEGATIVE, RPT_MODE_OFF };
 
-enum FRONTEND_PATH { FRONTEND_PATH_ATT, FRONTEND_PATH_THRU, FRONTEND_PATH_LNA };
+enum FRONTEND_PATH { FRONTEND_PATH_ATT, FRONTEND_PATH_THRU, FRONTEND_PATH_LNA, FRONTEND_PATH_AUTO };
 
 extern const char *bandNames[];
 extern const char *IFFilterNames[];
@@ -121,6 +121,7 @@ BAND find_band(unsigned long);
 bool tx_enabled();
 void set_band(BAND band = BAND_NONE);
 void set_vfo(uint8_t);
+
 uint8_t toggle_vfo();
 uint8_t get_vfo();
 BAND get_curr_freq_band();
