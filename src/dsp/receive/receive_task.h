@@ -34,7 +34,7 @@ class ReceiveTask : public ReceiveTaskBase {
     DspIIRDecimator<1> deemph_filter;
     bool deemph_enabled = false;
     // Audio bandpass filter
-    DspIIRDecimator<2> audio_bpf;
+    DspIIRDecimator<1> audio_bpf;
     bool audio_bpf_enabled = true;
 
     FeedForwardCompressor compressor;
@@ -48,7 +48,7 @@ class ReceiveTask : public ReceiveTaskBase {
     void set_squelch();
     bool init() override;
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;
-    MODULATION_MODE get_modulation_mode() override;
+    MODULATION_MODE get_modulation_mode() const override;
 };
 
 #endif // TRX_FRONTEND_RECEIVE_TASK_H

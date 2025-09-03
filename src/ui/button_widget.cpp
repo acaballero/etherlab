@@ -9,12 +9,9 @@
 
 void Button::set_text(char const *t) {
     strncpy(text, t, MAX_CHARS);
-    if (variable_width) {
-        calc_widths();
-        set_width();
-    }
-
     set_dirty();
+
+    calc_widths();
 }
 
 char *Button::get_text() {
@@ -30,12 +27,6 @@ void Button::calc_widths() {
     lw = display->get_text_size(text).width();
     vw = display->get_text_size(value).width();
     uw = display->get_text_size(unit).width();
-}
-
-void Button::before_paint() {
-    if (this->dirty()) {
-        calc_widths();
-    }
 }
 
 void Button::draw_box(int box_width, uint16_t bg) {
@@ -71,6 +62,12 @@ void Button::set_width() {
     }
 
     set_parent_rect(r);
+}
+
+void Button::before_paint() {
+    if (dirty() && variable_width) {
+        set_width();
+    }
 }
 
 bool Button::paint_callback() {
@@ -206,11 +203,13 @@ void Button::set_fg(uint16_t fg) {
 void Button::set_value(const char *t) {
     strncpy(value, t, MAX_CHARS_VALUE);
     set_dirty();
+    calc_widths();
 }
 
 void Button::set_unit(const char *t) {
     strncpy(unit, t, 4);
     set_dirty();
+    calc_widths();
 }
 
 void Button::set_color(uint16_t l, uint16_t v, uint16_t u) {

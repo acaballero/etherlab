@@ -88,13 +88,13 @@ class ReceiveTaskBase : public Task {
     uint32_t modulation_bandwidth_hz; // Minimum bandwidth for demodulation (measured as double sideband)
     uint32_t demodulation_sample_rate;
 
-    virtual MODULATION_MODE get_modulation_mode() = 0;
+    virtual MODULATION_MODE get_modulation_mode() const = 0;
     virtual bool init() = 0;
     virtual void process_audio(buffer_t<float32_t> &buff_out_f32) = 0;
 
     /* Bandwidth of the output audio stream */
     virtual uint32_t get_audio_bw_hz() const {
-        return 12000;
+        return get_modulation_mode() == WFM ? 24000 : 12000;
     };
 
     /* Bandwidth of the modulation */

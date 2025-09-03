@@ -3,7 +3,7 @@
 #include "os/periodic_task.h"
 #include "config.h"
 
-// Coefficients for the curve fitting the measured temperature (C) vs voltage(mV) at the detector
+// Coefficients for  curve fitting the measured temperature (C) vs voltage(mV) at the detector
 // This is using a 3.3k NTC shunt thermistor pulled up to 5.1v through 3.3k
 // The temperature was measured with a thermocouple touching the top copper plane of the PCB at around 1cm of both drains.
 // At 65º, the drains were at 100º

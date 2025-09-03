@@ -30,6 +30,11 @@ class DCBlock {
     float32_t pole_radius;
     float32_t last_x = 0;
     float32_t last_y = 0;
+
+    // Fixed-point members for int16_t optimization
+    int32_t last_x_q15 = 0;  // Q15.16 format
+    int32_t last_y_q15 = 0;  // Q15.16 format
+    int16_t pole_radius_q15; // Q15 format
 };
 
 #endif // TRX_FRONTEND_DC_BLOCK_H

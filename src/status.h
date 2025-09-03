@@ -55,13 +55,15 @@ struct st_status {
     radio::BAND filter;
     radio::IF_FILTER if_filter;
     radio::FRONTEND_PATH frontend_path;
-    bool agc;
+    bool analog_agc;
+    bool dsp_agc;
     unsigned long f_carrier;
     Menu::MenuStatus menuStatus = Menu::UNKNOWN;
 
     bool operator==(const st_status &st) const {
-        return modulation == st.modulation && tx == st.tx && frontend_path == st.frontend_path && band == st.band && agc == st.agc &&
-               if_filter == st.if_filter && f_carrier == st.f_carrier && filter == st.filter && menuStatus == st.menuStatus; // or another approach as above
+        return modulation == st.modulation && tx == st.tx && frontend_path == st.frontend_path && band == st.band && analog_agc == st.analog_agc &&
+               dsp_agc == st.dsp_agc && if_filter == st.if_filter && f_carrier == st.f_carrier && filter == st.filter &&
+               menuStatus == st.menuStatus; // or another approach as above
     }
 };
 

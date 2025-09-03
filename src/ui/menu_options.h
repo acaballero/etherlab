@@ -43,7 +43,7 @@ template <typename T> using menu_options_t = menu_option_st<T> *;
 extern menu_option_st<uint16_t> color_options[23];
 extern menu_option_st<MODULATION_MODE> modulation_options[6];
 extern menu_option_st<radio::BAND> band_options[radio::BAND_NONE + 1];
-extern menu_option_st<radio::IF_FILTER> if_filter_options[7];
+extern menu_option_st<radio::IF_FILTER> if_filter_options[9];
 
 } // namespace Menu
 

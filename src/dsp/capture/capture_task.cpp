@@ -25,6 +25,10 @@ void CaptureTask::work() {
         return;
     }
 
+    // IMPORTANT: Until the SD card is integrated in the board, there are some bands (e.g. 127.1 Mhz)
+    // where it radiates a lot and pollutes (heavily) the recording. There's not much to be done to prevent it apart from
+    // inyecting the LO from the other side or changing IFs
+
     // GPIOD->BSRR |= GPIO_PIN_9;
 
     uint16_t av = input_stream.available(&p);

@@ -115,7 +115,7 @@ TOGGLE(config.fft.view_IQBalance, showIQBalance, "Show: ", doNothing, noEvent, n
        VALUE("On", true, toggleIQorWaterfall, noEvent), VALUE("Off", false, toggleIQorWaterfall, noEvent));
 
 MENU(menuIQBalance, "IQ Balance", doNothing, anyEvent, noStyle, SUBMENU(setIQBalance), SUBMENU(showIQBalance), OBJ(iqBalancePeriodMenu),
-     OP("Reset", resetIQBalancer, enterEvent), EXIT("<Back"));
+     OP("Reset", reset_iq_balancer, enterEvent), EXIT("<Back"));
 
 TOGGLE(config.fft.enabled, setEnableFFT, "Enabled: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,

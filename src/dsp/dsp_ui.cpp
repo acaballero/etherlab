@@ -24,17 +24,32 @@ result toggle_dsp(eventMask) {
 TOGGLE(dsp_enabled, toggleDSP, "DSP receiver: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
        VALUE("On", true, toggle_dsp, noEvent), VALUE("Off", false, toggle_dsp, noEvent));
 
+TOGGLE(config.dsp.agc_enabled, toggleAGC, "DSP AGC: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
+       VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
+
 Menu::numberPrompt<int32_t> compressorThresholdMenu((const char *)"Compressor threshold", &dsp::dsp_config.audio_compressor_threshold, 0, ' ', '.', "dB",
                                                     [](int32_t) {
                                                         dsp_restart();
                                                     },
                                                     -50, 30, 1, 10);
 
-Menu::numberPrompt<uint32_t> dspBandwidthMenu((const char *)"DSP Bandwidth", &config.fft.bw, 0, ' ', '.', "Hz",
+Menu::numberPrompt<uint32_t> dspBandwidthMenu((const char *)"DSP bandwidth", &config.fft.bw, 0, ' ', '.', "Hz",
                                               [](uint32_t) {
                                                   dsp_restart();
                                               },
                                               DSP_BANDWIDTH / 2, DSP_BANDWIDTH * 2, 1000, 10000);
+
+Menu::numberPrompt<uint32_t> dspWFMMaxDev((const char *)"WFM max. deviation", &config.dsp.wideband_fm_max_deviation, 0, ' ', '.', "Hz",
+                                          [](uint32_t) {
+                                              dsp_restart();
+                                          },
+                                          10000, 100000, 5000, 10000);
+
+Menu::numberPrompt<uint32_t> dspFMMaxDev((const char *)"FM max. deviation", &config.dsp.fm_max_deviation, 0, ' ', '.', "Hz",
+                                         [](uint32_t) {
+                                             dsp_restart();
+                                         },
+                                         2000, 5000, 100, 1000);
 
 result dsp_compressor_set(eventMask) {
     if (dsp::dsp_config.audio_compressor_enabled) {
@@ -63,7 +78,7 @@ result open_aprs(eventMask) {
 
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleAudioBPF),
-     SUBMENU(toggleFMDeemph), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleAGC), SUBMENU(toggleAudioBPF),
+     SUBMENU(toggleFMDeemph), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu), OBJ(dspWFMMaxDev), OBJ(dspFMMaxDev));
 
 } // namespace dsp_ui

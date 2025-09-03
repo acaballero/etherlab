@@ -84,6 +84,9 @@ void Label::set_style(ButtonStyle style) {
 }
 
 void Label::before_paint() {
+}
+
+void Label::calc_widths() {
     display->setFont(font);
     lw = display->get_text_size(label).width();
     vw = display->get_text_size(value).width();
@@ -93,6 +96,7 @@ void Label::before_paint() {
 void Label::set_label(const char *t) {
     strncpy(label, t, MAX_CHARS);
     set_dirty();
+    calc_widths();
 }
 
 char *Label::get_label() {
@@ -102,11 +106,13 @@ char *Label::get_label() {
 void Label::set_value(const char *t) {
     strncpy(value, t, MAX_CHARS_VALUE);
     set_dirty();
+    calc_widths();
 }
 
 void Label::set_unit(const char *t) {
     strncpy(unit, t, MAX_CHARS_UNIT);
     set_dirty();
+    calc_widths();
 }
 
 void Label::set_color(uint16_t c) {

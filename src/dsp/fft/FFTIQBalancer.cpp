@@ -347,7 +347,7 @@ void FFTIQBalancer::collectBalanceInfo(complex_t_f32 *data) {
     float32_t copy[FFT_N];
     memcpy(copy, snrSqr, FFT_N * sizeof(*snrSqr));
 
-    std::sort(copy, copy + FFT_N);
+    std::sort(copy, copy + FFT_N - 1);
 
     this->noise_level = copy[FFT_N >> 1];
     // arm_mean_f32((float32_t *)snrSqr,FFT_N,&snrMedian); // Mean
@@ -374,7 +374,7 @@ void FFTIQBalancer::collectBalanceInfo(complex_t_f32 *data) {
                 // Synchronous detection of the image using the main signal as a reference oscillator
                 // The synchronous detector has very high sensitivity and can detect the image signal even if it is below the noise.
                 // z is the normalized output power of the image
-                complex_t_f32 z = complexMult(data[i], data[FFT_N - i]);
+                complex_t_f32 z = complex_mult(data[i], data[FFT_N - i]);
                 float32_t pwr = SQR(data[i].r) + SQR(data[i].i) + SQR(data[FFT_N - i].r) + SQR(data[FFT_N - i].i);
                 z.r = z.r / pwr;
                 z.i = z.i / pwr;

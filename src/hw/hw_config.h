@@ -75,13 +75,12 @@
 #define GPIOEXP_IF_FILTER_3KHZ 0
 #define GPIOEXP_IF_FILTER_15KHZ 1
 #define GPIOEXP_IF_FILTER_150KHZ 2
-
 #define GPIOEXP_ANALOG_RXTX_DIGITAL_TX_SWITCH 3
 /* Bits 4-7 are used in the frontend filter bank */
 
 // PORT_B (inverted logic in pins 3 - 7)
 #ifdef STM32F4xx
-// The LNA,attenuator and pass-thru must be exclusively activated. Note the LNA
+// The LNA, attenuator and pass-thru must be exclusively activated. Note the LNA
 // has inverted logic
 #define GPIOEXP_FRONT_THRU 1       // Frontend pass-thru
 #define GPIOEXP_FRONT_ATTENUATOR 2 // Frontend attenuator
@@ -118,8 +117,9 @@
 
 // PORT_B (normal logic)
 
-#define GPIOEXP_2ND_15KHZ_FILTER 2 // Second 15 Khz. IF filter switch
-#define GPIOEXP_5VIF_TX 3          // +5v TX (1) / RX (0)
+//#define GPIOEXP_2ND_15KHZ_FILTER 2 // Second 15 Khz. IF filter switch
+#define GPIOEXP_5VIF_TX 3    // +5v TX (1) / RX (0)
+#define GPIOEXP_IF_RSSI_5V 4 // Bias for IF RSSI detector
 #define GPIOEXP_10MHHZ_MIXER 7
 
 /* Power control bit weights */

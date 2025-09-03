@@ -130,11 +130,11 @@ enum DSP_ERROR {
 // transition band of the low pass filter
 #define USABLE_BW_FACTOR 0.80
 #define MAX_DECIMATION_FACTOR 8
-#define MAX_DSP_DECIMATION_FACTOR 8
+#define MAX_DSP_DECIMATION_FACTOR 32
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
 #define FIR_DECIMATOR_1ST_HALFBAND_TAPS 31
-#define FIR_DECIMATOR_SIGNAL_TAPS 47
+#define FIR_DECIMATOR_SIGNAL_TAPS 61
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
 // A LCD SPI DMA transfer and cause problems
@@ -230,6 +230,12 @@ struct st_dsp_config {
     bool audio_bpf_enabled = true;
     int32_t audio_compressor_threshold = -30;
     st_test_signal_params test_signal;
+
+    // The following attributes are NOT SAVED
+    uint32_t wideband_fm_max_deviation = 90000;
+    uint32_t fm_max_deviation = 3500;
+    // Digital AGC enabled (controlling demodulator gain)
+    bool agc_enabled = true;
 };
 
 struct st_timestamp {
@@ -279,6 +285,10 @@ st_dsp_config get_config();
 
 void enable_frequency_shift(bool b);
 bool get_freq_shift_enabled();
+
+void log_buff(float32_t *buff, int count, const std::string &title, bool newline = true);
+
+void log_buff(adc_type *buff, int count, const std::string &title, bool newline = true);
 
 } // namespace dsp
 

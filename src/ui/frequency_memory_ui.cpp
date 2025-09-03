@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <sstream>
 #include <sys/_stdint.h>
+#include "ui/view_manager.h"
 #include "utils.hpp"
 
 namespace freq_memory {
@@ -306,7 +307,7 @@ bool init_file_buffer() {
     // Mute to avoid SD card EMI. There's a TODO in some place to address this (new board design)
     main_board::setMute(GPIO_PIN_SET);
     status::handleError(status::ST_INFO, "Initializing memory");
-
+    view_manager::mainView.paint();
     bool res = true;
 
     if (result->load(FREQ_MEMORY_FILE, true)) {

@@ -11,6 +11,7 @@
 #include "config.h"
 #include "status.h"
 #include <hw/stm32.h>
+#include <sys/_stdint.h>
 
 /** NOT REAL AGC. Just automatic overload gain backoff **/
 
@@ -18,8 +19,8 @@ namespace agc {
 
 void check_agc();
 
-Signal signal;
-
+Signal signal_agc_voltage;
+Signal signal_gain;
 float agc_voltage;
 static constexpr int task_period_ms = 250;
 os::periodic_task task(task_period_ms, check_agc);
@@ -28,6 +29,13 @@ bool overload = false;
 uint64_t last_overload_state_change = 0;
 
 uint16_t overload_auto_correction_delay_ms = task_period_ms * 4;
+
+// Coefficients for curve fitting the measured AGC voltage VS analog gain
+// Basic exponential curve y=a+b*e^(-c*x) with the following coefficients
+
+#define AGC_FITTING_COEFF_A -(1.324064f)
+#define AGC_FITTING_COEFF_B 297.7007f
+#define AGC_FITTING_COEFF_C 1.863459f
 
 float get_agc(bool filter) {
 
@@ -60,13 +68,16 @@ int frontend_gain() {
 }
 
 int get_analog_gain() {
-    int if_gain = 25; // TODO: Calculate from agc_voltage (note this will require interpolating and lookup tables of gain vs frequency vs agc)
+
+    // 27 is a rough estimate of max gain after 1st and 2nd mixers. It does not account for frequency-variable gain or LO power
+    int if_gain = max2(0, 28 - round(AGC_FITTING_COEFF_A + (AGC_FITTING_COEFF_B * exp(-AGC_FITTING_COEFF_C * agc_voltage))));
     return if_gain + frontend_gain();
 }
+
 void check_agc() {
 
     get_agc(false);
-    signal.emit(&agc_voltage);
+    signal_agc_voltage.emit(&agc_voltage);
 
     if (ISTX) {
         return;
@@ -76,8 +87,8 @@ void check_agc() {
     volatile const int max_dbm = get_max_input_dbm();
     const uint64_t t = HAL_GetTick();
 
-    // Constants
-    static const uint32_t ATTACK_MS = 10, RELEASE_MS = 250, ADC_LOCKOUT_MS = 3000;
+    // Attack and release time should never be shorter that the time it takes for the FFT to process a new snapshot reflcting the new signal strength
+    static const uint32_t ATTACK_MS = 100, RELEASE_MS = 500, ADC_LOCKOUT_MS = 3000;
     static const int HEADROOM_DB = 12;
     static const uint32_t ADC_OVERLOAD_THRESHOLD = 100;
 
@@ -145,22 +156,35 @@ void check_agc() {
     // Power-based AGC
     const bool power_overload = power_dbm >= max_dbm;
 
+    // LOG("dbm:%.1f,max:%d,g:%d", power_dbm, max_dbm, get_gain());
+    // LOG_RAW(",p:%.1f,ag:%d\n", fft::dbm_peak, get_analog_gain());
     if (power_overload != overload) {
         last_overload_state_change = t;
         overload = power_overload;
     }
 
-    const uint64_t time_since_change = t - last_overload_state_change;
-    const bool adc_lockout = (t - last_adc_reduction) < ADC_LOCKOUT_MS;
+    if (config.dsp.agc_enabled) { // Won't change gain if DSP AGC is disabled
+        const uint64_t time_since_change = t - last_overload_state_change;
+        const bool adc_lockout = (t - last_adc_reduction) < ADC_LOCKOUT_MS;
 
-    const bool should_reduce = power_overload && (time_since_change >= ATTACK_MS);
-    const bool should_increase = !power_overload && (power_dbm < max_dbm - HEADROOM_DB) && (time_since_change >= RELEASE_MS) && !adc_lockout;
+        if (config.agc_enabled && agc_voltage < 2) {
+            // FIXME: If AGC is enabled and its voltage is low, the DSP gain should not be increased even if power overload is not detected here. Sometimes
+            // DSP gain is increased causing saturation and attenuation, which locks the digital gain high.
+        }
 
-    if (should_reduce || should_increase) {
-        auto [vga, vgb] = adjust_gains(should_reduce);
-        bool b = apply_gain_change(vga, vgb, should_reduce ? "power_overload" : "increased_headroom");
-        if (!b) {
-            b = main_board::change_frontend_gain(should_increase ? 1 : -1);
+        const bool should_reduce = power_overload && (time_since_change >= ATTACK_MS);
+        const bool should_increase = !power_overload && (power_dbm < max_dbm - HEADROOM_DB) && (time_since_change >= RELEASE_MS) && !adc_lockout;
+
+        if (should_reduce || should_increase) {
+            auto [vga, vgb] = adjust_gains(should_reduce);
+            bool b = apply_gain_change(vga, vgb, should_reduce ? "power_overload" : "increased_headroom");
+            if (!b) {
+                b = main_board::change_frontend_gain(should_increase ? 1 : -1);
+            }
+
+            if (b) {
+                signal_gain.emit(nullptr);
+            }
         }
     }
 }

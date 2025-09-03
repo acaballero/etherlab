@@ -40,6 +40,10 @@ class FIFO {
         closed = true;
     }
 
+    char *data_p() {
+        return data;
+    }
+
   protected:
     char *data;
     uint32_t size;

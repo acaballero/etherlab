@@ -74,22 +74,22 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
         // Ouput silence
         memset(buff_out_f32.p, 0, buff_out_f32.size_bytes);
     } else {
-        if (compressor_enabled) {
-            compressor.work(buff_out_f32);
+
+        if (audio_bpf_enabled) {
+            audio_bpf.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
         }
 
         if (deemph_enabled) {
             deemph_filter.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
         }
 
-        if (audio_bpf_enabled) {
-            //  buffer_t<float32_t> b = {(float32_t *)bi1_p, (size_t)block_size_out * 2};
-            audio_bpf.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
+        if (compressor_enabled) {
+            compressor.work(buff_out_f32);
         }
     }
 }
 
-MODULATION_MODE ReceiveTask::get_modulation_mode() {
+MODULATION_MODE ReceiveTask::get_modulation_mode() const {
     return main_board::getModulationMode();
 }
 
@@ -99,7 +99,7 @@ void ReceiveTask::set_squelch() {
 
         float threshold = max2(0, 10 - config.squelch_level);
 
-        squelch.config(threshold, status.sample_rate);
+        squelch.config(threshold, status.sample_rate, status.bandwidth * 3 / 2);
         squelch_enabled = true;
 
     } else {
@@ -112,7 +112,7 @@ bool ReceiveTask::init() {
     MODULATION_MODE mod = main_board::getModulationMode();
 
     if (dsp::apply_audio_bpf()) {
-        audio_bpf.config(status.sample_rate, 6000, 1, 300);
+        audio_bpf.config(status.sample_rate, mod == WFM ? 15000 : 5000, 1, mod == WFM ? 30 : 300);
         audio_bpf_enabled = true;
     } else {
         audio_bpf_enabled = false;

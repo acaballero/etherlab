@@ -15,7 +15,7 @@ class FMSquelch {
   public:
     /* Returns true if noise is above threshold. */
     bool is_noise(buffer_t<float32_t> &audio);
-    void config(const float new_threshold, uint32_t sample_rate);
+    void config(const float new_threshold, uint32_t sample_rate, uint32_t audio_bandwidth = 4000);
     bool enabled() const;
 
   private:

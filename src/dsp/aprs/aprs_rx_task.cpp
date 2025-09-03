@@ -15,7 +15,7 @@ namespace dsp {
 
 Signal aprs_signal;
 
-MODULATION_MODE APRSTask::get_modulation_mode() {
+MODULATION_MODE APRSTask::get_modulation_mode() const {
     return FM;
 }
 

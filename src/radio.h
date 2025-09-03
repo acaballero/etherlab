@@ -75,7 +75,18 @@ enum BAND {
     BAND_NONE
 };
 
-enum IF_FILTER { IF_FILTER_300HZ, IF_FILTER_3KHZ, IF_FILTER_6KHZ, IF_FILTER_9KHZ, IF_FILTER_15KHZ, IF_FILTER_150KHZ, IF_FILTER_AUTO, IF_FILTER_NONE };
+enum IF_FILTER {
+    IF_FILTER_300HZ,
+    IF_FILTER_3KHZ,
+    IF_FILTER_6KHZ,
+    IF_FILTER_7_5KHZ,
+    IF_FILTER_9KHZ,
+    IF_FILTER_15KHZ,
+    IF_FILTER_150KHZ,
+    IF_FILTER_180KHZ,
+    IF_FILTER_AUTO,
+    IF_FILTER_NONE
+};
 
 enum IF_FILTER_2 { IF_FILTER_2_AUTO, IF_FILTER_2_AUTO_THRU, IF_FILTER_2_NONE };
 
@@ -91,7 +102,7 @@ extern const uint32_t modulation_min_bandwidths[];
 extern const char *repeaterNames[];
 extern BAND filter;
 extern IF_FILTER if_filter;
-extern const st_filter if_filters[6];
+extern const st_filter if_filters[8];
 extern const st_band bands[];
 extern mixer mixers[];
 extern Signal freq_signal;

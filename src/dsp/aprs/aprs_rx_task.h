@@ -82,7 +82,7 @@ class APRSTask : public ReceiveTaskBase {
 
     bool init() override;
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;
-    MODULATION_MODE get_modulation_mode() override;
+    MODULATION_MODE get_modulation_mode() const override;
     uint32_t get_audio_bw_hz() const override {
         return bandwidth;
     };

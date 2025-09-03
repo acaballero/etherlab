@@ -307,6 +307,40 @@ void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
     }
 }
 
+void log_buff(float32_t *buff, int count, const std::string &title, bool newline) {
+
+    if (title.length()) {
+        LOG(title.c_str());
+        LOG_RAW(" : ");
+    }
+    for (int i = 0; i < count; i++) {
+        LOG_RAW("%.3f,", buff[i]);
+    }
+    if (newline) {
+        LOG_RAW("-300,\n");
+    }
+}
+
+void log_buff(adc_type *buff, int count, const std::string &title, bool newline) {
+
+    if (title.length()) {
+        LOG(title.c_str());
+        LOG_RAW(" : ");
+    }
+    int min = 100000;
+    for (int i = 0; i < count; i++) {
+        LOG_RAW("%d,", buff[i]);
+        if (min > buff[i]) {
+            min = buff[i];
+        }
+    }
+
+    min -= 20;
+
+    if (newline) {
+        LOG_RAW("%d,%d,%d,%d,\n", min, min, min, min);
+    }
+}
 /* THIS ROTATION FUNCTION LOSES A LOT OF PRECISSION
 #define __SMULBB(x, y) ((int32_t)(((int16_t)((x)&0xFFFF)) * ((int16_t)((y)&0xFFFF))))
 #define __SMULBT(x, y) ((int32_t)(((int16_t)((x)&0xFFFF)) * ((int16_t)((y) >> 16))))

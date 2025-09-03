@@ -80,7 +80,7 @@ mixer mixers[2];
 const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
                          {270000000, 295000000, FLT_6_CODE, ANY_SIDE, true},
                          {143000000, 158000000, FLT_2_CODE, HIGH_SIDE, true},
-                         {118000000, 137000000, FLT_1_CODE, HIGH_SIDE, false},
+                         {118000000, 137000000, FLT_1_CODE, ANY_SIDE, false},
                          {85000000, 110000000, FLT_3_CODE, ANY_SIDE, false},
                          // From this band down the injection has to be high side since the ADF4351 can't go below 35 MHz
                          {50000000, 54000000, FLT_3_CODE, HIGH_SIDE, false},
@@ -98,20 +98,22 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
                          {7000000, 500000000, FLT_3_CODE, ANY_SIDE, false},
                          {7000000, 500000000, FLT_3_CODE, ANY_SIDE, false}};
 
-const st_filter if_filters[6] = {
+const st_filter if_filters[8] = {
     {10700000, 300, false, 0},                          // 500 Hz (digital only)
     {9998500, 3000, true, GPIOEXP_IF_FILTER_3KHZ},      // 3 Khz
     {10700000, 6000, false, 0},                         // 6 Khz (digital only)
+    {10700000, 7500, false, 0},                         // 7.5 Khz (digital only)
     {10700000, 9000, false, 0},                         // 9 Khz (digital only)
     {10698000, 15000, true, GPIOEXP_IF_FILTER_15KHZ},   // 15 Kh
     {10700000, 150000, true, GPIOEXP_IF_FILTER_150KHZ}, // 150 Khz
+    {10700000, 150000, false, 0},                       // 180 Khz for WFM (digital only)
 
 };
 const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "10 m",  "11 m", "12 m", "15 m",
                            "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "None"};
 const char *modulation_names[] = {"LSB", "USB", "FM", "WFM", "AM", "CW"};
 const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 150000, 6000, 0};
-const char *IFFilterNames[] = {"300 Hz", "3 k", "6 K", "9 K", "15 k", "150 k", "Auto"};
+const char *IFFilterNames[] = {"300 Hz", "3 k", "6 k", "7.5 k", "9 k", "15 k", "150 k", "180 k", "Auto"};
 const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
 const char *modeNames[] = {"ANA RX", "ANA TX", "DIG RX", "DIG TX"};
@@ -444,7 +446,12 @@ IF_FILTER band_if_filter() {
         case FM:
         case WFM:
             if (get_curr_freq_band() == BAND_FM) {
-                filter = IF_FILTER_150KHZ;
+                if (ISANALOG) {
+                    filter = IF_FILTER_150KHZ;
+                } else {
+                    filter = IF_FILTER_180KHZ;
+                }
+
             } else {
                 filter = IF_FILTER_15KHZ;
             }
@@ -453,7 +460,7 @@ IF_FILTER band_if_filter() {
             if (ISANALOG) {
                 filter = IF_FILTER_15KHZ;
             } else {
-                filter = IF_FILTER_6KHZ;
+                filter = IF_FILTER_7_5KHZ;
             }
             break;
         default:

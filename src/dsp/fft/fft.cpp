@@ -7,6 +7,7 @@
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
 
+#include <sys/_stdint.h>
 #include <sys/types.h>
 #include <utility>
 #include "dsp/blocks/dc_block.h"
@@ -254,7 +255,7 @@ void calc_snr() {
 
     float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft_params.span;
     float papr_db = 3.0f + 10.0f * bandwidth_ratio; // PAPR: Peak to average power ratio (rough estimation to avoid calculating the peak power)
-    dbm_peak = total_dbm_instant + papr_db;
+    dbm_peak = dbm_peak - 0.2f * (dbm_peak - (total_dbm_instant + papr_db));
 }
 
 } // namespace fft
@@ -363,6 +364,12 @@ bool st_fft_params::valid() {
     return b;
 }
 
+void fft_dcremoval(buffer_t<adc_type> &vData) {
+
+    dcBlockers[fft_slice_n][0].filter(vData, 2, 0);
+    dcBlockers[fft_slice_n][1].filter(vData, 2, 1);
+}
+
 void fft_dcremoval(buffer_t<float32_t> &vData) {
 
     dcBlockers[fft_slice_n][0].filter(vData, 2, 0);
@@ -403,7 +410,7 @@ inline float get_window_enrb_factor() {
     }
 }
 
-void calcFFTRange() {
+void calc_fft_range() {
 
     // Values in the fft_output array are not normalized, so they are v*FFT_N where v is the voltage magnitude
     // config.fft.maxAmpl is the integer range of the ADC
@@ -458,7 +465,7 @@ void fft_init() {
 
     generateSmoothingGainLUT();
 
-    calcFFTRange();
+    calc_fft_range();
 
     config.fft.max_decimation_factor = min2(config.fft.max_decimation_factor, MAX_DECIMATION_FACTOR); // sanity check
 
@@ -467,9 +474,15 @@ void fft_init() {
     fftUI::init_waterfall();
     fftUI::initIQorWaterfall();
     fft::waterfall_task.set_period(fftUI::get_waterfall_period());
+
+    // When the gain changes, the FIFO is reset so the new gain gets reflected immediatelly. Otherwise the AGC itself, which relies in the FFT DB values, gets
+    // laggy.
+    agc::signal_gain.add(nullptr, [](void *, void *) {
+        fft_fifo.reset();
+    });
 }
 
-void resetIQBalancer() {
+void reset_iq_balancer() {
     fftIQBalancer.reset();
 }
 
@@ -615,7 +628,7 @@ void doFFT() {
         // Calculate FFT
         (*arm_cfft)(&S_cfft, (float32_t *)fft_slice_buff, 0, 1);
 
-        reorderBins(fft_slice_buff);
+        reorder_bins(fft_slice_buff);
 
         fftIQBalancer.setFftRbw(fft_params.rbw);
 
@@ -635,7 +648,7 @@ void doFFT() {
     }
 }
 
-void reorderBins(complex_t_f32 *v) {
+void reorder_bins(complex_t_f32 *v) {
 
     complex_t_f32 temp;
     uint16_t center_bin = FFT_N / 2;
@@ -646,7 +659,7 @@ void reorderBins(complex_t_f32 *v) {
     }
 }
 
-uint32_t getPeak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v) {
+uint32_t get_peak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v) {
 
     uint32_t max_ix = 0;
 
@@ -694,13 +707,13 @@ void calculateNoiseFloor() {
 /*
  * Search for the smoothing gain factor on a precalculated lookup table
  */
-float32_t getSmoothGain(float db) {
+float32_t get_smooth_gain(float db) {
 
-    // Some smoothing with a 1st order low pass IIR filter
+    // Somoothing with a 1st order low pass IIR filter
     // The gain of the filter is a non-linear function of the amplitude, making the time constant high for the
     // noise (low level signals) but small (fast response) for stronger signals
 
-    // The exp function is too slow, so we use an approximation instead
+    // The following exp function is too slow, so we use an approximation instead
     // gain = (1 - exp(-0.005 * ((db - FFT_MIN_DB + 1))));
     // gain *= config.fft.smooth_factor;
 
@@ -768,8 +781,8 @@ inline fft_type fft_output_db(fft_type v) {
 
     v = v * fft_mag_conv_factor;
 
-    // Divide by the gain
-    v /= fft_radio_gain_factor;
+    // Multiply by the gain factor
+    v = v * fft_radio_gain_factor;
 
     // dBm (account for the ENRB of the applied window) I'm assuming peak-to-peak voltage values (so dividing 400 instead of 100 to get the power from RMS)
     // because that's how I'm getting values close to what's expected, but I think this is wrong (FFT bins are voltage magnitudes)
@@ -789,12 +802,15 @@ inline fft_type fft_output_db(fft_type v) {
     return db;
 }
 
-void processFFT(float32_t *v) {
+void process_fft(float32_t *v) {
 
     uint16_t startx;
     int8_t x_inc;
 
-    fft_radio_gain_factor = pow(10.0, (float)agc::get_gain() / 20.0f);
+    float32_t g = (float)agc::get_gain();
+    fft_radio_gain_factor = 1 / pow(10.0, g / 20.0f);
+
+    // LOG("fft_gain_factor:%.1f,ag:%.1f\n", fft_radio_gain_factor, g);
 
     // The first pixel depends on the slice we are currently in
 
@@ -836,7 +852,7 @@ void processFFT(float32_t *v) {
             if (bin_ix != last_bin_ix) {
                 db = fft_output_db(fft_output[bin_ix]);
                 fft_output[bin_ix] = db;
-                gain = first_frame ? 1 : getSmoothGain(db);
+                gain = first_frame ? 0.8 : get_smooth_gain(db);
                 last_bin_ix = bin_ix;
             }
 
@@ -883,7 +899,7 @@ void processFFT(float32_t *v) {
 
             if (nix == next_display_ix) { // store the accumulated value of the display
 
-                gain = first_frame ? 1 : getSmoothGain(db);
+                gain = first_frame ? 1 : get_smooth_gain(db);
 
                 db_constrained = constrain(db, config.fft.min_db, config.fft.max_db);
 
@@ -929,7 +945,7 @@ void processFFT(float32_t *v) {
 }
 
 /* Decimate a complex_t buffer into the fft_slice_buff buffer */
-void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
+void decimate_complex_fft_buffer(complex_t *f_buff, size_t size) {
 
     uint16_t decimated_block_size = DSP_BLOCK / fft_params.decimation_factor;
 
@@ -962,7 +978,7 @@ void decimateComplexFFTBuffer(complex_t *f_buff, size_t size) {
 
 // ADC Acquisition
 // OFFLINE. It needs FFN*decimation_factor ADC buffer length
-void adquireFFTAsync() {
+void adquire_fft_async() {
 
     /* The FIR filter has a delay of (FFT_LPF_FIR_FILTER_NTAPS-1)/2 samples, so we
      * discard the first ((FFT_LPF_FIR_FILTER_NTAPS-1)/2)/DSP_BLOCK blocks
@@ -990,12 +1006,22 @@ void adquireFFTAsync() {
     while (fft_fifo.available(&data.c) < chunk_size && HAL_GetTick() < timeout) {
     }
 
+    if (config.fft.removeDC) {
+        uint32_t size = fft_buff_size << 1;
+        buffer_t<adc_type> buff = {(adc_type *const)(data.c), size};
+        fft_dcremoval(buff);
+    }
+
+    if (dsp::get_freq_shift_enabled()) {
+        dsp::rotate_fs4_q15((adc_type *)data.c, (adc_type *)data.c, fft_buff_size);
+    }
+
     if (true) { // av >= chunk_size) {
 
         if (fft_params.decimation_factor > 1) {
 
             // Decimate the complex buffer (I and Q channels interleaved, so odd and even indexes) into fft_slice_buff
-            decimateComplexFFTBuffer((complex_t *)data.c, fft_buff_size);
+            decimate_complex_fft_buffer((complex_t *)data.c, fft_buff_size);
         } else {
             // Transform to float
             //  dsp::s16_to_f32((adc_type *)data.f, (float32_t *)fft_slice_buff, fft_buff_size << 1);
@@ -1008,19 +1034,9 @@ void adquireFFTAsync() {
 
         fft_fifo.consume(chunk_size, &data.c);
     }
-#if !DSP_FS4_SHIFT
-    if (config.fft.removeDC) {
-        fft_dcremoval(fft_slice_buffer);
-    }
-#else
-    if (config.fft.removeDC && !dsp::get_freq_shift_enabled()) {
-        // In digital mode, the DC is removed in the DSP processor in some cases
-        fft_dcremoval(fft_slice_buffer);
-    }
-#endif
 }
 
-complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b) {
+complex_t_f32 complex_mult(complex_t_f32 a, complex_t_f32 b) {
 
     complex_t_f32 r;
     r.r = a.r * b.r - a.i * b.i;
@@ -1031,7 +1047,7 @@ complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b) {
 
 void fft_work() {
 
-    adquireFFTAsync();
+    adquire_fft_async();
 
     // Estimate only in the first slice
     // IQ imbalance varies with IF frequency so we are only estimating it in the first slice
@@ -1053,12 +1069,12 @@ void fft_work() {
         // just the bandwidth of interest, which is lower than half the sampling rate (1st nyquist zone)
         // Reference reading: Analog Devices MT-002: "What the Nyquist Criterion Means to Your Sampled Data System Design by Walt Kester")
 
-        processFFT((float32_t *)fft_slice_buff);
+        process_fft((float32_t *)fft_slice_buff);
 
         // A (side) note of caution. When changing connections, be careful not to swap I/Q signals from
         // the quadrature mixer into the ADCs, or the frequency will be inverted again.
 
-        uint32_t peak_ix = getPeak(fft_params.start_bin, fft_params.start_bin + fft_params.nbins, fft_peak_v);
+        auto peak_ix = get_peak(fft_params.start_bin, fft_params.start_bin + fft_params.nbins, fft_peak_v);
 
         // Only consider a peak value if it's above a threshold from the current noise floor
         if (fft_peak_v > FFT_SIGNAL_THRESHOLD_DB + fft_noise_floor_db && fft_peak < fft_peak_v) {
@@ -1116,13 +1132,13 @@ void updateFFT() {
 
     unsigned long f;
 
-    // GPIOA->BSRR= GPIO_PIN_15;
+    // NOTE: When the AGC is NOT active, if the gain is too high, some slices with strong signals may saturate the
+    // digital path, causing attenuation that appears as abrupt changes in FFT power
     for (fft_slice_n = 0; fft_slice_n < slices; fft_slice_n++) {
 
         f = first_slice_center_f +
             ((uint32_t)fft_params.bw << 1U) * (int32_t)fft_slice_n; // move to the next bandwidth of interest (set by the LPF before de ADC)
 
-        //  GPIOB->BSRR= GPIO_PIN_5;
         if (radio::f_iq != f) { // slice change
 
             radio::f_iq = f;
@@ -1141,7 +1157,6 @@ void updateFFT() {
             // TODO: Check if a delay for fequency settling is needed or not
             HAL_Delay(0);
         }
-        //  GPIOB->BSRR= GPIO_PIN_5 << 16;
 
         fft_work();
     }

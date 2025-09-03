@@ -86,6 +86,8 @@ class Label : public Widget {
 
     bool on_touch(const st_inputEvent e) override;
 
+    void calc_widths();
+
     // Widths
     uint16_t lw;
     uint16_t vw;

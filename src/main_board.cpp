@@ -7,6 +7,7 @@
 #include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
 #include "hw/board/board_v2.h"
+#include "hw/hw_config.h"
 #include "s_strength.h"
 #include "rf_coupler.h"
 #include "config.h"
@@ -185,10 +186,12 @@ void setGPIO() {
     changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_ALC, ISTX, false);
 
     // AGC (Automatic gain control) is Off in TX
-    // In FM and AM the RSSI signal from the log amplifier is fed to the RSSI level adapter and then to the AGC board just before the
-    // level detector mosfet
-    // Note: Only active in ANALOG mode.
-    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_AGC, !ISTX && config.agc_enabled && ISANALOG, false);
+    // In FM and AM the RSSI signal from the log amplifier (of the particular demodulator board) is fed to the RSSI level adapter and then to the AGC board just
+    // before the level detector mosfet
+    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_AGC, !ISTX && config.agc_enabled, false);
+
+    // Experimental: In DIGITAL modes, the RSSI is the output from the logamp that's fed with the 1st IF.
+    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_IF_RSSI_5V, !ISANALOG, false);
 
     changed = changed | setGPIOExpPin(&hmcp03, MCP23017_PORTA, GPIOEXP_FPANEL_TX_LED, ISTX, false);
 
@@ -493,9 +496,10 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
         switch (config.modulation) {
             case FM:
             case WFM:
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && ISANALOG, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, ISANALOG, false);
+                //  changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, ISANALOG, false);
+
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, ISTX || !ISANALOG,
                                                   false); // When low, it powers up the +5v rail that goes into the FM detector board
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_MODULATOR, !(config.mode == ANALOG_TX), false);
@@ -504,9 +508,10 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
 
                 break;
             case AM:
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && ISANALOG, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX, false);
                 changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, ISANALOG, false);
+                // changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, ISANALOG, false);
+
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_AM_DETECTOR, ISTX || !ISANALOG, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, true, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_MODULATOR, true, false);
@@ -514,7 +519,7 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
                 break;
 
             default:
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, false, false);
+                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_RSSI_LEVEL_ADAPTER, !ISTX && !ISANALOG, false);
 
                 // The 10Mhz mixer can be fed either by its 10Mhz TCXO or a synthesized Si5351 output. Currently, we use
                 // the Si5351 only when the selected IF filter is not at 10Mhz, so we're setting this GPIO pin in the filter
@@ -524,7 +529,7 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
                 // changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, true, false);
 
                 // Close the 2nd 15Khz IF filter which is only used for FM/AM analog detectors
-                changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, false, false);
+                // changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_2ND_15KHZ_FILTER, false, false);
 
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_AM_DETECTOR, true, false);
                 changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTB, GPIOEXP_FM_DETECTOR, true, false);

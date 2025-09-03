@@ -9,7 +9,8 @@
 #include "os/periodic_task.h"
 
 namespace agc {
-extern Signal signal;
+extern Signal signal_agc_voltage;
+extern Signal signal_gain;
 extern float agc_voltage;
 
 float get_agc();

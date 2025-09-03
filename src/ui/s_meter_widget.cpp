@@ -4,6 +4,7 @@
 
 #include "s_meter_widget.h"
 #include "../config.h"
+#include "Display_afb.h"
 #include "input/inputEvent.h"
 #include "ips_font.h"
 #include "s_strength.h"
@@ -11,6 +12,7 @@
 #include "stm32f4xx_hal.h"
 #include "view_manager.h"
 #include "menu_prompts.h"
+#include "agc.h"
 
 bool SMeterWidget::paint_callback() {
 
@@ -92,8 +94,10 @@ bool SMeterWidget::paint_callback() {
     if (config.agc_enabled) {
         display->setColor(C565_GREY_LIGHT);
         display->setFont((FontDef *)&Font_Fixed5x7);
-        display->gotoXY(max_x - (display->getFont()->width * 3) - 5, y1 + (((y2 - y1) - display->getFont()->height + 1) / 2));
-        display->print("AGC");
+        display->gotoXY(max_x - (display->getFont()->width * 7) - 5, y1 + (((y2 - y1) - display->getFont()->height + 1) / 2));
+
+        snprintf(buf, 4, "%.1f", agc::agc_voltage);
+        display->print("AGC: ", buf, " V");
     }
 
     return true;

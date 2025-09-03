@@ -9,6 +9,7 @@
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_config.h"
 #include "dsp/fft/fft.h"
+#include "dsp/fft/fft_types.h"
 #include "handlers.h"
 #include "radio.h"
 #include "status.h"
@@ -312,11 +313,36 @@ inline void adc_work() {
 
 #if DSP_FS4_SHIFT
 
+    if (!dsp::dsp_status || dsp::dsp_status->direction == DSP_DIRECTION_IN || dsp::dsp_status->direction == DSP_DIRECTION_INOUT) {
+
+        // If the direction is input or bidirectional...
+
+        // Fill the FFT FIFO. Here we don't care if we overrun (returns error) as the FFT doesn't need to be processed in real-time
+        // TODO: write to the FFT FIFO in a separate DspProcessor
+
+        fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
+
+        // char *d;
+        // static uint32_t last_t;
+        // uint32_t t = HAL_GetTick();
+
+        // if (fft_fifo.available(&d) >= 64 && t - last_t > 1000) {
+
+        //     dsp::log_buff((adc_type *)d, 64, "", true);
+        //     last_t = t;
+        // }
+    }
+
     if (dsp::get_freq_shift_enabled()) {
 
-        buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
-        dc_block_i.filter(bb, 2, 0);
-        dc_block_q.filter(bb, 2, 1);
+        // Removing DC here and thus not having to do it in subsequent stages (FFT, DSP processing) is not as efficient as it seems at first glance since:
+        // - FFT processing is not done in real-time so no need to do the work for it
+        // - Receivers, for example, can remove DC just before demodulation, at a much lower sample rate
+        // The drawback is we have to rotate it there too after DC removal
+
+        // buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
+        // dc_block_i.filter(bb, 2, 0);
+        // dc_block_q.filter(bb, 2, 1);
 
         if (fft_params.decimation_factor > 1) {
             // TODO: Decimate here vs in both FFT and current DSP task?
@@ -326,16 +352,6 @@ inline void adc_work() {
     }
 
 #endif
-
-    if (!dsp::dsp_status || dsp::dsp_status->direction == DSP_DIRECTION_IN || dsp::dsp_status->direction == DSP_DIRECTION_INOUT) {
-
-        // If the direction is input or bidirectional...
-
-        // Fill the FFT FIFO. Here we don't care if we overrun (returns error) as the FFT doesn't need to be processed in real-time
-        // TODO: write to the FFT FIFO in a separate DspProcessor
-
-        fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
-    }
 
     if (current_processor && (current_processor->status.direction == DSP_DIRECTION_IN || current_processor->status.direction == DSP_DIRECTION_INOUT)) {
         current_processor->work(current_buffer);

@@ -35,26 +35,6 @@
 /* Should be defined in the HW abstraction layer */
 extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
-void log_buff(float32_t *buff, int count, const std::string &title) {
-
-    LOG(title.c_str());
-    LOG(" : ");
-    for (int i = 0; i < count; i++) {
-        LOG("%.3f,", buff[i]);
-    }
-    LOG("\n\n");
-}
-
-void log_buff(adc_type *buff, int count, const std::string &title) {
-
-    LOG(title.c_str());
-    LOG(" : ");
-    for (int i = 0; i < count; i++) {
-        LOG("%d,", buff[i]);
-    }
-    LOG("\n\n");
-}
-
 HOT_FUNCTION
 void ReceiveTaskBase::work() {
     if (status.status == DSP_STATUS_RUNNING) {
@@ -103,6 +83,7 @@ void ReceiveTaskBase::work() {
                     } else {
                         // Half-band decimators
                         decimators[dec_phase]->decimate(bi1_p, bq1_p, dec_out_i, dec_out_q, block_size_in);
+
                         factor = decimators[dec_phase]->get_factor();
                     }
 
@@ -120,12 +101,11 @@ void ReceiveTaskBase::work() {
 
                     half_accum_p = half_accum_buff_f32_p;
 
-#if !DSP_FS4_SHIFT
                     // DC block
-                    d buffer_t<float32_t> bb = {(float32_t *)bi2_p, (size_t)block_size_out << 1};
+                    buffer_t<float32_t> bb = {(float32_t *)half_accum_buff_f32_p, (size_t)samples_per_batch << 1};
                     dc_block_i.filter(bb, 2, 0);
                     dc_block_q.filter(bb, 2, 1);
-#endif
+
                     demodulator->work_real(half_accum_buff_f32_p, half_accum_buff_f32_p + samples_per_batch, bi1_p, samples_per_batch);
 
                     if (dec_phase < n_decimators) {
@@ -212,14 +192,14 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
     bool ret;
     while (dec > 1) {
 
+        LOG("Remaining dec factor: %d\n", dec);
+
         if (n_decimators == max_decimators - 1 || dec == 2) { // || (stage_fs / factor) > (status.bandwidth / 2)) {
 
             // Final narrowband signal decimator
             factor = dec;
 
-            // The last state bandwidth will be determined by whatever is smaller, the demodulation mandwidth, or the maximum output bandwidth
-            // Note this determines the bandwidth of the signal sent to the DACs, but further analog filtering is performed before the audio amp.
-            next_stage_bandwidth = min2(modulation_bandwidth_hz, status.bandwidth);
+            next_stage_bandwidth = status.bandwidth;
 
             switch (mod) {
                 case SSB_USB:
@@ -240,7 +220,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
                     break;
             }
 
-            LOG("ReceiveTask::init_decimators: Signal decimator: ");
+            LOG("ReceiveTask::init_decimators: Signal decimator ==> \n");
 
         } else {
 
@@ -256,19 +236,19 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
 
                 // assign the output sample rate of this decimator as the demodulation sample rate so we configure the demodulator accordingly
                 demodulation_sample_rate = next_stage_fs;
-                next_stage_bandwidth = modulation_bandwidth_hz; // Low pass fiter to 1/4 sample rate
+                next_stage_bandwidth = modulation_bandwidth_hz; // Filter just the signal bandwidth to demodulate
                 n_pre_decimators++;
                 decimators[n_decimators] = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS>>();
-                LOG("ReceiveTask::init_decimators: Pre-demodulation decimator: ");
+                LOG("ReceiveTask::init_decimators: Pre-demodulation decimator => \n");
 
             } else {
 
                 // Prefer larger factors instead
 
-                factor = dec > 16 ? 8 : (dec > 8 ? 4 : 2);
-                next_stage_bandwidth = (stage_sr / (factor * 2)); // Low pass fiter to 1/4 sample rate
+                factor = dec >= 16 ? 8 : (dec >= 8 ? 4 : (dec >= 4 ? 2 : 2));
+                next_stage_bandwidth = (stage_sr / (factor * 3)); // Low pass fiter to 1/3 sample rate
                 decimators[n_decimators] = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS>>();
-                LOG("ReceiveTask::init_decimators: Decimation step: ");
+                LOG("ReceiveTask::init_decimators: Decimation step => \n");
             }
 
             ret = decimators[n_decimators]->config(stage_sr, next_stage_bandwidth, factor);
@@ -281,7 +261,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
 
         n_decimators++;
 
-        LOG("Rate %d:%d -> %d (filter: %d)\n", stage_sr, factor, stage_sr / factor, next_stage_bandwidth);
+        LOG("Rate %d:%d -> %d (filter: %d)\n\n", stage_sr, factor, stage_sr / factor, next_stage_bandwidth);
         dec /= factor;
         stage_sr = stage_sr / factor;
     }
@@ -307,11 +287,11 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
             return std::make_unique<dsp::ssb_demodulator>();
         case FM:
             demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, 3500);
+            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, config.dsp.fm_max_deviation);
             return demod;
         case WFM:
             demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, 75000);
+            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, config.dsp.wideband_fm_max_deviation);
             return demod;
         default:
             return std::make_unique<dsp::ssb_demodulator>();
@@ -329,7 +309,8 @@ bool ReceiveTaskBase::start() {
 
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
-    status.bandwidth = get_audio_bw_hz();
+
+    uint32_t dac_sample_rate = get_audio_bw_hz();
 
     modulation_bandwidth_hz = get_modulation_bw_hz();
 
@@ -344,9 +325,15 @@ bool ReceiveTaskBase::start() {
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
     // (while using decimation factors of 2^n)
 
-    while (status.sample_rate > status.bandwidth * 2 && dec_factor < 32) {
+    while (status.sample_rate > dac_sample_rate * 2 && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
+    }
+
+    if (modulation_bandwidth_hz > status.sample_rate) {
+        status.bandwidth = status.sample_rate / 3;
+    } else {
+        status.bandwidth = modulation_bandwidth_hz;
     }
 
     status.direction = DSP_DIRECTION_INOUT;

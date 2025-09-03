@@ -27,8 +27,6 @@ class TitleBarWidgetInner : public Widget {
     void before_paint() override;
 
     st_topBar status;
-
-    Button btnDSP{{0, MARGIN, 100, area.box.height - MARGIN * 2}, display, ""};
 };
 
 class TitleBarWidget : public View {
@@ -44,7 +42,7 @@ class TitleBarWidget : public View {
 
     void init();
 
-    Button btnDSP{{110, MARGIN, 0, area.box.height - MARGIN * 2}, display, ""};
+    Button btnDSP{{120 + MARGIN, MARGIN, 0, area.box.height - MARGIN * 2}, display, ""};
 
     TitleBarWidgetInner titleBarWidgetInner{{0, MARGIN, 110, area.box.height}, &lcd};
 };

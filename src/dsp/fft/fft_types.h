@@ -22,9 +22,9 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 // Length (number of bins) of a single fourier transform
 #define FFT_N 256
 
-// Needs to be >= FFT_BANDWIDTH*2 by a safe margin, depending on the width of
+// Needs to be >= DSP_BANDWIDTH*2 by a safe margin, depending on the width of
 // the transition band of the low pass filter
-#define FFT_MIN_SAMPLE_RATE (DSP_BANDWIDTH * 2 * USABLE_BW_FACTOR)
+#define FFT_MIN_SAMPLE_RATE (DSP_BANDWIDTH * 2 / USABLE_BW_FACTOR)
 // Minimum allowed span for the FTT
 #define FFT_MIN_SPAN 8192
 // Maximum allowed span for the FTT
@@ -110,8 +110,8 @@ typedef struct {
     // burst
     uint32_t max_sample_rate = ADC_MAX_SAMPLE_RATE;
 
-    // Max sample frequency in DSP mode. When doing DSP, we have to do more
-    // processing to the ADC buffer in real time, so the sample frequency is even
+    // Max sample frequency in DSP mode. When doing DSP, we spent more time
+    // processing the ADC buffer in real time, so the sample frequency is even
     // more constrained. If we'd have enough processing power, ideally,
     // dsp_max_sample_rate and max_sample_rate would be the same. Currently, the FFT
     // has to be reconfigured when doing real time DSP (see

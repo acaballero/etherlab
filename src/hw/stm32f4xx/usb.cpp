@@ -31,23 +31,13 @@ uint8_t getUSBConnectionStatus() {
     return ((((USBD_HandleTypeDef *)hpcd_USB_OTG_HS.pData)->dev_state) == USBD_STATE_CONFIGURED) ? USB_CONN_STATUS_CONNECTED : USB_CONN_STATUS_DISCONNECTED;
 }
 
-bool wait_for_sd_card(uint32_t timeout_ms) {
-    uint32_t start = HAL_GetTick();
-    while (!lock_sd_card()) {
-        if ((HAL_GetTick() - start) > timeout_ms) {
-            return false; // timeout
-        }
-    }
-    return true;
-}
-
 bool init_USB_MSC() {
 
     if (usb_msc_active) {
         return true;
     }
 
-    if (wait_for_sd_card(5000)) { // Wait for SD card to be free
+    if (lock_sd_card(5000)) { // Wait for SD card to be free
 
         USB_SetupMSC();
 

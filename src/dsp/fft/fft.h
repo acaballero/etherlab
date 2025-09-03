@@ -102,15 +102,15 @@ std::pair<int, int> get_bandwidth_pixel_range();
 extern Signal signal;
 } // namespace fft
 
-complex_t_f32 complexMult(complex_t_f32 a, complex_t_f32 b);
-void processFFT(float32_t *v);
+complex_t_f32 complex_mult(complex_t_f32 a, complex_t_f32 b);
+void process_fft(float32_t *v);
 bool fft_config(uint32_t span);
 void fft_init();
-void resetIQBalancer();
-uint32_t getPeak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v);
-void adquireFFTAsync();
-void reorderBins(complex_t_f32 *v);
-void calcFFTRange();
+void reset_iq_balancer();
+uint32_t get_peak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v);
+void adquire_fft_async();
+void reorder_bins(complex_t_f32 *v);
+void calc_fft_range();
 
 extern st_fft_params fft_params;
 extern FFTIQBalancer fftIQBalancer;

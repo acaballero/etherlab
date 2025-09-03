@@ -42,7 +42,10 @@ result changeCMX973Gain(eventMask e, navNode &nav, Menu::prompt &item) {
         config.hw.cmx973_vgb = gain;
     }
 
-    // if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb); // Comment-out for immediate effect. Otherwise it is controlled in agc.cpp
+    if (!config.dsp.agc_enabled) {
+
+        if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb); // Immediate if digital AGC is disable. Otherwise it is controlled in agc.cpp
+    }
     return proceed;
 }
 

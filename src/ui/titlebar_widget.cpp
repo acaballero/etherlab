@@ -58,45 +58,43 @@ bool TitleBarWidgetInner::paint_callback() {
     display->print("TRX_100");
 #endif
 
-    if (battery::battery_info.status != battery::BATTERY_STATUS_UNDEFINED) {
+    char c;
 
-        char c;
-
-        switch (battery::battery_info.status) {
-            case battery::BATTERY_STATUS_VERY_LOW:
-                color = C565_RED;
-                c = ICON_BATT_LOW;
-                break;
-            case battery::BATTERY_STATUS_LOW:
-                color = C565_RED;
-                c = ICON_BATT_MID;
-                break;
-            case battery::BATTERY_STATUS_MEDIUM:
-                color = C565_GREENYELLOW;
-                c = ICON_BATT_MID;
-                break;
-            case battery::BATTERY_STATUS_HIGH:
-                color = C565_GREEN;
-                c = ICON_BATT_FULL;
-                break;
-            case battery::BATTERY_STATUS_CHARGING:
-                color = C565_MAGENTA;
-                c = ICON_BATT_CHARGING;
-                break;
-            default:
-            case battery::BATTERY_STATUS_UNDEFINED:
-                c = ICON_BATT_MID;
-                break;
-        }
-
-        display->setFont((FontDef *)&Font_Icons9x8);
-        display->setColor(color);
-        display->writeChar(c);
-        display->setFont((FontDef *)&Font_Tiny8x8);
-        display->setColor(C565_WHITE);
-        // display->print(battery_info.voltage, 2);
-        display->print(" ");
+    switch (battery::battery_info.status) {
+        case battery::BATTERY_STATUS_VERY_LOW:
+            color = C565_RED;
+            c = ICON_BATT_LOW;
+            break;
+        case battery::BATTERY_STATUS_LOW:
+            color = C565_RED;
+            c = ICON_BATT_MID;
+            break;
+        case battery::BATTERY_STATUS_MEDIUM:
+            color = C565_GREENYELLOW;
+            c = ICON_BATT_MID;
+            break;
+        case battery::BATTERY_STATUS_HIGH:
+            color = C565_GREEN;
+            c = ICON_BATT_FULL;
+            break;
+        case battery::BATTERY_STATUS_CHARGING:
+            color = C565_MAGENTA;
+            c = ICON_BATT_CHARGING;
+            break;
+        default:
+        case battery::BATTERY_STATUS_UNDEFINED:
+            color = C565_GREY_DARK;
+            c = ICON_BATT_LOW;
+            break;
     }
+
+    display->setFont((FontDef *)&Font_Icons9x8);
+    display->setColor(color);
+    display->writeChar(c);
+    display->setFont((FontDef *)&Font_Tiny8x8);
+    display->setColor(C565_WHITE);
+    // display->print(battery_info.voltage, 2);
+    display->print(" ");
 
     display->setFont((FontDef *)&Font_Icons9x8);
 

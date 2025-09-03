@@ -157,7 +157,7 @@ char *StatusWidget::frontend() {
 
 char *StatusWidget::agc_alc() {
     if (!ISTX) {
-        sprintf(buf, "AGC");
+        sprintf(buf, "AGC%s", config.dsp.agc_enabled ? "" : "!");
         buttons[AGC].set_fg(fg_color);
     } else {
         sprintf(buf, "ALC");
@@ -209,7 +209,8 @@ void StatusWidget::before_paint() {
 
     radio::BAND band = config.band == radio::BAND_AUTO ? radio::find_band(radio::get_frequency()) : config.band;
 
-    status::st_status status = {config.modulation, ISTX, band, radio::filter, radio::if_filter, main_board::get_frontend_path(), config.agc_enabled,
+    status::st_status status = {config.modulation,      ISTX, band, radio::filter, radio::if_filter, main_board::get_frontend_path(), config.agc_enabled,
+                                config.dsp.agc_enabled,
                                 _status.f_carrier, // we won't show the frequency in the status bar, so use current_status value
                                 Menu::menuStatus
 
