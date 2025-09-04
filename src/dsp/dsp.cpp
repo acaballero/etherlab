@@ -313,6 +313,25 @@ inline void adc_work() {
 
 #if DSP_FS4_SHIFT
 
+    if (dsp::get_freq_shift_enabled()) {
+
+        // Removing DC here and thus not having to do it in subsequent stages (FFT, DSP processing) is not as efficient as it seems at first glance since:
+        // - FFT processing is not done in real-time so no need to do the work for it
+        // - Receivers, for example, could remove DC just before demodulation, at a much lower sample rate but, in fact, after shifting, the DC spike is
+        //   removed by the low pass filters
+        // The drawback is we have to rotate it there (fft module)too after DC removal
+
+        buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
+        dc_block_i.filter(bb, 2, 0);
+        dc_block_q.filter(bb, 2, 1);
+
+        if (fft_params.decimation_factor > 1) {
+            // TODO: Decimate here vs in both FFT and current DSP task?
+        }
+
+        dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
+    }
+
     if (!dsp::dsp_status || dsp::dsp_status->direction == DSP_DIRECTION_IN || dsp::dsp_status->direction == DSP_DIRECTION_INOUT) {
 
         // If the direction is input or bidirectional...
@@ -331,25 +350,6 @@ inline void adc_work() {
         //     dsp::log_buff((adc_type *)d, 64, "", true);
         //     last_t = t;
         // }
-    }
-
-    if (dsp::get_freq_shift_enabled()) {
-
-        // Removing DC here and thus not having to do it in subsequent stages (FFT, DSP processing) is not as efficient as it seems at first glance since:
-        // - FFT processing is not done in real-time so no need to do the work for it
-        // - Receivers, for example, could remove DC just before demodulation, at a much lower sample rate but, in fact, after shifting, the DC spike is
-        //   removed by the low pass filters
-        // The drawback is we have to rotate it there (fft module)too after DC removal
-
-        buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
-        dc_block_i.filter(bb, 2, 0);
-        dc_block_q.filter(bb, 2, 1);
-
-        if (fft_params.decimation_factor > 1) {
-            // TODO: Decimate here vs in both FFT and current DSP task?
-        }
-
-        dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
     }
 
 #endif

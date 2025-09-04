@@ -97,7 +97,15 @@ bool FFTWidget::on_touch(const st_inputEvent) {
 }
 
 void FFTWidget::draw_span_marks() {
-    char buf[10];
+    char buf[40];
+
+    if (config.debug) {
+        sprintf(buf, "d:%2d s:%9d w:%.2f ", fft_params.decimation_factor, fft_params.sample_freq, fft_params.bin_width_px);
+        display->setFont((FontDef *)&Font_Tiny8x8);
+        display->gotoXY(50, 5);
+        display->setBgColor(C565_BLACK);
+        display->print(buf);
+    }
 
     uint8_t y0 = 2;
     uint16_t x2 = FFT_ZONE_WIDTH - 40;

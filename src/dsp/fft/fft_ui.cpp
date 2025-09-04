@@ -3,6 +3,7 @@
 //
 
 #include "fft_ui.h"
+#include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
 #include "dsp/fft/fft.h"
 #include "fft_types.h"
@@ -141,6 +142,7 @@ Menu::numberPrompt<uint32_t> maxSampleRateMenu((const char *)"Max sample rate", 
                                                config.fft.min_sample_rate, ADC_MAX_SAMPLE_RATE, 10000, 25000);
 Menu::numberPrompt<uint32_t> maxDSPSampleRateMenu((const char *)"DSP max sample rate", &config.fft.dsp_max_sample_rate, 0, ' ', '.', "Hz",
                                                   [](uint32_t v) {
+                                                      dsp_restart();
                                                       fft_config(v);
                                                   },
                                                   FFT_MIN_SAMPLE_RATE, ADC_MAX_SAMPLE_RATE, 10000, 25000);

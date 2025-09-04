@@ -3,11 +3,13 @@
 //
 
 #include "waterfall_widget.h"
+#include "Display_afb.h"
 #include "config.h"
 #include "dsp/fft/fft_types.h"
 #include "dsp/fft/fft_ui.h"
 #include "fft.h"
 #include "input/inputEvent.h"
+#include "ips_font.h"
 
 #define PIXELS_BYTE 2
 // Map db to color linearly

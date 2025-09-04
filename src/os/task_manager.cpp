@@ -13,7 +13,7 @@
 #include <memory>
 #include "status.h"
 
-#define WITH_PRIORITIES 0
+#define WITH_PRIORITIES 1
 
 namespace os {
 int TaskManager::add(periodic_task *t) {

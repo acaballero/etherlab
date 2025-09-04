@@ -55,6 +55,8 @@ FIFO fft_fifo((char *)fft_fifo_buff, FFT_FIFO_SIZE * sizeof(complex_t));
 DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_i{};
 DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_q{};
 
+buffer_t<float32_t> fft_slice_buffer = {(float32_t *const)(fft_slice_buff), FFT_N * 2};
+
 #if FFT_N == 64
 
 const float32_t *twiddle = twiddleCoef_64;
@@ -366,7 +368,7 @@ bool st_fft_params::valid() {
     // In the end, we need to be sure that the distance from the (shifted) baseband center frequency to the lower cutoff
     // frequency of the filter is at least the bandowidth of interest (after decimation)
 
-    bool valid_bw = ((int32_t)config.fft.bw - (ISANALOG ? 0 : abs(dsp::get_frequency_shift(sample_freq)))) >= (int32_t)bw;
+    bool valid_bw = true; // ((int32_t)config.fft.bw - (ISANALOG ? 0 : abs(dsp::get_frequency_shift(sample_freq)))) >= (int32_t)bw;
     return valid_sf() && valid_bw;
 }
 
@@ -528,18 +530,18 @@ bool fft_config(uint32_t span) {
     st_fft_params best;
 
     // FOR DEBUG
-    static uint64_t last_t;
-    static uint32_t last_span = 0;
-    uint32_t t = HAL_GetTick();
-    bool log = false;
-    if (t - last_t > 5000 || last_span != span) {
-        log = true;
-        last_t = t;
-        last_span = span;
-    }
+    // static uint64_t last_t;
+    // static uint32_t last_span = 0;
+    // uint32_t t = HAL_GetTick();
+    // bool log = false;
+    // if (t - last_t > 5000 || last_span != span) {
+    //     log = true;
+    //     last_t = t;
+    //     last_span = span;
+    // }
 
-    if (log)
-        LOG("\n\n**** Required span: %d\n", span);
+    // if (log)
+    //    LOG("\n\n**** Required span: %d\n", span);
     for (int s = 1; s <= current_max_slices; s++) {
         for (int d = config.fft.max_decimation_factor; d >= 1; d >>= 1) {
             // for (int d = 1; d <= config.fft.max_decimation_factor; d <<= 1) {
@@ -552,8 +554,9 @@ bool fft_config(uint32_t span) {
             params.calc();
 
             if (!params.valid_sf()) {
-                if (log)
-                    LOG("Invalid try: sr: %u\n", params.sample_freq);
+                // if (log)
+                //      LOG("Invalid try: sr: %u\n", params.sample_freq);
+
                 params.sample_freq = constrain(params.sample_freq, config.fft.min_sample_rate, dsp::dsp_max_sample_rate);
 
                 params.calc();
@@ -563,14 +566,15 @@ bool fft_config(uint32_t span) {
                     params.calc(span);
                 }
 
-                if (log) {
-                    LOG("Changed by: sr: %u, span: %d | start_bin: %d | nbins: %d ", params.sample_freq, params.span, params.start_bin, params.nbins);
-                }
+                //  if (log) {
+                //       LOG("Changed by: sr: %u, span: %d | start_bin: %d | nbins: %d \n", params.sample_freq, params.span, params.start_bin, params.nbins);
+                //  }
             }
 
             if (params.valid()) {
-                if (log)
-                    LOG("Current is sr: %u | span: %d | delta: %d | width: %.1f \n", params.sample_freq, params.span, params.span - span, params.bin_width_px);
+                //  if (log)
+                //      LOG("Current is sr: %u | span: %d | delta: %d | width: %.1f \n", params.sample_freq, params.span, params.span - span,
+                //      params.bin_width_px);
                 // Cost function is:
                 // - Bin width in screen pixels: nearest to one so the bins doesn't have to be stretched nor shrink
                 // - Decimation factor: the larger, the better SNR (preferred in digital RX), but also slower rates of FFT update
@@ -580,16 +584,16 @@ bool fft_config(uint32_t span) {
                 if (best_delta || abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px) ||
                     (!ISANALOG && (params.decimation_factor > best.decimation_factor))) {
                     best = params;
-                    if (log)
-                        LOG("Best is sr: %u | span: %d | delta: %d | width: %.1f |", best.sample_freq, best.span, span_delta, params.bin_width_px);
-                    if (log)
-                        LOG_RAW(" dec: %d | start_bin: %d | nbins: %d \n", best.decimation_factor, best.start_bin, best.nbins);
+                    //  if (log)
+                    //       LOG("Best is sr: %u | span: %d | delta: %d | width: %.1f |", best.sample_freq, best.span, span_delta, params.bin_width_px);
+                    //   if (log)
+                    //       LOG_RAW(" dec: %d | start_bin: %d | nbins: %d \n", best.decimation_factor, best.start_bin, best.nbins);
 
                     found = true;
                 }
             } else {
-                if (log)
-                    LOG("Invalid result\n");
+                //  if (log)
+                //      LOG("Invalid result\n");
             }
         }
     }
@@ -1058,15 +1062,27 @@ void adquire_fft_async() {
     while (fft_fifo.available(&data.c) < chunk_size && HAL_GetTick() < timeout) {
     }
 
-    if (config.fft.removeDC) {
-        uint32_t size = fft_buff_size << 1;
-        buffer_t<adc_type> buff = {(adc_type *const)(data.c), size};
-        fft_dcremoval(buff);
-    }
+    // if (config.fft.removeDC) {
+    //     uint32_t size = fft_buff_size << 1;
+    //     buffer_t<adc_type> buff = {(adc_type *const)(data.c), size};
+    //     fft_dcremoval(buff);
+    // }
 
-    if (dsp::get_freq_shift_enabled()) {
-        dsp::rotate_fs4_q15((adc_type *)data.c, (adc_type *)data.c, fft_buff_size);
+    // if (dsp::get_freq_shift_enabled()) {
+    //     dsp::rotate_fs4_q15((adc_type *)data.c, (adc_type *)data.c, fft_buff_size);
+    // }
+
+#if !DSP_FS4_SHIFT
+    if (config.fft.removeDC) {
+        fft_dcremoval(fft_slice_buffer);
     }
+#else
+    if (config.fft.removeDC && !dsp::get_freq_shift_enabled()) {
+        // In digital mode, the DC is removed in the DSP processor in some cases
+
+        fft_dcremoval(fft_slice_buffer);
+    }
+#endif
 
     if (true) { // av >= chunk_size) {
 
