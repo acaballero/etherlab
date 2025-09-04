@@ -84,12 +84,12 @@ bool design_fir_kaiser_lpf(float *taps, double cutoffHz, double sampleRate, doub
 
     printf_("[LPF Kaiser FIR]: fx:%f,fs:%f,taps:%d\n\n", sampleRate, cutoffHz, numTaps);
 
-    // for (int n = 0; n < numTaps; ++n) {
-    //     double x = n - M / 2.0;
-    //     double win = besselI0(beta * sqrt(1 - pow(2.0 * x / M, 2))) / besselI0(beta);
-    //     taps[n] = 2 * normCutoff * sinc(2 * normCutoff * x) * win;
-    //     printf_(",%f", taps[n]);
-    // }
+    for (int n = 0; n < numTaps; ++n) {
+        double x = n - M / 2.0;
+        double win = besselI0(beta * sqrt(1 - pow(2.0 * x / M, 2))) / besselI0(beta);
+        taps[n] = 2 * normCutoff * sinc(2 * normCutoff * x) * win;
+        //   printf_(",%f", taps[n]);
+    }
     // printf_("\n\n");
     return true;
 }

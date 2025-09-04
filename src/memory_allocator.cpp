@@ -7,7 +7,7 @@
 #include "status.h"
 
 // Static definitions
-uint8_t CCMMemoryAllocator::ccm_memory_pool[16384] __attribute__((section(".ccmram"))) __attribute__((aligned(32)));
+uint8_t CCMMemoryAllocator::ccm_memory_pool[size] __attribute__((section(".ccmram"))) __attribute__((aligned(32)));
 CCMMemoryAllocator::Block CCMMemoryAllocator::blocks[64];
 CCMMemoryAllocator::Block *CCMMemoryAllocator::free_blocks = nullptr;
 size_t CCMMemoryAllocator::total_allocated = 0;
@@ -33,7 +33,7 @@ void CCMMemoryAllocator::init() {
     total_allocated = 0;
     initialized = true;
 
-    printf("Allocator initialized: %lu KB in BSS\n", sizeof(ccm_memory_pool) / 1024);
+    printf_("Allocator initialized: %lu KB in CMM RAM\n", sizeof(ccm_memory_pool) / 1024);
 }
 
 void *CCMMemoryAllocator::alloc(size_t size, size_t alignment) {

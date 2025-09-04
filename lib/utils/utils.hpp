@@ -64,6 +64,8 @@ void format_long(int64_t x, char *buf, uint8_t length, char thou_separator = '.'
 
 int strcicmp(char const *a, char const *b);
 
+double round_to_nearest_double(double n, double m);
+
 void removePunct(char *str);
 
 void removeChars(char *str, const char *chars);

@@ -53,8 +53,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->numberEditView.set_z_index(300);
     this->msg_w.set_z_index(1000);
     this->msg_w.set_visible(false);
-    this->msg_w.get_display()->setPadding(8, 8);
-    this->msg_w.get_display()->setVerticalLineSpacing(1);
+
     this->iqbal_w.set_visible(false);
 
     this->children_.reserve(40);

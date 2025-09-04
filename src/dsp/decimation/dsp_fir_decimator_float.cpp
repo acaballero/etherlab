@@ -46,7 +46,9 @@ void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<float32_t> &src, buffer_t<flo
     // Write to the final adc_buffer in interleaved IQ format
     for (uint16_t i = start_dst, j = 0; j < decimated_block_size; i += n_channels, j++) {
         dst.p[i] = this->tmp_buff_out[j];
+        // LOG_RAW("%.1f,", tmp_buff_out[j]);
     }
+    // LOG_RAW("\n");
 }
 
 // template <int TAPS> void DspFIRDecimatorFloat<TAPS, complex_t_f32>::decimate(buffer_t<complex_t_f32> &src, buffer_t<complex_t_f32> &dst) {
@@ -158,6 +160,7 @@ template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::init() {
     if (state_q == nullptr) {
         state_q = (float32_t *)CCMMemoryAllocator::alloc(state_size);
     }
+
     arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance_q, TAPS, this->factor, this->coeffs, state_q, DSP_BLOCK);
 
     ret = ret && status == arm_status::ARM_MATH_SUCCESS;

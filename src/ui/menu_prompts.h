@@ -10,6 +10,7 @@
 #include "menu_options.h"
 #include "ui/menuILI9431Out.h"
 #include "ui/option_buttons_view.h"
+#include "utils.hpp"
 #include "view_manager.h"
 #include <cstdint>
 #include <functional>
@@ -125,9 +126,10 @@ void open_number_edit(T value, const char *units, const char *name, uint8_t frac
 
     view_manager::mainView.NumberEdit()->on_changed = on_changed; // note this must be assigned before setting the value or a previous handler might be called
 
-    if (on_changed) {
-        LOG("open_number_edit on_changed has value\n");
-    }
+    // if (on_changed) {
+    //     LOG("open_number_edit on_changed has value\n");
+    // }
+    value = (T)round_to_nearest_double(value, step);
     view_manager::mainView.NumberEdit()->set_value(value, frac_digits, units, name, min, max, step, step_big);
     view_manager::mainView.to_top(view_manager::mainView.NumberEdit());
     view_manager::mainView.NumberEdit()->set_focus(true);
@@ -152,7 +154,6 @@ template <typename T> void open(numberPrompt<T> &prompt) {
             [&prompt](T v) {
                 *(prompt.value) = v;
                 if (prompt.on_select) {
-
                     prompt.on_select(v);
                 }
             },

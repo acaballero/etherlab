@@ -80,7 +80,7 @@ typedef struct st_fft_params {
     // Starting intermediate frequency of the span
     uint64_t span_if_start;
 
-    void calc();
+    void calc(uint32_t span = 0);
 
     bool valid();
 
@@ -131,7 +131,6 @@ extern FIFO fft_fifo;
 extern fft_type fft_display[FTT_DISPLAY_WIDTH];
 extern fft_type fft_display_db[FTT_DISPLAY_WIDTH];
 extern complex_t_f32 fft_slice_buff[FFT_N];
-extern buffer_t<float32_t> fft_slice_buffer;
 extern fft_type fft_output[FFT_N];
 extern float window[FFT_N];
 

@@ -3,6 +3,7 @@
 //
 
 #include "receive_task_base.h"
+#include "arm_math.h"
 #include "dsp/blocks/dc_block.h"
 #include "dsp/buffer.hpp"
 #include "dsp/decimation/dsp_fir_decimator_float.h"
@@ -66,6 +67,12 @@ void ReceiveTaskBase::work() {
 
                 dsp::s16_to_f32((const adc_type *)in_p, bi2_p, block_size_in << 1);
 
+                buffer_t<float32_t> bb = {(float32_t *)bi2_p, DSP_BLOCK * 2};
+                dc_block_i.filter(bb, 2, 0);
+                dc_block_q.filter(bb, 2, 1);
+
+                dsp::rotate_fs4_f32((const float32_t *)bi2_p, (float32_t *)bi2_p, DSP_BLOCK);
+
                 dsp::unzip_f32((const float32_t *)bi2_p, bi1_p, bq1_p, block_size_in);
 
                 // Pre-demodulation decimation: decimate as much as the demoulation bandwidth allows
@@ -102,9 +109,9 @@ void ReceiveTaskBase::work() {
                     half_accum_p = half_accum_buff_f32_p;
 
                     // DC block
-                    buffer_t<float32_t> bb = {(float32_t *)half_accum_buff_f32_p, (size_t)samples_per_batch << 1};
-                    dc_block_i.filter(bb, 2, 0);
-                    dc_block_q.filter(bb, 2, 1);
+                    // buffer_t<float32_t> bb = {(float32_t *)half_accum_buff_f32_p, (size_t)samples_per_batch << 1};
+                    // dc_block_i.filter(bb, 2, 0);
+                    // dc_block_q.filter(bb, 2, 1);
 
                     demodulator->work_real(half_accum_buff_f32_p, half_accum_buff_f32_p + samples_per_batch, bi1_p, samples_per_batch);
 

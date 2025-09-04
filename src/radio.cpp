@@ -2,6 +2,7 @@
 // Created by Angel Dust on 17/06/2021.
 //
 
+//#include "main_board.h"
 #include "status.h"
 #include "stdio.h"
 #include "radio.h"
@@ -12,6 +13,7 @@
 #include "types.h"
 #include <stdint.h>
 #include "printf.h"
+//#include "ui/frequency_memory_ui.h"
 
 /*
  * Bits 4-7 int the PORT_A of the hmcp01 MCP23017 instance corresponding
@@ -419,7 +421,17 @@ void set_band(BAND band) {
     config.f_min = bands[config.band].freq_start;
     config.f_max = bands[config.band].freq_end;
 
-    set_frequency(constrain(get_frequency(), config.f_min, config.f_max));
+    uint64_t curr_freq = get_frequency();
+    if (curr_freq < config.f_min || curr_freq > config.f_max) {
+
+        // st_freq_mem m = freq_memory::find_closest(config.f_min, FORWARD, FREQ_TYPE::BAND_START);
+        // if (m.freq && m.freq < config.f_max) {
+        //     set_frequency(m.freq);
+        //     main_board::set_modulation_mode(m.mode, false);
+        // } else {
+        set_frequency((config.f_min + config.f_max) / 2);
+        //}
+    }
 
     band_signal.emit(nullptr);
 }

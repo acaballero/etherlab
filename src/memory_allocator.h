@@ -22,9 +22,10 @@ class CCMMemoryAllocator {
     static Block *free_blocks;
     static size_t total_allocated;
     static bool initialized;
+    static constexpr int size = 16384;
 
   public:
-    static uint8_t ccm_memory_pool[16384] __attribute__((section(".ccmram"))) __attribute__((aligned(32)));
+    static uint8_t ccm_memory_pool[size] __attribute__((section(".ccmram"))) __attribute__((aligned(32)));
     static void init();
     static void *alloc(size_t size, size_t alignment = 4);
     static void free(void *ptr);

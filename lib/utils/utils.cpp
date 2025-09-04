@@ -539,6 +539,17 @@ float mapFloat(float x, float in_min, float in_max, float out_min, float out_max
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+double round_to_nearest_double(double n, double m) {
+    if (m == 0.0) {
+        return n; // avoid division by zero
+    }
+    if (n >= 0.0) {
+        return m * (int)((n / m) + 0.5);
+    } else {
+        return m * (int)((n / m) - 0.5);
+    }
+}
+
 /*
 float roundDownToNearest(float d, float t) {
     // 105.5 down to nearest 1 = 105

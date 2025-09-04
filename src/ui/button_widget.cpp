@@ -10,7 +10,6 @@
 void Button::set_text(char const *t) {
     strncpy(text, t, MAX_CHARS);
     set_dirty();
-
     calc_widths();
 }
 
@@ -27,6 +26,9 @@ void Button::calc_widths() {
     lw = display->get_text_size(text).width();
     vw = display->get_text_size(value).width();
     uw = display->get_text_size(unit).width();
+    if (variable_width) {
+        set_width();
+    }
 }
 
 void Button::draw_box(int box_width, uint16_t bg) {
@@ -65,9 +67,6 @@ void Button::set_width() {
 }
 
 void Button::before_paint() {
-    if (dirty() && variable_width) {
-        set_width();
-    }
 }
 
 bool Button::paint_callback() {

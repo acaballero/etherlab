@@ -349,7 +349,7 @@ inline void adc_work() {
             // TODO: Decimate here vs in both FFT and current DSP task?
         }
 
-        dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
+        // dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
     }
 
 #endif

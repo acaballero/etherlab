@@ -25,6 +25,12 @@
 #define DSP_MIN_TX_GAIN_DB -20
 #define DSP_MAX_TX_GAIN_DB 20
 
+// Ensure the sample frequency is multiple of this value
+// The reason is 16*1200, so the sample frequency is decimable by 16
+// and, after that, is still a multiple of 1200 bauds, which is required for symbol synchronization in many audio processing modes
+// This can only be done when we have one slice (which is the case for real-time DSP processing)
+#define DSP_SAMPLE_FREQ_MULT 19200
+
 #ifdef __clang__
 // Clang-compatible implementations
 #define __PKHBT(a, b, shift) ((uint32_t)(((uint32_t)(a)&0xFFFFU) | (((uint32_t)(b)&0xFFFFU) << (shift))))
@@ -133,7 +139,7 @@ enum DSP_ERROR {
 #define MAX_DSP_DECIMATION_FACTOR 32
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
-#define FIR_DECIMATOR_1ST_HALFBAND_TAPS 31
+#define FIR_DECIMATOR_1ST_HALFBAND_TAPS 67
 #define FIR_DECIMATOR_SIGNAL_TAPS 61
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt

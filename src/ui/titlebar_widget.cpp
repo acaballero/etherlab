@@ -245,6 +245,7 @@ void TitleBarWidget::before_paint() {
 
         color = C565_GREY_LIGHT;
 
+        display->set_padding(8, 8);
         btnDSP.set_bg(ISTX ? C565_RED : C565_VIOLET);
 
         if (ISANALOG) {
