@@ -13,6 +13,8 @@
 #include <memory>
 #include "status.h"
 
+#define WITH_PRIORITIES 0
+
 namespace os {
 int TaskManager::add(periodic_task *t) {
     t->set_id(++last_id);
@@ -52,20 +54,22 @@ periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
     return task;
 }
 
-// void TaskManager::run() {
+#if !WITH_PRIORITIES
+void TaskManager::run() {
 
-//     size_t i = 0;
-//     while (i < tasks.size()) {
+    size_t i = 0;
+    while (i < tasks.size()) {
 
-//         tasks[i]->run();
+        tasks[i]->run();
 
-//         if (tasks[i]->finished()) {
-//             remove(tasks[i].get());
-//         } else {
-//             i++;
-//         }
-//     }
-// }
+        if (tasks[i]->finished()) {
+            remove(tasks[i].get());
+        } else {
+            i++;
+        }
+    }
+}
+#else
 void TaskManager::run() {
     uint64_t current_time = HAL_GetTick();
     static size_t round_robin_index = 0;
@@ -139,6 +143,6 @@ void TaskManager::run() {
         round_robin_index = (round_robin_index + 1) % tasks.size();
     }
 }
-
+#endif
 os::TaskManager task_manager;
 } // namespace os

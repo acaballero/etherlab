@@ -67,11 +67,11 @@ void ReceiveTaskBase::work() {
 
                 dsp::s16_to_f32((const adc_type *)in_p, bi2_p, block_size_in << 1);
 
-                buffer_t<float32_t> bb = {(float32_t *)bi2_p, DSP_BLOCK * 2};
-                dc_block_i.filter(bb, 2, 0);
-                dc_block_q.filter(bb, 2, 1);
+                // buffer_t<float32_t> bb = {(float32_t *)bi2_p, DSP_BLOCK * 2};
+                // dc_block_i.filter(bb, 2, 0);
+                // dc_block_q.filter(bb, 2, 1);
 
-                dsp::rotate_fs4_f32((const float32_t *)bi2_p, (float32_t *)bi2_p, DSP_BLOCK);
+                // dsp::rotate_fs4_f32((const float32_t *)bi2_p, (float32_t *)bi2_p, DSP_BLOCK);
 
                 dsp::unzip_f32((const float32_t *)bi2_p, bi1_p, bq1_p, block_size_in);
 
