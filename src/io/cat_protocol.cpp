@@ -234,7 +234,7 @@ void cmd_send_read_mode(st_usb_cdc_command *command, uint8_t *response, uint8_t 
     switch (buf[5]) {
         case CMD_SEND_READ_MODE:
             if (command->size == 7) {
-                main_board::setMode(buf[5] == 0 ? ANALOG_RX : ANALOG_TX);
+                main_board::set_mode(buf[5] == 0 ? ANALOG_RX : ANALOG_TX);
             }
             response[(*size)++] = !ISTX ? 0x01 : 0x00;
             break;
@@ -294,7 +294,7 @@ void cmd_read_freq_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *siz
 }
 
 void cmd_read_mode_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *size) {
-    response[(*size)++] = from_modulation_mode(main_board::getModulationMode());
+    response[(*size)++] = from_modulation_mode(main_board::get_modulation_mode());
 }
 
 void cmd_set_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *) {
@@ -304,7 +304,7 @@ void cmd_set_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_
 
 void cmd_set_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *) {
 
-    main_board::setModulationMode(to_modulation_mode(command->data[5]), false);
+    main_board::set_modulation_mode(to_modulation_mode(command->data[5]), false);
     memcpy(response, ok_response_data, 5);
 }
 
@@ -573,10 +573,10 @@ void cmd_set_vfo_mode_handler(st_usb_cdc_command *command, uint8_t *response, ui
 
     if (vfo == 0) { // Consider only changes in current VFO
 
-        main_board::setModulationMode(to_modulation_mode(command->data[6]), false);
+        main_board::set_modulation_mode(to_modulation_mode(command->data[6]), false);
 
         response[*size++] = 0;
-        response[*size++] = from_modulation_mode(main_board::getModulationMode());
+        response[*size++] = from_modulation_mode(main_board::get_modulation_mode());
         response[*size++] = 0;    // Data mode off
         response[*size++] = 0x01; // Filter 1
 

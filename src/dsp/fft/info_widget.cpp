@@ -18,7 +18,7 @@ bool InfoWidget::paint_callback() {
     display->setBgColor(C565_BLACK);
     display->setColor(C565_WHITE);
     display->setFont((FontDef *)&Font_7x10);
-    display->setPadding(0, 0);
+    display->set_padding(0, 0);
     display->gotoCharXY(0, 0);
     format_long(fft_params.span / 1000, buf);
 
@@ -78,7 +78,7 @@ bool InfoWidget::paint_callback() {
         display->print(status::systemStatus.msg);
     }
 
-    display->setPadding(4, 4);
+    display->set_padding(4, 4);
     return true;
 }
 

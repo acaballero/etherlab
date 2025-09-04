@@ -151,78 +151,78 @@ std::pair<int, int> get_bandwidth_pixel_range() {
 
     return std::pair<int, int>{bm_s, bm_e};
 }
-
+/*
 void calc_snr_2() {
-    const std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
-    const int bin_start = bin_limits.first;
-    const int bin_end = bin_limits.second;
-    const int start_bin = fft_params.start_bin;
-    const int end_bin = start_bin + fft_params.nbins;
+const std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
+const int bin_start = bin_limits.first;
+const int bin_end = bin_limits.second;
+const int start_bin = fft_params.start_bin;
+const int end_bin = start_bin + fft_params.nbins;
 
-    float sigplusnoise = 0.0f;
-    float total_signal = 0.0f;
+float sigplusnoise = 0.0f;
+float total_signal = 0.0f;
 
-    const float inv_ten = 0.1f;
-    const float *fft_ptr = &fft_display_db[start_bin];
+const float inv_ten = 0.1f;
+const float *fft_ptr = &fft_display_db[start_bin];
 
-    // Process 4 elements at a time for better instruction pipeline usage
-    int i = start_bin;
-    const int unroll_end = end_bin - 3;
+// Process 4 elements at a time for better instruction pipeline usage
+int i = start_bin;
+const int unroll_end = end_bin - 3;
 
-    for (; i < unroll_end; i += 4) {
-        // Calculate 4 power values
-        const float p0 = powf(10.0f, fft_ptr[0] * inv_ten);
-        const float p1 = powf(10.0f, fft_ptr[1] * inv_ten);
-        const float p2 = powf(10.0f, fft_ptr[2] * inv_ten);
-        const float p3 = powf(10.0f, fft_ptr[3] * inv_ten);
+for (; i < unroll_end; i += 4) {
+    // Calculate 4 power values
+    const float p0 = powf(10.0f, fft_ptr[0] * inv_ten);
+    const float p1 = powf(10.0f, fft_ptr[1] * inv_ten);
+    const float p2 = powf(10.0f, fft_ptr[2] * inv_ten);
+    const float p3 = powf(10.0f, fft_ptr[3] * inv_ten);
 
-        // Accumulate signal+noise conditionally
-        if (i >= bin_start && i <= bin_end) {
-            sigplusnoise += p0;
-        }
-        if ((i + 1) >= bin_start && (i + 1) <= bin_end) {
-            sigplusnoise += p1;
-        }
-        if ((i + 2) >= bin_start && (i + 2) <= bin_end) {
-            sigplusnoise += p2;
-        }
-        if ((i + 3) >= bin_start && (i + 3) <= bin_end) {
-            sigplusnoise += p3;
-        }
-
-        // Accumulate total signal
-        total_signal += p0 + p1 + p2 + p3;
-
-        fft_ptr += 4;
+    // Accumulate signal+noise conditionally
+    if (i >= bin_start && i <= bin_end) {
+        sigplusnoise += p0;
+    }
+    if ((i + 1) >= bin_start && (i + 1) <= bin_end) {
+        sigplusnoise += p1;
+    }
+    if ((i + 2) >= bin_start && (i + 2) <= bin_end) {
+        sigplusnoise += p2;
+    }
+    if ((i + 3) >= bin_start && (i + 3) <= bin_end) {
+        sigplusnoise += p3;
     }
 
-    // Handle remaining elements
-    for (; i < end_bin; i++) {
-        const float p = powf(10.0f, (*fft_ptr) * inv_ten);
-        if (i >= bin_start && i <= bin_end) {
-            sigplusnoise += p;
-        }
-        total_signal += p;
-        fft_ptr++;
-    }
+    // Accumulate total signal
+    total_signal += p0 + p1 + p2 + p3;
 
-    // Rest of calculation identical to original
-    const float noise_floor_mag = powf(10.0f, fft_noise_floor_db * inv_ten);
-    const float noise = noise_floor_mag * (float)(bin_end - bin_start + 1);
-    const float signal = max2(sigplusnoise - noise, 1e-14f);
-    const float curr_snr = 10.0f * fasterlog(signal / noise);
-
-    snr = snr - 0.3f * (snr - curr_snr);
-
-    dbm_instant = 10.0f * fasterlog(sigplusnoise);
-    const float total_dbm_instant = 10.0f * fasterlog(total_signal);
-    dbm = dbm - 0.3f * (dbm - dbm_instant);
-
-    const float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft_params.span;
-    const float papr_db = 3.0f + 10.0f * bandwidth_ratio;
-    dbm_peak = total_dbm_instant + papr_db;
+    fft_ptr += 4;
 }
 
+// Handle remaining elements
+for (; i < end_bin; i++) {
+    const float p = powf(10.0f, (*fft_ptr) * inv_ten);
+    if (i >= bin_start && i <= bin_end) {
+        sigplusnoise += p;
+    }
+    total_signal += p;
+    fft_ptr++;
+}
+
+// Rest of calculation identical to original
+const float noise_floor_mag = powf(10.0f, fft_noise_floor_db * inv_ten);
+const float noise = noise_floor_mag * (float)(bin_end - bin_start + 1);
+const float signal = max2(sigplusnoise - noise, 1e-14f);
+const float curr_snr = 10.0f * fasterlog(signal / noise);
+
+snr = snr - 0.3f * (snr - curr_snr);
+
+dbm_instant = 10.0f * fasterlog(sigplusnoise);
+const float total_dbm_instant = 10.0f * fasterlog(total_signal);
+dbm = dbm - 0.3f * (dbm - dbm_instant);
+
+const float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft_params.span;
+const float papr_db = 3.0f + 10.0f * bandwidth_ratio;
+dbm_peak = total_dbm_instant + papr_db;
+}
+*/
 void calc_snr() {
 
     std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
@@ -342,9 +342,11 @@ void st_fft_params::calc() {
     span_f_start = config.vfo[config.vfo_ix].freq - (span >> 1U);
 }
 
-bool st_fft_params::valid() {
+bool st_fft_params::valid_sf() {
+    return sample_freq >= config.fft.min_sample_rate && sample_freq <= dsp::dsp_max_sample_rate;
+}
 
-    bool b = sample_freq >= config.fft.min_sample_rate && sample_freq <= dsp::dsp_max_sample_rate;
+bool st_fft_params::valid() {
 
     // In digital mode, if near-zero tuning is active (tuning to -sample_freq/4), the available bandwidth gets reduced.
     // After shifting up again +SF/4 in software, the lower cutoff of the pre-ADC low-pass filter is brought up by
@@ -355,13 +357,11 @@ bool st_fft_params::valid() {
     // .....(_______X____|______)
     //    ^-----lost
     //
-    // With decimation, the bandwidht of interest is smaller and we can afford losing some phisical bandwidht, which
+    // With decimation, the bandwidht of interest is smaller and we can afford losing some phisical bandwidth, which
     // is also taken into account here
-    // In the end, we need to assure that the distance from the (shifted) baseband center frequency to the lower cutoff
+    // In the end, we need to be sure that the distance from the (shifted) baseband center frequency to the lower cutoff
     // frequency of the filter is at least the bandowidth of interest (after decimation)
-    b = b && ((int32_t)config.fft.bw - (ISANALOG ? 0 : abs(dsp::get_frequency_shift(sample_freq)))) >= (int32_t)bw;
-
-    return b;
+    return valid_sf() && ((int32_t)config.fft.bw - (ISANALOG ? 0 : abs(dsp::get_frequency_shift(sample_freq)))) >= (int32_t)bw;
 }
 
 void fft_dcremoval(buffer_t<adc_type> &vData) {
@@ -522,6 +522,7 @@ bool fft_config(uint32_t span) {
     st_fft_params best;
 
     for (int s = 1; s <= current_max_slices; s++) {
+        //  for (int d = config.fft.max_decimation_factor; d >= 1; d >>= 1) {
         for (int d = 1; d <= config.fft.max_decimation_factor; d <<= 1) {
 
             params.decimation_factor = d;
@@ -530,11 +531,20 @@ bool fft_config(uint32_t span) {
             params.sample_freq = 0; // calculate
             params.calc();
 
+            // if (!params.valid_sf()) {
+            //     params.sample_freq = constrain(params.sample_freq, config.fft.min_sample_rate, config.fft.dsp_max_sample_rate);
+            //     params.calc();
+            // }
+
             if (params.valid()) {
                 // Cost function is:
                 // - Bin width in screen pixels: nearest to one so the bins doesn't have to be stretched nor shrink
                 // - Decimation factor: the larger, the better SNR (preferred in digital RX), but also slower rates of FFT update
-                if (abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px) || (!ISANALOG && (params.decimation_factor > best.decimation_factor))) {
+                auto span_delta = abs((int)params.span - (int)span);
+                auto best_span_delta = abs((int)best.span - (int)span);
+                bool best_delta = false; // span_delta < best_span_delta;
+                if (best_delta || abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px) ||
+                    (!ISANALOG && (params.decimation_factor > best.decimation_factor))) {
                     best = params;
                     found = true;
                 }
@@ -594,7 +604,7 @@ bool fft_config(uint32_t span) {
 
             set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
 
-            LOG("fft_config: Changed sample rate :%lu\n", config.fft.sample_rate);
+            LOG("fft_config: Changed sample rate: %lu\n", config.fft.sample_rate);
             signal.emit(nullptr);
         } else {
             decimator_i.set_factor(fft_params.decimation_factor);

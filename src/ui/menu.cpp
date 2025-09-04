@@ -56,7 +56,7 @@ menu_option_st<radio::RPT_MODE> rpt_mode_options[] = {{radio::repeaterNames[radi
 MODULATION_MODE modulation;
 optionsPrompt<MODULATION_MODE> modulationMenu((const char *)"Modulation", modulation_options, modulation,
                                               sizeof(modulation_options) / sizeof(modulation_options[0]), [](MODULATION_MODE v) {
-                                                  main_board::setModulationMode(v, true);
+                                                  main_board::set_modulation_mode(v, true);
                                               });
 
 optionsPrompt<radio::BAND> bandMenu((const char *)"Band", band_options, config.band, sizeof(band_options) / sizeof(band_options[0]), [](radio::BAND band) {
@@ -248,7 +248,7 @@ result settings_reset(eventMask) {
 
 bool locked = false;
 result set_usb_msc_mode(eventMask) {
-    main_board::setMute(GPIO_PIN_SET); // TODO: SD card generates big EMI. Pending new board with integrated SD card
+    main_board::set_mute(GPIO_PIN_SET); // TODO: SD card generates big EMI. Pending new board with integrated SD card
     init_USB_MSC();
     return proceed;
 }
@@ -276,7 +276,7 @@ void unlock() {
         fft::fft_task.set_enabled(true);
         view_manager::task.set_enabled(true);
         view_manager::mainView.set_dirty();
-        main_board::setMute(GPIO_PIN_RESET);
+        main_board::set_mute(GPIO_PIN_RESET);
         // TODO: Maybe this is not good and the previous mute state has to be set. Also, it is muted in set_usb_msc_mode and unmuted here, which is ugly.
         locked = false;
     }

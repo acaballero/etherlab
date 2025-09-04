@@ -41,9 +41,7 @@ bool TitleBarWidgetInner::paint_callback() {
     char buff[20];
 
     display->clear();
-
     display->gotoXY(0, MARGIN);
-
     display->setColor(C565_WHITE);
     display->setBgColor(C565_BLACK);
     display->setFont(font);
@@ -183,14 +181,14 @@ bool TitleBarWidgetInner::paint_callback() {
     if (!ISTX) {
         // AUDIO
 
-        if (main_board::getMute()) {
+        if (main_board::get_mute()) {
             display->setColor(C565_GREY_DARKER);
         } else {
             display->setColor(C565_WHITE);
         }
         display->print(" ");
         display->setFont((FontDef *)&Font_Icons9x8);
-        display->writeChar(main_board::getMute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
+        display->writeChar(main_board::get_mute() ? ICON_SOUND_OFF : ICON_SOUND_ON);
     }
 
     return true;
@@ -198,7 +196,7 @@ bool TitleBarWidgetInner::paint_callback() {
 
 void TitleBarWidgetInner::before_paint() {
 
-    st_topBar topBar = {main_board::getMute() ? true : false};
+    st_topBar topBar = {main_board::get_mute() ? true : false};
 
     if (this->dirty() || !(topBar == this->status)) {
         this->status = topBar;
@@ -269,7 +267,7 @@ void TitleBarWidget::before_paint() {
 
             dsp::dsp_status->reset();
             char buf[20];
-            MODULATION_MODE mod = main_board::getModulationMode();
+            MODULATION_MODE mod = main_board::get_modulation_mode();
             bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod);
             sprintf(buf, "%s%s%s%s%s", "DSP", space ? " " : "", dsp::apply_compression(mod) ? "C" : "", dsp::apply_deemph(mod) ? "D" : "", error ? " !" : "");
             trim(buf);

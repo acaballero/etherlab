@@ -38,8 +38,7 @@ void clearError() {
 
 void handleError(StatusCode code, const char *msg) {
 
-    LOG(msg, 0) // Print to console, if enabled
-    LOG("\n", 0)
+    LOG("%s\n", msg) // Print to console, if enabled
 
     systemStatus.code = code;
     snprintf(systemStatus.msg, 40, "%s", msg);

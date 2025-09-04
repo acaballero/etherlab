@@ -28,7 +28,7 @@
 
 namespace main_board {
 
-bool setMode(MODE mode);
+bool set_mode(MODE mode);
 
 GPIOPin powCtrlDataPin(POW_CTRL_DATA_PIN, POW_CTRL_DATA_PORT, GPIO_MODE_OUTPUT_PP);
 GPIOPin powCtrlSetPin(POW_CTRL_SET_PIN, POW_CTRL_SET_PORT, GPIO_MODE_OUTPUT_PP);
@@ -51,7 +51,7 @@ battery::BATTERY_STATUS battery_status = battery::BATTERY_STATUS_UNDEFINED;
 void s_strength_callback(void *, void *args) {
     sstrength::st_sstrength_info info = *((sstrength::st_sstrength_info *)args);
 
-    setMute(info.in_squelch && info.level > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    set_mute(info.in_squelch && info.level > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 void on_dsp_event(st_dsp_status *status) {
@@ -77,7 +77,7 @@ void check_status() {
         // Shuts down power amp if battery is low
         if (battery::battery_info.voltage > 6 && battery::battery_info.status == battery::BATTERY_STATUS_LOW) {
             status::handleError(status::ST_INFO, "Battery low");
-            setModulationMode(config.modulation, true);
+            set_modulation_mode(config.modulation, true);
         }
 
         battery_status = battery::battery_info.status;
@@ -130,7 +130,7 @@ void init() {
     sstrength::squelch_signal.add(NULL, s_strength_callback);
     battery::battery_signal.add(NULL, battery_callback);
     main_board::if_filter_signal.add(nullptr, if_filter_signal_callback);
-    setModulationMode(config.modulation, true);
+    set_modulation_mode(config.modulation, true);
 
     // Standby led
     setGPIOExpPin(&hmcp03, MCP23017_PORTB, GPIOEXP_FPANEL_STBY_LED, true, true);
@@ -229,10 +229,10 @@ bool allow_modulation_in_mode(MODE mode, MODULATION_MODE modulation) {
 void toggle_dsp() {
     if (!ISTX) {
         if (config.mode != DIGITAL_RX) {
-            setMode(DIGITAL_RX);
+            set_mode(DIGITAL_RX);
         } else {
             if (allow_modulation_in_mode(config.mode, config.modulation)) {
-                setMode(ANALOG_RX);
+                set_mode(ANALOG_RX);
             } else {
                 status::handleError(status::ST_WARN, "Modulation disabled in analog");
             }
@@ -240,7 +240,7 @@ void toggle_dsp() {
     }
 }
 
-bool _setMode(MODE mode, bool force) {
+bool _set_mode(MODE mode, bool force) {
 
     // LOG("_setMode: mode: %s,%b\n", radio::modeNames[mode], force);
     bool changed = false;
@@ -258,7 +258,7 @@ bool _setMode(MODE mode, bool force) {
         // TODO: DSP squelch not implemented yet, so we disable mute in DSP mode
         GPIO_PinState muteState = ISANALOG ? mute : GPIO_PIN_RESET;
 
-        setMute(GPIO_PIN_SET);
+        set_mute(GPIO_PIN_SET);
 
         /**
          *  Change power lines according to RX/TX modes.
@@ -392,7 +392,7 @@ bool _setMode(MODE mode, bool force) {
             set_if_filter(config.if_filter);
         }
 
-        setMute(muteState);
+        set_mute(muteState);
 
         if (changed) {
             mode_signal.emit(nullptr);
@@ -414,25 +414,25 @@ void sleep() {
 }
 
 void wakeup() {
-    setModulationMode(config.modulation, true);
+    set_modulation_mode(config.modulation, true);
 }
 
 void update() {
-    _setMode(config.mode, true);
+    _set_mode(config.mode, true);
 }
 
-bool setMode(MODE mode) {
+bool set_mode(MODE mode) {
     // LOG("------ [BEGIN] setMode %s ------\n", radio::modeNames[mode]);
     bool b = false;
-    if (_setMode(mode, false)) {
-        setModulationMode(config.modulation, true);
+    if (_set_mode(mode, false)) {
+        set_modulation_mode(config.modulation, true);
         b = true;
     }
     // LOG("------ [END] setMode %s: %d ------\n", radio::modeNames[mode], b);
     return b;
 }
 
-void setMute(GPIO_PinState muteState) {
+void set_mute(GPIO_PinState muteState) {
     if (mute != muteState) {
         // LOG("setMute: %d\n", static_cast<int>(muteState));
         mute = muteState;
@@ -442,15 +442,15 @@ void setMute(GPIO_PinState muteState) {
     }
 }
 
-GPIO_PinState getMute() {
+GPIO_PinState get_mute() {
     return mute;
 }
 
-MODULATION_MODE getModulationMode() {
+MODULATION_MODE get_modulation_mode() {
     return config.modulation;
 }
 
-void setModulationMode(MODULATION_MODE mod_val, bool force) {
+void set_modulation_mode(MODULATION_MODE mod_val, bool force) {
 
     if (mod_val >= MODULATION_MODE_ALL) {
         return;
@@ -475,7 +475,7 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
 
         GPIO_PinState muteState = mute;
 
-        setMute(GPIO_PIN_SET);
+        set_mute(GPIO_PIN_SET);
 
         if (!allow_modulation_in_mode(config.mode, config.modulation)) {
             // Only-digital modes allowed for some modulations
@@ -484,7 +484,7 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
         }
 
         // Set RX/TX mode to set the power lines according to the new modulation
-        _setMode(config.mode, true);
+        _set_mode(config.mode, true);
 
         // Set some GPIO pins according to the new modulation
         // NOTE: hmcp01 has negative logic
@@ -550,7 +550,7 @@ void setModulationMode(MODULATION_MODE mod_val, bool force) {
             mode_signal.emit(nullptr);
         }
 
-        setMute(muteState);
+        set_mute(muteState);
     }
 }
 

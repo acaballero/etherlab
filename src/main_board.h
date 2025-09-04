@@ -20,9 +20,9 @@ void init();
 
 void main_board_signal_static_callback(void *thisptr, void *args);
 
-void setModulationMode(MODULATION_MODE mod_val, bool force);
+void set_modulation_mode(MODULATION_MODE mod_val, bool force);
 
-MODULATION_MODE getModulationMode();
+MODULATION_MODE get_modulation_mode();
 
 void setSquelch();
 
@@ -38,11 +38,11 @@ void sleep();
 
 void toggle_dsp();
 
-bool setMode(MODE mode);
+bool set_mode(MODE mode);
 
-void setMute(GPIO_PinState);
+void set_mute(GPIO_PinState);
 
-GPIO_PinState getMute();
+GPIO_PinState get_mute();
 
 void set_frontend_path(radio::FRONTEND_PATH path);
 

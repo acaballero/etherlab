@@ -16,7 +16,7 @@ bool MessageWidget::paint_callback() {
     display->fillBuffer(C565_BLACK);
     display->setBgColor(C565_BLACK);
     display->setVerticalLineSpacing(6);
-    display->setPadding(4, 4);
+    display->set_padding(4, 4);
 
     display->writeRect(0, 0, area.box.width - 1, area.box.height - 1, border_color);
     display->fill(1, 1, area.box.width - 1, title_font->height + 3, border_color);

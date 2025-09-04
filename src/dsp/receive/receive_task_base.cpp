@@ -300,7 +300,7 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
 
 bool ReceiveTaskBase::start() {
 
-    main_board::setMute(GPIO_PIN_SET);
+    main_board::set_mute(GPIO_PIN_SET);
 
     // Stop task processing timer (in case this is a restart)
     HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
@@ -310,13 +310,13 @@ bool ReceiveTaskBase::start() {
     int dec_factor = 1;
     status.sample_rate = config.fft.sample_rate;
 
-    uint32_t dac_sample_rate = get_audio_bw_hz();
+    uint32_t dac_sample_rate = get_audio_sample_rate();
 
     modulation_bandwidth_hz = get_modulation_bw_hz();
 
     MODULATION_MODE mod = get_modulation_mode();
 
-    main_board::setModulationMode(mod, false);
+    main_board::set_modulation_mode(mod, false);
 
     if (mod != SSB_USB && mod != SSB_LSB && mod != CW) {
         modulation_bandwidth_hz /= 2; // Halved for double sideband modulations since modulation bandwidth represents the double sideband bandwidth
@@ -348,7 +348,7 @@ bool ReceiveTaskBase::start() {
     bool ret = init_decimators(mod);
 
     if (!ret) {
-        main_board::setMute(GPIO_PIN_RESET);
+        main_board::set_mute(GPIO_PIN_RESET);
         halt(DSP_ERR);
         return false;
     }
@@ -363,12 +363,12 @@ bool ReceiveTaskBase::start() {
                         .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
 
     if (!ret) {
-        main_board::setMute(GPIO_PIN_RESET);
+        main_board::set_mute(GPIO_PIN_RESET);
         halt(DSP_ERR);
         return false;
     }
 
-    main_board::setMute(GPIO_PIN_RESET);
+    main_board::set_mute(GPIO_PIN_RESET);
 
     // Start task processing timer
     // TODO: This should be done by the caller of this method and be generic for all tasks

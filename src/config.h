@@ -24,14 +24,14 @@
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ANALOGMODE(mode) (mode == ANALOG_TX || mode == ANALOG_RX)
 #define ISANALOG (ANALOGMODE(config.mode))
-#define CONFIG_VERSION "336"
+#define CONFIG_VERSION "337"
 
 namespace configuration {
 extern os::periodic_task task;
 }
 
 struct st_vfo_config {
-    uint32_t freq = 118500000UL;
+    uint32_t freq = 127100000UL;
     uint32_t step = 10000;
     int32_t rit = 0; // Receive incremental tuning offset
 

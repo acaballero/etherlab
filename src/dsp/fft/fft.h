@@ -84,6 +84,8 @@ typedef struct st_fft_params {
 
     bool valid();
 
+    bool valid_sf();
+
 } st_fft_params;
 
 namespace fft {

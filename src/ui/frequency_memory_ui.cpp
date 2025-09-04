@@ -305,7 +305,7 @@ bool init_file_buffer() {
     auto result = std::unique_ptr<io::FileWrapper<>>(new io::FileWrapper<>());
 
     // Mute to avoid SD card EMI. There's a TODO in some place to address this (new board design)
-    main_board::setMute(GPIO_PIN_SET);
+    main_board::set_mute(GPIO_PIN_SET);
     status::handleError(status::ST_INFO, "Initializing memory");
     view_manager::mainView.paint();
     bool res = true;
@@ -333,7 +333,7 @@ bool init_file_buffer() {
         res = false;
     }
 
-    main_board::setMute(GPIO_PIN_RESET);
+    main_board::set_mute(GPIO_PIN_RESET);
     return res;
 }
 
@@ -565,7 +565,7 @@ void set(st_freq_mem &mem) {
         if (ix >= 0) {
             curr_index = ix;
         }
-        main_board::setModulationMode(mem.mode, false);
+        main_board::set_modulation_mode(mem.mode, false);
     } else {
         using namespace status;
         handleError(ST_ERROR, "radio::set_frequency() was false");

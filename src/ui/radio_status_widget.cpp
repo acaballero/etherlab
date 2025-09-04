@@ -37,7 +37,7 @@ void RadioStatusWidget::init() {
             mode = config.mode == DIGITAL_RX ? DIGITAL_TX : DIGITAL_RX;
         }
 
-        main_board::setMode(mode);
+        main_board::set_mode(mode);
     };
 
     add_children({&lblMode, &btnSquelch, &btnGain, &btnVFO, &btnRIT, &btnSettings});
@@ -149,7 +149,7 @@ void RadioStatusWidget::before_paint() {
 
         display->setFont((FontDef *)&Font_Tiny8x8);
         display->setVerticalLineSpacing(6);
-        display->setPadding(4, 4);
+        display->set_padding(4, 4);
         display->gotoCharXY(0, 0);
 
         lblMode.set_label(mode());

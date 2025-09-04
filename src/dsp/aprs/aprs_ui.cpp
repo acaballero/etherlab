@@ -117,7 +117,7 @@ void APRSView::start_rx() {
     //  LOG("START RX\n");
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, nullptr);
     // To execute a task other than DSP_TASK_RECEIVE, setMode has to be called so
-    main_board::setMode(DIGITAL_RX);
+    main_board::set_mode(DIGITAL_RX);
 }
 
 void APRSView::settings() {
@@ -145,7 +145,7 @@ void APRSView::exit() {
                 if (m == DIGITAL_RX) {
                     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE}, nullptr);
                 }
-                main_board::setMode(m);
+                main_board::set_mode(m);
             });
 
             // Clear specific bottom quick buttons
@@ -235,7 +235,7 @@ void APRSView::send_packet(std::string info) {
     });
 
     // To execute a task other than DSP_TASK_REPLAY, setMode has to be called so
-    main_board::setMode(DIGITAL_TX);
+    main_board::set_mode(DIGITAL_TX);
 }
 
 void APRSView::on_packet(APRSPacket *packet) {

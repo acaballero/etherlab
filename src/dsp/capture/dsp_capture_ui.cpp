@@ -162,7 +162,7 @@ void on_event(st_dsp_status *status) {
                 if (previous_mode == DIGITAL_RX) {
                     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, nullptr);
                 }
-                main_board::setMode(previous_mode);
+                main_board::set_mode(previous_mode);
             });
 
             break;

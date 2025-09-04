@@ -154,7 +154,7 @@ class Display {
 
     void setColor(uint16_t c);
 
-    void setPadding(uint16_t x, uint16_t y);
+    void set_padding(uint16_t x, uint16_t y);
 
     uint16_t get_padding_x();
 

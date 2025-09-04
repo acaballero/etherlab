@@ -200,7 +200,7 @@ bool AFSKTXTask::start() {
         return false;
     }
 
-    main_board::setMute(GPIO_PIN_RESET);
+    main_board::set_mute(GPIO_PIN_RESET);
 
     // Se the fifo processing frequency
     //   LOG("-- [END] AFSKTX ST --\n");

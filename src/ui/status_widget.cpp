@@ -250,7 +250,7 @@ void StatusWidget::before_paint() {
 
         display->setFont((FontDef *)&Font_Tiny8x8);
         display->setVerticalLineSpacing(6);
-        display->setPadding(4, 4);
+        display->set_padding(4, 4);
         display->gotoCharXY(0, 0);
 
         const char *modulation_str = modulation();

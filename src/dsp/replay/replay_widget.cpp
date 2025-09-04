@@ -48,7 +48,7 @@ bool ReplayWidget::paint_callback() {
     display->setFont((FontDef *)&Font_7x10);
     // display->setFont((FontDef *)&Font_Tiny8x8);
     display->setVerticalLineSpacing(1);
-    display->setPadding(10, 10);
+    display->set_padding(10, 10);
 
     display->gotoCharXY(0, 0);
     display->setColor(C565_WHITE);

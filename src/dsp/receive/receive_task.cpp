@@ -90,18 +90,15 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
 }
 
 MODULATION_MODE ReceiveTask::get_modulation_mode() const {
-    return main_board::getModulationMode();
+    return main_board::get_modulation_mode();
 }
 
 void ReceiveTask::set_squelch() {
     MODULATION_MODE m = get_modulation_mode();
     if ((m == FM || m == WFM) && config.squelch_level) {
-
         float threshold = max2(0, 10 - config.squelch_level);
-
-        squelch.config(threshold, status.sample_rate, status.bandwidth * 3 / 2);
+        squelch.config(threshold, status.sample_rate, 0.8f * get_audio_bw_hz());
         squelch_enabled = true;
-
     } else {
         squelch_enabled = false;
     }
@@ -109,10 +106,10 @@ void ReceiveTask::set_squelch() {
 
 bool ReceiveTask::init() {
 
-    MODULATION_MODE mod = main_board::getModulationMode();
+    MODULATION_MODE mod = main_board::get_modulation_mode();
 
     if (dsp::apply_audio_bpf()) {
-        audio_bpf.config(status.sample_rate, mod == WFM ? 15000 : 5000, 1, mod == WFM ? 30 : 300);
+        audio_bpf.config(status.sample_rate, get_audio_bw_hz(), 1, mod == WFM ? 30 : 300);
         audio_bpf_enabled = true;
     } else {
         audio_bpf_enabled = false;

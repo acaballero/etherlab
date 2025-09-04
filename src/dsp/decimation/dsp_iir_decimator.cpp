@@ -120,8 +120,8 @@ template <int order> void DspIIRDecimator<order>::init() {
 
     // Convert to CMSIS format (output coefficients are negated)
     LOG("IIR Filter : type %d\n", type);
-    LOG("a=[%f,%f,%f]\n", dg[0].m_a0, dg[0].m_a1, dg[0].m_a2);
-    LOG("b=[%f,%f,%f]\n", dg[0].m_b0, dg[0].m_b1, dg[0].m_b2);
+    // LOG("a=[%f,%f,%f]\n", dg[0].m_a0, dg[0].m_a1, dg[0].m_a2);
+    // LOG("b=[%f,%f,%f]\n", dg[0].m_b0, dg[0].m_b1, dg[0].m_b2);
     LOG("rate %d, bw: %d, start_freq:%d\n", input_rate, bandwidth, start_frequency);
 
     coeffs[0] = dg[0].m_b0;

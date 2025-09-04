@@ -94,6 +94,11 @@ class ReceiveTaskBase : public Task {
 
     /* Bandwidth of the output audio stream */
     virtual uint32_t get_audio_bw_hz() const {
+        return get_modulation_mode() == WFM ? 15000 : 5000;
+    };
+
+    /* Rate of the output audio stream */
+    virtual uint32_t get_audio_sample_rate() const {
         return get_modulation_mode() == WFM ? 24000 : 12000;
     };
 

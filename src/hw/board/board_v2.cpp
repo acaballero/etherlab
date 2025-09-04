@@ -382,7 +382,7 @@ bool radio_config(st_radio_config radioConfig) {
 
         // LOG("DIG TX\n");
 
-        bool ret = main_board::setMode(DIGITAL_TX);
+        bool ret = main_board::set_mode(DIGITAL_TX);
 
         if (!ret) {
             return false;
@@ -415,7 +415,7 @@ bool radio_config(st_radio_config radioConfig) {
 
             // LOG("ANA RX\n");
 
-            main_board::setMode(ANALOG_RX);
+            main_board::set_mode(ANALOG_RX);
 
             if_direction(RF_DIRECTION_RX);
 
@@ -432,7 +432,7 @@ bool radio_config(st_radio_config radioConfig) {
 
             // LOG("DIG RX\n");
 
-            main_board::setMode(DIGITAL_RX);
+            main_board::set_mode(DIGITAL_RX);
 
             if_direction(RF_DIRECTION_RX);
 

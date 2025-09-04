@@ -1014,7 +1014,7 @@ size_t Display::print(const char str[], const char *value, const char units[], u
     return 0;
 }
 
-void Display::setPadding(uint16_t x, uint16_t y) {
+void Display::set_padding(uint16_t x, uint16_t y) {
     padding_x = x;
     padding_y = y;
 }

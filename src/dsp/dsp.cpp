@@ -337,8 +337,9 @@ inline void adc_work() {
 
         // Removing DC here and thus not having to do it in subsequent stages (FFT, DSP processing) is not as efficient as it seems at first glance since:
         // - FFT processing is not done in real-time so no need to do the work for it
-        // - Receivers, for example, can remove DC just before demodulation, at a much lower sample rate
-        // The drawback is we have to rotate it there too after DC removal
+        // - Receivers, for example, could remove DC just before demodulation, at a much lower sample rate but, in fact, after shifting, the DC spike is
+        //   removed by the low pass filters
+        // The drawback is we have to rotate it there (fft module)too after DC removal
 
         // buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
         // dc_block_i.filter(bb, 2, 0);

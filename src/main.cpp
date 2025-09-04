@@ -150,12 +150,12 @@ void frequency_signal_callback(void *, void *args) {
     switch (event.event) {
 
         case radio::BEFORE_UPDATE:
-            mute_state = main_board::getMute();
+            mute_state = main_board::get_mute();
             // Prevent audio transients
-            main_board::setMute(GPIO_PIN_SET);
+            main_board::set_mute(GPIO_PIN_SET);
             break;
         case radio::AFTER_UPDATE:
-            main_board::setMute(mute_state);
+            main_board::set_mute(mute_state);
 
             if (config.filter == radio::BAND_AUTO) {
                 main_board::set_filter();
