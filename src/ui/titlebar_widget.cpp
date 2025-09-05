@@ -286,7 +286,7 @@ void TitleBarWidget::before_paint() {
             dsp::dsp_status->reset();
             char buf[20];
             MODULATION_MODE mod = main_board::get_modulation_mode();
-            bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod);
+            bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod) || dsp::apply_audio_bpf();
             sprintf(buf, "%s%s%s%s%s%s", "DSP", space ? " " : "", dsp::apply_compression(mod) ? "C" : "", dsp::apply_deemph(mod) ? "D" : "",
                     dsp::apply_audio_bpf() ? "F" : "", error ? " !" : "");
             trim(buf);
