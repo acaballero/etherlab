@@ -288,12 +288,20 @@ os::periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
     view_manager::mainView.IQBalance()->set_dirty();
 });
 os::periodic_task waterfall_task(0, []() {
+    // TODO: The waterfall will display the current spectrum line, but it should (sure?) accumulate the values and show higher intensity when its speed is lower
     view_manager::mainView.IQBalance()->set_visible(false);
     view_manager::mainView.Waterfall()->set_visible(true);
     view_manager::mainView.Waterfall()->set_dirty();
 });
 
 Signal signal{"fft_signal"};
+
+void set_waterfall_speed(uint16_t pps) {
+    config.fft.waterfall_pixels_per_second = pps;
+    fftUI::init_waterfall();
+    fft::waterfall_task.set_period(fftUI::get_waterfall_period());
+}
+
 } // namespace fft
 
 uint64_t last_iqbalance_estimate_ms = 0;
@@ -479,9 +487,8 @@ void fft_init() {
 
     fftUI::set_spectrum_style(config.fft.spectrum_style);
     fftUI::set_spectrum_colors(config.fft.spectrum_line_color, config.fft.spectrum_fill_color);
-    fftUI::init_waterfall();
+    fft::set_waterfall_speed(config.fft.waterfall_pixels_per_second);
     fftUI::initIQorWaterfall();
-    fft::waterfall_task.set_period(fftUI::get_waterfall_period());
 
     // When the gain changes, the FIFO is reset so the new gain gets reflected immediatelly. Otherwise the AGC itself, which relies in the FFT DB values, gets
     // laggy.

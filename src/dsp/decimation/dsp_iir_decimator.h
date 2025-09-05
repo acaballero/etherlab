@@ -34,7 +34,7 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
     void decimate(const buffer_t<float32_t> &src, buffer_t<float32_t> &dst, const uint8_t channel_n, const uint8_t n_channels_in, const uint8_t n_channels_out);
 
   private:
-    void init();
+    bool init();
 
     float32_t coeffs[10];
 

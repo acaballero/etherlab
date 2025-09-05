@@ -5,6 +5,7 @@
 #include "fm_squelch.h"
 #include "dsp/decimation/dsp_decimator.h"
 #include <stdio.h>
+#include <sys/_stdint.h>
 #include "status.h"
 
 bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
@@ -42,9 +43,12 @@ bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
 
 void FMSquelch::config(const float mag_threshold, uint32_t sample_rate, uint32_t audio_bandwidth) {
 
-    // LOG("Setting FM squelch high pass filter | threshold:%.1f | rate: %d | start freq: %d\n", mag_threshold, sample_rate, audio_bandwidth);
-    this->threshold = 5 * mag_threshold * mag_threshold; // square the peak magnitude
-    high_pass_filter.config(sample_rate, audio_bandwidth, 1, HPF);
+    this->threshold = 10 * mag_threshold * mag_threshold; // square the peak magnitude
+
+    if (high_pass_filter.get_bandwidth() != audio_bandwidth || high_pass_filter.get_input_rate() != sample_rate) {
+        LOG("Setting FM squelch high pass filter | threshold:%.1f | rate: %d | start freq: %d\n", mag_threshold, sample_rate, audio_bandwidth);
+        high_pass_filter.config(sample_rate, audio_bandwidth, 1, HPF);
+    }
 }
 
 bool FMSquelch::enabled() const {

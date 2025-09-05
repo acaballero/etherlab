@@ -152,9 +152,10 @@ void ReceiveTaskBase::work() {
 
                         out_accum_p = n_pre_decimators == n_decimators ? bi1_p : out_accum_buff_f32_p;
 
-                        buffer_t<float32_t> buff_out_f32 = {out_accum_p, (size_t)samples_per_batch, status.sample_rate, REAL};
-
-                        process_audio(buff_out_f32);
+                        if (!baseband_echo) {
+                            buffer_t<float32_t> buff_out_f32 = {out_accum_p, (size_t)samples_per_batch, status.sample_rate, REAL};
+                            process_audio(buff_out_f32);
+                        }
 
                         dsp::f32_to_s16((const float32_t *)out_accum_p, (adc_type *)out_p, samples_per_batch);
 
@@ -268,7 +269,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
 
         n_decimators++;
 
-        LOG("Rate %d:%d -> %d (filter: %d)\n\n", stage_sr, factor, stage_sr / factor, next_stage_bandwidth);
+        LOG("Rate %d / %d -> %d (filter: %d)\n", stage_sr, factor, stage_sr / factor, next_stage_bandwidth);
         dec /= factor;
         stage_sr = stage_sr / factor;
     }
@@ -285,23 +286,28 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
 std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
 
     std::unique_ptr<dsp::demodulator> demod;
-    switch (get_modulation_mode()) {
-        case AM:
-            return std::make_unique<dsp::am_demodulator>();
-        case CW:
-        case SSB_LSB:
-        case SSB_USB:
-            return std::make_unique<dsp::ssb_demodulator>();
-        case FM:
-            demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, config.dsp.fm_max_deviation);
-            return demod;
-        case WFM:
-            demod = std::make_unique<dsp::fm_demodulator>();
-            ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, config.dsp.wideband_fm_max_deviation);
-            return demod;
-        default:
-            return std::make_unique<dsp::ssb_demodulator>();
+
+    if (get_baseband_echo()) {
+        return std::make_unique<dsp::ssb_demodulator>();
+    } else {
+        switch (get_modulation_mode()) {
+            case AM:
+                return std::make_unique<dsp::am_demodulator>();
+            case CW:
+            case SSB_LSB:
+            case SSB_USB:
+                return std::make_unique<dsp::ssb_demodulator>();
+            case FM:
+                demod = std::make_unique<dsp::fm_demodulator>();
+                ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, config.dsp.fm_max_deviation);
+                return demod;
+            case WFM:
+                demod = std::make_unique<dsp::fm_demodulator>();
+                ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, config.dsp.wideband_fm_max_deviation);
+                return demod;
+            default:
+                return std::make_unique<dsp::ssb_demodulator>();
+        }
     }
 }
 

@@ -390,7 +390,7 @@ void update_options() {
         }
     }
 
-    dsp_ui::dsp_compressor_set();
+    dsp_ui::apply_dsp_changes();
 }
 
 void mode_signal_handler(void *, void *) {

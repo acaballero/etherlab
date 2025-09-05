@@ -7,6 +7,7 @@
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
+#include "dsp/fft/fft.h"
 #include "hw/stm32f4xx/rtc.h"
 #include "input/inputEvent.h"
 #include "io/log_file.h"
@@ -80,6 +81,9 @@ void APRSView::init() {
     actions_signal.emit(&actions);
 
     previous_mode = config.mode;
+    previous_waterfall_speed = config.fft.waterfall_pixels_per_second;
+
+    fft::set_waterfall_speed(1);
 
     radio::set_band(radio::BAND_AUTO); // must do this in case we are band-limited
     radio::set_frequency(EU_APRS_FREQ);
@@ -119,6 +123,9 @@ void APRSView::start_rx() {
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, nullptr);
     // To execute a task other than DSP_TASK_RECEIVE, setMode has to be called so
     main_board::set_mode(DIGITAL_RX);
+
+    set_agc_enabled(false); // Prevent sudden changes in gain from the digital AGC. TODO: Whether digital AGC is enabled or not should be a property of the
+                            // modulation mode (create one for digital modes)
 }
 
 void APRSView::settings() {
@@ -139,7 +146,7 @@ void APRSView::threshold() {
         [&](int8_t v) {
             aprs_task.set_bit_threshold(v);
         },
-        -254, 255, 1, 1);
+        -128, 127, 1, 1);
 }
 
 void APRSView::exit() {
@@ -151,12 +158,16 @@ void APRSView::exit() {
 
             aprs_signal.remove(aprs_signal_token);
 
+            set_agc_enabled(true); // Turn on AGC
+
             MODE m = previous_mode;
-            os::task_manager.set_timeout(1, [m]() {
+            uint16_t ws = previous_waterfall_speed;
+            os::task_manager.set_timeout(1, [m, ws]() {
                 if (m == DIGITAL_RX) {
                     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE}, nullptr);
                 }
                 main_board::set_mode(m);
+                fft::set_waterfall_speed(ws);
             });
 
             // Clear specific bottom quick buttons

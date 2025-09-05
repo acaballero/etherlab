@@ -13,6 +13,7 @@
 #include <memory>
 #include <stdio.h>
 #include <string>
+#include <sys/_stdint.h>
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/afsk/afsk_tx_task.h"
 #include "dsp/dsp.h"
@@ -104,6 +105,7 @@ class APRSView : public View {
     int beacon_task_id{0};
 
     MODE previous_mode;
+    uint16_t previous_waterfall_speed;
 
     bool on_input(const st_inputEvent event) override;
     void before_paint() override;

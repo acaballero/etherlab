@@ -173,7 +173,7 @@ void DAC_DMA_Start(DAC_HandleTypeDef *hdac) {
 void DAC_DMA_Stop(DAC_HandleTypeDef *hdac) {
     if (dac_dma_started) {
         // LOG("DAC_DMA_STOP\n");
-        HAL_TIM_Base_Stop(&htim6); // Start DAC DMA timer
+        HAL_TIM_Base_Stop(&htim6); // Stop DAC DMA timer
         HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
         HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_2);
         dac_dma_started = false;

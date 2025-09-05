@@ -24,8 +24,18 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
     // Audio signal processing
     // NOTE: Expects REAL-valued buffer
 
+    bool is_noise = false;
+    if (squelch_enabled && squelch.is_noise(audio)) {
+        // Flag is noise, but don't clear the audio since we don't want to miss a single sample when it is not
+        is_noise = true;
+    }
+
     if (deemph_enabled) {
         deemph_filter.decimate(audio, audio, 0, 1, 1);
+    }
+
+    if (audio_bpf_enabled) {
+        audio_bpf.decimate(audio, audio, 0, 1, 1);
     }
 
     float32_t *audio_sample_p = audio.p;
@@ -124,7 +134,7 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         }
     }
 
-    if (squelch_enabled && squelch.is_noise(audio)) {
+    if (is_noise) {
         // Ouput silence
         memset(audio.p, 0, audio.size_bytes);
     }
@@ -133,10 +143,8 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
 void APRSTask::set_squelch() {
 
     if (config.squelch_level) {
-
         float threshold = max2(0, 10 - config.squelch_level);
-        squelch.config(threshold, status.sample_rate, 0.8f * get_audio_bw_hz());
-
+        squelch.config(threshold, status.sample_rate, 2 * get_audio_bw_hz());
         squelch_enabled = true;
 
     } else {
@@ -262,7 +270,14 @@ bool APRSTask::init() {
 
     state = WAIT_FLAG;
 
-    deemph_filter.config(status.sample_rate, 1000, 1, LPF);
+    bool ok = deemph_filter.config(status.sample_rate, 300, 1, LPF);
+
+    if (dsp::apply_audio_bpf()) {
+        ok = ok && audio_bpf.config(status.sample_rate, get_audio_bw_hz(), 1, 800);
+        audio_bpf_enabled = true;
+    } else {
+        audio_bpf_enabled = false;
+    }
 
     if (!squelch_signal_token) {
         squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
@@ -272,7 +287,7 @@ bool APRSTask::init() {
 
     set_squelch();
 
-    return true;
+    return ok;
 }
 
 APRSTask::~APRSTask() {

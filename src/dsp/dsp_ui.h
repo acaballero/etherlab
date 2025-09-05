@@ -18,7 +18,7 @@ namespace dsp_ui {
 
 extern Menu::menu menuDSP;
 extern bool dsp_enabled;
-Menu::result dsp_compressor_set(Menu::eventMask = Menu::noEvent);
+Menu::result apply_dsp_changes(Menu::eventMask = Menu::noEvent);
 
 } // namespace dsp_ui
 

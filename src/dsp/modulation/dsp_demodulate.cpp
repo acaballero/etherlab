@@ -370,8 +370,8 @@ void fm_demodulator::configure(const float sampling_rate, const float deviation_
      * Maximum delta-theta (output of atan2) at maximum deviation frequency:
      * delta_theta_max = 2 * pi * deviation / sampling_rate
      */
-    // LOG("Configuring FM demodulator: deviation: %d, rate: %d\n", (int)deviation_hz, (int)sampling_rate);
-    kf = static_cast<float>((1.0f / (2.0 * PI * deviation_hz / sampling_rate)) * 6);
+    LOG("Configuring FM demodulator | deviation: %d | rate: %d\n", (int)deviation_hz, (int)sampling_rate);
+    kf = static_cast<float>((1.0f / (2.0 * PI * deviation_hz / sampling_rate)));
 }
 
 } // namespace dsp

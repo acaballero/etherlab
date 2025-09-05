@@ -60,6 +60,14 @@ bool get_freq_shift_enabled() {
     return fft_params.n_slices == 1 && !ISANALOG && freq_shift_enabled;
 }
 
+void set_agc_enabled(bool v) {
+    dsp_config.agc_enabled = v;
+}
+
+bool get_agc_enabled() {
+    return dsp_config.agc_enabled;
+}
+
 int32_t get_frequency_shift(uint32_t sample_rate) {
 #if DSP_FS4_SHIFT
 

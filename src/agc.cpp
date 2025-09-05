@@ -163,11 +163,11 @@ void check_agc() {
         overload = power_overload;
     }
 
-    if (config.dsp.agc_enabled) { // Won't change gain if DSP AGC is disabled
+    if (dsp::dsp_config.agc_enabled) { // Won't change gain if DSP AGC is disabled
         const uint64_t time_since_change = t - last_overload_state_change;
         const bool adc_lockout = (t - last_adc_reduction) < ADC_LOCKOUT_MS;
 
-        if (config.agc_enabled && agc_voltage < 2) {
+        if (dsp::dsp_config.agc_enabled && agc_voltage < 2) {
             // FIXME: If AGC is enabled and its voltage is low, the DSP gain should not be increased even if power overload is not detected here. Sometimes
             // DSP gain is increased causing saturation and attenuation, which locks the digital gain high.
         }

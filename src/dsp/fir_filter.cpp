@@ -8,6 +8,7 @@
 #include <cmath>
 #include <iomanip>
 #include "MemoryFree.h"
+#include "status.h"
 
 static double sinc(const double x) {
     if (x == 0) {
@@ -82,7 +83,7 @@ bool design_fir_kaiser_lpf(float *taps, double cutoffHz, double sampleRate, doub
 
     int M = numTaps - 1;
 
-    printf_("[LPF Kaiser FIR]: fx:%f,fs:%f,taps:%d\n\n", sampleRate, cutoffHz, numTaps);
+    LOG("[LPF Kaiser FIR]: fx:%f,fs:%f,taps:%d\n", sampleRate, cutoffHz, numTaps);
 
     for (int n = 0; n < numTaps; ++n) {
         double x = n - M / 2.0;

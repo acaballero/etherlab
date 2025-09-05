@@ -242,6 +242,8 @@ struct st_dsp_config {
     uint32_t fm_max_deviation = 3500;
     // Digital AGC enabled (controlling demodulator gain)
     bool agc_enabled = true;
+    // Echo the baseband to the audio DAC without demodulating, for testing purposes
+    bool baseband_echo = false;
 };
 
 struct st_timestamp {
@@ -291,6 +293,9 @@ st_dsp_config get_config();
 
 void enable_frequency_shift(bool b);
 bool get_freq_shift_enabled();
+
+void set_agc_enabled(bool);
+bool get_agc_enabled();
 
 void log_buff(float32_t *buff, int count, const std::string &title, bool newline = true);
 

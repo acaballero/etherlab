@@ -12,9 +12,11 @@
 #include "../../../lib/DspFilters/include/Cascade.h"
 #include "../../../lib/DspFilters/include/Filter.h"
 #include "../../status.h"
+#include <cassert>
 
 template class DspIIRDecimator<1>; // Pre-declared
 template class DspIIRDecimator<2>; // Pre-declared
+template class DspIIRDecimator<4>; // Pre-declared
 
 template <int order> void DspIIRDecimator<order>::decimate(buffer_t<int16_t> &src, buffer_t<int16_t> &dst) {
     // FIXME: Shouldn't this use a different decimator instance for each channel?
@@ -75,7 +77,7 @@ void DspIIRDecimator<order>::decimate(const buffer_t<float32_t> &src, buffer_t<f
     }
 }
 
-template <int order> void DspIIRDecimator<order>::init() {
+template <int order> bool DspIIRDecimator<order>::init() {
 
     // Generate coefficients for the current DSP parameters
 
@@ -91,6 +93,7 @@ template <int order> void DspIIRDecimator<order>::init() {
 
         Dsp::Cascade::Storage st = f.getCascadeStorage();
         dg = st.stageArray;
+        n_stages = f.getNumStages();
     } else if (type == HPF) {
         Dsp::SimpleFilter<Dsp::Butterworth::HighPass<order>, 1, Dsp::DirectFormI> f;
 
@@ -102,10 +105,12 @@ template <int order> void DspIIRDecimator<order>::init() {
 
         Dsp::Cascade::Storage st = f.getCascadeStorage();
         dg = st.stageArray;
+        n_stages = f.getNumStages();
     } else {
         Dsp::SimpleFilter<Dsp::Butterworth::BandPass<order>, 1, Dsp::DirectFormI> f;
         uint32_t bw = bandwidth - start_frequency; // I know, bandwidth is such a bad naming for the cutoff freq when it comes to band-pass
 
+        // NOTE: The bandpass transform will have TWICE as poles as the base lowpass
         f.setup(order,                      // order
                 this->input_rate,           // sample rate
                 start_frequency + (bw / 2), // center frequency
@@ -114,15 +119,13 @@ template <int order> void DspIIRDecimator<order>::init() {
 
         Dsp::Cascade::Storage st = f.getCascadeStorage();
         dg = st.stageArray;
+        n_stages = f.getNumStages();
     }
 
-    n_stages = (order + 1) / 2;
-
     // Convert to CMSIS format (output coefficients are negated)
-    LOG("IIR Filter : type %d\n", type);
-    // LOG("a=[%f,%f,%f]\n", dg[0].m_a0, dg[0].m_a1, dg[0].m_a2);
-    // LOG("b=[%f,%f,%f]\n", dg[0].m_b0, dg[0].m_b1, dg[0].m_b2);
-    LOG("rate %d, bw: %d, start_freq:%d\n", input_rate, bandwidth, start_frequency);
+    LOG("IIR Filter | type: %d | order: %d\n", type == 0 ? "lpf" : (type == 1 ? "hpf" : "bpf"), order);
+    LOG("a1=[%f,%f,%f]\n", dg[0].m_a0, dg[0].m_a1, dg[0].m_a2);
+    LOG("b1=[%f,%f,%f]\n", dg[0].m_b0, dg[0].m_b1, dg[0].m_b2);
 
     coeffs[0] = dg[0].m_b0;
     coeffs[1] = dg[0].m_b1;
@@ -136,6 +139,14 @@ template <int order> void DspIIRDecimator<order>::init() {
         coeffs[7] = dg[1].m_b2;
         coeffs[8] = -dg[1].m_a1;
         coeffs[9] = -dg[1].m_a2;
+        LOG("a2=[%f,%f,%f]\n", dg[1].m_a0, dg[1].m_a1, dg[1].m_a2);
+        LOG("b2=[%f,%f,%f]\n", dg[1].m_b0, dg[1].m_b1, dg[1].m_b2)
+    }
+
+    LOG("rate %d, bw: %d, start_freq:%d\n", input_rate, bandwidth, start_frequency);
+
+    if (n_stages > 2) {
+        LOG("ERROR: %d stages configuring the filter (2 allowed)\n", n_stages);
     }
 
 #if DSP_USE_IIR_Q15
@@ -162,7 +173,7 @@ template <int order> bool DspIIRDecimator<order>::config(uint32_t input_rate, ui
         this->factor = factor;
         this->type = type;
 
-        this->init();
+        return this->init();
     }
 
     return true;

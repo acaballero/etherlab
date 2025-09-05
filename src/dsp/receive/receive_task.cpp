@@ -97,7 +97,7 @@ void ReceiveTask::set_squelch() {
     MODULATION_MODE m = get_modulation_mode();
     if ((m == FM || m == WFM) && config.squelch_level) {
         float threshold = max2(0, 10 - config.squelch_level);
-        squelch.config(threshold, status.sample_rate, 0.8f * get_audio_bw_hz());
+        squelch.config(threshold, status.sample_rate, 1.4f * get_audio_bw_hz());
         squelch_enabled = true;
     } else {
         squelch_enabled = false;
@@ -117,7 +117,8 @@ bool ReceiveTask::init() {
 
     if (dsp::apply_deemph(mod)) {
         // Init de-emphasis FM filter
-        deemph_filter.config(status.sample_rate, 3000, 1, LPF);
+        // FIXME: This is a 2nd order (12db octave). Too much slope. I has to be a 1st order (1 pole) IIR filter
+        deemph_filter.config(status.sample_rate, 300, 1, LPF);
         deemph_enabled = true;
     } else {
         deemph_enabled = false;

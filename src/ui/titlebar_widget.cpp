@@ -56,7 +56,7 @@ bool TitleBarWidgetInner::paint_callback() {
     st_datetime datetime = rtc_get_date_time();
     uint32_t current_epoch = rtc_to_epoch(&datetime.time, &datetime.date);
     if (current_epoch != last_epoch) {
-        current_epoch = last_epoch;
+        last_epoch = current_epoch;
     } else {
         // The clock is not ticking
         color = C565_GREY_DARK;
@@ -286,9 +286,9 @@ void TitleBarWidget::before_paint() {
             dsp::dsp_status->reset();
             char buf[20];
             MODULATION_MODE mod = main_board::get_modulation_mode();
-            bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod) || dsp::apply_audio_bpf();
-            sprintf(buf, "%s%s%s%s%s%s", "DSP", space ? " " : "", dsp::apply_compression(mod) ? "C" : "", dsp::apply_deemph(mod) ? "D" : "",
-                    dsp::apply_audio_bpf() ? "F" : "", error ? " !" : "");
+            bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod) || dsp::apply_audio_bpf() || dsp::dsp_config.baseband_echo;
+            sprintf(buf, "%s%s%s%s%s%s%s", "DSP", space ? " " : "", dsp::apply_compression(mod) ? "C" : "", dsp::apply_deemph(mod) ? "D" : "",
+                    dsp::apply_audio_bpf() ? "F" : "", dsp::dsp_config.baseband_echo ? "E" : "", error ? " !" : "");
             trim(buf);
             btnDSP.set_text(buf);
         }

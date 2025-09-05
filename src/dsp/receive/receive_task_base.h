@@ -51,6 +51,14 @@ class ReceiveTaskBase : public Task {
 
     void stop() override;
 
+    bool get_baseband_echo() {
+        return baseband_echo;
+    }
+
+    void set_baseband_echo(bool v) {
+        baseband_echo = v;
+    }
+
   protected:
     // Cascaded decimators
     std::unique_ptr<DspDecimator<float32_t>>
@@ -92,9 +100,12 @@ class ReceiveTaskBase : public Task {
     virtual bool init() = 0;
     virtual void process_audio(buffer_t<float32_t> &buff_out_f32) = 0;
 
+    // Skips demodulation step for testing purposes, echoing the baseband signal
+    bool baseband_echo = false;
+
     /* Bandwidth of the output audio stream */
     virtual uint32_t get_audio_bw_hz() const {
-        return get_modulation_mode() == WFM ? 15000 : 5000;
+        return get_modulation_mode() == WFM ? 15000 : 4000;
     };
 
     /* Rate of the output audio stream */

@@ -424,9 +424,15 @@ void update() {
 bool set_mode(MODE mode) {
     // LOG("------ [BEGIN] setMode %s ------\n", radio::modeNames[mode]);
     bool b = false;
-    if (_set_mode(mode, false)) {
-        set_modulation_mode(config.modulation, true);
-        b = true;
+    volatile static bool setting_mode;
+
+    if (!setting_mode) {
+        setting_mode = true;
+        if (_set_mode(mode, false)) {
+            set_modulation_mode(config.modulation, true);
+            b = true;
+        }
+        setting_mode = false;
     }
     // LOG("------ [END] setMode %s: %d ------\n", radio::modeNames[mode], b);
     return b;

@@ -1,6 +1,10 @@
 //
 // Created by Angel Dust on 16/04/2021.
 //
+#include "config.h"
+#include "dsp/dsp_common.h"
+#include "dsp/dsp_tasks.h"
+#include "dsp/receive/receive_task.h"
 #include "ui/menu.h"
 #include "dsp_ui.h"
 #include "main_board.h"
@@ -51,24 +55,32 @@ Menu::numberPrompt<uint32_t> dspFMMaxDev((const char *)"FM max. deviation", &con
                                          },
                                          2000, 5000, 100, 1000);
 
-result dsp_compressor_set(eventMask) {
+result apply_dsp_changes(eventMask) {
     if (dsp::dsp_config.audio_compressor_enabled) {
         compressorThresholdMenu.enable();
     } else {
         compressorThresholdMenu.disable();
     }
-    dsp_restart();
+
+    ((ReceiveTask *)dsp::tasks[dsp::DSP_TASK_RECEIVE])->set_baseband_echo(dsp::dsp_config.baseband_echo);
+
+    if (!ISANALOG) {
+        dsp_restart();
+    }
     return proceed;
 }
 
 TOGGLE(dsp::dsp_config.audio_compressor_enabled, toggleDSPCompressor, "Audio compressor: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
-       VALUE("On", true, dsp_compressor_set, noEvent), VALUE("Off", false, dsp_compressor_set, noEvent));
+       VALUE("On", true, apply_dsp_changes, noEvent), VALUE("Off", false, apply_dsp_changes, noEvent));
 
 TOGGLE(dsp::dsp_config.deemphasis_enabled, toggleFMDeemph, "FM Deemph: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
-       VALUE("On", true, dsp_compressor_set, noEvent), VALUE("Off", false, dsp_compressor_set, noEvent));
+       VALUE("On", true, apply_dsp_changes, noEvent), VALUE("Off", false, apply_dsp_changes, noEvent));
 
 TOGGLE(dsp::dsp_config.audio_bpf_enabled, toggleAudioBPF, "Audio BPF: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
-       VALUE("On", true, dsp_compressor_set, noEvent), VALUE("Off", false, dsp_compressor_set, noEvent));
+       VALUE("On", true, apply_dsp_changes, noEvent), VALUE("Off", false, apply_dsp_changes, noEvent));
+
+TOGGLE(dsp::dsp_config.baseband_echo, toggleBasebandEcho, "Baseband echo: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
+       VALUE("On", true, apply_dsp_changes, noEvent), VALUE("Off", false, apply_dsp_changes, noEvent));
 
 result open_aprs(eventMask) {
     Menu::menu_exit();
@@ -78,7 +90,8 @@ result open_aprs(eventMask) {
 
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleAGC), SUBMENU(toggleAudioBPF),
-     SUBMENU(toggleFMDeemph), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu), OBJ(dspWFMMaxDev), OBJ(dspFMMaxDev));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleAGC), SUBMENU(toggleBasebandEcho),
+     SUBMENU(toggleAudioBPF), SUBMENU(toggleFMDeemph), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu), OBJ(dspWFMMaxDev),
+     OBJ(dspFMMaxDev));
 
 } // namespace dsp_ui

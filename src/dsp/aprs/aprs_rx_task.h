@@ -62,6 +62,10 @@ class APRSTask : public ReceiveTaskBase {
     DspIIRDecimator<1> deemph_filter;
     bool deemph_enabled = false;
 
+    // Audio bandpass filter
+    DspIIRDecimator<2> audio_bpf;
+    bool audio_bpf_enabled = true;
+
     size_t samples_per_bit{};
 
     enum State { WAIT_FLAG, WAIT_FRAME, IN_FRAME };
@@ -105,6 +109,11 @@ class APRSTask : public ReceiveTaskBase {
 
     uint32_t get_modulation_bw_hz() const override {
         return 12000;
+    };
+
+    /* Bandwidth of the output audio stream */
+    uint32_t get_audio_bw_hz() const override {
+        return 2800;
     };
 };
 } // namespace dsp

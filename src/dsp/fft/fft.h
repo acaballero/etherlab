@@ -101,6 +101,7 @@ extern float dbm_instant;
 extern float dbm_peak;
 extern adc_type adc_max_ampl;
 std::pair<int, int> get_bandwidth_pixel_range();
+void set_waterfall_speed(uint16_t);
 extern Signal signal;
 } // namespace fft
 

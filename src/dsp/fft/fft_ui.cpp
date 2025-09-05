@@ -158,8 +158,8 @@ Menu::numberPrompt<float> smoothMenu((const char *)"Smooth", &config.fft.smooth_
                                      0, 1, 0.1, 1);
 
 Menu::numberPrompt<uint16_t> waterfallSpeedMenu((const char *)"Waterfall speed", &config.fft.waterfall_pixels_per_second, 0, ' ', '.', "pps",
-                                                [](uint16_t) {
-                                                    fft_init();
+                                                [](uint16_t v) {
+                                                    fft::set_waterfall_speed(v);
                                                 },
                                                 2, (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 5);
 
