@@ -1072,18 +1072,6 @@ void adquire_fft_async() {
     //     dsp::rotate_fs4_q15((adc_type *)data.c, (adc_type *)data.c, fft_buff_size);
     // }
 
-#if !DSP_FS4_SHIFT
-    if (config.fft.removeDC) {
-        fft_dcremoval(fft_slice_buffer);
-    }
-#else
-    if (config.fft.removeDC && !dsp::get_freq_shift_enabled()) {
-        // In digital mode, the DC is removed in the DSP processor in some cases
-
-        fft_dcremoval(fft_slice_buffer);
-    }
-#endif
-
     if (true) { // av >= chunk_size) {
 
         if (fft_params.decimation_factor > 1) {
@@ -1102,6 +1090,18 @@ void adquire_fft_async() {
 
         fft_fifo.consume(chunk_size, &data.c);
     }
+
+#if !DSP_FS4_SHIFT
+    if (config.fft.removeDC) {
+        fft_dcremoval(fft_slice_buffer);
+    }
+#else
+    if (config.fft.removeDC && !dsp::get_freq_shift_enabled()) {
+        // In digital mode, the DC is removed in the DSP processor in some cases
+
+        fft_dcremoval(fft_slice_buffer);
+    }
+#endif
 }
 
 complex_t_f32 complex_mult(complex_t_f32 a, complex_t_f32 b) {

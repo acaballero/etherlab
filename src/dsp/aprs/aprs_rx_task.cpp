@@ -22,7 +22,7 @@ MODULATION_MODE APRSTask::get_modulation_mode() const {
 void APRSTask::process_audio(buffer_t<float32_t> &audio) {
 
     // Audio signal processing
-    // NOTE: Expects REAL samples buffer
+    // NOTE: Expects REAL-valued buffer
 
     if (deemph_enabled) {
         deemph_filter.decimate(audio, audio, 0, 1, 1);
@@ -47,10 +47,30 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         prev_filtered = sample_filtered;
         prev_mixed = sample_mixed;
 
+        static float rms_est = 0.0f;
+        const float alpha = 0.995f; // slow RMS smoothing
+
+        // update rms estimate
+        rms_est = alpha * rms_est + (1.0f - alpha) * abs(sample_filtered);
+
+        // dynamic threshold and hysteresis
+        float thr_high = 0.05f * rms_est;
+        float thr_low = -0.05f * rms_est;
+
+        // !!! DEBUG
+        // audio.p[c] = sample_filtered;
+        // !!! DEBUG
+
         // Slice
         sample_bits <<= 1;
 
-        uint8_t bit = (sample_filtered < -20) ? 1 : 0;
+        static int last_state = 0;
+        if (sample_filtered < thr_low) {
+            last_state = 1;
+        } else if (sample_filtered > thr_high) {
+            last_state = 0;
+        }
+        uint8_t bit = last_state;
 
         sample_bits |= bit;
 
@@ -115,8 +135,8 @@ void APRSTask::set_squelch() {
     if (config.squelch_level) {
 
         float threshold = max2(0, 10 - config.squelch_level);
+        squelch.config(threshold, status.sample_rate, 0.8f * get_audio_bw_hz());
 
-        squelch.config(threshold, status.sample_rate);
         squelch_enabled = true;
 
     } else {

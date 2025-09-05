@@ -64,7 +64,7 @@ class APRSView : public View {
     bool collapsed{false};
 
     Menu::menu_action_st menu_actions[6] = {{"Pause",
-                                             [this]() {
+                                             [&]() {
                                                  if (!paused) {
                                                      stop();
                                                  } else {
@@ -72,23 +72,23 @@ class APRSView : public View {
                                                  }
                                              }},
                                             {"Send",
-                                             [this]() {
+                                             [&]() {
                                                  send_packet("Beacon");
                                              }},
                                             {"Beacon",
-                                             [this]() {
+                                             [&]() {
                                                  toggle_beacon();
                                              },
                                              C565_TEXT_FG, C565_BG_DISABLED},
                                             {"Text",
-                                             [this]() {
+                                             [&]() {
                                                  settings();
                                              }},
-                                            {"Gain",
-                                             []() {
-                                                 Menu::open(Menu::frontendPathMenu);
+                                            {"Settings",
+                                             [&]() {
+                                                 threshold();
                                              }},
-                                            {"Exit", [this]() {
+                                            {"Exit", [&]() {
                                                  exit();
                                              }}};
 
@@ -114,6 +114,7 @@ class APRSView : public View {
     void settings();
     void start_rx();
     void toggle_beacon();
+    void threshold();
     bool paused{false};
 };
 

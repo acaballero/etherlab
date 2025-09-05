@@ -29,7 +29,13 @@ TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *displa
         set_dirty();
     });
     rf_coupler::rf_coupler_signal.add(this, TitleBarWidgetInner::signal_static_callback);
-    rtc_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    rtc_signal.add(this, [this](void *, void *) {
+        // Repaing every 5 seconds
+        static int i;
+        if (i++ % 5 == 0) {
+            set_dirty();
+        }
+    });
     main_board::mode_signal.add(this, TitleBarWidgetInner::signal_static_callback);
 }
 
@@ -37,7 +43,7 @@ bool TitleBarWidgetInner::paint_callback() {
 
     FontDef *font = (FontDef *)&Font_Tiny8x8;
 
-    uint16_t color = C565_BLACK;
+    Color color = C565_GREY_LIGHT;
     char buff[20];
 
     display->clear();
@@ -48,9 +54,19 @@ bool TitleBarWidgetInner::paint_callback() {
 
 #if ENABLE_RTC
     st_datetime datetime = rtc_get_date_time();
+    uint32_t current_epoch = rtc_to_epoch(&datetime.time, &datetime.date);
+    if (current_epoch != last_epoch) {
+        current_epoch = last_epoch;
+    } else {
+        // The clock is not ticking
+        color = C565_GREY_DARK;
+        datetime = {};
+    }
 
-    // sprintf(buff, "%02d/%02d %02d:%02d  ",date.Month,date.Date,time.Hours,time.Minutes);
     sprintf(buff, "%02d:%02d ", datetime.time.Hours, datetime.time.Minutes);
+    // sprintf(buff, "%02d/%02d %02d:%02d  ",date.Month,date.Date,time.Hours,time.Minutes);
+
+    display->setColor(color);
     display->print(buff);
 #else
     display->print("TRX_100");
@@ -173,10 +189,11 @@ bool TitleBarWidgetInner::paint_callback() {
     }
 
     // TODO: GPSDO lock. Meanwhile, warmup time has passed
+
     uint32_t uptime = rtc_uptime();
-    if (uptime > 8 * 60) {
-        display->print(" G");
-    }
+
+    display->setColor(uptime > 8 * 60 ? C565_GREEN : C565_GREY_DARK);
+    display->print(" G");
 
     if (!ISTX) {
         // AUDIO
@@ -270,7 +287,8 @@ void TitleBarWidget::before_paint() {
             char buf[20];
             MODULATION_MODE mod = main_board::get_modulation_mode();
             bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod);
-            sprintf(buf, "%s%s%s%s%s", "DSP", space ? " " : "", dsp::apply_compression(mod) ? "C" : "", dsp::apply_deemph(mod) ? "D" : "", error ? " !" : "");
+            sprintf(buf, "%s%s%s%s%s%s", "DSP", space ? " " : "", dsp::apply_compression(mod) ? "C" : "", dsp::apply_deemph(mod) ? "D" : "",
+                    dsp::apply_audio_bpf() ? "F" : "", error ? " !" : "");
             trim(buf);
             btnDSP.set_text(buf);
         }

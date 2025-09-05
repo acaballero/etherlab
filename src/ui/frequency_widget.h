@@ -32,8 +32,8 @@ class FrequencyWidget : public View {
   protected:
     static constexpr uint8_t MARGIN = 3;
     static constexpr uint8_t LBLVFO_WIDTH = 24;
-    static constexpr uint8_t LBLSCAN_WIDTH = 50;
-    static constexpr uint8_t LBLRPT_WIDTH = 50;
+    static constexpr uint8_t LBLSCAN_WIDTH = 40;
+    static constexpr uint8_t LBLRPT_WIDTH = 40;
 
     uint16_t freq_xpos = LBLRPT_WIDTH + LBLVFO_WIDTH + LBLSCAN_WIDTH + MARGIN * 3;
     st_freqInfo status;

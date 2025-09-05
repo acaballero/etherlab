@@ -6,10 +6,12 @@
 #define TRX_FRONTEND_TITLEBAR_WIDGET_H
 
 #include "button_widget.h"
+#include "hw/stm32f4xx/rtc.h"
 #include "ui/frequency_widget.h"
 #include "view.h"
 #include "types.h"
 #include "../../lib/Signal/Signal.h"
+#include <sys/_stdint.h>
 
 class TitleBarWidgetInner : public Widget {
 
@@ -27,6 +29,8 @@ class TitleBarWidgetInner : public Widget {
     void before_paint() override;
 
     st_topBar status;
+
+    uint32_t last_epoch;
 };
 
 class TitleBarWidget : public View {

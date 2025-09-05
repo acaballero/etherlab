@@ -42,7 +42,7 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
     int n_stages;
     float state[8];
     filter_type type;
-    uint32_t start_frequency; // Start frequency for the band-pass case
+    uint32_t start_frequency{0}; // Start frequency for the band-pass case
 };
 
 void test_iir_decimator();

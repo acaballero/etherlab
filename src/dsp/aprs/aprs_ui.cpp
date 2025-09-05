@@ -22,6 +22,7 @@
 #include <cstring>
 #include <iterator>
 #include <string>
+#include <sys/_stdint.h>
 #include "dsp/protocols/aprs.hpp"
 #include "ui/map_view.h"
 #include "ui/ui_types.h"
@@ -129,6 +130,16 @@ void APRSView::settings() {
         send_packet(std::string(str));
     };
     view_manager::push((View *)&view_manager::keyboardView);
+}
+
+void APRSView::threshold() {
+
+    Menu::open_number_edit<int8_t>(
+        aprs_task.get_bit_threshold(), "", "Bit threshold", 0,
+        [&](int8_t v) {
+            aprs_task.set_bit_threshold(v);
+        },
+        -254, 255, 1, 1);
 }
 
 void APRSView::exit() {

@@ -9,6 +9,7 @@
 #include "dsp/modulation/dsp_demodulate.h"
 #include "dsp/receive/receive_task_base.h"
 #include "dsp/audio/fm_squelch.h"
+#include <sys/_stdint.h>
 
 namespace dsp {
 
@@ -35,6 +36,20 @@ class APRSTask : public ReceiveTaskBase {
     using ReceiveTaskBase::ReceiveTaskBase;
 
     ~APRSTask() override;
+
+    void set_bit_threshold(int8_t v) {
+        bit_threshold = v;
+    }
+    int8_t get_bit_threshold() {
+        return bit_threshold;
+    }
+
+    void enable_deemph(bool v) {
+        deemph_enabled = v;
+    }
+    bool get_deemph_enabled() {
+        return deemph_enabled;
+    };
 
   private:
     static constexpr uint32_t bandwidth = 24000;
@@ -65,6 +80,7 @@ class APRSTask : public ReceiveTaskBase {
     uint8_t current_byte = 0;
     uint8_t byte_index = 0;
     uint8_t packet_buffer[buffer_size];
+    int8_t bit_threshold = -20;
     size_t packet_buffer_size = 0;
 
     APRSPacket aprs_packet{};
@@ -88,7 +104,7 @@ class APRSTask : public ReceiveTaskBase {
     };
 
     uint32_t get_modulation_bw_hz() const override {
-        return 10000;
+        return 12000;
     };
 };
 } // namespace dsp
