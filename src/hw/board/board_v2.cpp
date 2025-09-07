@@ -448,10 +448,10 @@ bool radio_config(st_radio_config radioConfig) {
 
             // NOTE: Have in mind that, when dual interleaved DAC is used, the nyquist frequency is HALF the sample frequency that we set here
 
-            int ratio = (float)(fft_params.sample_freq / radioConfig.sample_freq) * ((float)ADC_DMA_TIMER_CLOCK_HZ / (float)DAC_TIMER_CLOCK_HZ);
-            uint32_t adc_timer_real_freq = ADC_DMA_TIMER_CLOCK_HZ / ((ADC_DMA_TIMER->PSC + 1) * (ADC_DMA_TIMER->ARR + 1));
+            int ratio = (float)(fft::fft_params.sample_freq / radioConfig.sample_freq) * ((float)ADC_DMA_TIMER_CLOCK_HZ / (float)DAC_TIMER_CLOCK_HZ);
+            uint32_t adc_timer_real_freq = get_adc_timer_frequency();
 
-            LOG("Setting DAC_TIMER for DIGITAL_RX: DAC target: %llu | FFT target sample freq: %d | ", radioConfig.sample_freq, fft_params.sample_freq);
+            LOG("Setting DAC_TIMER for DIGITAL_RX: DAC target: %llu | FFT target sample freq: %d | ", radioConfig.sample_freq, fft::fft_params.sample_freq);
             LOG_RAW("ADC real freq: %d | ratio: %d | result: %d\n", adc_timer_real_freq, ratio, adc_timer_real_freq / ratio);
             set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, adc_timer_real_freq / ratio);
 

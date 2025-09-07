@@ -26,7 +26,7 @@
 #include "FFTIQBalancer.h"
 #include "FIFOv1.h"
 #include "os/periodic_task.h"
-
+#include "fft_params.h"
 typedef float32_t fft_type;
 
 #define FFT_SCALE_FACTOR 0
@@ -39,54 +39,6 @@ extern void (*arm_cfft)(const arm_cfft_instance_f32 *, float32_t *, uint8_t, uin
 extern void (*arm_cmplx_mag)(float32_t *pSrc, float32_t *pDst, uint32_t numSamples);
 
 enum FFT_STATUS { FFT_STATUS_READY, FFT_STATUS_ADQUIRING, FFT_STATUS_IDLE, FFT_STATUS_FAULT };
-
-typedef struct st_fft_params {
-
-    uint32_t span;
-
-    uint16_t size;
-
-    // Resolution bandwidth per bin
-    float rbw;
-
-    // Number of usable bins of each FFT
-    uint16_t nbins;
-
-    uint16_t total_bins;
-
-    // Usable bandwidth (half the bandwidth, actually) of each slice
-    uint32_t bw = 0;
-
-    uint8_t n_slices = 1;
-
-    uint8_t decimation_factor = 0; // 0: not initialized
-
-    uint32_t sample_freq = 0;
-
-    float bin_width_px = MAXFLOAT;
-
-    // Slice width, in screen pixels
-    uint16_t slice_w_px = 0;
-
-    // Start bin of each FFT
-    uint16_t start_bin = 0;
-
-    // Resolution bandwidth at the display
-    float display_rbw = 0;
-
-    // Absolute start frequency of the span
-    uint64_t span_f_start;
-
-    // Starting intermediate frequency of the span
-    uint64_t span_if_start;
-
-    void calc(uint32_t span = 0);
-
-    bool valid();
-
-    bool valid_sf();
-
-} st_fft_params;
 
 namespace fft {
 void set_max_slices(uint8_t);
@@ -102,6 +54,7 @@ extern float dbm_peak;
 extern adc_type adc_max_ampl;
 std::pair<int, int> get_bandwidth_pixel_range();
 void set_waterfall_speed(uint16_t);
+void apply_fft_params(st_fft_params);
 extern Signal signal;
 } // namespace fft
 
@@ -115,7 +68,6 @@ void adquire_fft_async();
 void reorder_bins(complex_t_f32 *v);
 void calc_fft_range();
 
-extern st_fft_params fft_params;
 extern FFTIQBalancer fftIQBalancer;
 extern fft_type fft_peak;
 extern uint64_t fft_peak_f;

@@ -69,11 +69,11 @@
 #define INPUT_PIN_CONTROLLER_TIMER TIM13
 #define INPUT_PIN_CONTROLLER_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM13 is on the APB1 BUS
 
-#define ADC_DMA_TIMER TIM2
+#define ADC_DMA_TIMER TIM2                                             // 32-bit timer
 #define ADC_DMA_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM2 is on the APB1 BUS
 
-#define DAC_TIMER TIM6
-#define DAC_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM6 is on the APB1 BUS
+#define DAC_TIMER TIM5                                             // 32-bit timer
+#define DAC_TIMER_CLOCK_HZ (SystemCoreClock / APB1_PRESCALER << 1) // TIM5 is on the APB1 BUS
 
 #else
 

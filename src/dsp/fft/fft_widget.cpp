@@ -55,8 +55,8 @@ void FFTWidget::draw_bandwidth() {
 }
 
 void FFTWidget::fetch_stations_in_range() {
-    unsigned long fft_span_f_end = fft_params.span_f_start + config.fft.span;
-    freq_memory::find_in_freq_range(fft_params.span_f_start, fft_span_f_end, stations_in_range);
+    unsigned long fft_span_f_end = fft::fft_params.span_f_start + config.fft.span;
+    freq_memory::find_in_freq_range(fft::fft_params.span_f_start, fft_span_f_end, stations_in_range);
 }
 
 void FFTWidget::draw_freq_marks() {
@@ -71,7 +71,7 @@ void FFTWidget::draw_freq_marks() {
 
         if (data.type == STATION) {
 
-            uint16_t x = ((float)(data.freq - fft_params.span_f_start) / (float)(fft_params.span)) * FTT_DISPLAY_WIDTH;
+            uint16_t x = ((float)(data.freq - fft::fft_params.span_f_start) / (float)(fft::fft_params.span)) * FTT_DISPLAY_WIDTH;
             text_width = strlen(data.name) * font->width;
             int x0 = x - (text_width / 2) - padding;
             int x1 = x0 + padding * 2 + text_width;
@@ -100,7 +100,7 @@ void FFTWidget::draw_span_marks() {
     char buf[40];
 
     if (config.debug) {
-        sprintf(buf, "d:%2d s:%9d w:%.2f ", fft_params.decimation_factor, fft_params.sample_freq, fft_params.bin_width_px);
+        sprintf(buf, "d:%2d s:%9d w:%.2f ", fft::fft_params.decimation_factor, fft::fft_params.sample_freq, fft::fft_params.bin_width_px);
         display->setFont((FontDef *)&Font_Tiny8x8);
         display->gotoXY(50, 5);
         display->setBgColor(C565_BLACK);
@@ -109,7 +109,7 @@ void FFTWidget::draw_span_marks() {
 
     uint8_t y0 = 2;
     uint16_t x2 = FFT_ZONE_WIDTH - 40;
-    uint16_t span = fft_params.span / 1000 / 2;
+    uint16_t span = fft::fft_params.span / 1000 / 2;
     display->setFont((FontDef *)&Font_7x10);
     display->setColor(C565_WHITE);
     display->setBgColor(C565_DARKEST);
@@ -136,7 +136,7 @@ void FFTWidget::draw_h_labels() {
         n_divs--;
     }
 
-    uint32_t delta_khz = fft_params.span / n_divs / 1000;
+    uint32_t delta_khz = fft::fft_params.span / n_divs / 1000;
     uint16_t delta_x = DISPLAY_X_PIXELS / n_divs;
 
     display->setFont((FontDef *)&Font_Fixed5x7);
@@ -167,7 +167,7 @@ void FFTWidget::draw_peak() {
     if (fft_peak_bin) {
         // Peak is in bin units and need to be translated to display units
 
-        uint16_t peak_x = fft_peak_bin / fft_params.bin_width_px;
+        uint16_t peak_x = fft_peak_bin / fft::fft_params.bin_width_px;
 
         // If the LO is high-side injected, the bins in the fft are in reverse frequency order
         if (radio::is_freq_inverted()) {
@@ -270,7 +270,7 @@ bool FFTWidget::paint_callback() {
 void FFTWidget::before_paint() {
 
     if (this->dirty()) {
-        refresh_x_axis = f_start != fft_params.span_f_start || fft_span != fft_params.span;
+        refresh_x_axis = f_start != fft::fft_params.span_f_start || fft_span != fft::fft_params.span;
     }
 }
 

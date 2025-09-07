@@ -185,7 +185,7 @@ bool AFSKTXTask::start() {
 
     status.block_size_bytes = DSP_BLOCK * 2 * 2;
     status.n_channels = 2;
-    status.bandwidth = fft_params.span;
+    status.bandwidth = fft::fft_params.span;
     status.bits_per_sample = 16;
     status.decimated_block_size = DSP_BLOCK * 2 / status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
     status.decimated_block_size_bytes = this->status.block_size_bytes / status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);

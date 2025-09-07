@@ -334,7 +334,7 @@ void FFTIQBalancer::collectBalanceInfo(complex_t_f32 *data) {
 
     // Margin bins outside the bandwidth of interest of the whole FFT
 
-    uint8_t marginBins = fft_params.start_bin;
+    uint8_t marginBins = fft::fft_params.start_bin;
 
     // Calculate SNR squared
 

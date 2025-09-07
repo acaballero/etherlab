@@ -10,6 +10,7 @@
 #include "dsp/decimation/dsp_fir_decimator_float_complex.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/fft/fft.h"
+#include "dsp/fft/fft_params.h"
 #include "dsp/fft/fft_types.h"
 #include "dsp/fir_filter.h"
 #include "dsp/dsp_common.h"
@@ -320,10 +321,18 @@ bool ReceiveTaskBase::start() {
 
     dsp_set_real_time(true);
 
-    int dec_factor = 1;
-    status.sample_rate = config.fft.sample_rate;
+    status.sample_rate = fft::fft_params.sample_freq;
 
     uint32_t dac_sample_rate = get_audio_sample_rate();
+
+    // Set the nearest sample rate that's a multiple of the target DAC sample rate
+    // Note I've seen it working with an arbitrary sample rate (the APRS decoder figures out the phase increment for the clock synchronization), but even so...
+    // status.sample_rate = round_to_nearest_double(status.sample_rate, dac_sample_rate * 8);
+
+    fft::st_fft_params params = fft::fft_params;
+    // params.sample_freq = status.sample_rate;
+    // params.freq_mult = 1200 * MAX_DSP_DECIMATION_FACTOR;
+    fft::apply_fft_params(params);
 
     modulation_bandwidth_hz = get_modulation_bw_hz();
 
@@ -337,7 +346,7 @@ bool ReceiveTaskBase::start() {
 
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
     // (while using decimation factors of 2^n)
-
+    int dec_factor = 1;
     while (status.sample_rate > dac_sample_rate * 2 && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
@@ -370,10 +379,10 @@ bool ReceiveTaskBase::start() {
 
     ret = init();
 
-    ret = radio_config({.direction = RF_DIRECTION_RX,
-                        .sample_freq = status.sample_rate,
-                        .freq = 0,
-                        .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
+    ret = ret && radio_config({.direction = RF_DIRECTION_RX,
+                               .sample_freq = status.sample_rate,
+                               .freq = 0,
+                               .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
 
     if (!ret) {
         main_board::set_mute(GPIO_PIN_RESET);

@@ -150,7 +150,7 @@ bool ReplayTask::start() {
             // Update FFT and sample rate parameters
             fft_config(config.fft.span);
 
-            uint32_t sf = fft_params.sample_freq;
+            uint32_t sf = fft::fft_params.sample_freq;
             // The maximum decimation factor can't be greater than DSP_BLOCK
             uint8_t max_decimation_factor = DSP_BLOCK;
             while (decimation_factor < max_decimation_factor && sf > wi.sample_rate) {
@@ -163,13 +163,13 @@ bool ReplayTask::start() {
         } else {
 
             // Since we don't have the sample rate of the stored waveform, we'll set it to the effective sample rate of the fft processing
-            wi.sample_rate = fft_params.sample_freq / fft_params.decimation_factor;
+            wi.sample_rate = fft::fft_params.sample_freq / fft::fft_params.decimation_factor;
             wi.carrier_freq = radio::get_frequency();
-            decimation_factor = fft_params.decimation_factor;
+            decimation_factor = fft::fft_params.decimation_factor;
         }
 
         this->status.direction = DSP_DIRECTION_OUT;
-        this->status.bandwidth = fft_params.span;
+        this->status.bandwidth = fft::fft_params.span;
         this->status.sample_rate = wi.sample_rate;
         this->status.decimation_factor = decimation_factor;
         this->status.bits_per_sample = wi.bits_sample;

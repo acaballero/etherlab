@@ -4,6 +4,7 @@
 
 #include "dsp_common.h"
 #include "dsp/fft/fft.h"
+#include "dsp/fft/fft_params.h"
 #include "dsp_config.h"
 #include "config.h"
 #include "arm_math.h"
@@ -38,7 +39,7 @@ void set_max_sample_freq(bool dsp) {
     } else {
         dsp_max_sample_rate = config.fft.dsp_max_sample_rate;
     }
-    fft_config(config.fft.span);
+    fft_config(fft::fft_params.span);
 }
 
 void set_max_sample_freq(uint32_t rate) {
@@ -57,7 +58,7 @@ void enable_frequency_shift(bool b) {
 }
 
 bool get_freq_shift_enabled() {
-    return fft_params.n_slices == 1 && !ISANALOG && freq_shift_enabled;
+    return fft::fft_params.n_slices == 1 && !ISANALOG && freq_shift_enabled;
 }
 
 void set_agc_enabled(bool v) {
@@ -72,14 +73,14 @@ int32_t get_frequency_shift(uint32_t sample_rate) {
 #if DSP_FS4_SHIFT
 
     int factor = 1;
-    if (fft_params.decimation_factor > 1) {
+    if (fft::fft_params.decimation_factor > 1) {
         // Shifting the frequency in hardware helps with some Zero-IF issues, but wastes our LPF bandwidth.
         // To minimise the shift (but still match it with FS/4), we can apply it at a particular decimation
         // state where the sample frequency has already been reduced
         // factor = 2;
     }
 
-    return ((sample_rate ? sample_rate : fft_params.sample_freq) / 4) / factor;
+    return ((sample_rate ? sample_rate : fft::fft_params.sample_freq) / 4) / factor;
 
 #else
     return 0;

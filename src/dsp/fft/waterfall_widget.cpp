@@ -36,7 +36,7 @@ void WaterfallWidget::centerSpectrum() {
         int32_t f_offset = (int32_t)waterfallFreq - (int32_t)radio::get_frequency();
 
         // Calculate the equivalent width in buffer bytes
-        int16_t offset_pixels = round((float)f_offset / fft_params.display_rbw / PIXELS_BYTE);
+        int16_t offset_pixels = round((float)f_offset / fft::fft_params.display_rbw / PIXELS_BYTE);
 
         // To scroll horizontally, we 'memmove' the buffer, then erase the unwanted pixels
         // Remember there's 4-bit by pixel, so we divide the displacement by two
@@ -46,7 +46,7 @@ void WaterfallWidget::centerSpectrum() {
         if (offset_pixels != 0) {
             moveSpectrum(offset_pixels);
             // Update the waterfall frequency which will differ from f_carrier as we have moved it by multiples of bin_offset
-            waterfallFreq -= offset_pixels * fft_params.display_rbw * PIXELS_BYTE;
+            waterfallFreq -= offset_pixels * fft::fft_params.display_rbw * PIXELS_BYTE;
         }
     }
 }

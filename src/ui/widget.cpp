@@ -84,14 +84,12 @@ void Widget::set_parent(Widget *const new_parent) {
         // We have a parent, but are losing it. Update visible status.
         //  dirty_overlapping_children_in_rect(screen_rect());
         set_visible(false);
-
         parent_->on_child_update(this);
     }
 
     parent_ = new_parent;
 
     if (parent_) {
-
         parent_->on_child_update(this);
     }
 

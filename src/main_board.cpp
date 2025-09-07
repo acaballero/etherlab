@@ -301,7 +301,7 @@ bool _set_mode(MODE mode, bool force) {
 
             if (ISANALOG) {
                 // We just want to see the signal being sent
-                fft_config(FFT_MIN_SPAN);
+                fft_config(radio::get_bandwidth_hz());
 
                 /*
 

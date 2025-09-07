@@ -150,7 +150,7 @@ void DAC_DMA_Start(DAC_HandleTypeDef *hdac) {
 
     if (!dac_dma_started) {
         // LOG("DAC_DMA_START\n");
-        HAL_StatusTypeDef ret = HAL_TIM_Base_Start(&htim6); // Start DAC DMA timer
+        HAL_StatusTypeDef ret = HAL_TIM_Base_Start(&htim5); // Start DAC DMA timer
 
         if (ret == HAL_OK) {
             // We are using a complex buffer of int16_t, so the length of the buffer is DSP_BLOCK*2 to fill the whole dac_buff
@@ -173,7 +173,7 @@ void DAC_DMA_Start(DAC_HandleTypeDef *hdac) {
 void DAC_DMA_Stop(DAC_HandleTypeDef *hdac) {
     if (dac_dma_started) {
         // LOG("DAC_DMA_STOP\n");
-        HAL_TIM_Base_Stop(&htim6); // Stop DAC DMA timer
+        HAL_TIM_Base_Stop(&htim5); // Stop DAC DMA timer
         HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
         HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_2);
         dac_dma_started = false;

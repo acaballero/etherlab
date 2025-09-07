@@ -6,10 +6,12 @@
 #include "hw/stm32.h"
 #include "timers.h"
 #include "config.h"
+#include "status.h"
+#include <sys/_stdint.h>
 
 TIM_HandleTypeDef htim3;  // Led blink
 TIM_HandleTypeDef htim2;  // ADC DMA
-TIM_HandleTypeDef htim6;  // DAC DMA
+TIM_HandleTypeDef htim5;  // DAC DMA
 TIM_HandleTypeDef htim13; // Debouncer timer
 TIM_HandleTypeDef htim14; // SD Card FIFO processing task timer
 
@@ -49,15 +51,15 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
 
         /* USER CODE END TIM2_MspInit 1 */
     }
-    if (htim_base->Instance == TIM6) {
-        /* USER CODE BEGIN TIM6_MspInit 0 */
+    if (htim_base->Instance == TIM5) {
+        /* USER CODE BEGIN TIM5_MspInit 0 */
 
-        /* USER CODE END TIM6_MspInit 0 */
+        /* USER CODE END TIM5_MspInit 0 */
         /* Peripheral clock enable */
-        __HAL_RCC_TIM6_CLK_ENABLE();
-        /* USER CODE BEGIN TIM6_MspInit 1 */
+        __HAL_RCC_TIM5_CLK_ENABLE();
+        /* USER CODE BEGIN TIM5_MspInit 1 */
 
-        /* USER CODE END TIM6_MspInit 1 */
+        /* USER CODE END TIM5_MspInit 1 */
     }
     if (htim_base->Instance == TIM13) {
         /* USER CODE BEGIN TIM13_MspInit 0 */
@@ -123,15 +125,15 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *htim_base) {
         /* USER CODE BEGIN TIM2_MspDeInit 1 */
 
         /* USER CODE END TIM2_MspDeInit 1 */
-    } else if (htim_base->Instance == TIM6) {
-        /* USER CODE BEGIN TIM6_MspDeInit 0 */
+    } else if (htim_base->Instance == TIM5) {
+        /* USER CODE BEGIN TIM5_MspDeInit 0 */
 
-        /* USER CODE END TIM6_MspDeInit 0 */
+        /* USER CODE END TIM5_MspDeInit 0 */
         /* Peripheral clock disable */
-        __HAL_RCC_TIM6_CLK_DISABLE();
-        /* USER CODE BEGIN TIM6_MspDeInit 1 */
+        __HAL_RCC_TIM5_CLK_DISABLE();
+        /* USER CODE BEGIN TIM5_MspDeInit 1 */
 
-        /* USER CODE END TIM6_MspDeInit 1 */
+        /* USER CODE END TIM5_MspDeInit 1 */
     } else if (htim_base->Instance == TIM13) {
         /* USER CODE BEGIN TIM13_MspDeInit 0 */
 
@@ -336,33 +338,33 @@ void MX_TIM4_Init(void) {
    }
    */
 
-void MX_TIM6_Init(void) {
+void MX_TIM5_Init(void) {
 
-    /* USER CODE BEGIN TIM6_Init 0 */
+    /* USER CODE BEGIN TIM5_Init 0 */
 
-    /* USER CODE END TIM6_Init 0 */
+    /* USER CODE END TIM5_Init 0 */
 
     TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-    /* USER CODE BEGIN TIM6_Init 1 */
+    /* USER CODE BEGIN TIM5_Init 1 */
 
-    /* USER CODE END TIM6_Init 1 */
-    htim6.Instance = TIM6;
-    htim6.Init.Prescaler = 10;
-    htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim6.Init.Period = 1000;
-    htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    if (HAL_TIM_Base_Init(&htim6) != HAL_OK) {
+    /* USER CODE END TIM5_Init 1 */
+    htim5.Instance = TIM5;
+    htim5.Init.Prescaler = 10;
+    htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim5.Init.Period = 1000;
+    htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    if (HAL_TIM_Base_Init(&htim5) != HAL_OK) {
         Error_Handler();
     }
     sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
     sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK) {
+    if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK) {
         Error_Handler();
     }
-    /* USER CODE BEGIN TIM6_Init 2 */
+    /* USER CODE BEGIN TIM5_Init 2 */
 
-    /* USER CODE END TIM6_Init 2 */
+    /* USER CODE END TIM5_Init 2 */
 }
 
 /**
@@ -499,42 +501,71 @@ void set_timer_sample_rate_NOT_INTEGER_PHASE_MATCH(TIM_TypeDef *timer, uint32_t 
     timer->EGR = TIM_EGR_UG;
 }
 
-void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
+uint64_t get_adc_timer_frequency() {
+    return ADC_DMA_TIMER_CLOCK_HZ / ((ADC_DMA_TIMER->PSC + 1) * (ADC_DMA_TIMER->ARR + 1));
+}
 
-    if (clk_freq == 0) {
-        HardFault_Handler();
-    }
+uint32_t get_timer_params_and_freq(bool is16bits, uint32_t clk_freq, uint32_t hz, uint32_t *result_psc, uint32_t *result_arr) {
 
-    uint32_t target_div = clk_freq / hz;
+    // ARR is 16-bit or 32-bit (on STM32F4/F7/H7, TIM2/TIM5 are 32-bit)
+    uint32_t max_psc = 0xFFFF;                         // Prescaler always 16-bit
+    uint32_t max_arr = is16bits ? 0xFFFF : 0xFFFFFFFF; // Default 16-bit ARR
 
-    uint32_t best_psc = 0;
-    uint32_t best_arr = 0;
+    uint64_t target_div = ((uint64_t)clk_freq) / hz;
+
+    *result_psc = 0;
+    *result_arr = 0;
     volatile uint32_t min_error = 0xFFFFFFFF;
+    uint32_t error = 0;
+    uint32_t curr_freq = 0;
+    for (uint32_t psc = 0; psc <= max_psc; ++psc) {
+        uint64_t denom = (uint64_t)(psc + 1);
+        uint64_t arr = target_div / denom;
 
-    for (uint32_t psc = 0; psc <= 0xFFFF; ++psc) {
-        uint32_t denom = psc + 1;
-
-        uint32_t arr = target_div / denom;
-
-        if (arr == 0 || arr > 0x10000) {
+        if (arr == 0 || arr > ((uint64_t)max_arr + 1)) {
             continue;
         }
 
         uint32_t actual_freq = clk_freq / (denom * arr);
-        uint32_t error = (actual_freq > hz) ? (actual_freq - hz) : (hz - actual_freq);
+        error = (actual_freq > hz) ? (actual_freq - hz) : (hz - actual_freq);
 
         if (error < min_error) {
             min_error = error;
-            best_psc = psc;
-            best_arr = arr - 1;
+            *result_psc = psc;
+            *result_arr = (uint32_t)(arr - 1);
+            curr_freq = actual_freq;
             if (error == 0) {
                 break; // perfect match found
             }
         }
     }
 
-    timer->PSC = best_psc;
-    timer->ARR = best_arr;
+    return curr_freq;
+}
+
+uint32_t get_timer_exact_freq(bool is16bits, uint32_t clk_freq, uint32_t hz) {
+    uint32_t psc, arr;
+    uint32_t f = get_timer_params_and_freq(is16bits, clk_freq, hz, &psc, &arr);
+    return f;
+}
+
+void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
+
+    if (clk_freq == 0) {
+        HardFault_Handler();
+    }
+
+    uint32_t psc, arr;
+    uint32_t freq = get_timer_params_and_freq(timer != TIM2 && timer != TIM5, clk_freq, hz, &psc, &arr);
+
+    int error = hz - freq;
+
+    if (error) {
+        LOG("Warning: Frequency error: %d Hz while setting timer | clk: %d | freq: %d |  result: %d\n", error, clk_freq, hz, freq);
+    }
+
+    timer->PSC = psc;
+    timer->ARR = arr;
     timer->EGR = TIM_EGR_UG;
 }
 
@@ -542,7 +573,7 @@ void setup_timers() {
 
     MX_TIM3_Init();  // LED timer
     MX_TIM2_Init();  // ADC DMA timer
-    MX_TIM6_Init();  // DAC DMA timer
+    MX_TIM5_Init();  // DAC DMA timer
     MX_TIM13_Init(); // Input pin debouncer timer (TODO: I think it's initialized in the constuctor of the InputPinController)
     MX_TIM14_Init(); // IO task timer
 
@@ -550,9 +581,9 @@ void setup_timers() {
     HAL_DBGMCU_EnableDBGStandbyMode();
     HAL_DBGMCU_EnableDBGStopMode();
 
-    DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM2_STOP | DBGMCU_APB1_FZ_DBG_TIM6_STOP | DBGMCU_APB1_FZ_DBG_TIM14_STOP | DBGMCU_APB1_FZ_DBG_TIM3_STOP;
+    DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_TIM2_STOP | DBGMCU_APB1_FZ_DBG_TIM5_STOP | DBGMCU_APB1_FZ_DBG_TIM14_STOP | DBGMCU_APB1_FZ_DBG_TIM3_STOP;
     ;
 
     // Calculate the pre-scaler and period for the config sample rate
-    set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, fft_params.sample_freq);
+    set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, fft::fft_params.sample_freq);
 }

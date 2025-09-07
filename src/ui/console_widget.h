@@ -13,9 +13,10 @@ class ConsoleWidget : public Widget {
     ConsoleWidget(Rect parent_rect, Display *display);
     bool paint_callback() override;
 
+    void clear();
     void write(const std::string &message);
     void writeln(const std::string &message);
-
+    void set_parent_rect(Rect) override;
     static constexpr char color_mark = '\x1B';
 
   protected:
@@ -29,7 +30,7 @@ class ConsoleWidget : public Widget {
     size_t line_head = 0;
     size_t line_count = 0;
     void wrap(const std::string &raw_line);
-
+    void calc_size();
     void before_paint() override;
 };
 

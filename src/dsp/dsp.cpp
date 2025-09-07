@@ -22,6 +22,7 @@
 #include <cstring>
 #include <functional>
 #include <sys/_stdint.h>
+#include "../ui/menu.h"
 
 #if ENABLE_SD_CARD
 
@@ -156,13 +157,13 @@ uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_statu
 }
 
 void dsp_start_task() {
-    LOG("dsp_start_task");
+    LOG("dsp_start_task:");
 
     //  current_task = tasks[pending_command.id];
     //  dsp_status = &current_task->status;
     if (!dsp::dsp_status || dsp::dsp_status->status != DSP_STATUS_RUNNING) {
 
-        LOG_RAW(": not running, will start\n");
+        LOG_RAW(": No running task. Starting new.\n");
 
         input_stream.reset();
         output_stream.reset();
@@ -212,7 +213,7 @@ void dsp_start_task() {
             status::handleError(status::ST_ERROR, "Error starting DSP task");
         }
     } else {
-        //   LOG(": alerady running task\n");
+        //   LOG(": already running task, skipping\n");
     }
 }
 
@@ -325,7 +326,7 @@ inline void adc_work() {
         dc_block_i.filter(bb, 2, 0);
         dc_block_q.filter(bb, 2, 1);
 
-        if (fft_params.decimation_factor > 1) {
+        if (fft::fft_params.decimation_factor > 1) {
             // TODO: Decimate here vs in both FFT and current DSP task?
         }
 
@@ -410,8 +411,6 @@ void dsp_test_cb(st_dsp_status *) {
     }
 }
 
-#include "../ui/menu.h"
-
 void dsp_stop() {
 
     if (dspstatus != DSP_STATUS_STOPPING) {
@@ -426,14 +425,14 @@ void dsp_stop() {
             dac_buff[i] = (adc_type)config.hw.dac_offset;
         }
 
-        LOG("dspStop\n");
+        // LOG("dspStop\n");
         if (current_processor) {
-            LOG("dspStop:processor stop\n");
+            //  LOG("dspStop:processor stop\n");
             current_processor->stop();
         }
 
         if (current_task) {
-            LOG("dspStop:task stop\n");
+            //  LOG("dspStop:task stop\n");
             current_task->stop();
         }
 
@@ -455,7 +454,7 @@ void dsp_stop() {
 
         if (!ISANALOG) {
             // TODO: This forces the receive task to start again. But its ugly
-            fft_config(fft_params.span);
+            fft_config(fft::fft_params.span);
         }
     }
 }

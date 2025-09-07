@@ -74,7 +74,8 @@ io::path get_file_name() {
 
         if (n >= 0) {
             while (!found) {
-                sprintf(fname_buff, WAVEFILE_DEFAULT_FILENAME, n, fft_params.sample_freq / fft_params.decimation_factor, f, file_type_extensions[ftype]);
+                sprintf(fname_buff, WAVEFILE_DEFAULT_FILENAME, n, fft::fft_params.sample_freq / fft::fft_params.decimation_factor, f,
+                        file_type_extensions[ftype]);
                 int ix = fso.entryIdx((folder / fname_buff).c_str());
                 found = ix == 0;
             }

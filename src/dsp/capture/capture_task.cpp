@@ -116,10 +116,10 @@ bool CaptureTask::start() {
     status.reset();
 
     this->status.direction = DSP_DIRECTION_IN;
-    this->status.bandwidth = fft_params.bw;
+    this->status.bandwidth = fft::fft_params.bw;
     this->status.sample_rate = config.fft.sample_rate;
-    this->status.decimation_factor = fft_params.decimation_factor;
-    this->status.decimated_block_size = DSP_BLOCK / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->status.decimation_factor = fft::fft_params.decimation_factor;
+    this->status.decimated_block_size = DSP_BLOCK / fft::fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
     this->status.bits_per_sample = 16;
     this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
     this->status.decimated_block_size_bytes = this->status.block_size_bytes / this->status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);

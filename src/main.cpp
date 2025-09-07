@@ -231,7 +231,7 @@ int main() {
 #if DEBUG_SD_CARD
             test_sd_card();
 #endif
-            //  test();
+            test();
 
             dsptested = true;
         }

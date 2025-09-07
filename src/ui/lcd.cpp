@@ -4,6 +4,7 @@
 
 #include "lcd.h"
 #include "../../lib/ST77XX-STM32/st7789_fb.h"
+#include "status.h"
 
 extern SPI_HandleTypeDef LCD_SPI_HANDLE;
 
@@ -16,10 +17,7 @@ void lcd_init() {
     int8_t ret = lcd.begin();
 
     if (ret < 0) {
-
-#if DEBUG
-        debug_print("Error initializing display");
-#endif
+        LOG("Error initializing display");
     }
 
 #endif

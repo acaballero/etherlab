@@ -23,9 +23,9 @@
 #define LOG_VARS(with_timestamp, msg, ...)                                                                                                                     \
     { ::status::debug_print(msg, with_timestamp, __VA_ARGS__); }
 #else
-#define LOG_NOARGS(msg)                                                                                                                                        \
+#define LOG_NOARGS(with_timestamp, msg)                                                                                                                        \
     {}
-#define LOG_VARS(msg, ...)                                                                                                                                     \
+#define LOG_VARS(with_timestamp, msg, ...)                                                                                                                     \
     {}
 #endif
 

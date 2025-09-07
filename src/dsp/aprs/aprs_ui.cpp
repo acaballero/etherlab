@@ -120,7 +120,14 @@ void APRSView::toggle_beacon() {
 }
 void APRSView::start_rx() {
     //  LOG("START RX\n");
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, nullptr);
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, [&](st_dsp_status *status) {
+        if (status->status == DSP_STATUS_STOPPED) {
+            if (status->error != DSP_ERR_NONE) {
+                exit();
+                status::handleError(status::ST_ERROR, "Error starting APRS task");
+            }
+        }
+    });
     // To execute a task other than DSP_TASK_RECEIVE, setMode has to be called so
     main_board::set_mode(DIGITAL_RX);
 

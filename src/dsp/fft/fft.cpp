@@ -15,10 +15,12 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/fft/fft.h"
+#include "dsp/fft/fft_params.h"
 #include "dsp/fft/fft_types.h"
 #include "hw/stm32f4xx/adc.h"
 #include "hw/stm32f4xx/timers.h"
 #include "itemsTemplates.hpp"
+#include "menuIO/SWOOut.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
 #include "ui/view.h"
@@ -33,9 +35,6 @@
 #include "ui/view_manager.h"
 #include "utils.hpp"
 #include "ui/frequency_memory_ui.h"
-
-// FFT parameters
-st_fft_params fft_params;
 
 // Current slice
 uint8_t fft_slice_n;
@@ -129,7 +128,7 @@ std::pair<int, int> get_bandwidth_pixel_range() {
     int bm_s, bm_e, bm_m;
     bm_m = DISPLAY_X_PIXELS / 2;
 
-    int16_t px_if_width = (int16_t)(radio::get_bandwidth_hz() / fft_params.display_rbw) >> 1;
+    int16_t px_if_width = (int16_t)(radio::get_bandwidth_hz() / fft::fft_params.display_rbw) >> 1;
     px_if_width = max2(px_if_width, 1);
 
     if (config.modulation == SSB_USB) {
@@ -137,7 +136,7 @@ std::pair<int, int> get_bandwidth_pixel_range() {
         bm_s = bm_m + 1;
         bm_e = bm_m + (px_if_width << 1) - 1;
     } else if (config.modulation == CW) {
-        int16_t px_pitch_offset = (int16_t)(CW_PITCH_HZ / fft_params.display_rbw);
+        int16_t px_pitch_offset = (int16_t)(CW_PITCH_HZ / fft::fft_params.display_rbw);
         bm_s = bm_m + px_pitch_offset - px_if_width;
         bm_e = bm_m + px_pitch_offset + px_if_width;
     } else if (config.modulation == SSB_LSB) {
@@ -157,8 +156,8 @@ void calc_snr_2() {
 const std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
 const int bin_start = bin_limits.first;
 const int bin_end = bin_limits.second;
-const int start_bin = fft_params.start_bin;
-const int end_bin = start_bin + fft_params.nbins;
+const int start_bin =fft::fft_params.start_bin;
+const int end_bin = start_bin +fft::fft_params.nbins;
 
 float sigplusnoise = 0.0f;
 float total_signal = 0.0f;
@@ -219,7 +218,7 @@ dbm_instant = 10.0f * fasterlog(sigplusnoise);
 const float total_dbm_instant = 10.0f * fasterlog(total_signal);
 dbm = dbm - 0.3f * (dbm - dbm_instant);
 
-const float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft_params.span;
+const float bandwidth_ratio = (float)radio::get_bandwidth_hz() /fft::fft_params.span;
 const float papr_db = 3.0f + 10.0f * bandwidth_ratio;
 dbm_peak = total_dbm_instant + papr_db;
 }
@@ -254,7 +253,7 @@ void calc_snr() {
     float total_dbm_instant = 10.0f * fasterlog(total_signal);
     dbm = (dbm - (0.3f * (dbm - dbm_instant)));
 
-    float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft_params.span;
+    float bandwidth_ratio = (float)radio::get_bandwidth_hz() / fft::fft_params.span;
     float papr_db = 3.0f + 10.0f * bandwidth_ratio; // PAPR: Peak to average power ratio (rough estimation to avoid calculating the peak power)
     dbm_peak = dbm_peak - 0.2f * (dbm_peak - (total_dbm_instant + papr_db));
 }
@@ -302,83 +301,65 @@ void set_waterfall_speed(uint16_t pps) {
     fft::waterfall_task.set_period(fftUI::get_waterfall_period());
 }
 
+void apply_fft_params(st_fft_params params) {
+
+    uint8_t current_dec_factor = fft::fft_params.decimation_factor;
+    uint32_t current_sample_rate = config.fft.sample_rate;
+    uint32_t current_bw = fft::fft_params.bw;
+
+    params.calc(params.span); // Recalculate all params, maintaining the desired visible span
+
+    fft::fft_params = params;
+
+    config.fft.sample_rate = fft::fft_params.sample_freq;
+
+    // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
+    // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
+
+#if DSP_FS4_SHIFT
+    if (dsp::get_freq_shift_enabled()) {
+        // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
+        // move to the adjacent slice. Not done yet.
+        radio::set_dsp_frequency_shift(-dsp::get_frequency_shift());
+    } else {
+        radio::set_dsp_frequency_shift(0);
+    }
+#endif
+
+    if (current_dec_factor != fft::fft_params.decimation_factor) {
+        // If decimation factor has changed, reset the fifo and make sure its size is a multiple
+        // of the chunk size. This changes if we are decimating, since in that case, we store some filter delay blocks
+        fft_fifo.set_size((FFT_N + (fft::fft_params.decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) * MAX_DECIMATION_FACTOR *
+                          sizeof(complex_t));
+        fft_fifo.reset();
+    }
+
+    if (current_sample_rate != config.fft.sample_rate || current_bw != fft::fft_params.bw ||
+        !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
+
+        bool b = decimator_i.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
+        decimator_q.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
+
+        if (!b) {
+            // Failed decimator initialization. Should't happen but we could've mess with the fft params calculation
+            status::handleError(status::ST_ERROR, "Error initializing FFT decimator");
+        }
+
+        set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
+
+        // Since the timer cannot be set to match exacts frequencies, we save the actual ADC frequency
+        fft_params.sample_freq = config.fft.sample_rate = get_adc_timer_frequency();
+        LOG("fft_config: Changed sample rate: %lu\n", config.fft.sample_rate);
+        signal.emit(nullptr);
+    } else {
+        decimator_i.set_factor(fft::fft_params.decimation_factor);
+        decimator_q.set_factor(fft::fft_params.decimation_factor);
+    }
+}
+
 } // namespace fft
 
 uint64_t last_iqbalance_estimate_ms = 0;
-
-// Calculates FFT parameters from desired span, decimation factor and n_slices
-// If visible_span is given and the object parameters allow resolving for it, calculates the start and end bin accordingly
-// It is required that either sample_freq or span are set
-void st_fft_params::calc(uint32_t visible_span) {
-
-    // Number of usable bins in each slice
-
-    if (sample_freq == 0) {
-        // Calculate sample frequency, taking into account the usable bandwidth of each slice
-        sample_freq = span * ((float)decimation_factor / n_slices / USABLE_BW_FACTOR);
-    } else {
-        // Fixed sample_freq
-        span = sample_freq / ((float)decimation_factor / n_slices / USABLE_BW_FACTOR);
-    }
-
-    if (n_slices == 1) {
-        // See comment in constant definition
-        sample_freq = ((sample_freq + DSP_SAMPLE_FREQ_MULT - 1) / DSP_SAMPLE_FREQ_MULT) * DSP_SAMPLE_FREQ_MULT;
-    }
-
-    // Resolution bandwidth (per FFT bin)
-    rbw = sample_freq / size / decimation_factor;
-
-    if (visible_span && visible_span < span) {
-        span = visible_span;
-        nbins = span / rbw / n_slices;
-    } else {
-        nbins = size * USABLE_BW_FACTOR;
-    }
-
-    // Bandwidth per slice
-    bw = span / 2 / n_slices;
-
-    // Total bins
-    total_bins = nbins * n_slices;
-
-    // Pixels per bin
-    bin_width_px = (float)total_bins / (float)DISPLAY_X_PIXELS;
-
-    display_rbw = rbw * bin_width_px;
-
-    slice_w_px = nbins / bin_width_px;
-
-    // first bin to show in each slice
-    start_bin = (uint8_t)((float)(size - nbins) / 2.0);
-
-    span_if_start = radio::f_dsp_if - (span >> 1U);
-    span_f_start = config.vfo[config.vfo_ix].freq - (span >> 1U);
-}
-
-bool st_fft_params::valid_sf() {
-    return sample_freq >= config.fft.min_sample_rate && sample_freq <= dsp::dsp_max_sample_rate + DSP_SAMPLE_FREQ_MULT; // allow DSP_SAMPLE_FREQ_MULT headroom
-}
-
-bool st_fft_params::valid() {
-
-    // In digital mode, if near-zero tuning is active (tuning to -sample_freq/4), the available bandwidth gets reduced.
-    // After shifting up again +SF/4 in software, the lower cutoff of the pre-ADC low-pass filter is brought up by
-    // the same amount
-    // (_______X____|___________)
-    //         ^----FS/4
-    //
-    // .....(_______X____|______)
-    //    ^-----lost
-    //
-    // With decimation, the bandwidht of interest is smaller and we can afford losing some phisical bandwidth, which
-    // is also taken into account here
-    // In the end, we need to be sure that the distance from the (shifted) baseband center frequency to the lower cutoff
-    // frequency of the filter is at least the bandowidth of interest (after decimation)
-
-    bool valid_bw = true; // ((int32_t)config.fft.bw - (ISANALOG ? 0 : abs(dsp::get_frequency_shift(sample_freq)))) >= (int32_t)bw;
-    return valid_sf() && valid_bw;
-}
 
 void fft_dcremoval(buffer_t<adc_type> &vData) {
 
@@ -477,7 +458,7 @@ void fft_init() {
         fft_display[i] = FFT_HEIGHT;
     }
 
-    fft_config(config.fft.span);
+    apply_fft_params(fft_params);
 
     generateSmoothingGainLUT();
 
@@ -501,10 +482,6 @@ void reset_iq_balancer() {
     fftIQBalancer.reset();
 }
 
-uint32_t fft_max_span() {
-    return current_max_slices * DSP_BANDWIDTH * 2;
-}
-
 /* Finds the optimal FFT parameters based on the current selected span
  *
  * Calculates:
@@ -522,150 +499,11 @@ uint32_t fft_max_span() {
  */
 bool fft_config(uint32_t span) {
 
-    uint8_t current_dec_factor = fft_params.decimation_factor;
-    uint32_t current_sample_rate = config.fft.sample_rate;
-    uint32_t current_bw = fft_params.bw;
+    st_fft_params best = st_fft_params::find(span);
 
-    // Max span check
-    uint32_t max_span = fft_max_span();
-    if (span > max_span) {
-        span = max_span;
-    }
+    apply_fft_params(best);
 
-    st_fft_params params{.span = span};
-    bool found = false;
-    st_fft_params best;
-
-    // FOR DEBUG
-    // static uint64_t last_t;
-    // static uint32_t last_span = 0;
-    // uint32_t t = HAL_GetTick();
-    // bool log = false;
-    // if (t - last_t > 5000 || last_span != span) {
-    //     log = true;
-    //     last_t = t;
-    //     last_span = span;
-    // }
-
-    // if (log)
-    //    LOG("\n\n**** Required span: %d\n", span);
-    for (int s = 1; s <= current_max_slices; s++) {
-        for (int d = config.fft.max_decimation_factor; d >= 1; d >>= 1) {
-            // for (int d = 1; d <= config.fft.max_decimation_factor; d <<= 1) {
-
-            params.decimation_factor = d;
-            params.n_slices = s;
-            params.size = FFT_N;
-            params.sample_freq = 0; // calculate
-            params.span = span;
-            params.calc();
-
-            if (!params.valid_sf()) {
-                // if (log)
-                //      LOG("Invalid try: sr: %u\n", params.sample_freq);
-
-                params.sample_freq = constrain(params.sample_freq, config.fft.min_sample_rate, dsp::dsp_max_sample_rate);
-
-                params.calc();
-
-                if (params.span >= span) {
-                    // Reduce the visible bins
-                    params.calc(span);
-                }
-
-                //  if (log) {
-                //       LOG("Changed by: sr: %u, span: %d | start_bin: %d | nbins: %d \n", params.sample_freq, params.span, params.start_bin, params.nbins);
-                //  }
-            }
-
-            if (params.valid()) {
-                //  if (log)
-                //      LOG("Current is sr: %u | span: %d | delta: %d | width: %.1f \n", params.sample_freq, params.span, params.span - span,
-                //      params.bin_width_px);
-                // Cost function is:
-                // - Bin width in screen pixels: nearest to one so the bins doesn't have to be stretched nor shrink
-                // - Decimation factor: the larger, the better SNR (preferred in digital RX), but also slower rates of FFT update
-                auto span_delta = abs((int)params.span - (int)span);
-                auto best_span_delta = abs((int)best.span - (int)span);
-                bool best_delta = span_delta < best_span_delta;
-                if (best_delta || abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px) ||
-                    (!ISANALOG && (params.decimation_factor > best.decimation_factor))) {
-                    best = params;
-                    //  if (log)
-                    //       LOG("Best is sr: %u | span: %d | delta: %d | width: %.1f |", best.sample_freq, best.span, span_delta, params.bin_width_px);
-                    //   if (log)
-                    //       LOG_RAW(" dec: %d | start_bin: %d | nbins: %d \n", best.decimation_factor, best.start_bin, best.nbins);
-
-                    found = true;
-                }
-            } else {
-                //  if (log)
-                //      LOG("Invalid result\n");
-            }
-        }
-    }
-
-    if (!found) {
-        params.decimation_factor = 1;
-        params.n_slices = 1;
-        params.size = FFT_N;
-        params.sample_freq = config.fft.min_sample_rate;
-
-        params.calc();
-        best = params;
-
-        found = true;
-        // status::handleError(status::ST_ERROR, "FFT params can't be fit");
-    }
-
-    if (found) {
-
-        fft_params = best;
-        config.fft.sample_rate = fft_params.sample_freq;
-
-        // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
-        // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
-
-#if DSP_FS4_SHIFT
-        if (dsp::get_freq_shift_enabled()) {
-            // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
-            // move to the adjacent slice. Not done yet.
-            radio::set_dsp_frequency_shift(-dsp::get_frequency_shift());
-        } else {
-            radio::set_dsp_frequency_shift(0);
-        }
-#endif
-
-        if (current_dec_factor != fft_params.decimation_factor) {
-            // If decimation factor has changed, reset the fifo and make sure its size is a multiple
-            // of the chunk size. This changes if we are decimating, since in that case, we store some filter delay blocks
-            fft_fifo.set_size((FFT_N + (fft_params.decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) * MAX_DECIMATION_FACTOR *
-                              sizeof(complex_t));
-            fft_fifo.reset();
-        }
-
-        if (current_sample_rate != config.fft.sample_rate || current_bw != fft_params.bw ||
-            !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
-
-            bool b = decimator_i.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
-            decimator_q.config(config.fft.sample_rate, fft_params.bw, fft_params.decimation_factor);
-
-            if (!b) {
-                // Failed decimator initialization. Should't happen but we could've mess with the fft params calculation
-                status::handleError(status::ST_ERROR, "Error initializing FFT decimator");
-            }
-
-            set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate);
-
-            LOG("fft_config: Changed sample rate: %lu\n", config.fft.sample_rate);
-            signal.emit(nullptr);
-        } else {
-            decimator_i.set_factor(fft_params.decimation_factor);
-            decimator_q.set_factor(fft_params.decimation_factor);
-        }
-    }
-
-    return found;
+    return true;
 }
 
 /*
@@ -693,7 +531,7 @@ void doFFT() {
 
         reorder_bins(fft_slice_buff);
 
-        fftIQBalancer.setFftRbw(fft_params.rbw);
+        fftIQBalancer.setFftRbw(fft::fft_params.rbw);
 
         if (fft_estimateIQBalance && fft_slice_n == 0) {
 
@@ -747,9 +585,9 @@ uint32_t get_peak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v) {
 void calculateNoiseFloor() {
 
     fft_type copy[FFT_N];
-    memcpy(copy, fft_output + fft_params.start_bin, fft_params.nbins * sizeof(fft_type));
+    memcpy(copy, fft_output + fft::fft_params.start_bin, fft::fft_params.nbins * sizeof(fft_type));
 
-    std::sort(copy, copy + fft_params.nbins);
+    std::sort(copy, copy + fft::fft_params.nbins);
     fft_type median = copy[fft_params.nbins >> 1];
 
     // Exponential filter
@@ -883,10 +721,10 @@ void process_fft(float32_t *v) {
         // This happens when the number of high side LO injections is odd
 
         // Here, if the LO is injected in the high side, the frequency is inverted and we start drawing from right to left
-        startx = DISPLAY_X_PIXELS - (uint16_t)(fft_slice_n * fft_params.slice_w_px) - 1;
+        startx = DISPLAY_X_PIXELS - (uint16_t)(fft_slice_n * fft::fft_params.slice_w_px) - 1;
         x_inc = -1;
     } else {
-        startx = (uint16_t)(fft_slice_n * fft_params.slice_w_px);
+        startx = (uint16_t)(fft_slice_n * fft::fft_params.slice_w_px);
         x_inc = 1;
     }
 
@@ -901,15 +739,15 @@ void process_fft(float32_t *v) {
     float bin_pos, display_pos;
     float range_inv = 1.0 / db_amp; // Precompute division
 
-    if (fft_params.bin_width_px < 1) {
+    if (fft::fft_params.bin_width_px < 1) {
 
         // Display size > number of bins => increase display index by one
         display_ix = startx;
-        int last_bin_ix = fft_params.start_bin - 1;
-        bin_pos = fft_params.start_bin;
+        int last_bin_ix = fft::fft_params.start_bin - 1;
+        bin_pos = fft::fft_params.start_bin;
 
-        while (radio::is_freq_inverted() ? display_ix >= max2(0, startx - fft_params.slice_w_px)
-                                         : display_ix < min2(DISPLAY_X_PIXELS, fft_params.slice_w_px + startx)) {
+        while (radio::is_freq_inverted() ? display_ix >= max2(0, startx - fft::fft_params.slice_w_px)
+                                         : display_ix < min2(DISPLAY_X_PIXELS, fft::fft_params.slice_w_px + startx)) {
             bin_ix = uint16_t(bin_pos);
 
             if (bin_ix != last_bin_ix) {
@@ -936,7 +774,7 @@ void process_fft(float32_t *v) {
 
             fft_display_db[display_ix] = fft_display_db[display_ix] - (config.fft.smooth_factor * (fft_display_db[display_ix] - db));
             display_ix += x_inc;
-            bin_pos += fft_params.bin_width_px;
+            bin_pos += fft::fft_params.bin_width_px;
         }
     } else {
 
@@ -944,10 +782,10 @@ void process_fft(float32_t *v) {
         display_pos = startx;
         int next_display_ix = startx + x_inc;
         int nix = uint16_t(display_pos);
-        bin_ix = fft_params.start_bin;
-        float display_pos_incr = (1.0f / fft_params.bin_width_px) * (float)x_inc;
+        bin_ix = fft::fft_params.start_bin;
+        float display_pos_incr = (1.0f / fft::fft_params.bin_width_px) * (float)x_inc;
 
-        while (bin_ix <= fft_params.start_bin + fft_params.nbins) {
+        while (bin_ix <= fft::fft_params.start_bin + fft::fft_params.nbins) {
 
             display_ix = nix;
 
@@ -984,7 +822,7 @@ void process_fft(float32_t *v) {
     }
 
     // If the slice is not fully shown, set the fft_output to min_db so they're not used in further calculations (getPeak, for example)
-    /*while (ii < fft_params.start_bin + fft_params.nbins) {
+    /*while (ii <fft::fft_params.start_bin +fft::fft_params.nbins) {
         //fft_output[ii] = config.fft.min_db;
         fft_output[ii] = FFT_MIN_DB;
         ii++;
@@ -1010,7 +848,7 @@ void process_fft(float32_t *v) {
 /* Decimate a complex_t buffer into the fft_slice_buff buffer */
 void decimate_complex_fft_buffer(complex_t *f_buff, size_t size) {
 
-    uint16_t decimated_block_size = DSP_BLOCK / fft_params.decimation_factor;
+    uint16_t decimated_block_size = DSP_BLOCK / fft::fft_params.decimation_factor;
 
     // We decimate in DSP_BLOCK block sizes to save memory, at the expense of speed, since we need two buffers
     // to process the signal (one of DSP_BLOCK length and one of DSP_BLOCK / fft_decimation_factor length)
@@ -1031,7 +869,7 @@ void decimate_complex_fft_buffer(complex_t *f_buff, size_t size) {
         decimator_q.decimate(src, dst, 1, 2, 0);
 
         // Skip the first blocks to account for the delay group of the filter
-        if (ix >= FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft_params.decimation_factor) {
+        if (ix >= FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft::fft_params.decimation_factor) {
             ixOut += decimated_block_size;
         }
 
@@ -1050,11 +888,11 @@ void adquire_fft_async() {
      * here we are filtering AFTER the whole set of blocks is acquired, and so, we have to acquire
      * 'discard_n_blocks' in excess BEFORE we start the filtering and, after that, discard them */
     // uint8_t discard_n_blocks = (uint8_t) (((FFT_LPF_FIR_FILTER_NTAPS - 1) / 2) / DSP_BLOCK) + 1;
-    uint16_t fft_buff_size = fft_params.size * fft_params.decimation_factor;
+    uint16_t fft_buff_size = fft::fft_params.size * fft::fft_params.decimation_factor;
 
-    if (fft_params.decimation_factor > 1) {
+    if (fft::fft_params.decimation_factor > 1) {
         // If we are decimating (using FIR filtering), we have to discard the FIR filter group delay samples
-        fft_buff_size += FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft_params.decimation_factor;
+        fft_buff_size += FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft::fft_params.decimation_factor;
     }
 
     union {
@@ -1081,7 +919,7 @@ void adquire_fft_async() {
 
     if (true) { // av >= chunk_size) {
 
-        if (fft_params.decimation_factor > 1) {
+        if (fft::fft_params.decimation_factor > 1) {
 
             // Decimate the complex buffer (I and Q channels interleaved, so odd and even indexes) into fft_slice_buff
             decimate_complex_fft_buffer((complex_t *)data.c, fft_buff_size);
@@ -1149,15 +987,16 @@ void fft_work() {
         // A (side) note of caution. When changing connections, be careful not to swap I/Q signals from
         // the quadrature mixer into the ADCs, or the frequency will be inverted again.
 
-        auto peak_ix = get_peak(fft_params.start_bin, fft_params.start_bin + fft_params.nbins, fft_peak_v);
+        auto peak_ix = get_peak(fft::fft_params.start_bin, fft::fft_params.start_bin + fft::fft_params.nbins, fft_peak_v);
 
         // Only consider a peak value if it's above a threshold from the current noise floor
         if (fft_peak_v > FFT_SIGNAL_THRESHOLD_DB + fft_noise_floor_db && fft_peak < fft_peak_v) {
 
             fft_peak = fft_peak_v;
-            fft_peak_bin = fft_slice_n * fft_params.nbins + peak_ix - fft_params.start_bin;
+            fft_peak_bin = fft_slice_n * fft::fft_params.nbins + peak_ix - fft::fft_params.start_bin;
 
-            fft_peak_f = fft_params.span_if_start + fft_params.rbw * fft_peak_bin; // config.vfo[config.vfo_ix].freq + (rbw*(peak_ix-(FFT_N>>1)))*1000;
+            fft_peak_f =
+                fft::fft_params.span_if_start + fft::fft_params.rbw * fft_peak_bin; // config.vfo[config.vfo_ix].freq + (rbw*(peak_ix-(FFT_N>>1)))*1000;
         }
     }
 }
@@ -1172,10 +1011,10 @@ void updateFFT() {
     unsigned long first_slice_center_f;
 
     // Calculate the resolution bandwith (hz per bin) required to have a bin per pixel
-    uint64_t last_start_freq = fft_params.span_f_start;
-    fft_config(fft_params.span);
+    uint64_t last_start_freq = fft::fft_params.span_f_start;
+    fft_config(fft::fft_params.span);
 
-    if (last_start_freq != fft_params.span_f_start) {
+    if (last_start_freq != fft::fft_params.span_f_start) {
         // If the span has changed, cancel the smoot factor for a frame so the current values are preserved
         first_frame = true;
     } else {
@@ -1185,10 +1024,10 @@ void updateFFT() {
     if (config.fft.view_mode == FFT_VIEW_TIME_DOMAIN) {
         slices = 1;
     } else {
-        slices = fft_params.n_slices;
+        slices = fft::fft_params.n_slices;
     }
 
-    first_slice_center_f = fft_params.span_if_start + fft_params.bw;
+    first_slice_center_f = fft::fft_params.span_if_start + fft::fft_params.bw;
 
     fft_peak_v = FFT_MIN_DB;
     fft_peak = FFT_MIN_DB;

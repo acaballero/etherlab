@@ -115,7 +115,7 @@ typedef struct {
     // dsp_max_sample_rate and max_sample_rate would be the same. Currently, the FFT
     // has to be reconfigured when doing real time DSP (see
     // dsp_set_real_time function)
-    uint32_t dsp_max_sample_rate = (ADC_MAX_SAMPLE_RATE / 2);
+    uint32_t dsp_max_sample_rate = (ADC_MAX_SAMPLE_RATE * 3 / 2);
 
     // Min sample frequency, determined by the bandwidth of the ADC's low pass
     // filters Must be twice the bandwidth of interest plus the length of the

@@ -10,10 +10,10 @@
 #include "console_widget.h"
 #include "../config.h"
 #include "ips_font.h"
+#include "os/periodic_task.h"
 
 ConsoleWidget::ConsoleWidget(Rect parent_rect, Display *display) : Widget(parent_rect, display) {
-
-    line_buffer.fill("");
+    clear();
 }
 
 bool ConsoleWidget::paint_callback() {
@@ -57,9 +57,24 @@ void ConsoleWidget::before_paint() {
         this->set_clean();
     } else {
         display->setVerticalLineSpacing(2);
-        this->cols = area.box.width / font->width;
-        this->rows = min2(area.box.height / (font->height + display->getVerticalLineSpacing()), max_lines);
+        calc_size();
     }
+}
+
+void ConsoleWidget::calc_size() {
+    this->cols = area.box.width / font->width;
+    this->rows = min2(area.box.height / (font->height + display->getVerticalLineSpacing()), max_lines);
+}
+
+void ConsoleWidget::set_parent_rect(Rect r) {
+    Widget::set_parent_rect(r);
+    calc_size();
+}
+
+void ConsoleWidget::clear() {
+    line_buffer.fill("");
+    line_count = 0;
+    line_head = 0;
 }
 
 void ConsoleWidget::write(const std::string &message) {

@@ -26,14 +26,14 @@ void SignalGeneratorTask::work() {
 bool SignalGeneratorTask::start() {
 
     this->status.direction = DSP_DIRECTION_OUT;
-    this->status.bandwidth = fft_params.span;
-    this->status.sample_rate = fft_params.sample_freq;
-    this->status.decimation_factor = fft_params.decimation_factor;
+    this->status.bandwidth = fft::fft_params.span;
+    this->status.sample_rate = fft::fft_params.sample_freq;
+    this->status.decimation_factor = fft::fft_params.decimation_factor;
     this->status.bits_per_sample = 16;
     this->status.n_channels = 2;
     this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
-    this->status.decimated_block_size = DSP_BLOCK * 2 / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
-    this->status.decimated_block_size_bytes = this->status.block_size_bytes / fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->status.decimated_block_size = DSP_BLOCK * 2 / fft::fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->status.decimated_block_size_bytes = this->status.block_size_bytes / fft::fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
     bool ret =
         radio_config({.direction = mode,

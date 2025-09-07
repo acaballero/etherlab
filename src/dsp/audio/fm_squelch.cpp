@@ -45,7 +45,7 @@ void FMSquelch::config(const float mag_threshold, uint32_t sample_rate, uint32_t
 
     this->threshold = 10 * mag_threshold * mag_threshold; // square the peak magnitude
 
-    if (high_pass_filter.get_bandwidth() != audio_bandwidth || high_pass_filter.get_input_rate() != sample_rate) {
+    if (high_pass_filter.get_factor() == 0 || high_pass_filter.get_bandwidth() != audio_bandwidth || high_pass_filter.get_input_rate() != sample_rate) {
         LOG("Setting FM squelch high pass filter | threshold:%.1f | rate: %d | start freq: %d\n", mag_threshold, sample_rate, audio_bandwidth);
         high_pass_filter.config(sample_rate, audio_bandwidth, 1, HPF);
     }

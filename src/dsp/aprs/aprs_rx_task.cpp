@@ -260,10 +260,17 @@ bool APRSTask::parse_bit(const uint8_t current_bit) {
 
 bool APRSTask::init() {
 
+    if (status.sample_rate % baudrate != 0) {
+        LOG("ERROR: Initializing APRS: Sample rate %d is not divisible by baud rate %d\n", status.sample_rate, baudrate);
+        return false;
+    }
+
     samples_per_bit = this->status.sample_rate / baudrate;
 
     phase_inc = (0x10000 * baudrate) / this->status.sample_rate;
     phase = 0;
+
+    LOG("Initializing APRS | samples per bit: %d | phase delta: %d\n", samples_per_bit, phase_inc);
 
     // Delay line
     delay_line_index = 0;

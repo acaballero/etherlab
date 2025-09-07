@@ -20,29 +20,29 @@ bool InfoWidget::paint_callback() {
     display->setFont((FontDef *)&Font_7x10);
     display->set_padding(0, 0);
     display->gotoCharXY(0, 0);
-    format_long(fft_params.span / 1000, buf);
+    format_long(fft::fft_params.span / 1000, buf);
 
     display->print("Span:", buf, " kHz");
 
-    uint16_t fft_fs = fft_params.sample_freq / 1000 / fft_params.decimation_factor;
+    uint16_t fft_fs = fft::fft_params.sample_freq / 1000 / fft::fft_params.decimation_factor;
 
     display->gotoCharXY(13, 0);
 
     format_long(fft_fs, buf);
     display->print("ADC:", buf, " kHz");
 
-    if (fft_params.decimation_factor > 1) {
+    if (fft::fft_params.decimation_factor > 1) {
 
-        snprintf(buf, 6, "[x%d]", fft_params.decimation_factor);
+        snprintf(buf, 6, "[x%d]", fft::fft_params.decimation_factor);
         display->print(buf);
     }
 
     display->gotoCharXY(0, 1);
 
-    snprintf(buf, 12, " #: %d", fft_params.n_slices);
+    snprintf(buf, 12, " #: %d", fft::fft_params.n_slices);
     display->print(buf);
 
-    snprintf(buf, 6, " %.0f", fft_params.display_rbw);
+    snprintf(buf, 6, " %.0f", fft::fft_params.display_rbw);
     display->print(" RBW:", buf, " Hz");
 
     display->gotoCharXY(0, 2);

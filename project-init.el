@@ -77,8 +77,11 @@
   (sleep-for 1)
 
   ;; Run pio upload
-  (message "Uploading...") 
-(call-interactively 'platformio-upload))
+  (message "Uploading...")
+  (let ((default-directory "/home/ahcr/dev/trx/"))
+   (compile "PLATFORMIO_BUILD_FLAGS='-DDEBUG_MSGS=0' pio run -t upload"))
+  ;;(call-interactively 'platformio-upload)
+  )
 
 (defvar my-current-dir (file-name-directory (or load-file-name buffer-file-name)) "The directory of the currently loaded or evaluated .el file.")
 
@@ -111,8 +114,9 @@ for debug echo." (interactive)
   (sleep-for 1)
   ;; Run pio upload
   (message "Uploading firmware...")
-(add-hook 'compilation-finish-functions 'start-openocd-after-compilation) 
-(call-interactively 'platformio-upload)
+  (add-hook 'compilation-finish-functions 'start-openocd-after-compilation)
+ 
+  (call-interactively 'platformio-upload)
 )
 
 
@@ -197,3 +201,13 @@ for debug echo." (interactive)
 ;;                   "[/\\\\]toolchain-.*/.*"
 ;;                   ;; But allow your project
 ;;                   "!/home/ahcr/dev/trx/.*"))))
+
+
+(require 'ansi-color)
+
+(defun colorize-compilation-buffer ()
+  "Interpret ANSI escape sequences in the compilation buffer."
+  (when (eq major-mode 'compilation-mode)
+    (ansi-color-apply-on-region (point-min) (point-max))))
+
+(add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
