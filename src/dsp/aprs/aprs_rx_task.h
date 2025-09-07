@@ -66,7 +66,7 @@ class APRSTask : public ReceiveTaskBase {
     DspIIRDecimator<2> audio_bpf;
     bool audio_bpf_enabled = true;
 
-    size_t samples_per_bit{};
+    float32_t samples_per_bit{};
 
     enum State { WAIT_FLAG, WAIT_FRAME, IN_FRAME };
 
@@ -77,7 +77,7 @@ class APRSTask : public ReceiveTaskBase {
     size_t delay_line_index{};
 
     uint32_t sample_bits{0};
-    uint32_t phase{}, phase_inc{};
+    float32_t phase{}, phase_inc{};
     int32_t sample_mixed{}, prev_mixed{}, sample_filtered{}, prev_filtered{};
     uint8_t last_bit = 0;
     uint8_t ones_count = 0;

@@ -48,7 +48,7 @@ void MX_DAC_Init(void) {
     }
     /** DAC channel OUT1 config
      */
-    sConfig.DAC_Trigger = DAC_TRIGGER_T6_TRGO;
+    sConfig.DAC_Trigger = DAC_TRIGGER_T5_TRGO; // TIM5 triggers the DAC
     sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
 
     if (HAL_DAC_ConfigChannel(&hdac1, &sConfig, DAC_CHANNEL_1) != HAL_OK) {

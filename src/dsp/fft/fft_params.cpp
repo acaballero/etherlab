@@ -15,6 +15,30 @@
 
 namespace fft {
 
+// Structure to hold fft_params dependencies
+struct st_fft_params_dependencies {
+    uint32_t span;
+    uint32_t freq_mult;
+    uint8_t decimation_factor_max;
+    uint8_t current_max_slices;
+    uint32_t min_sample_rate;
+    uint32_t dsp_max_sample_rate;
+
+    bool operator==(const st_fft_params_dependencies &other) const {
+        return span == other.span && freq_mult == other.freq_mult && decimation_factor_max == other.decimation_factor_max &&
+               current_max_slices == other.current_max_slices && min_sample_rate == other.min_sample_rate && dsp_max_sample_rate == other.dsp_max_sample_rate;
+    }
+
+    bool operator!=(const st_fft_params_dependencies &other) const {
+        return !(*this == other);
+    }
+};
+
+// Cache storage
+static st_fft_params_dependencies fft_params_dependencies = {0};
+static st_fft_params cached_result;
+static bool cache_valid = false;
+
 // Calculates FFT parameters from desired span, decimation factor and n_slices
 // If visible_span is given and the object parameters allow resolving for it, calculates the start and end bin accordingly
 // It is required that either sample_freq or span are set
@@ -37,7 +61,7 @@ void st_fft_params::calc(uint32_t visible_span) {
             sample_freq = ((sample_freq + freq_mult - 1) / freq_mult) * freq_mult;
         } else {
             // Set the real exact achievable frequency in the timer
-            sample_freq = get_timer_exact_freq(false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
+            sample_freq = get_timer_exact_freq(MAX_DSP_DECIMATION_FACTOR, false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
         }
     }
 
@@ -96,6 +120,22 @@ bool st_fft_params::valid() {
 }
 
 st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
+
+    // Create cache key with current parameters
+    st_fft_params_dependencies current_dependencies = {.span = span,
+                                                       .freq_mult = freq_mult ? freq_mult : fft_params.freq_mult,
+                                                       .decimation_factor_max = config.fft.max_decimation_factor,
+                                                       .current_max_slices = current_max_slices,
+                                                       .min_sample_rate = config.fft.min_sample_rate,
+                                                       .dsp_max_sample_rate = dsp::dsp_max_sample_rate};
+
+    // Check if we can use cached result
+    if (current_dependencies == fft_params_dependencies) {
+        return cached_result;
+    }
+
+    // Cache miss - need to recalculate
+    fft_params_dependencies = current_dependencies;
 
     // Max span check
     uint32_t max_span = current_max_slices * DSP_BANDWIDTH * 2;
@@ -190,6 +230,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
         found = true;
     }
 
+    cached_result = best;
     return best;
 }
 

@@ -329,10 +329,10 @@ bool ReceiveTaskBase::start() {
     // Note I've seen it working with an arbitrary sample rate (the APRS decoder figures out the phase increment for the clock synchronization), but even so...
     // status.sample_rate = round_to_nearest_double(status.sample_rate, dac_sample_rate * 8);
 
-    fft::st_fft_params params = fft::fft_params;
+    // fft::st_fft_params params = fft::fft_params;
     // params.sample_freq = status.sample_rate;
     // params.freq_mult = 1200 * MAX_DSP_DECIMATION_FACTOR;
-    fft::apply_fft_params(params);
+    // fft::apply_fft_params(params);
 
     modulation_bandwidth_hz = get_modulation_bw_hz();
 

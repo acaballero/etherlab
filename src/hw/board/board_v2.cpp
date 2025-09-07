@@ -2,6 +2,7 @@
 // Created by Angel Dust on 29/05/2021.
 //
 
+#include "dsp/dsp_common.h"
 #include "dsp/fft/fft.h"
 #include "hw/stm32f4xx/timers.h"
 #include "stdio.h"
@@ -402,7 +403,7 @@ bool radio_config(st_radio_config radioConfig) {
         // Enable DAC for IF modulation
         MX_DAC_Init();
         // LOG("Setting DAC_TIMER for DIGITAL_TX %d\n", radioConfig.sample_freq);
-        set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq);
+        set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq, MAX_DSP_DECIMATION_FACTOR);
         DAC_DMA_Start(&hdac1);
 
         // Starting the DAC causes a DC transient. Wait for it to stop
@@ -448,15 +449,21 @@ bool radio_config(st_radio_config radioConfig) {
 
             // NOTE: Have in mind that, when dual interleaved DAC is used, the nyquist frequency is HALF the sample frequency that we set here
 
-            int ratio = (float)(fft::fft_params.sample_freq / radioConfig.sample_freq) * ((float)ADC_DMA_TIMER_CLOCK_HZ / (float)DAC_TIMER_CLOCK_HZ);
-            uint32_t adc_timer_real_freq = get_adc_timer_frequency();
+            if (fft::fft_params.sample_freq % radioConfig.sample_freq != 0) {
+                LOG("Error setting DAC_TIMER for DIGITAL_RX: The ADC/DAC sample rates (%d/%d) is not integer. Their phases will slide!\n",
+                    fft::fft_params.sample_freq, radioConfig.sample_freq);
+                return false;
+            } else {
+                int ratio = ((float32_t)fft::fft_params.sample_freq / radioConfig.sample_freq) * ((float)ADC_DMA_TIMER_CLOCK_HZ / (float)DAC_TIMER_CLOCK_HZ);
+                uint32_t adc_timer_real_freq = get_adc_timer_frequency();
 
-            LOG("Setting DAC_TIMER for DIGITAL_RX: DAC target: %llu | FFT target sample freq: %d | ", radioConfig.sample_freq, fft::fft_params.sample_freq);
-            LOG_RAW("ADC real freq: %d | ratio: %d | result: %d\n", adc_timer_real_freq, ratio, adc_timer_real_freq / ratio);
-            set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, adc_timer_real_freq / ratio);
+                LOG("Setting DAC_TIMER for DIGITAL_RX: DAC target: %llu | FFT target sample freq: %d | ", radioConfig.sample_freq, fft::fft_params.sample_freq);
+                LOG_RAW("ADC real freq: %d | ratio: %d | result: %d\n", adc_timer_real_freq, ratio, adc_timer_real_freq / ratio);
+                set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, adc_timer_real_freq / ratio);
 
-            // TODO: Use only one DAC instead of two in quadrature
-            DAC_DMA_Start(&hdac1);
+                // TODO: Use only one DAC instead of two in quadrature
+                DAC_DMA_Start(&hdac1);
+            }
         }
         ADC_DMA_Start(&hadc1);
     }

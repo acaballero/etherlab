@@ -49,7 +49,7 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         delay_line[delay_line_index & delay_line_ix_mask] = current_sample;
 
         // Delay line get, and LPF
-        sample_mixed = (delay_line[(delay_line_index - (samples_per_bit / 2)) & delay_line_ix_mask] * current_sample) / 4;
+        sample_mixed = (delay_line[(delay_line_index - (size_t)(samples_per_bit / 2.0f)) & delay_line_ix_mask] * current_sample) / 4;
         sample_filtered = prev_mixed + sample_mixed + (prev_filtered / 2);
 
         delay_line_index++;
@@ -87,16 +87,16 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         // Check for "clean" transition: either 0011 or 1100
         if ((((sample_bits >> 2) ^ sample_bits) & 3) == 3) {
             // Adjust phase
-            if (phase < 0x8000) {
-                phase += 0x800; // Is this a proper value ?
+            if (phase < 0.5f) {
+                phase += 1.0f / 32; // Is this a proper value ?
             } else {
-                phase -= 0x800;
+                phase -= 1.0f / 32;
             }
         }
 
         phase += phase_inc;
 
-        if (phase >= 0x10000) { // 65536
+        if (phase >= 1.0f) {
 
             // DEBUG
             // static uint32_t i = 0;
@@ -117,7 +117,7 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
             // printf_("\n");
             //  DEBUG
 
-            phase &= 0xFFFF;
+            phase -= 1.0f;
 
             if (true) {
                 uint8_t bit;
@@ -144,7 +144,7 @@ void APRSTask::set_squelch() {
 
     if (config.squelch_level) {
         float threshold = max2(0, 10 - config.squelch_level);
-        squelch.config(threshold, status.sample_rate, 2 * get_audio_bw_hz());
+        squelch.config(threshold, status.sample_rate, 1.6 * get_audio_bw_hz());
         squelch_enabled = true;
 
     } else {
@@ -260,17 +260,18 @@ bool APRSTask::parse_bit(const uint8_t current_bit) {
 
 bool APRSTask::init() {
 
-    if (status.sample_rate % baudrate != 0) {
-        LOG("ERROR: Initializing APRS: Sample rate %d is not divisible by baud rate %d\n", status.sample_rate, baudrate);
-        return false;
-    }
+    // Not required with the current float accumulator
+    // if (status.sample_rate % baudrate != 0) {
+    //     LOG("ERROR: Initializing APRS: Sample rate %d is not divisible by baud rate %d\n", status.sample_rate, baudrate);
+    //     return false;
+    // }
 
-    samples_per_bit = this->status.sample_rate / baudrate;
+    samples_per_bit = (float32_t)this->status.sample_rate / baudrate;
 
-    phase_inc = (0x10000 * baudrate) / this->status.sample_rate;
-    phase = 0;
+    phase_inc = (float32_t)baudrate / this->status.sample_rate;
+    phase = 0.0f;
 
-    LOG("Initializing APRS | samples per bit: %d | phase delta: %d\n", samples_per_bit, phase_inc);
+    LOG("Initializing APRS | samples per bit: %.2f | phase delta: %.2f\n", samples_per_bit, phase_inc);
 
     // Delay line
     delay_line_index = 0;

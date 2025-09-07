@@ -123,7 +123,7 @@ template <int order> bool DspIIRDecimator<order>::init() {
     }
 
     // Convert to CMSIS format (output coefficients are negated)
-    LOG("IIR Filter | type: %d | order: %d\n", type == 0 ? "lpf" : (type == 1 ? "hpf" : "bpf"), order);
+    LOG("IIR Filter | type: %s | order: %d\n", type == 0 ? "lpf" : (type == 1 ? "hpf" : "bpf"), order);
     LOG("a1=[%f,%f,%f]\n", dg[0].m_a0, dg[0].m_a1, dg[0].m_a2);
     LOG("b1=[%f,%f,%f]\n", dg[0].m_b0, dg[0].m_b1, dg[0].m_b2);
 

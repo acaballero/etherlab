@@ -505,7 +505,7 @@ uint64_t get_adc_timer_frequency() {
     return ADC_DMA_TIMER_CLOCK_HZ / ((ADC_DMA_TIMER->PSC + 1) * (ADC_DMA_TIMER->ARR + 1));
 }
 
-uint32_t get_timer_params_and_freq(bool is16bits, uint32_t clk_freq, uint32_t hz, uint32_t *result_psc, uint32_t *result_arr) {
+uint32_t get_timer_params_and_freq(uint32_t factor, bool is16bits, uint32_t clk_freq, uint32_t hz, uint32_t *result_psc, uint32_t *result_arr) {
 
     // ARR is 16-bit or 32-bit (on STM32F4/F7/H7, TIM2/TIM5 are 32-bit)
     uint32_t max_psc = 0xFFFF;                         // Prescaler always 16-bit
@@ -527,6 +527,12 @@ uint32_t get_timer_params_and_freq(bool is16bits, uint32_t clk_freq, uint32_t hz
         }
 
         uint32_t actual_freq = clk_freq / (denom * arr);
+
+        // Enforce divisibility
+        if (factor > 1 && (actual_freq % factor != 0)) {
+            continue;
+        }
+
         error = (actual_freq > hz) ? (actual_freq - hz) : (hz - actual_freq);
 
         if (error < min_error) {
@@ -543,25 +549,26 @@ uint32_t get_timer_params_and_freq(bool is16bits, uint32_t clk_freq, uint32_t hz
     return curr_freq;
 }
 
-uint32_t get_timer_exact_freq(bool is16bits, uint32_t clk_freq, uint32_t hz) {
+uint32_t get_timer_exact_freq(uint32_t factor, bool is16bits, uint32_t clk_freq, uint32_t hz) {
     uint32_t psc, arr;
-    uint32_t f = get_timer_params_and_freq(is16bits, clk_freq, hz, &psc, &arr);
+    uint32_t f = get_timer_params_and_freq(factor, is16bits, clk_freq, hz, &psc, &arr);
     return f;
 }
 
-void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz) {
+void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz, uint32_t factor) {
 
     if (clk_freq == 0) {
         HardFault_Handler();
     }
 
     uint32_t psc, arr;
-    uint32_t freq = get_timer_params_and_freq(timer != TIM2 && timer != TIM5, clk_freq, hz, &psc, &arr);
+    uint32_t freq = get_timer_params_and_freq(factor, timer != TIM2 && timer != TIM5, clk_freq, hz, &psc, &arr);
 
     int error = hz - freq;
 
     if (error) {
-        LOG("Warning: Frequency error: %d Hz while setting timer | clk: %d | freq: %d |  result: %d\n", error, clk_freq, hz, freq);
+        LOG("Warning: Frequency error: %d Hz while setting timer | clk: %d | freq: %d | factor: %d", error, clk_freq, hz, factor);
+        LOG_RAW(" | result: %d\n", freq);
     }
 
     timer->PSC = psc;
@@ -585,5 +592,5 @@ void setup_timers() {
     ;
 
     // Calculate the pre-scaler and period for the config sample rate
-    set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, fft::fft_params.sample_freq);
+    set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, fft::fft_params.sample_freq, 1);
 }

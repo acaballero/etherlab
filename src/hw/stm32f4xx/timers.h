@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_TIMERS_H
 
 #include <stm32f4xx.h>
+#include <sys/_stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,9 +29,9 @@ void MX_TIM13_Init(void);
 void MX_TIM14_Init(void);
 
 void update_timer(TIM_TypeDef *timer, uint32_t period, uint32_t prescaler);
-void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz);
+void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz, uint32_t factor = 1);
 uint64_t get_adc_timer_frequency();
-uint32_t get_timer_exact_freq(bool is16bits, uint32_t clk_freq, uint32_t hz);
+uint32_t get_timer_exact_freq(uint32_t factor, bool is16bits, uint32_t clk_freq, uint32_t hz);
 void setup_timers();
 
 /*

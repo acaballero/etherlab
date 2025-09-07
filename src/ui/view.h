@@ -48,11 +48,9 @@ class View : public Widget {
 
     void on_child_update(Widget *) override;
 
-    // Those methods are no longer public
-
-    bool paint_callback() final;
-
     void set_area() override;
+
+    bool paint_callback() final; // Note this is no longer overridable
 };
 
 #endif

@@ -94,6 +94,7 @@ MODULATION_MODE ReceiveTask::get_modulation_mode() const {
 }
 
 void ReceiveTask::set_squelch() {
+
     MODULATION_MODE m = get_modulation_mode();
     if ((m == FM || m == WFM) && config.squelch_level) {
         float threshold = max2(0, 10 - config.squelch_level);
@@ -133,7 +134,9 @@ bool ReceiveTask::init() {
 
     if (!squelch_signal_token) {
         squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
-            set_squelch();
+            if (status.status == DSP_STATUS_RUNNING) {
+                set_squelch();
+            }
         });
     }
 
