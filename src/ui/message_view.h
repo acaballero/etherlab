@@ -35,7 +35,7 @@ class MessageView : public View {
     uint16_t title_color;
     const uint16_t text_color;
 
-    ConsoleWidget console{{0, 0, parent_rect().width(), parent_rect().height()}, &lcd};
+    ConsoleWidget console{{4, 4, parent_rect().width() - 8, parent_rect().height() - 8}, &lcd};
 
     void init();
     void before_paint() override;

@@ -7,7 +7,6 @@
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
 
-#include <sys/_stdint.h>
 #include <sys/types.h>
 #include <utility>
 #include "dsp/blocks/dc_block.h"
@@ -286,11 +285,10 @@ os::periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
     view_manager::mainView.Waterfall()->set_visible(false);
     view_manager::mainView.IQBalance()->set_dirty();
 });
-os::periodic_task waterfall_task(0, []() {
-    // TODO: The waterfall will display the current spectrum line, but it should (sure?) accumulate the values and show higher intensity when its speed is lower
+os::periodic_task waterfall_task(FFT_WATERFALL_MIN_REFRESH_PERIOD_MS, []() {
     view_manager::mainView.IQBalance()->set_visible(false);
     view_manager::mainView.Waterfall()->set_visible(true);
-    view_manager::mainView.Waterfall()->set_dirty();
+    view_manager::mainView.Waterfall()->work();
 });
 
 Signal signal{"fft_signal"};
@@ -298,7 +296,9 @@ Signal signal{"fft_signal"};
 void set_waterfall_speed(uint16_t pps) {
     config.fft.waterfall_pixels_per_second = pps;
     fftUI::init_waterfall();
-    fft::waterfall_task.set_period(fftUI::get_waterfall_period());
+    auto period = fftUI::get_waterfall_period();
+    //  LOG("Setting waterfall task tp %d pps (%d ms period)\n",  config.fft.waterfall_pixels_per_second, period);
+    view_manager::mainView.Waterfall()->set_scroll_period(period);
 }
 
 void apply_fft_params(st_fft_params params) {
@@ -342,7 +342,7 @@ void apply_fft_params(st_fft_params params) {
 
         if (!b) {
             // Failed decimator initialization. Should't happen but we could've mess with the fft params calculation
-            status::handleError(status::ST_ERROR, "Error initializing FFT decimator");
+            status::pop_alert(status::ST_ERROR, "Error initializing FFT decimator");
         }
 
         set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate, MAX_DSP_DECIMATION_FACTOR);
@@ -1062,7 +1062,7 @@ void updateFFT() {
             bool b = if_freq(RF_DIRECTION_RX, f);
 
             if (!b) {
-                status::handleError(status::ST_ERROR, "updateFFT: Error setting IF freq");
+                status::pop_alert(status::ST_ERROR, "updateFFT: Error setting IF freq");
             }
 
             // Clear the FIFO since it will likely contain samples of the previous slice

@@ -144,6 +144,7 @@ bool is_filter_allowed(IF_FILTER);
 uint64_t get_max_frequency();
 uint64_t get_min_frequency();
 uint32_t get_bandwidth_hz();
+
 extern const char *modeNames[];
 #ifdef __cplusplus
 }

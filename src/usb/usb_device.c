@@ -36,6 +36,7 @@ void USB_SetupCDC(void) {
 }
 
 void USB_SetupMSC(void) {
+
     if (hUsbDeviceHS.dev_state) { // Already initalized? Stopping an unitialized device crashes
         USBD_Stop(&hUsbDeviceHS);
         USBD_DeInit(&hUsbDeviceHS);

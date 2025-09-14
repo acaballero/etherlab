@@ -67,10 +67,10 @@ struct st_status {
     }
 };
 
-extern Status systemStatus;
+extern Status system_status;
 void debug_print(const char *str, int timestamp, ...);
-void clearError();
-void handleError(StatusCode code, const char *msg);
+void hide_alert();
+void pop_alert(StatusCode code, const char *msg);
 } // namespace status
 
 #endif // TRX_FRONTEND_STATUS_H

@@ -22,7 +22,7 @@
 #include "result.h"
 #include <cstddef>
 #include <sstream>
-#include <sys/_stdint.h>
+
 #include "ui/view_manager.h"
 #include "utils.hpp"
 
@@ -287,7 +287,7 @@ void init_memory_mode() {
         freq_memory::set(mem);
     } else {
         using namespace status;
-        handleError(ST_ERROR, "Frequency memory empty");
+        pop_alert(ST_ERROR, "Frequency memory empty");
     }
 }
 
@@ -306,7 +306,7 @@ bool init_file_buffer() {
 
     // Mute to avoid SD card EMI. There's a TODO in some place to address this (new board design)
     main_board::set_mute(GPIO_PIN_SET);
-    status::handleError(status::ST_INFO, "Initializing memory");
+    status::pop_alert(status::ST_INFO, "Initializing memory");
     view_manager::mainView.paint();
     bool res = true;
 
@@ -538,10 +538,10 @@ void del_freq(int i) {
     if (i >= 0 && i < get_freq_mem_count()) {
         db_file->delete_line(i);
         using namespace status;
-        handleError(ST_INFO, "Deleted");
+        pop_alert(ST_INFO, "Deleted");
     } else {
         using namespace status;
-        handleError(ST_ERROR, "Error deleting");
+        pop_alert(ST_ERROR, "Error deleting");
     }
 }
 
@@ -568,7 +568,7 @@ void set(st_freq_mem &mem) {
         main_board::set_modulation_mode(mem.mode, false);
     } else {
         using namespace status;
-        handleError(ST_ERROR, "radio::set_frequency() was false");
+        pop_alert(ST_ERROR, "radio::set_frequency() was false");
     }
 }
 

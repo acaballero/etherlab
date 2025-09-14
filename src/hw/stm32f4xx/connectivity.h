@@ -11,8 +11,6 @@
 extern i2cbitbang i2cport01;
 extern i2cbitbang i2cport02;
 
-
-
 extern SPI_HandleTypeDef hspi2;
 extern SPI_HandleTypeDef hspi4;
 extern I2C_HandleTypeDef hi2c1;
@@ -20,14 +18,15 @@ extern I2C_HandleTypeDef hi2c2;
 
 extern SD_HandleTypeDef hsd;
 
+bool set_sdio_high_speed(bool);
+void restart_sdio(bool high_speed);
+void MS_SDIO_Init();
 void MX_SPI2_Init();
 void MX_SPI4_Init();
 void MX_I2C1_Init();
 void MX_I2C2_Init();
 void BitBangI2C_setup();
-
 void setup_connectivity();
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,9 +39,8 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *hspi);
 void SDIO_IRQHandler(void);
 void SPI2_IRQHandler(void);
 
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif //TRX_FRONTEND_CONNECTIVITY_H
+#endif // TRX_FRONTEND_CONNECTIVITY_H

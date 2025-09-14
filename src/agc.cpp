@@ -4,6 +4,7 @@
 
 #include "agc.h"
 #include "dsp/dsp.h"
+#include "dsp/dsp_common.h"
 #include "dsp/fft/fft.h"
 #include "main_board.h"
 #include "radio.h"
@@ -21,8 +22,16 @@ void check_agc();
 
 Signal signal_agc_voltage;
 Signal signal_gain;
+
 float agc_voltage;
 static constexpr int task_period_ms = 250;
+
+static constexpr uint32_t AGC_DEFAULT_RELEASE_MS = 500;
+static constexpr uint32_t AGC_DEFAULT_ATTACK_MS = 100;
+
+uint32_t release_ms = AGC_DEFAULT_RELEASE_MS;
+uint32_t attack_ms = AGC_DEFAULT_ATTACK_MS;
+
 os::periodic_task task(task_period_ms, check_agc);
 
 bool overload = false;
@@ -36,6 +45,16 @@ uint16_t overload_auto_correction_delay_ms = task_period_ms * 4;
 #define AGC_FITTING_COEFF_A -(1.324064f)
 #define AGC_FITTING_COEFF_B 297.7007f
 #define AGC_FITTING_COEFF_C 1.863459f
+
+void reset() {
+
+    // Start at minimum gain and let it raise from there (agc.cpp)
+    if_gain(RF_DIRECTION_RX, MIN_VGA_GAIN, MIN_VGB_GAIN);
+
+    // Set default attack and release
+    set_attack_ms();
+    set_release_ms();
+}
 
 float get_agc(bool filter) {
 
@@ -54,24 +73,19 @@ float get_agc(bool filter) {
     return agc_voltage;
 }
 
-int frontend_gain() {
-    switch (main_board::get_frontend_path()) {
-        case radio::FRONTEND_PATH_ATT:
-            return -10;
-        case radio::FRONTEND_PATH_THRU:
-            return 0;
-        case radio::FRONTEND_PATH_LNA:
-            return 20;
-        default:
-            return -100;
-    }
-}
-
 int get_analog_gain() {
 
     // 27 is a rough estimate of max gain after 1st and 2nd mixers. It does not account for frequency-variable gain or LO power
     int if_gain = max2(0, 28 - round(AGC_FITTING_COEFF_A + (AGC_FITTING_COEFF_B * exp(-AGC_FITTING_COEFF_C * agc_voltage))));
-    return if_gain + frontend_gain();
+    return if_gain + main_board::get_frontend_gain();
+}
+
+void set_release_ms(uint32_t v) {
+    release_ms = v ? v : AGC_DEFAULT_RELEASE_MS;
+}
+
+void set_attack_ms(uint32_t v) {
+    attack_ms = v ? v : AGC_DEFAULT_ATTACK_MS;
 }
 
 void check_agc() {
@@ -88,7 +102,7 @@ void check_agc() {
     const uint64_t t = HAL_GetTick();
 
     // Attack and release time should never be shorter that the time it takes for the FFT to process a new snapshot reflcting the new signal strength
-    static const uint32_t ATTACK_MS = 100, RELEASE_MS = 500, ADC_LOCKOUT_MS = 3000;
+    static const uint32_t ADC_LOCKOUT_MS = 3000;
     static const int HEADROOM_DB = 12;
     static const uint32_t ADC_OVERLOAD_THRESHOLD = 100;
 
@@ -172,8 +186,8 @@ void check_agc() {
             // DSP gain is increased causing saturation and attenuation, which locks the digital gain high.
         }
 
-        const bool should_reduce = power_overload && (time_since_change >= ATTACK_MS);
-        const bool should_increase = !power_overload && (power_dbm < max_dbm - HEADROOM_DB) && (time_since_change >= RELEASE_MS) && !adc_lockout;
+        const bool should_reduce = power_overload && (time_since_change >= attack_ms);
+        const bool should_increase = !power_overload && (power_dbm < max_dbm - HEADROOM_DB) && (time_since_change >= release_ms) && !adc_lockout;
 
         if (should_reduce || should_increase) {
             auto [vga, vgb] = adjust_gains(should_reduce);

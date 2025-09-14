@@ -1,6 +1,5 @@
 
 #include <cstdint>
-#include <sys/_stdint.h>
 
 #include "aprs.hpp"
 #include "ax25.hpp"

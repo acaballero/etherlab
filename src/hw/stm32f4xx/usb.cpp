@@ -4,11 +4,13 @@
 
 #include "usb.h"
 #include "fatfs/fatfs.h"
+#include "hw/stm32f4xx/connectivity.h"
 #include "status.h"
 #include "usb/usbd_conf.h"
 #include "usbd_def.h"
 #include "usb/usb_device.h"
 #include "usbd_msc.h"
+#include <type_traits>
 
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
@@ -41,17 +43,22 @@ bool init_USB_MSC() {
 
         USB_SetupMSC();
 
+        restart_sdio(true);
+
         usb_msc_active = 1;
 
         return true;
     }
 
-    status::handleError(status::ST_ERROR, "Timeout waiting for SD card");
+    status::pop_alert(status::ST_ERROR, "Timeout waiting for SD card");
 
     return false;
 }
 
 bool init_USB_CDC() {
+
+    restart_sdio(true);
+
     USB_SetupCDC();
 
     usb_msc_active = 0;

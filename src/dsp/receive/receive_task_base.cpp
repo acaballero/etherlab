@@ -30,7 +30,7 @@
 #include <cstddef>
 #include <cstring>
 #include <memory>
-#include <sys/_stdint.h>
+
 #include "printf.h"
 #include "utils.hpp"
 
@@ -314,6 +314,7 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
 
 bool ReceiveTaskBase::start() {
 
+    auto current_mute = main_board::get_mute();
     main_board::set_mute(GPIO_PIN_SET);
 
     // Stop task processing timer (in case this is a restart)
@@ -370,7 +371,7 @@ bool ReceiveTaskBase::start() {
     bool ret = init_decimators(mod);
 
     if (!ret) {
-        main_board::set_mute(GPIO_PIN_RESET);
+        main_board::set_mute(current_mute);
         halt(DSP_ERR);
         return false;
     }
@@ -385,12 +386,12 @@ bool ReceiveTaskBase::start() {
                                .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
 
     if (!ret) {
-        main_board::set_mute(GPIO_PIN_RESET);
+        main_board::set_mute(current_mute);
         halt(DSP_ERR);
         return false;
     }
 
-    main_board::set_mute(GPIO_PIN_RESET);
+    main_board::set_mute(current_mute);
 
     // Start task processing timer
     // TODO: This should be done by the caller of this method and be generic for all tasks

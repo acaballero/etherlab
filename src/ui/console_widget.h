@@ -8,7 +8,7 @@
 #include "widget.h"
 #include "types.h"
 
-class ConsoleWidget : public Widget {
+class ConsoleWidget : public Widget, public HasPadding {
   public:
     ConsoleWidget(Rect parent_rect, Display *display);
     bool paint_callback() override;
@@ -25,6 +25,7 @@ class ConsoleWidget : public Widget {
 
     size_t rows = 0;
     size_t cols = 0;
+    uint16_t line_height = 0;
 
     std::array<std::string, max_lines> line_buffer;
     size_t line_head = 0;

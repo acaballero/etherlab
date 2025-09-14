@@ -170,12 +170,16 @@ void check_signal_strength() {
 }
 
 void set_squelch(float level) {
+    float current_level = config.squelch_level;
     config.squelch_level = level;
     info.in_squelch = false;
     last_squelch_test = false;
     last_activation_trigger_ms = 0;
     info.level = level;
-    squelch_signal.emit(&info);
+
+    if (level != current_level) {
+        squelch_signal.emit(&info);
+    }
 }
 
 float get_squelch() {

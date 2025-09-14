@@ -116,7 +116,7 @@ uint8_t settings_write(Config *settings) {
         ok = config_file.save("config.cfg", settings);
 
         if (!ok) {
-            status::handleError(status::ST_ERROR, "Error saving config in SD card. Fallback to Flash");
+            status::pop_alert(status::ST_ERROR, "Error saving config in SD card. Fallback to Flash");
         }
     }
 #endif
@@ -140,7 +140,7 @@ uint8_t settings_write(st_freq_mem *mem) {
         ok = config_file.save("mem.db", mem);
 
         if (!ok) {
-            status::handleError(status::ST_ERROR, "Error saving memory in SD card");
+            status::pop_alert(status::ST_ERROR, "Error saving memory in SD card");
         }
     }
 #else

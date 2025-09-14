@@ -75,11 +75,12 @@
 
   ;; Wait a bit for OpenOCD to release ports
   (sleep-for 1)
-
+   (setq compilation-scroll-output t)
   ;; Run pio upload
   (message "Uploading...")
   (let ((default-directory "/home/ahcr/dev/trx/"))
-   (compile "PLATFORMIO_BUILD_FLAGS='-DDEBUG_MSGS=0' pio run -t upload"))
+    (compile "PLATFORMIO_BUILD_FLAGS='-DDEBUG_MSGS=0' pio run -t upload"))
+
   ;;(call-interactively 'platformio-upload)
   )
 

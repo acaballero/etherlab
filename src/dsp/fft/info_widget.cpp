@@ -18,6 +18,7 @@ bool InfoWidget::paint_callback() {
     display->setBgColor(C565_BLACK);
     display->setColor(C565_WHITE);
     display->setFont((FontDef *)&Font_7x10);
+    display->setVerticalLineSpacing(1);
     display->set_padding(0, 0);
     display->gotoCharXY(0, 0);
     format_long(fft::fft_params.span / 1000, buf);
@@ -71,12 +72,6 @@ bool InfoWidget::paint_callback() {
 
     snprintf(buf, 4, "%.1f", agc::agc_voltage);
     display->print(" AGC: ", buf, " V");
-
-    if (status::systemStatus.code != status::ST_OK) {
-        display->gotoCharXY(0, 4);
-        display->setColor(C565_RED);
-        display->print(status::systemStatus.msg);
-    }
 
     display->set_padding(4, 4);
     return true;

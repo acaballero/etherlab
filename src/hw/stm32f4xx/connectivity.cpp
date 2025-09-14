@@ -6,7 +6,10 @@
 #include "gpio.h"
 #include "handlers.h"
 #include "mcp23017.h"
+#include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_dma.h"
+#include "stm32f4xx_hal_gpio.h"
+#include "stm32f4xx_ll_sdmmc.h"
 #include <stm32f4xx.h>
 
 // IO Expanders
@@ -26,6 +29,8 @@ I2C_HandleTypeDef hi2c2;
 SD_HandleTypeDef hsd;
 
 extern void Error_Handler();
+
+bool sdio_high_speed = true;
 
 /*!
  * \brief Initialize the SWO trace port for debug message printing
@@ -478,8 +483,13 @@ static void MX_SDIO_SD_Init(void) {
     if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK) {
         Error_Handler();
     }
-    /* USER CODE BEGIN SDIO_Init 2 */
 
+    /* USER CODE BEGIN SDIO_Init 2 */
+    if (sdio_high_speed) {
+        __HAL_SD_DISABLE(&hsd);
+        MODIFY_REG(hsd.Instance->CLKCR, SDIO_CLKCR_CLKDIV, 0); // SDIO clk = PLLQ freq / (2+clkdiv)
+        __HAL_SD_ENABLE(&hsd);
+    }
     /* USER CODE END SDIO_Init 2 */
 }
 
@@ -491,7 +501,9 @@ static void MX_SDIO_SD_Init(void) {
  */
 void HAL_SD_MspInit(SD_HandleTypeDef *hsd) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
+
     if (hsd->Instance == SDIO) {
+        auto sdio_pins_speed = sdio_high_speed ? GPIO_SPEED_FREQ_VERY_HIGH : GPIO_SPEED_FREQ_LOW;
         /* USER CODE BEGIN SDIO_MspInit 0 */
 
         /* USER CODE END SDIO_MspInit 0 */
@@ -511,14 +523,15 @@ void HAL_SD_MspInit(SD_HandleTypeDef *hsd) {
         GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12;
         GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
         GPIO_InitStruct.Pull = GPIO_PULLUP;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+        GPIO_InitStruct.Speed =
+            sdio_pins_speed; // Put this to low if SD_CARD EMI is too high, but note clock divider should be increased then and so the speed would be lower
         GPIO_InitStruct.Alternate = GPIO_AF12_SDIO;
         HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
         GPIO_InitStruct.Pin = GPIO_PIN_2;
         GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
         GPIO_InitStruct.Pull = GPIO_PULLUP;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; // LOW for reduced EMI
+        GPIO_InitStruct.Speed = sdio_pins_speed; // LOW for reduced EMI
         GPIO_InitStruct.Alternate = GPIO_AF12_SDIO;
         HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
@@ -692,4 +705,33 @@ void SDIO_IRQHandler(void) {
  */
 void SPI2_IRQHandler(void) {
     HAL_SPI_IRQHandler(&hspi2);
+}
+
+bool set_sdio_high_speed(bool v) {
+    if (sdio_high_speed != v) {
+        sdio_high_speed = v;
+        return true;
+    }
+
+    return false;
+}
+
+void restart_sdio(bool high_speed) {
+    if (set_sdio_high_speed(high_speed)) {
+
+        __HAL_SD_DISABLE(&SDIO_HANDLE);
+        MODIFY_REG(SDIO_HANDLE.Instance->CLKCR, SDIO_CLKCR_CLKDIV, high_speed ? 0 : 1); // SDIO clk = PLLQ freq / (2+clkdiv)
+        __HAL_SD_ENABLE(&SDIO_HANDLE);
+
+        HAL_Delay(50);
+
+        HAL_SD_MspInit(&hsd);
+
+        HAL_Delay(50);
+
+        if (SDIO_GetPowerState(SDIO_HANDLE.Instance) == 0) {
+            SDIO_PowerState_ON(SDIO_HANDLE.Instance);
+            HAL_Delay(10);
+        }
+    }
 }

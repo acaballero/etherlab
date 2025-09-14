@@ -4,7 +4,6 @@
 
 #include <cstring>
 #include <string>
-#include <sys/_stdint.h>
 
 namespace aprs {
 

@@ -8,6 +8,7 @@
 #include "dsp/dsp_common.h"
 #include "hw/board/board_v2.h"
 #include "hw/hw_config.h"
+#include "os/task_manager.h"
 #include "s_strength.h"
 #include "rf_coupler.h"
 #include "config.h"
@@ -38,6 +39,7 @@ MCP23017Pin mutePin(GPIOEXP_MUTE, MCP23017_PORTA, &hmcp02, GPIO_MODE_OUTPUT_PP);
 ShiftReg PowControlShiftReg(&powCtrlDataPin, &powCtrlClkPin, &powCtrlSetPin);
 
 GPIO_PinState mute = GPIO_PIN_RESET;
+bool analog_mute_enabled = true;
 
 Signal mode_signal{"mode_signal"};
 Signal if_filter_signal{"if_filter_signal"};
@@ -48,10 +50,22 @@ st_modulation_mode modes[] = {{CW, false}};
 
 battery::BATTERY_STATUS battery_status = battery::BATTERY_STATUS_UNDEFINED;
 
-void s_strength_callback(void *, void *args) {
-    sstrength::st_sstrength_info info = *((sstrength::st_sstrength_info *)args);
+void enable_analog_mute(bool b) {
+    analog_mute_enabled = b;
+    if (!b) {
+        set_mute(GPIO_PIN_RESET);
+    } else {
 
-    set_mute(info.in_squelch && info.level > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        // set_mute(info.in_squelch && info.level > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    }
+}
+
+void s_strength_callback(void *, void *args) {
+
+    if (analog_mute_enabled) {
+        sstrength::st_sstrength_info info = *((sstrength::st_sstrength_info *)args);
+        set_mute(info.in_squelch && info.level > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    }
 }
 
 void on_dsp_event(st_dsp_status *status) {
@@ -76,7 +90,7 @@ void check_status() {
     if (battery_status != battery::battery_info.status) {
         // Shuts down power amp if battery is low
         if (battery::battery_info.voltage > 6 && battery::battery_info.status == battery::BATTERY_STATUS_LOW) {
-            status::handleError(status::ST_INFO, "Battery low");
+            status::pop_alert(status::ST_INFO, "Battery low");
             set_modulation_mode(config.modulation, true);
         }
 
@@ -84,15 +98,15 @@ void check_status() {
     }
 
     if (battery::battery_info.voltage > 6 && power_amp::status == power_amp::HIGH_TEMP) {
-        status::handleError(status::ST_ERROR, "Power amp high temperature");
+        status::pop_alert(status::ST_ERROR, "Power amp high temperature");
     }
 
     if (rf_coupler::info.swr >= rf_coupler::HIGH_SWR) {
-        status::handleError(status::ST_ERROR, "High SWR");
+        status::pop_alert(status::ST_ERROR, "High SWR");
     }
 
     if (rf_coupler::info.p_for_dbm >= config.max_power_dbm) {
-        status::handleError(status::ST_ERROR, "HPA max power exceeded");
+        status::pop_alert(status::ST_ERROR, "HPA max power exceeded");
     }
 
     // Shuts down/turns on power amp bias as needed
@@ -149,6 +163,19 @@ void set_frontend_path(radio::FRONTEND_PATH path) {
 
 radio::FRONTEND_PATH get_frontend_path() {
     return frontend_path;
+}
+
+int get_frontend_gain() {
+    switch (main_board::get_frontend_path()) {
+        case radio::FRONTEND_PATH_ATT:
+            return -10;
+        case radio::FRONTEND_PATH_THRU:
+            return 0;
+        case radio::FRONTEND_PATH_LNA:
+            return 20;
+        default:
+            return -100;
+    }
 }
 
 bool change_frontend_gain(int direction) {
@@ -234,7 +261,7 @@ void toggle_dsp() {
             if (allow_modulation_in_mode(config.mode, config.modulation)) {
                 set_mode(ANALOG_RX);
             } else {
-                status::handleError(status::ST_WARN, "Modulation disabled in analog");
+                status::pop_alert(status::ST_WARN, "Modulation disabled in analog");
             }
         }
     }
@@ -248,15 +275,14 @@ bool _set_mode(MODE mode, bool force) {
     if (force || mode != config.mode) {
 
         if (TXMODE(mode) && !radio::tx_enabled()) {
-            status::handleError(status::ST_WARN, "TX disabled for current band");
+            status::pop_alert(status::ST_WARN, "TX disabled for current band");
             return false;
         }
 
         changed = config.mode != mode;
         config.mode = mode;
 
-        // TODO: DSP squelch not implemented yet, so we disable mute in DSP mode
-        GPIO_PinState muteState = ISANALOG ? mute : GPIO_PIN_RESET;
+        GPIO_PinState muteState = get_mute();
 
         set_mute(GPIO_PIN_SET);
 
@@ -360,12 +386,6 @@ bool _set_mode(MODE mode, bool force) {
 
             setGPIO();
 
-            // Restore configured gain of the quadrature demodulator
-            // if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);
-
-            // Start at minimum gain and let it raise from there (agc.cpp)
-            if_gain(RF_DIRECTION_RX, MIN_VGA_GAIN, MIN_VGB_GAIN);
-
             if (ISANALOG) { // Restore analog span (in digital mode it is set by the current dsp task)
                 fft_config(config.fft.span);
             }
@@ -392,11 +412,11 @@ bool _set_mode(MODE mode, bool force) {
             set_if_filter(config.if_filter);
         }
 
-        set_mute(muteState);
-
         if (changed) {
             mode_signal.emit(nullptr);
         }
+
+        set_mute(muteState);
     }
 
     return true;
@@ -440,10 +460,10 @@ bool set_mode(MODE mode) {
 
 void set_mute(GPIO_PinState muteState) {
     if (mute != muteState) {
-        // LOG("setMute: %d\n", static_cast<int>(muteState));
+        LOG("setMute: %d\n", static_cast<int>(muteState));
         mute = muteState;
         if (mutePin.set(muteState) != HAL_OK) {
-            status::handleError(status::ST_ERROR, "Error setting mute");
+            status::pop_alert(status::ST_ERROR, "Error setting mute");
         }
     }
 }
@@ -657,7 +677,7 @@ bool getGPIOExpPin(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort, uint8_t pin, b
 void commitGPIOExpPort(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort) {
     uint32_t error = mcp23017_write_gpio(hmcp, mcpPort);
     if (error != I2CBB_ERROR_NONE) {
-        status::handleError(status::ST_ERROR, "GPIO expander port error");
+        status::pop_alert(status::ST_ERROR, "GPIO expander port error");
     }
 }
 

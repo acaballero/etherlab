@@ -6,10 +6,13 @@
 #define __APRS_RX_TASK_H__
 
 #include "aprs_packet.h"
+#ifndef _ARM_MATH_H
+#include "arm_math.h"
+#endif
+#include "dsp/blocks/beep_generator.h"
 #include "dsp/modulation/dsp_demodulate.h"
 #include "dsp/receive/receive_task_base.h"
 #include "dsp/audio/fm_squelch.h"
-#include <sys/_stdint.h>
 
 namespace dsp {
 
@@ -51,12 +54,25 @@ class APRSTask : public ReceiveTaskBase {
         return deemph_enabled;
     };
 
+    void enable_beeper(bool b) {
+        beeper_enabled = b;
+        if (beeper_enabled) {
+            set_beeper();
+        }
+    }
+
+    bool get_beeper_enabled() {
+        return beeper_enabled;
+    }
+
   private:
     static constexpr uint32_t bandwidth = 24000;
     static constexpr size_t baudrate = 1200;
     static constexpr size_t buffer_size = 256;
     static constexpr size_t delay_line_length = 64; // Note: Must be a power of 2 so the index can be ANDded
     static constexpr size_t delay_line_ix_mask = delay_line_length - 1;
+    static constexpr float32_t noise_threshold = 0.7f;
+    static constexpr float32_t alpha = 0.15f; // slow RMS smoothing
 
     // De-empth filter
     DspIIRDecimator<1> deemph_filter;
@@ -65,6 +81,11 @@ class APRSTask : public ReceiveTaskBase {
     // Audio bandpass filter
     DspIIRDecimator<2> audio_bpf;
     bool audio_bpf_enabled = true;
+
+    BeepGenerator beeper{};
+    bool beeper_enabled{true};
+
+    void set_beeper();
 
     float32_t samples_per_bit{};
 
@@ -78,6 +99,10 @@ class APRSTask : public ReceiveTaskBase {
 
     uint32_t sample_bits{0};
     float32_t phase{}, phase_inc{};
+    float32_t rms_est = 0.0f;
+    float32_t thr_high;
+    float32_t thr_low;
+    int32_t last_sample_sign = 0;
     int32_t sample_mixed{}, prev_mixed{}, sample_filtered{}, prev_filtered{};
     uint8_t last_bit = 0;
     uint8_t ones_count = 0;

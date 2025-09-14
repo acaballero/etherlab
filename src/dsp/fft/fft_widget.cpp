@@ -103,6 +103,7 @@ void FFTWidget::draw_span_marks() {
     if (config.debug) {
         sprintf(buf, "d: %d\ns: %d\nw: %.2f ", fft::fft_params.decimation_factor, fft::fft_params.sample_freq, fft::fft_params.bin_width_px);
 
+        display->setColor(C565_WHITE);
         display->gotoXY(50, 5);
         display->setBgColor(C565_BLACK);
         display->print(buf);

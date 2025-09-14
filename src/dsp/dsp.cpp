@@ -2,6 +2,7 @@
 // Created by Angel Dust on 04/04/2021.
 //
 #include "dsp.h"
+#include "agc.h"
 #include "arm_math.h"
 #include "blocks/dc_block.h"
 #include "config.h"
@@ -21,7 +22,7 @@
 #include <cstddef>
 #include <cstring>
 #include <functional>
-#include <sys/_stdint.h>
+
 #include "../ui/menu.h"
 
 #if ENABLE_SD_CARD
@@ -103,6 +104,10 @@ void restart_callback(void *, void *) {
     } else {
         //   LOG("restart_callback:dsp_restart\n");
         dsp_restart();
+    }
+
+    if (dsp::get_agc_enabled()) {
+        agc::reset();
     }
 }
 
@@ -198,7 +203,7 @@ void dsp_start_task() {
             if (current_processor->status.direction != DSP_DIRECTION_OUT) {
                 bool ok = current_processor->start();
                 if (!ok) {
-                    status::handleError(status::ST_ERROR, "Error starting DSP processor");
+                    status::pop_alert(status::ST_ERROR, "Error starting DSP processor");
                     return;
                 }
             } else {
@@ -210,7 +215,7 @@ void dsp_start_task() {
                 on_event(dsp::dsp_status);
             }
         } else {
-            status::handleError(status::ST_ERROR, "Error starting DSP task");
+            status::pop_alert(status::ST_ERROR, "Error starting DSP task");
         }
     } else {
         //   LOG(": already running task, skipping\n");
@@ -470,28 +475,28 @@ void dspError(DSP_ERROR err) {
     switch (err) {
 
         case DSP_ERR_FILEOPEN:
-            handleError(status::ST_ERROR, "Wave file open error");
+            pop_alert(status::ST_ERROR, "Wave file open error");
             break;
         case DSP_ERR_FILECLOSE:
-            handleError(status::ST_ERROR, "Wave file close error");
+            pop_alert(status::ST_ERROR, "Wave file close error");
             break;
         case DSP_ERR_FILEWRITE:
-            handleError(status::ST_ERROR, "Wave write error");
+            pop_alert(status::ST_ERROR, "Wave write error");
             break;
         case DSP_ERR_FILEREAD:
-            handleError(status::ST_ERROR, "Wave read error");
+            pop_alert(status::ST_ERROR, "Wave read error");
             break;
         case DSP_ERR:
-            handleError(status::ST_ERROR, "DSP error");
+            pop_alert(status::ST_ERROR, "DSP error");
             break;
         case DSP_ERR_DMAOVERRUN:
-            handleError(status::ST_ERROR, "DMA overrun");
+            pop_alert(status::ST_ERROR, "DMA overrun");
             break;
         case DSP_ERR_FIFO_OVERRUN:
-            handleError(status::ST_ERROR, "FIFO overrun");
+            pop_alert(status::ST_ERROR, "FIFO overrun");
             break;
         case DSP_ERR_FIFO_UNDERRUN:
-            handleError(status::ST_ERROR, "FIFO underrun");
+            pop_alert(status::ST_ERROR, "FIFO underrun");
             break;
         default:
             break;

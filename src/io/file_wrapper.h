@@ -22,7 +22,7 @@ static constexpr uint32_t BUFFER_SIZE = 256;
 
 enum FindMode { LTE, GTE, GT, LT, EQ };
 
-template <uint32_t LINE_CACHE_SIZE = 12, uint32_t NEWLINE_CACHE_SIZE = 64> class FileWrapper {
+template <uint32_t LINE_CACHE_SIZE = 16, uint32_t NEWLINE_CACHE_SIZE = 128> class FileWrapper {
   private:
     FatFSFile file_;
 

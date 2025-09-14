@@ -1,6 +1,5 @@
 
 #include "ax25.hpp"
-#include <sys/_stdint.h>
 
 namespace ax25 {
 

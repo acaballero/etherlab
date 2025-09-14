@@ -42,6 +42,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->tune_w.set_visible(config.debug);
     this->radio_w.set_visible(!config.debug);
     this->info_w.set_visible(config.debug);
+    this->info_w.set_z_index(10);
     this->info_w.set_show_fps(config.debug);
     this->menu_w.set_show_fps(config.debug);
     this->menu_w.set_z_index(100);
@@ -157,8 +158,7 @@ bool MainView::on_input(const st_inputEvent event) {
             consumed = menu_w.on_input(event); // First try to consume it by the menu
 
             if (consumed) {
-                to_top(&menu_w);
-                menu_w.set_focus(true);
+                Menu::open();
             }
         } else if (!event.is_touch()) {
             consumed = View::on_input(event);

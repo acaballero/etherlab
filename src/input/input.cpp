@@ -78,8 +78,6 @@ void frontPanelInterruptCallback() {
         uint8_t reg = 0;
         mcp23017_read(&hmcp03, REGISTER_INTCAPA, &reg);
         mcp23017_read(&hmcp03, REGISTER_INTCAPB, &reg);
-
-        HAL_Delay(4); // Let the interrupt pin go up before we check its state again
     }
 }
 

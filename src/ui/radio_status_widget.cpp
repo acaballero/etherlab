@@ -47,7 +47,7 @@ void RadioStatusWidget::init() {
         btn->set_aling(ALIGN_CENTER);
         if (btn != &lblMode) {
             ((Button *)btn)->action = [this](Button &button, st_inputEvent e) {
-                this->on_button(button, e);
+                on_button(button, e);
             };
         }
     }

@@ -10,7 +10,7 @@
 
 namespace status {
 
-Status systemStatus;
+Status system_status;
 Signal status_signal;
 
 void debug_print(const char *str, int timestamp, ...) {
@@ -31,18 +31,18 @@ void debug_print(const char *str, int timestamp, ...) {
     va_end(argptr);
 }
 
-void clearError() {
-    systemStatus.code = ST_OK;
-    status_signal.emit(&systemStatus);
+void hide_alert() {
+    system_status.code = ST_OK;
+    status_signal.emit(&system_status);
 }
 
-void handleError(StatusCode code, const char *msg) {
+void pop_alert(StatusCode code, const char *msg) {
 
     LOG("%s\n", msg) // Print to console, if enabled
 
-    systemStatus.code = code;
-    snprintf(systemStatus.msg, 40, "%s", msg);
+    system_status.code = code;
+    snprintf(system_status.msg, 40, "%s", msg);
 
-    status_signal.emit(&systemStatus);
+    status_signal.emit(&system_status);
 }
 } // namespace status

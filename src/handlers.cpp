@@ -94,7 +94,7 @@ void Error_Handler(void) {
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
 
-    status::handleError(status::ST_ERROR, "Fatal error");
+    status::pop_alert(status::ST_ERROR, "Fatal error");
 
     /* USER CODE END Error_Handler_Debug */
 }
@@ -102,7 +102,7 @@ void Error_Handler(void) {
 void HardFault_Handler(void) {
 
     // TODO: Implement something like https://blog.feabhas.com/2013/02/developing-a-generic-hard-fault-handler-for-arm-cortex-m3cortex-m4/
-    printf("Hard Fault");
+    LOG("Hard Fault\n");
     while (1) {
     }
 }

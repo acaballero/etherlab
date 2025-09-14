@@ -8,7 +8,6 @@
 #include <cmath>
 #include <cstdint>
 #include <cstddef>
-#include <sys/_stdint.h>
 
 namespace {
 /* Count of bits that differ between the two values. */

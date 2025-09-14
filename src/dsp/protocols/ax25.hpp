@@ -6,7 +6,6 @@
 #include "crc.hpp"
 #include <cstring>
 #include <string>
-#include <sys/_stdint.h>
 
 #define AX25_FLAG 0x7E
 

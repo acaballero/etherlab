@@ -11,7 +11,6 @@
 #include "view.h"
 #include "types.h"
 #include "../../lib/Signal/Signal.h"
-#include <sys/_stdint.h>
 
 class TitleBarWidgetInner : public Widget {
 

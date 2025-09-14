@@ -17,6 +17,7 @@
  */
 
 #include "fatfs.h"
+#include "ffconf.h"
 #include "hw/stm32f4xx/usb.h"
 
 #include "status.h"
@@ -45,7 +46,12 @@ void sdcard_loop();
 
 namespace sdcard {
 os::periodic_task task(2000, sdcard_loop);
+
+sdcard_st_info &get_info() {
+    return sdcard_info;
 }
+
+} // namespace sdcard
 
 /*
  * Poll to update the status of the SD card
@@ -139,7 +145,7 @@ FRESULT check_sd_card_health(void) {
     return f_opendir(&dir, ""); // Check root directory
 }
 /* USER CODE END Variables */
-
+bool sdcard_initialized = false;
 void sdcard_init(void) {
 
     /* Link the USER driver */
@@ -186,7 +192,7 @@ void sdcard_init(void) {
             fres = f_getfree("", &free_clusters, &getFreeFs);
 
             if (fres != FR_OK) {
-                handleError(status::ST_ERROR, "f_getfree error");
+                pop_alert(status::ST_ERROR, "f_getfree error");
                 new_status.status = IOError;
             } else {
 
@@ -194,13 +200,9 @@ void sdcard_init(void) {
                 total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
                 free_sectors = free_clusters * getFreeFs->csize;
 
-                new_status.free_kb = free_sectors / 2;
-                new_status.sectors = total_sectors / 2;
+                new_status.free_bytes = free_sectors * 512;
+                new_status.total_bytes = total_sectors * 512;
                 new_status.status = Mounted;
-
-                /* LOG("SD card stats:\r\n%10lu KiB total drive space.\r\n%10lu KiB available.\r\n",
-                            sdcard_info.sectors,
-                            sdcard_info.free_kb);*/
             }
         }
 
@@ -208,6 +210,11 @@ void sdcard_init(void) {
             // Inform the listeners
             sdcard_info = new_status;
             sdcard_signal.emit(&sdcard_info);
+
+            if (!sdcard_initialized) { // Show this just one time
+                LOG("SD card space: %llu / %llu bytes total / available.\n", sdcard_info.total_bytes, sdcard_info.free_bytes);
+            }
+            sdcard_initialized = true;
         }
 
         unlock_sd_card();

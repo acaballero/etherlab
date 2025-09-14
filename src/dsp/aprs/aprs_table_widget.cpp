@@ -27,7 +27,7 @@ bool APRSTableWidget::paint_callback() {
     display->setVerticalLineSpacing(line_spacing);
     display->drawRoundedRectangle(0, 0, area.box.width, title_height, 2, true);
     display->gotoXY(4, 3);
-    sprintf(buf, "%-7s %5s %-8s\n", "Source", "Hits", "Time");
+    sprintf(buf, "%-8s %5s %-8s\n", "Source", "Hits", "Time");
     display->setBgColor(C565_GREY_DARKER);
     display->setColor(C565_WHITE);
     display->print(buf);
@@ -47,7 +47,7 @@ bool APRSTableWidget::paint_callback() {
             display->drawRoundedRectangle(0, y - 2, area.box.width, line_height, 2, false);
         }
 
-        snprintf(buf, sizeof(buf), "%-7s%s %s%3d %-8s\n", source->source_formatted, source->has_position ? "*" : "", source->hits <= 999 ? " " : "+",
+        snprintf(buf, sizeof(buf), "%-8s%s %s%3d %-8s\n", source->source_formatted, source->has_position ? "*" : " ", source->hits <= 999 ? " " : "+",
                  source->hits <= 999 ? source->hits : 999, source->time_string);
 
         display->print(buf);
@@ -64,7 +64,11 @@ bool APRSTableWidget::on_touch(const st_inputEvent e) {
 
     size_t ix = ((e.point - screen_pos()).y() - title_height) / line_height;
     if (ix >= 0 && ix < sources.size()) {
-        select(ix);
+        if (e.ms > LONG_PRESS_MS) {
+            on_select(sources[ix]);
+        } else {
+            select(ix);
+        }
     }
 
     return true;
@@ -138,7 +142,7 @@ bool APRSTableWidget::on_input(const st_inputEvent e) {
 
 void APRSTableWidget::init() {
     line_height = font->height + line_spacing;
-    title_height = this->font->height + 5;
+    title_height = this->font->height + 6;
 }
 
 int APRSTableWidget::find_free_id() {

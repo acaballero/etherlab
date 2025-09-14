@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_DSP_COMMON_H
 
 #include "dsp_config.h"
+#include <cmath>
 #include <hw/stm32.h>
 
 #define CCM_SECTION __attribute__((section(".ccmram")))   // 64KB CCM RAM at 0x10000000
@@ -82,7 +83,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#ifndef _ARM_MATH_H
 #include <arm_math.h>
+#endif
 #include <Signal.h>
 #include "FIFO.h"
 
@@ -225,7 +228,7 @@ struct st_test_signal_params {
 
 struct st_dsp_config {
     int8_t gain = DSP_MIN_TX_GAIN_DB;
-    bool audio_compressor_enabled = true;
+    bool audio_compressor_enabled = false;
     bool deemphasis_enabled = false;
     bool audio_bpf_enabled = true;
     int32_t audio_compressor_threshold = -30;
@@ -291,7 +294,7 @@ bool get_freq_shift_enabled();
 void set_agc_enabled(bool);
 bool get_agc_enabled();
 
-void log_buff(float32_t *buff, int count, const std::string &title, bool newline = true);
+void log_buff(float32_t *buff, int count, const std::string &title, bool newline = true, float ool_min = 1e+37f, float float_ool_max = -1e+37f);
 
 void log_buff(adc_type *buff, int count, const std::string &title, bool newline = true);
 

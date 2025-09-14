@@ -31,7 +31,7 @@
 #include "io/wav.h"
 #include <cstddef>
 #include <memory>
-#include <sys/_stdint.h>
+
 #include "s_strength.h"
 
 #include "printf.h"

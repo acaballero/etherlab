@@ -158,7 +158,7 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &, 
             update_buttons(true);
         }
     } else {
-        status::handleError(status::ST_ERROR, "OptionButtonsView: maxed items");
+        status::pop_alert(status::ST_ERROR, "OptionButtonsView: maxed items");
     }
 }
 

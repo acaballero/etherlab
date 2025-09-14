@@ -6,7 +6,6 @@
 #define TRX_FRONTEND_TIMERS_H
 
 #include <stm32f4xx.h>
-#include <sys/_stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

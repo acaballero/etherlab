@@ -83,7 +83,7 @@ TOGGLE(dsp::dsp_config.baseband_echo, toggleBasebandEcho, "Baseband echo: ", doN
        VALUE("On", true, apply_dsp_changes, noEvent), VALUE("Off", false, apply_dsp_changes, noEvent));
 
 result open_aprs(eventMask) {
-    Menu::menu_exit();
+    Menu::close();
     view_manager::open_aprs();
     return proceed;
 }

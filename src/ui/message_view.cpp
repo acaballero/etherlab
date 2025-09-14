@@ -2,11 +2,15 @@
 // Created by Angel Dust on 29/06/2022.
 //
 
-#include "message_view.h"
+#include "Display_afb.h"
 #include "input/inputEvent.h"
 #include "ui/console_widget.h"
+#include "message_view.h"
 
 void MessageView::init() {
+    set_border_width(2);
+    console.set_bg(C565_DARKEST);
+    console.set_padding(4, 4);
     add_child(&console);
 }
 
@@ -49,6 +53,11 @@ void MessageView::on_show() {
 }
 
 void MessageView::add_msg(const char *header, const char *str) {
-    std::string msg = ConsoleWidget::color_mark + std::string(1, (char)1) + header + ConsoleWidget::color_mark + std::string(1, (char)2) + str + "\n";
+    st_datetime datetime = rtc_get_date_time();
+
+    char buff[11];
+    sprintf(buff, "[%02d:%02d:%02d] ", datetime.time.Hours, datetime.time.Minutes, datetime.time.Seconds);
+    std::string msg = ConsoleWidget::color_mark + std::string(1, (char)1) + buff + ConsoleWidget::color_mark + std::string(1, (char)2) + header + ": " +
+                      ConsoleWidget::color_mark + std::string(1, (char)1) + str + "\n";
     console.write(msg);
 }

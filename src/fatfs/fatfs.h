@@ -7,9 +7,22 @@
 #include "../lib/Signal/Signal.h"
 #include "os/periodic_task.h"
 
+enum sdcard_STATUS { IOError = -3, MountError = -2, ConnectError = -1, NotPresent = 0, Present = 1, Mounted = 2, MassStorageDeviceActive = 3 };
+
+struct sdcard_st_info {
+    sdcard_STATUS status = NotPresent;
+    uint64_t total_bytes = 0;
+    uint64_t free_bytes = 0;
+
+    bool operator==(const sdcard_st_info &st) const {
+        return status == st.status && total_bytes == st.total_bytes && free_bytes == st.free_bytes;
+    }
+};
+
 namespace sdcard {
 extern os::periodic_task task;
-}
+sdcard_st_info &get_info();
+} // namespace sdcard
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,18 +34,6 @@ extern "C" {
 #define PATH_SIZE FN_SIZE * 2
 
 extern uint64_t sdcard_last_check_ms;
-
-enum sdcard_STATUS { IOError = -3, MountError = -2, ConnectError = -1, NotPresent = 0, Present = 1, Mounted = 2, MassStorageDeviceActive = 3 };
-
-struct sdcard_st_info {
-    sdcard_STATUS status = NotPresent;
-    uint32_t sectors = 0;
-    uint32_t free_kb = 0;
-
-    bool operator==(const sdcard_st_info &st) const {
-        return status == st.status && sectors == st.sectors && free_kb == st.free_kb;
-    }
-};
 
 /* USER CODE END Includes */
 

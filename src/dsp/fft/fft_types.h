@@ -17,6 +17,7 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 #define FFT_SNR_REFRESH_PERIOD_MS 150
 #define FFT_WATERFALL_NCOLORS 16
 #define FFT_WATERFALL_MIN_REFRESH_PERIOD_MS 75
+#define FFT_WATERFALL_DEFAULT_PPS (1000 / (FFT_WATERFALL_MIN_REFRESH_PERIOD_MS + 10));
 #define FFT_WATERFALL_MAX_PIXELS_PER_FRAME 4 // max scrolled pixels per frame
 
 // Length (number of bins) of a single fourier transform
@@ -67,10 +68,10 @@ enum FFT_VIEW_MODE { FFT_VIEW_SPECTRUM, FFT_VIEW_TIME_DOMAIN };
 typedef struct {
 
     uint8_t max_slices = FFT_MAX_SLICES;
-    uint32_t span = 750000;
+    uint32_t span = 125000;
     uint32_t bw = DSP_BANDWIDTH; // Bandwidth of interest of the FFT. Usable bandwidth.
-    int16_t min_db = -130;
-    int16_t max_db = -75;
+    int16_t min_db = -140;
+    int16_t max_db = -70;
     // bool min_db_auto = false;
     // bool show_noise_floor = true;
     // int resolution_bits = 16;
@@ -86,7 +87,7 @@ typedef struct {
     uint8_t conversion_time_us = 3; // Conversion time of the ADCs
     bool enabled = true;
     uint8_t refresh_period_ms = 33; // Aim for 30 fps
-    uint16_t waterfall_pixels_per_second = 1000 / (FFT_WATERFALL_MIN_REFRESH_PERIOD_MS + 10);
+    uint16_t waterfall_pixels_per_second = FFT_WATERFALL_DEFAULT_PPS;
 
     int16_t DCOffset_I = 0;
     int16_t DCOffset_Q = 0;
@@ -115,7 +116,7 @@ typedef struct {
     // dsp_max_sample_rate and max_sample_rate would be the same. Currently, the FFT
     // has to be reconfigured when doing real time DSP (see
     // dsp_set_real_time function)
-    uint32_t dsp_max_sample_rate = (ADC_MAX_SAMPLE_RATE * 3 / 2);
+    uint32_t dsp_max_sample_rate = (ADC_MAX_SAMPLE_RATE * 2 / 3);
 
     // Min sample frequency, determined by the bandwidth of the ADC's low pass
     // filters Must be twice the bandwidth of interest plus the length of the

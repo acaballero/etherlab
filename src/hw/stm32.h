@@ -3,8 +3,6 @@
 #ifndef TRX_FRONTEND_STM32_H
 #define TRX_FRONTEND_STM32_H
 
-// priority
-
 #ifndef STM32F4xx
 #define STM32F4xx
 #endif

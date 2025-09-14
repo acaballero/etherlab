@@ -1,21 +1,21 @@
 /**
  ******************************************************************************
-  * @file    bsp_driver_sd.h for F4 (based on stm324x9i_eval_sd.h)
-  * @brief   This file contains the common defines and functions prototypes for
-  *          the bsp_driver_sd.c driver.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
+ * @file    bsp_driver_sd.h for F4 (based on stm324x9i_eval_sd.h)
+ * @brief   This file contains the common defines and functions prototypes for
+ *          the bsp_driver_sd.c driver.
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under Ultimate Liberty license
+ * SLA0044, the "License"; You may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at:
+ *                             www.st.com/SLA0044
+ *
+ ******************************************************************************
+ */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F4_SD_H
@@ -30,28 +30,26 @@ extern "C" {
 
 /* Exported types --------------------------------------------------------*/
 /**
-  * @brief SD Card information structure
-  */
+ * @brief SD Card information structure
+ */
 #define BSP_SD_CardInfo HAL_SD_CardInfoTypeDef
 
 /* Exported constants --------------------------------------------------------*/
 /**
-  * @brief  SD status structure definition
-  */
-#define   MSD_OK                        ((uint8_t)0x00)
-#define   MSD_ERROR                     ((uint8_t)0x01)
+ * @brief  SD status structure definition
+ */
+#define MSD_OK ((uint8_t)0x00)
+#define MSD_ERROR ((uint8_t)0x01)
 
 /**
-  * @brief  SD transfer state definition
-  */
-#define   SD_TRANSFER_OK                ((uint8_t)0x00)
-#define   SD_TRANSFER_BUSY              ((uint8_t)0x01)
+ * @brief  SD transfer state definition
+ */
+#define SD_TRANSFER_OK ((uint8_t)0x00)
+#define SD_TRANSFER_BUSY ((uint8_t)0x01)
 
-#define SD_PRESENT               ((uint8_t)0x01)
-#define SD_NOT_PRESENT           ((uint8_t)0x00)
-#define SD_DATATIMEOUT           ((uint32_t)100000000)
-
-
+#define SD_PRESENT ((uint8_t)0x01)
+#define SD_NOT_PRESENT ((uint8_t)0x00)
+#define SD_DATATIMEOUT ((uint32_t)100000000)
 
 uint8_t BSP_SD_Init(void);
 
@@ -92,8 +90,6 @@ void BSP_SD_ErrorCallback(void);
 void BSP_SD_WriteCpltCallback(void);
 
 void BSP_SD_ReadCpltCallback(void);
-
-
 
 #ifdef __cplusplus
 }

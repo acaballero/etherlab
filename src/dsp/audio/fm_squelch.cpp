@@ -6,6 +6,7 @@
 #include "dsp/decimation/dsp_decimator.h"
 #include <stdio.h>
 #include <sys/_stdint.h>
+
 #include "status.h"
 
 bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
@@ -19,26 +20,34 @@ bool FMSquelch::is_noise(buffer_t<float32_t> &audio) {
     high_pass_filter.decimate(audio, high_freq_buffer, 0, 1, 1);
 
     float high_freq_magnitude = 0;
+    float min = 1e10, max = -1e10;
 
     for (size_t i = 0; i < n; i++) {
         auto sample = high_freq_buffer.p[i];
+
         float sample_squared = sample * sample;
+        if (min > sample_squared)
+            min = sample_squared;
+        if (max < sample_squared)
+            max = sample_squared;
         high_freq_magnitude += sample_squared;
     }
     high_freq_magnitude /= n;
-    // LOG("%5.1f,%5.1f,%5.1f\n", high_freq_magnitude_max, high_freq_magnitude_min, high_freq_magnitude);
+
+    // LOG("%5.1f , %5.1f , %5.1f\n", min, max, high_freq_magnitude);
     // LOG("%5.1f\n", high_freq_magnitude);
 
     bool is_noise = high_freq_magnitude > threshold;
 
     audio_history = (audio_history << 1) | (is_noise ? 0 : 1);
+
+    bool is_audio = audio_history == ((uint16_t)-1);
+
     is_noise = audio_history == 0;
 
-    if (is_noise) {
-        return true;
-    } else {
-        return false;
-    }
+    was_noise = is_noise ? 1 : is_audio ? 0 : was_noise;
+
+    return was_noise;
 }
 
 void FMSquelch::config(const float mag_threshold, uint32_t sample_rate, uint32_t audio_bandwidth) {

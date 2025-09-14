@@ -84,10 +84,15 @@ optionsPrompt<radio::RPT_MODE> repeaterMenu((const char *)"Repeater mode", rpt_m
                                             });
 
 void open_gain() {
-    menu_exit();
+    close();
     nav.doNav(navCmd(enterCmd));
     nav.doNav(navCmd(idxCmd, 0));
     nav.doNav(navCmd(idxCmd, 4));
+}
+
+void open() {
+    nav.doNav(navCmd(enterCmd));
+    view_manager::mainView.to_top(view_manager::mainView.Menu());
 }
 
 menu_option_st<radio::FRONTEND_PATH> frontend_path_options[] = {{"Att. (-10 dB)", radio::FRONTEND_PATH_ATT},
@@ -108,7 +113,7 @@ Menu::numberPrompt<float> squelchEditMenu((const char *)"Squelch", &config.squel
                                           },
                                           0, 9);
 
-void menu_exit() {
+void close() {
     stringIn<1> strIn;
     while (Menu::menuStatus == ACTIVE) {
         strIn.write('/'); // press esc multiple times to exit from whatever depth we're in

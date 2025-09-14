@@ -66,6 +66,8 @@ namespace board {
 extern bool change_drive_strength;
 extern bool change_calibration;
 extern os::periodic_task task;
+
+int16_t if_gain_to_db(IF_GAIN if_gain);
 } // namespace board
 
 #endif // TRX_FRONTEND_BOARD_V2_H

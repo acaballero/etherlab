@@ -9,7 +9,6 @@
 #include "dsp/decimation/dsp_iir_decimator.h"
 #include <cstdint>
 #include <cstddef>
-#include <sys/_stdint.h>
 
 class FMSquelch {
   public:
@@ -30,6 +29,7 @@ class FMSquelch {
     // However, i've tested it only with narrow bandwidth FM, so the deviation is small and the signal is naturally limited in amplitude.
     // With larger deviation, the 2nd order HPF would not have enough attenuation and, for example, a high amplitude tone may fire the threshold.
     uint16_t audio_history{0};
+    bool was_noise;
 };
 
 #endif /*__FM_SQUELCH_H__*/

@@ -4,7 +4,6 @@
 #define _FIR_FILTER_H
 
 #include "main.h"
-#include <arm_math.h>
 
 #define MAX_FILTER_TAPS 1000
 

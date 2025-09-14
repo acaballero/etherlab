@@ -24,7 +24,8 @@ extern short dispY;
 extern Menu::menuILI9431Out ili9431Out;
 
 namespace Menu {
-void menu_exit();
+void close();
+void open();
 extern Menu::MenuStatus menuStatus;
 
 // Character validators for the frequency memories

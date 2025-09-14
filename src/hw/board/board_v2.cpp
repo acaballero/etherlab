@@ -37,6 +37,27 @@ void loop() {
     }
 }
 os::periodic_task task(100, loop);
+
+int16_t if_gain_to_db(IF_GAIN if_gain) {
+    switch (if_gain) {
+        case IF_GAIN_0:
+            return 0;
+        case IF_GAIN_MINUS6:
+            return -6;
+        case IF_GAIN_MINUS12:
+            return -12;
+        case IF_GAIN_MINUS18:
+            return -18;
+        case IF_GAIN_MINUS24:
+            return -24;
+        case IF_GAIN_MINUS30:
+            return -30;
+        default:
+            status::pop_alert(status::ST_ERROR, "Undefined IF_GAIN value");
+            return 0;
+    }
+}
+
 } // namespace board
 
 Si5351 si5351;
@@ -145,38 +166,22 @@ bool if_freq(RF_DIRECTION direction, uint64_t freq) {
     return ret == HAL_OK;
 }
 
-int16_t if_gain_to_db(IF_GAIN if_gain) {
-    switch (if_gain) {
-        case IF_GAIN_0:
-            return 0;
-        case IF_GAIN_MINUS6:
-            return -6;
-        case IF_GAIN_MINUS12:
-            return -12;
-        case IF_GAIN_MINUS18:
-            return -18;
-        case IF_GAIN_MINUS24:
-            return -24;
-        case IF_GAIN_MINUS30:
-            return -30;
-        default:
-            status::handleError(status::ST_ERROR, "Undefined IF_GAIN value");
-            return 0;
-    }
-}
-
 int calc_max_input_dbm() {
     // Based on estimations from the datasheet of the CMX973
     if (vga_gain == IF_GAIN_0 && vgb_gain == IF_GAIN_0) {
         return -56;
     } else if (vga_gain <= IF_GAIN_MINUS18 && vgb_gain == IF_GAIN_0) {
-        return -56 - if_gain_to_db(vga_gain) / 2;
+        return -56 - board::if_gain_to_db(vga_gain) / 2;
     } else {
-        return -56 - (if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain)) / 2;
+        return -56 - (board::if_gain_to_db(vga_gain) + board::if_gain_to_db(vgb_gain)) / 2;
     }
 }
 
 void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
+
+    if (vga > IF_GAIN_MINUS18) {
+        vga = IF_GAIN_MINUS18;
+    }
 
     vga_gain = vga;
     vgb_gain = vgb;
@@ -192,7 +197,7 @@ void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
         cmx973_input_ip3 = calc_max_input_dbm();
 
     } else {
-        status::handleError(status::ST_ERROR, "The IF gain can't be changed in TX direction");
+        status::pop_alert(status::ST_ERROR, "The IF gain can't be changed in TX direction");
     }
 }
 
@@ -205,14 +210,14 @@ int get_max_input_dbm() {
  * @return
  */
 int board_gain() {
-    return if_gain_to_db(vga_gain) + if_gain_to_db(vgb_gain) +
+    return board::if_gain_to_db(vga_gain) + board::if_gain_to_db(vgb_gain) +
            59; // 60 is the total approximate gain of the CMX937 given current settings, minus 1 to account for the filter loss
 }
 
 void lo_enable(uint8_t stage, bool enabled) {
     switch (stage) {
         case 0:
-            status::handleError(status::ST_ERROR, "The 1st LO can't be disabled");
+            status::pop_alert(status::ST_ERROR, "The 1st LO can't be disabled");
             break;
         case 1:
             si5351.output_enable(SI5351_2LO_CLK, enabled);
@@ -242,7 +247,7 @@ bool lo_freq(uint8_t stage, uint64_t freq) {
     }
 
     if (!ok) {
-        status::handleError(status::ST_ERROR, "Error setting frequency");
+        status::pop_alert(status::ST_ERROR, "Error setting frequency");
     }
     return ok;
 }
@@ -305,7 +310,7 @@ void if_setup() {
     uint8_t ret = cmx973_update();
 
     if (ret) {
-        status::handleError(status::ST_ERROR, "Error updating CMX973");
+        status::pop_alert(status::ST_ERROR, "Error updating CMX973");
     }
 
     // if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb);

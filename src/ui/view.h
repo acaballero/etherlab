@@ -6,6 +6,7 @@
 #include "ui_types.h"
 #include "widget.h"
 #include "lcd.h"
+
 #include <vector>
 #include <map>
 
@@ -40,6 +41,14 @@ class View : public Widget {
 
     void paint(Area *area = nullptr) final;
 
+    void set_border_width(uint16_t w) {
+        border_width = w;
+    }
+
+    void set_border_color(Color c) {
+        border_color = c;
+    }
+
   protected:
     std::vector<Widget *> children_{};
 
@@ -51,6 +60,10 @@ class View : public Widget {
     void set_area() override;
 
     bool paint_callback() final; // Note this is no longer overridable
+
+  private:
+    uint16_t border_width{0};
+    Color border_color{C565_GREY_LIGHT};
 };
 
 #endif

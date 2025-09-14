@@ -17,20 +17,21 @@ ConsoleWidget::ConsoleWidget(Rect parent_rect, Display *display) : Widget(parent
 }
 
 bool ConsoleWidget::paint_callback() {
-    display->clear();
+
+    display->setBgColor(get_bg());
+    display->fillBuffer(get_bg());
     display->setFont(this->font);
-    display->setBgColor(C565_BLACK);
 
     bool escape = false;
 
     uint16_t color = C565_WHITE;
-    uint16_t line_height = font->height + display->getVerticalLineSpacing();
-    uint16_t y = (rows - line_count) * line_height;
+
+    uint16_t y = padding_y + (rows - line_count) * line_height;
     for (size_t i = 0; i < line_count; ++i) {
         size_t idx = (line_head - line_count + i + rows) % rows;
         const std::string &line = line_buffer[idx];
 
-        display->gotoXY(0, y);
+        display->gotoXY(padding_x, y);
 
         for (char c : line) {
             if (escape) {
@@ -53,17 +54,18 @@ bool ConsoleWidget::paint_callback() {
 
 void ConsoleWidget::before_paint() {
     uint64_t m = HAL_GetTick();
-    if (m - this->last_refresh_ms < this->update_period_ms && this->dirty()) {
+    if (m - last_refresh_ms < update_period_ms && dirty()) {
         this->set_clean();
-    } else {
+    } else if (dirty()) {
         display->setVerticalLineSpacing(2);
         calc_size();
     }
 }
 
 void ConsoleWidget::calc_size() {
-    this->cols = area.box.width / font->width;
-    this->rows = min2(area.box.height / (font->height + display->getVerticalLineSpacing()), max_lines);
+    line_height = font->height + display->getVerticalLineSpacing();
+    cols = (area.box.width - 2 * padding_x) / font->width;
+    rows = min2((area.box.height - (padding_y * 2)) / line_height, max_lines);
 }
 
 void ConsoleWidget::set_parent_rect(Rect r) {

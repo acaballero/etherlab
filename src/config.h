@@ -27,7 +27,7 @@
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ANALOGMODE(mode) (mode == ANALOG_TX || mode == ANALOG_RX)
 #define ISANALOG (ANALOGMODE(config.mode))
-#define CONFIG_VERSION "337"
+#define CONFIG_VERSION "339"
 
 namespace configuration {
 extern os::periodic_task task;
@@ -54,17 +54,17 @@ typedef struct st_config //__attribute__ ((packed))
 
     char version[4] = CONFIG_VERSION;
 
-    bool debug = false;
+    bool debug = true;
 
     uint8_t power_ctrl = 0; // Power control byte (8 power control lines)
 
     radio::BAND filter = radio::BAND_AUTO;
     radio::IF_FILTER if_filter = radio::IF_FILTER_AUTO;
-    radio::FRONTEND_PATH frontend_path = radio::FRONTEND_PATH_LNA; // LNA enabled
-    MODULATION_MODE modulation = AM;
+    radio::FRONTEND_PATH frontend_path = radio::FRONTEND_PATH_AUTO;
+    MODULATION_MODE modulation = FM;
     MODE mode = DIGITAL_RX;
     radio::BAND band = radio::BAND_AUTO;
-    bool hpa_enabled = true;
+    bool hpa_enabled = false;
     uint8_t max_power_dbm = 36;
 
     // Preferred Local oscillator injection side

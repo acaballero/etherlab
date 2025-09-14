@@ -13,11 +13,13 @@
 #include <memory>
 #include <stdio.h>
 #include <string>
-#include <sys/_stdint.h>
+
+#include "arm_math.h"
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/afsk/afsk_tx_task.h"
 #include "dsp/dsp.h"
 #include "types.h"
+#include "ui/gain_info.h"
 #include "ui/ui_types.h"
 #include "ui/view.h"
 #include "ui/button_widget.h"
@@ -48,7 +50,7 @@ class APRSView : public View {
     static constexpr int button_collapse_width = 30;
     static constexpr int panel_sep = 4;
     static constexpr int max_sources = 7;
-    static constexpr int table_width = DISPLAY_X_PIXELS / 2 - 66;
+    static constexpr int table_width = DISPLAY_X_PIXELS / 2 - 56;
     static constexpr int console_width = DISPLAY_X_PIXELS - table_width;
 
     void on_source_selected(APRSSource &source);
@@ -58,6 +60,7 @@ class APRSView : public View {
 
     Label title_widget{{0, 0, DISPLAY_X_PIXELS - button_collapse_width - 2, title_height}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
 
+    GainInfoWidget gain{{0, 0, DISPLAY_X_PIXELS / 3, title_height}, &lcd};
     APRSTableWidget table_view{{0, title_height + panel_sep, table_width - panel_sep / 2, 90 + title_height}, max_sources};
     ConsoleWidget console{{table_width + panel_sep / 2, title_height + panel_sep, console_width - panel_sep, 90 + title_height}, &lcd};
 
@@ -65,7 +68,7 @@ class APRSView : public View {
     bool collapsed{false};
 
     Menu::menu_action_st menu_actions[6] = {{"Pause",
-                                             [&]() {
+                                             [this]() {
                                                  if (!paused) {
                                                      stop();
                                                  } else {
@@ -73,23 +76,23 @@ class APRSView : public View {
                                                  }
                                              }},
                                             {"Send",
-                                             [&]() {
+                                             [this]() {
                                                  send_packet("Beacon");
                                              }},
                                             {"Beacon",
-                                             [&]() {
+                                             [this]() {
                                                  toggle_beacon();
                                              },
                                              C565_TEXT_FG, C565_BG_DISABLED},
                                             {"Text",
-                                             [&]() {
+                                             [this]() {
                                                  settings();
                                              }},
                                             {"Settings",
-                                             [&]() {
-                                                 threshold();
+                                             []() {
+                                                 Menu::open();
                                              }},
-                                            {"Exit", [&]() {
+                                            {"Exit", [this]() {
                                                  exit();
                                              }}};
 

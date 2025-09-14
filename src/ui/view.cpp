@@ -21,10 +21,17 @@
 
 bool View::paint_callback() {
 
-    bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
+    Rect r = parent_rect();
+    bool apply_pad = r.width() <= DISPLAY_X_PIXELS;
     Box current_offset = display->getOffset();
 
     display->fillBuffer(bg_color);
+
+    if (border_width) {
+        for (int i = 0; i < border_width; i++) {
+            display->writeRect(i, i, area.box.width - (i + 1), area.box.height - (i + 1), border_color);
+        }
+    }
 
     // To prevent flickr we have to paint all the children in the callback loop.
     // Otherwise the area will be drawn black then the widgets will be drawn
@@ -60,9 +67,7 @@ void View::set_parent_rect(Rect r) {
     }
 }
 
-void View::paint(Area *) {
-
-    bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
+void View::paint(Area *area) {
 
     if (this->can_be_seen()) {
         before_paint();
@@ -76,9 +81,20 @@ void View::paint(Area *) {
                 }
             }
 
-            // TODO: Take into account if we've received another 'Area' as parameter, other than the full widget's area
+            if (!area && !this->visible_rects.empty()) {
+                this->paint_overlapped();
+                return;
+            }
+
+            if (!area) {
+                area = &this->area;
+            }
+
+            bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
+
+            // TODO: Take into account if we've received another 'Area' as parameter, other than the full view area
             // LOG("Drawing view %s\n", get_name());
-            display->drawArea(&this->area, this, apply_pad);
+            display->drawArea(area, this, apply_pad);
 
             for (const auto child : this->children()) {
                 if (child->can_be_seen()) {
@@ -106,6 +122,7 @@ void View::add_child(Widget *const widget) {
         if (widget->parent() == nullptr) {
             //   printf_("Adding child %s to %s\n", widget->get_name(), name);
             children_.push_back(widget);
+
             widget->set_parent(this);
         }
     }
@@ -150,13 +167,13 @@ void View::on_child_update(Widget *w) {
                     // visible_parts = merge_rectangles(visible_parts);
 
                     if (r.contains(widget->screen_rect())) {
-                        //   printf_("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
+                        //   LOG("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
                     } else {
-                        // if (strcmp(widget->get_name(), "numedt") == 0) {
-                        //     printf_("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(),
-                        //             sibling->get_z_index());
-                        // }
-                        //  Process the overlap in the widget's childs to see if some can be hidden
+                        //   if (strcmp(widget->get_name(), "radio") == 0) {
+                        //       LOG("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(),
+                        //           sibling->get_z_index());
+                        //   }
+                        // Process the overlap in the widget's childs to see if some can be hidden
                     }
 
                     // overlaps.push_back(sibling);
@@ -212,12 +229,14 @@ void View::set_area() {
 void View::to_top(Widget *widget) {
     int max_z_index = 0;
     for (auto w : children()) {
-        if (w->get_z_index() > max_z_index) {
+        if (w != widget && w->get_z_index() > max_z_index) {
             max_z_index = w->get_z_index();
         }
     }
-    widget->set_z_index(max_z_index + 1);
+
     widget->set_visible(true);
+    widget->set_z_index(max_z_index + 1);
+    widget->set_focus(true);
 }
 
 const std::vector<Widget *> &View::children() const {

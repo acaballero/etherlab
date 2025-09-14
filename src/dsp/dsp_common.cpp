@@ -33,13 +33,15 @@ void set_config(dsp::st_dsp_config &c) {
 }
 
 void set_max_sample_freq(bool dsp) {
+
+    // Sanity check
+    config.fft.dsp_max_sample_rate = min2(config.fft.dsp_max_sample_rate, 700000);
     // Set the max sample frequency according to the amount of processing we will be doing
     if (!dsp) {
-        dsp_max_sample_rate = config.fft.max_sample_rate;
+        set_max_sample_freq(config.fft.max_sample_rate);
     } else {
-        dsp_max_sample_rate = config.fft.dsp_max_sample_rate;
+        set_max_sample_freq(config.fft.dsp_max_sample_rate);
     }
-    fft_config(fft::fft_params.span);
 }
 
 void set_max_sample_freq(uint32_t rate) {
@@ -316,14 +318,16 @@ void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
     }
 }
 
-void log_buff(float32_t *buff, int count, const std::string &title, bool newline) {
+void log_buff(float32_t *buff, int count, const std::string &title, bool newline, float ool_min, float ool_max) {
 
     if (title.length()) {
         LOG(title.c_str());
         LOG_RAW(" : ");
     }
     for (int i = 0; i < count; i++) {
-        LOG_RAW("%.3f,", buff[i]);
+        if (buff[i] < ool_min || buff[i] > ool_max) {
+            LOG_RAW("%.3f,", buff[i]);
+        }
     }
     if (newline) {
         LOG_RAW("-300,\n");

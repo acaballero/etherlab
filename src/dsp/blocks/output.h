@@ -5,7 +5,6 @@
 #ifndef TRX_FRONTEND_OUTPUT_H
 #define TRX_FRONTEND_OUTPUT_H
 
-#include "arm_math.h"
 #include "dsp/dsp_common.h"
 #include "dsp/buffer.hpp"
 

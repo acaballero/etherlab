@@ -219,7 +219,7 @@ void ssb_fm_demodulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
     const auto src_end = &src.p[src.count];
     float mag_sq_lpf_norm;
 
-    status::handleError(status::ST_ERROR, "Not implemented: SOS filters still not implemented");
+    status::pop_alert(status::ST_ERROR, "Not implemented: SOS filters still not implemented");
 
     while (src_p < src_end) {
         // FM APT audio tone demod: real part (USB-differentiator)  and AM tone demodulation + lpf (to remove the subcarrier.)
@@ -238,15 +238,15 @@ void ssb_fm_demodulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
 }
 
 void ssb_fm_demodulator::work(buffer_t<complex_t_f32> &, float32_t *) {
-    status::handleError(status::ST_ERROR, "Not implemented: SOS filters still not implemented");
+    status::pop_alert(status::ST_ERROR, "Not implemented: SOS filters still not implemented");
 }
 
 void ssb_fm_demodulator::work(const float32_t *, const float32_t *, float32_t *, size_t) {
-    status::handleError(status::ST_ERROR, "Not implemented");
+    status::pop_alert(status::ST_ERROR, "Not implemented");
 }
 
 void ssb_fm_demodulator::work_real(const float32_t *, const float32_t *, float32_t *, size_t) {
-    status::handleError(status::ST_ERROR, "Not implemented");
+    status::pop_alert(status::ST_ERROR, "Not implemented");
 }
 
 // ============================================================================

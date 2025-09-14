@@ -74,7 +74,7 @@ void main_view_warning_callback(void *, void *args) {
 
     view_manager::mainView.to_top(w);
     w->set_focus(true);
-    w->add_msg(st->code == status::ST_ERROR ? "WARNING" : "INFO", st->msg);
+    w->add_msg(st->code == status::ST_ERROR ? "W" : "I", st->msg);
 }
 
 void init() {
@@ -111,7 +111,7 @@ void open_aprs() {
     view->on_hide_fn = [view_ptr]() {
         view_manager::mainView.remove_child(view_ptr);
         view.reset();
-        Menu::menu_exit();
+        Menu::close();
     };
 
     view->set_visible(true);

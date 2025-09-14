@@ -7,7 +7,7 @@
 #include "timers.h"
 #include "config.h"
 #include "status.h"
-#include <sys/_stdint.h>
+#include <system_stm32f4xx.h>
 
 TIM_HandleTypeDef htim3;  // Led blink
 TIM_HandleTypeDef htim2;  // ADC DMA
@@ -577,6 +577,9 @@ void set_timer_sample_rate(TIM_TypeDef *timer, uint32_t clk_freq, uint32_t hz, u
 }
 
 void setup_timers() {
+
+    SystemCoreClockUpdate();
+    LOG("Initialising timers. SystemCoreClock: %d\n", SystemCoreClock);
 
     MX_TIM3_Init();  // LED timer
     MX_TIM2_Init();  // ADC DMA timer

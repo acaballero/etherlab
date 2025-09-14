@@ -30,6 +30,22 @@ class SignalGenerator : public Output<complex_t> {
 
     void set_shape(SIGNAL_SHAPE shape);
 
+    uint32_t get_sample_rate() {
+        return sample_rate;
+    };
+
+    uint32_t get_frequency() {
+        return frequency;
+    };
+
+    void set_sample_rate(uint32_t v) {
+        sample_rate = v;
+    };
+
+    void set_frequency(uint32_t v) {
+        frequency = v;
+    };
+
     void get_block(buffer_t<complex_t> &buff) override;
 
     void get_complex_sample(complex_t &sample) override;

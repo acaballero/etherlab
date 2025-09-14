@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
-#include <sys/_stdint.h>
+
 #include "Display_afb.h"
 #include "ui/frequency_memory_ui.h"
 #include "view.h"
@@ -69,6 +69,10 @@ void Widget::set_left(int x) {
 
 void Widget::set_bg(Color c) {
     bg_color = c;
+}
+
+Color Widget::get_bg() {
+    return bg_color;
 }
 
 Widget *Widget::parent() const {
@@ -351,8 +355,8 @@ void Widget::paint_overlapped() {
 
     Box current_offset = display->getOffset();
 
-    // if (strcmp("waterfa", get_name()) != 0) {
-    //     printf_("Child %s has %d visible rect/s\n", get_name(), visible_rects.size());
+    // if (strcmp("msg", get_name()) == 0 || strcmp("waterfall", get_name()) == 0 || strcmp("radio", get_name()) == 0) {
+    //     LOG("[paint_overlapped] Child %s has %d visible rect/s\n", get_name(), visible_rects.size());
     // }
     for (auto &rect : visible_rects) {
 
@@ -378,15 +382,15 @@ void Widget::paint_overlapped() {
                 display->setOffset(offset);
             }
 
-            // if (strcmp("waterfa", get_name()) != 0) {
+            // if (strcmp("msg", get_name()) == 0 || strcmp("waterfall", get_name()) == 0 || strcmp("radio", get_name()) == 0) {
             //     printf_("Painting area (%d,%d,%d,%d), offset (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, offset.x, offset.y,
             //             offset.width, offset.height, get_name());
             // }
             paint(&a);
 
         } else {
-            // if (strcmp("waterfa", get_name()) != 0) {
-            //     LOG("A child has a 'narrow' visible part\n");
+            // if (strcmp("msg", get_name()) == 0 || strcmp("waterfall", get_name()) == 0 || strcmp("radio", get_name()) == 0) {
+            //     LOG("Child %s has a 'narrow' visible part\n", get_name());
             // }
             //   printf_("Rect: (%d,%d,%d,%d) of widget %s\n", rect.left(), rect.top(), rect.width(), rect.height(), child->get_name());
         }

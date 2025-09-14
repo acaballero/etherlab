@@ -114,6 +114,8 @@ bool TitleBarWidgetInner::paint_callback() {
 
 #if ENABLE_SD_CARD
 
+    bool check_space = false;
+
     switch (sdcard_info.status) {
         case sdcard_STATUS::MountError:
             color = C565_YELLOW;
@@ -143,6 +145,16 @@ bool TitleBarWidgetInner::paint_callback() {
 
     display->setColor(color);
     display->writeChar(ICON_SD_CARD);
+
+    if (check_space) {
+        sdcard_st_info sd_info = sdcard::get_info();
+
+        if ((float)sd_info.free_bytes / sd_info.total_bytes < 0.1 || sd_info.free_bytes < 100000) {
+            display->setFont((FontDef *)&Font_Tiny8x8);
+            display->writeChar('!');
+        }
+    }
+
 #else
     display->setColor(C565_GREY_DARKER);
     display->writeChar(ICON_SD_CARD);

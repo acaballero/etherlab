@@ -112,6 +112,7 @@ bool TuneWidget::paint_callback() {
 }
 
 void TuneWidget::before_paint() {
+    display->setVerticalLineSpacing(1);
     this->set_dirty();
 }
 

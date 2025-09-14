@@ -97,6 +97,8 @@ class Widget : public Painter {
 
     void set_bg(Color c);
 
+    Color get_bg();
+
     bool dirty() const;
 
     bool set_focus(bool value);
@@ -156,13 +158,16 @@ class Widget : public Painter {
     Widget *parent_{nullptr};
 
     FontDef *font = (FontDef *)&Font_Tiny8x8;
+
     Color bg_color{C565_BLACK};
 
     Align align = ALIGN_LEFT;
 
     // FPS measurement
     float fps;
+
     bool show_fps{false};
+
     uint64_t last_refresh_ms;
 
     struct flags_t {
@@ -185,9 +190,31 @@ class Widget : public Painter {
     virtual void on_child_update(Widget *){};
 
     void refresh_fps();
+
     void paint_overlapped();
 
     Box getOffset(Rect &r, Box &offset, bool apply_pad);
+};
+
+class HasPadding {
+  public:
+    // Set padding
+    void set_padding(uint16_t x, uint16_t y) {
+        padding_x = x;
+        padding_y = y;
+    }
+
+    // Get padding values
+    uint16_t get_padding_x() const {
+        return padding_x;
+    }
+    uint16_t get_padding_y() const {
+        return padding_y;
+    }
+
+  protected:
+    uint16_t padding_x{0};
+    uint16_t padding_y{0};
 };
 
 #endif /*__WIDGET_H__*/

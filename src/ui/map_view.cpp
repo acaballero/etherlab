@@ -4,6 +4,7 @@
 
 #include "map_view.h"
 #include "Display_afb.h"
+#include "fatfs/fatfs.h"
 #include "input/inputEvent.h"
 #include "io/fatfs_file.h"
 #include "ips_font.h"
@@ -13,7 +14,6 @@
 #include <cstddef>
 #include <cstring>
 #include <stdio.h>
-#include <sys/_stdint.h>
 
 namespace ui {
 
@@ -203,6 +203,7 @@ bool Map::on_input(const st_inputEvent ev) {
 }
 
 void Map::map_read_line(Color *buffer, uint16_t pixels) {
+
     if (map_zoom == 1) {
         file.read(buffer, pixels << 1);
     } else if (map_zoom > 1) {
@@ -339,7 +340,7 @@ bool Map::paint_callback() {
 
             int widget_line = line + y1;
             uint16_t seek_line = zoom_seek_y + ((map_zoom >= 0) ? widget_line : (widget_line * (-map_zoom)));
-            file.seek(4 + ((zoom_seek_x + (map_width * seek_line)) << 1)); // skip 4 bytes for the
+            file.seek(4 + ((zoom_seek_x + (map_width * seek_line)) << 1)); // skip 4 bytes
             map_read_line(map_line_buffer.data(), r.width());
 
             for (uint16_t j = 0; j < duplicate_lines; j++) {
@@ -626,7 +627,7 @@ void MapView::on_focus() {
     locator.set_focus(true);
 
     if (!map.map_file_opened()) {
-        status::handleError(status::ST_ERROR, "No world_map.bin file");
+        status::pop_alert(status::ST_ERROR, "No world_map.bin file");
     }
 }
 

@@ -3,11 +3,13 @@
 //
 #include "aprs_ui.h"
 #include "Display_afb.h"
+#include "arm_math.h"
 #include "dsp/aprs/aprs_packet.h"
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
 #include "dsp/fft/fft.h"
+#include "hw/board/board_v2.h"
 #include "hw/stm32f4xx/rtc.h"
 #include "input/inputEvent.h"
 #include "io/log_file.h"
@@ -16,6 +18,7 @@
 #include "os/periodic_task.h"
 #include "os/task_manager.h"
 #include "radio.h"
+#include "s_strength.h"
 #include "status.h"
 #include "types.h"
 #include "ui/console_widget.h"
@@ -23,7 +26,7 @@
 #include <cstring>
 #include <iterator>
 #include <string>
-#include <sys/_stdint.h>
+
 #include "dsp/protocols/aprs.hpp"
 #include "ui/map_view.h"
 #include "ui/ui_types.h"
@@ -44,7 +47,7 @@ void APRSView::init() {
 
     button_collapse.set_aling(ALIGN_CENTER);
 
-    button_collapse.action = [&](Button &, st_inputEvent) {
+    button_collapse.action = [this](Button &, st_inputEvent) {
         collapsed = !collapsed;
 
         console.set_visible(!collapsed);
@@ -52,7 +55,7 @@ void APRSView::init() {
         if (collapsed) {
             set_width(METER_WIDTH);
             button_collapse.set_text(">>");
-            button_collapse.set_left(METER_WIDTH - button_collapse_width);
+            button_collapse.set_left(METER_WIDTH - button_collapse_width - 1);
             title_widget.set_width(METER_WIDTH - button_collapse_width);
 
         } else {
@@ -64,6 +67,12 @@ void APRSView::init() {
     };
 
     add_children({&table_view, &console, &title_widget, &button_collapse});
+
+    if (config.debug) {
+        table_view.set_height(table_view.parent_rect().height() - title_height - 2);
+        gain.set_top(parent_rect().height() - title_height);
+        add_child(&gain);
+    }
 
     console.set_font(this->font);
     table_view.set_font(this->font);
@@ -80,6 +89,7 @@ void APRSView::init() {
 
     actions_signal.emit(&actions);
 
+    // Get some current parameters so they can be restored on exit
     previous_mode = config.mode;
     previous_waterfall_speed = config.fft.waterfall_pixels_per_second;
 
@@ -120,11 +130,11 @@ void APRSView::toggle_beacon() {
 }
 void APRSView::start_rx() {
     //  LOG("START RX\n");
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, [&](st_dsp_status *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_status *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();
-                status::handleError(status::ST_ERROR, "Error starting APRS task");
+                status::pop_alert(status::ST_ERROR, "Error starting APRS task");
             }
         }
     });
@@ -133,6 +143,14 @@ void APRSView::start_rx() {
 
     set_agc_enabled(false); // Prevent sudden changes in gain from the digital AGC. TODO: Whether digital AGC is enabled or not should be a property of the
                             // modulation mode (create one for digital modes)
+
+    // Disable analog mute. Squelch is done digitally
+    main_board::enable_analog_mute(false);
+
+    // Set the configured IF gain (otherwise having disabled AGC it can be whatever not appropriate)
+    // TODO: It would be better to leave the AGC enabled, but setting
+    // long release and  small attack times. However, an APRS burst is very short and react quickly enough quite difficult in the current platform
+    if_gain(RF_DIRECTION_RX, IF_GAIN_MINUS18, config.hw.cmx973_vgb);
 }
 
 void APRSView::settings() {
@@ -150,7 +168,7 @@ void APRSView::threshold() {
 
     Menu::open_number_edit<int8_t>(
         aprs_task.get_bit_threshold(), "", "Bit threshold", 0,
-        [&](int8_t v) {
+        [this](int8_t v) {
             aprs_task.set_bit_threshold(v);
         },
         -128, 127, 1, 1);
@@ -169,12 +187,18 @@ void APRSView::exit() {
 
             MODE m = previous_mode;
             uint16_t ws = previous_waterfall_speed;
+
             os::task_manager.set_timeout(1, [m, ws]() {
                 if (m == DIGITAL_RX) {
                     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE}, nullptr);
                 }
+                //  LOG("Fired delayed close of APRS view\n");
                 main_board::set_mode(m);
+
                 fft::set_waterfall_speed(ws);
+
+                // Re-enable analog mute
+                main_board::enable_analog_mute(true);
             });
 
             // Clear specific bottom quick buttons
@@ -257,7 +281,7 @@ void APRSView::send_packet(std::string info) {
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &aprs_tx_task}, [this](st_dsp_status *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->fifo_underruns) {
-                status::handleError(status::ST_ERROR, "FIFO underruns");
+                status::pop_alert(status::ST_ERROR, "FIFO underruns");
             }
             start_rx();
         }

@@ -3,8 +3,9 @@
 //
 
 #include "aprs_rx_task.h"
-#include "arm_math.h"
 #include "dsp/aprs/aprs_packet.h"
+#include "dsp/blocks/beep_generator.h"
+#include "dsp/dsp_common.h"
 #include "dsp/receive/receive_task_base.h"
 #include "main_board.h"
 #include "stdio.h"
@@ -41,6 +42,7 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
     float32_t *audio_sample_p = audio.p;
 
     for (size_t c = 0; c < audio.count; c++, audio_sample_p++) {
+
         const int32_t sample_int = *audio_sample_p;
         int32_t current_sample = __SSAT(sample_int, 16);
 
@@ -57,15 +59,12 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         prev_filtered = sample_filtered;
         prev_mixed = sample_mixed;
 
-        static float rms_est = 0.0f;
-        const float alpha = 0.995f; // slow RMS smoothing
+        // Update rms estimate
+        rms_est = rms_est - alpha * (rms_est - abs(sample_filtered));
 
-        // update rms estimate
-        rms_est = alpha * rms_est + (1.0f - alpha) * abs(sample_filtered);
-
-        // dynamic threshold and hysteresis
-        float thr_high = 0.05f * rms_est;
-        float thr_low = -0.05f * rms_est;
+        // Threshold and hysteresis
+        thr_high = noise_threshold * rms_est;
+        thr_low = -noise_threshold * rms_est;
 
         // !!! DEBUG
         // audio.p[c] = sample_filtered;
@@ -74,13 +73,12 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
         // Slice
         sample_bits <<= 1;
 
-        static int last_state = 0;
         if (sample_filtered < thr_low) {
-            last_state = 1;
+            last_sample_sign = 1;
         } else if (sample_filtered > thr_high) {
-            last_state = 0;
+            last_sample_sign = 0;
         }
-        uint8_t bit = last_state;
+        uint8_t bit = last_sample_sign;
 
         sample_bits |= bit;
 
@@ -132,19 +130,35 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
                 }
             }
         }
+
+        if (beeper.is_beep_active()) { // If the beeper is active (from previous detection), emit its sample
+            adc_type beep_sample = 0;
+            beeper.get_sample(beep_sample);
+            audio.p[c] = beep_sample;
+        }
     }
 
-    if (is_noise) {
+    // if (HAL_GetTick() % 1000 == 1) {
+    //     LOG("rms:%.1f\n", rms_est);
+    // }
+
+    if (!beeper.is_beep_active() && is_noise) {
         // Ouput silence
         memset(audio.p, 0, audio.size_bytes);
     }
+}
+
+void APRSTask::set_beeper() {
+
+    beeper.set_sample_rate(status.sample_rate);
+    beeper.init(BEEP_SUCCESS);
 }
 
 void APRSTask::set_squelch() {
 
     if (config.squelch_level) {
         float threshold = max2(0, 10 - config.squelch_level);
-        squelch.config(threshold, status.sample_rate, 1.6 * get_audio_bw_hz());
+        squelch.config(threshold, status.sample_rate, 2.2f * get_audio_bw_hz());
         squelch_enabled = true;
 
     } else {
@@ -177,6 +191,7 @@ void APRSTask::parse_ax25() {
     }
 
     aprs_signal.emit(&aprs_packet);
+    beeper.restart();
 }
 
 bool APRSTask::parse_bit(const uint8_t current_bit) {
@@ -291,6 +306,11 @@ bool APRSTask::init() {
         squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
             set_squelch();
         });
+    }
+
+    if (beeper_enabled) {
+        set_beeper();
+        beeper.stop(); // stopped at first
     }
 
     set_squelch();
