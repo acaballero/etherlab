@@ -111,7 +111,7 @@ struct Size {
     }
 
     constexpr bool operator==(const Size &other) const {
-        return _w == other._w && _w == other._w;
+        return _w == other._w && _h == other._h;
     }
 };
 

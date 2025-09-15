@@ -27,8 +27,14 @@ bool View::paint_callback() {
 
     display->fillBuffer(bg_color);
 
+    if (shadow_width) {
+        for (int i = 0; i < shadow_width; i++) {
+            display->writeRect(i, i, area.box.width - (i + 1), area.box.height - (i + 1), C565_BLACK);
+        }
+    }
+
     if (border_width) {
-        for (int i = 0; i < border_width; i++) {
+        for (int i = shadow_width; i < border_width + shadow_width; i++) {
             display->writeRect(i, i, area.box.width - (i + 1), area.box.height - (i + 1), border_color);
         }
     }

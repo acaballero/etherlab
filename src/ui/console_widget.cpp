@@ -20,15 +20,15 @@ bool ConsoleWidget::paint_callback() {
 
     display->setBgColor(get_bg());
     display->fillBuffer(get_bg());
-    display->setFont(this->font);
+    display->setFont(font);
 
     bool escape = false;
 
     uint16_t color = C565_WHITE;
 
-    uint16_t y = padding_y + (rows - line_count) * line_height;
+    uint16_t y = padding_y + (rows - line_count) * line_height + 1;
     for (size_t i = 0; i < line_count; ++i) {
-        size_t idx = (line_head - line_count + i + rows) % rows;
+        size_t idx = (line_head - line_count + i + rows) % rows; // go back with modulus
         const std::string &line = line_buffer[idx];
 
         display->gotoXY(padding_x, y);
@@ -57,15 +57,29 @@ void ConsoleWidget::before_paint() {
     if (m - last_refresh_ms < update_period_ms && dirty()) {
         this->set_clean();
     } else if (dirty()) {
-        display->setVerticalLineSpacing(2);
+        display->setVerticalLineSpacing(line_spacing);
         calc_size();
     }
 }
 
 void ConsoleWidget::calc_size() {
-    line_height = font->height + display->getVerticalLineSpacing();
+    line_height = font->height + line_spacing;
     cols = (area.box.width - 2 * padding_x) / font->width;
+
+    size_t curr_rows = rows;
     rows = min2((area.box.height - (padding_y * 2)) / line_height, max_lines);
+
+    int new_lines = rows - curr_rows;
+    if (new_lines > 0) { // make space
+        for (int i = 0; i < new_lines; i++) {
+            line_buffer[line_head + i + new_lines] = line_buffer[line_head + i];
+        }
+    }
+    // TODO: Consider when shrinking
+}
+
+void ConsoleWidget::set_rows(size_t r) {
+    set_height(line_height * r + (padding_y * 2));
 }
 
 void ConsoleWidget::set_parent_rect(Rect r) {
@@ -83,6 +97,7 @@ void ConsoleWidget::write(const std::string &message) {
 
     size_t pos = 0;
     int next_color = -1;
+    int last_line = -1;
 
     while (pos < message.size()) {
         std::string line;
@@ -114,6 +129,7 @@ void ConsoleWidget::write(const std::string &message) {
         line.erase(line.begin(), std::find_if_not(line.begin(), line.end(), ::isspace));
 
         line_buffer[line_head] = line;
+        last_line = line_head;
         line_head = (line_head + 1) % rows;
 
         if (line_count < rows) {
@@ -123,7 +139,7 @@ void ConsoleWidget::write(const std::string &message) {
     }
 
     if (next_color != -1) {
-        line_buffer[line_head] = color_mark + std::string(1, next_color) + line_buffer[line_head];
+        line_buffer[last_line] = color_mark + std::string(1, next_color) + line_buffer[last_line];
     }
 
     set_dirty();

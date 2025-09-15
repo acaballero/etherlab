@@ -7,6 +7,7 @@
 
 #include "widget.h"
 #include "types.h"
+#include <sys/_stdint.h>
 
 class ConsoleWidget : public Widget, public HasPadding {
   public:
@@ -17,6 +18,11 @@ class ConsoleWidget : public Widget, public HasPadding {
     void write(const std::string &message);
     void writeln(const std::string &message);
     void set_parent_rect(Rect) override;
+    void set_rows(size_t r);
+    uint32_t get_line_count() {
+        return line_count;
+    };
+
     static constexpr char color_mark = '\x1B';
 
   protected:
@@ -26,10 +32,11 @@ class ConsoleWidget : public Widget, public HasPadding {
     size_t rows = 0;
     size_t cols = 0;
     uint16_t line_height = 0;
-
+    uint16_t line_spacing = 2;
     std::array<std::string, max_lines> line_buffer;
     size_t line_head = 0;
     size_t line_count = 0;
+
     void wrap(const std::string &raw_line);
     void calc_size();
     void before_paint() override;

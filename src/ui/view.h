@@ -45,6 +45,10 @@ class View : public Widget {
         border_width = w;
     }
 
+    void set_shadow_width(uint16_t w) {
+        shadow_width = w;
+    }
+
     void set_border_color(Color c) {
         border_color = c;
     }
@@ -63,6 +67,7 @@ class View : public Widget {
 
   private:
     uint16_t border_width{0};
+    uint16_t shadow_width{0};
     Color border_color{C565_GREY_LIGHT};
 };
 

@@ -14,6 +14,7 @@
 #include "menuBase.h"
 #include "radio.h"
 #include "status.h"
+#include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "ui/menu_actions.h"

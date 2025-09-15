@@ -188,7 +188,6 @@ int8_t wait_for_sd_idle(uint32_t timeout_ms) {
     return 1;
 }
 
-/*
 int8_t STORAGE_Read_HS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len) {
     volatile int8_t ret = (HAL_SD_ReadBlocks(&hsd, buf, blk_addr, blk_len, HAL_MAX_DELAY) == HAL_OK) ? USBD_OK : USBD_FAIL;
 
@@ -206,7 +205,8 @@ int8_t STORAGE_Write_HS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t b
         return USBD_BUSY;
     }
 }
- */
+
+/*
 int8_t STORAGE_Read_HS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len) {
 
     // Use DMA for better performance
@@ -222,6 +222,7 @@ int8_t STORAGE_Write_HS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t b
         return USBD_FAIL;
     }
 }
+*/
 
 int8_t STORAGE_GetMaxLun_HS(void) {
     return 0; // single LUN

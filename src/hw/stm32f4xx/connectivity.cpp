@@ -545,7 +545,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef *hsd) {
         hdma_sdio_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
         hdma_sdio_rx.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
         hdma_sdio_rx.Init.Mode = DMA_PFCTRL;
-        hdma_sdio_rx.Init.Priority = DMA_PRIORITY_MEDIUM;
+        hdma_sdio_rx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
         hdma_sdio_rx.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
         hdma_sdio_rx.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
         hdma_sdio_rx.Init.MemBurst = DMA_MBURST_INC4;
@@ -722,16 +722,5 @@ void restart_sdio(bool high_speed) {
         __HAL_SD_DISABLE(&SDIO_HANDLE);
         MODIFY_REG(SDIO_HANDLE.Instance->CLKCR, SDIO_CLKCR_CLKDIV, high_speed ? 0 : 1); // SDIO clk = PLLQ freq / (2+clkdiv)
         __HAL_SD_ENABLE(&SDIO_HANDLE);
-
-        HAL_Delay(50);
-
-        HAL_SD_MspInit(&hsd);
-
-        HAL_Delay(50);
-
-        if (SDIO_GetPowerState(SDIO_HANDLE.Instance) == 0) {
-            SDIO_PowerState_ON(SDIO_HANDLE.Instance);
-            HAL_Delay(10);
-        }
     }
 }

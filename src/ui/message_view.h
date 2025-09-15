@@ -29,13 +29,16 @@ class MessageView : public View {
     void on_show() override;
 
   protected:
+    static constexpr uint8_t border_width = 2;
+    static constexpr uint8_t shadow_width = 4;
+    static constexpr uint8_t padding = shadow_width + border_width + 2;
     int border_color;
     const FontDef *title_font;
     const FontDef *text_font;
     uint16_t title_color;
     const uint16_t text_color;
 
-    ConsoleWidget console{{4, 4, parent_rect().width() - 8, parent_rect().height() - 8}, &lcd};
+    ConsoleWidget console{{padding, padding, parent_rect().width() - (padding)*2, parent_rect().height() - (padding)*2}, &lcd};
 
     void init();
     void before_paint() override;

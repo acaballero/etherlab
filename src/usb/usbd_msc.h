@@ -44,7 +44,7 @@ extern "C" {
  */
 /* MSC Class Config */
 #ifndef MSC_MEDIA_PACKET
-#define MSC_MEDIA_PACKET 512U
+#define MSC_MEDIA_PACKET 4096U
 #endif /* MSC_MEDIA_PACKET */
 
 #define MSC_MAX_FS_PACKET 0x40U

@@ -133,6 +133,10 @@ class Widget : public Painter {
 
     void set_font(FontDef *);
 
+    FontDef *get_font() {
+        return font;
+    };
+
     uint32_t id{0};
 
     void set_aling(Align);
