@@ -15,7 +15,8 @@ class TextWidget : public Widget {
   public:
     TextWidget() : Widget(){};
 
-    TextWidget(Rect parent_rect, const std::string &t, uint16_t fg_color = C565_TEXT_FG) : Widget(parent_rect, &lcd), fg_color{fg_color} {
+    TextWidget(Rect parent_rect, const std::string &t, uint16_t fg_color = C565_TEXT_FG) : Widget(parent_rect, &lcd) {
+        set_fg(fg_color);
         set_text(t);
     };
 
@@ -27,15 +28,10 @@ class TextWidget : public Widget {
     TextWidget &operator=(const TextWidget &) = delete;
     TextWidget &operator=(TextWidget &&) = delete;
 
-    uint16_t get_fg() const;
-
-    void set_fg(uint16_t fg);
-
     bool paint_callback() override;
 
   protected:
     std::string text;
-    uint16_t fg_color = C565_GREY_LIGHT;
 
     void before_paint() override;
 };

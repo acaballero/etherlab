@@ -6,12 +6,19 @@
 #include "Display_afb.h"
 #include "utils.hpp"
 
-NumberField::NumberField(Point parent_pos, int length, range_t range, int32_t step, char fill_char, bool can_loop)
-    : Widget{{{parent_pos}, {8 * length, 16}}, &lcd}, range{range}, step{step}, length{length}, fill_char{fill_char}, can_loop{can_loop} {
+NumberField::NumberField(Point parent_pos, int l, range_t range, int32_t step, const char *u, bool can_loop)
+    : Widget{{{parent_pos}, {}}, &lcd}, range{range}, step{step}, length{l}, can_loop{can_loop} {
+    strncpy(units, u, sizeof(units));
+    calc_size();
 }
 
 int32_t NumberField::get_value() const {
     return value;
+}
+
+void NumberField::calc_size() {
+    set_width(font->width * (length + strlen(units)));
+    set_height(font->height + 2);
 }
 
 void NumberField::set_value(int32_t new_value, bool trigger_change) {
@@ -21,16 +28,17 @@ void NumberField::set_value(int32_t new_value, bool trigger_change) {
         } else {
             new_value = range.second + new_value + 1;
         }
+    }
+    new_value = constrain(new_value, range.first, range.second);
 
-        new_value = constrain(new_value, range.first, range.second);
-
-        if (new_value != get_value()) {
-            value = new_value;
-            if (on_change && trigger_change) {
-                on_change(value);
-            }
-            set_dirty();
+    if (new_value != get_value()) {
+        value = new_value;
+        format_long(value, text, length);
+        if (on_change && trigger_change) {
+            on_change(value);
         }
+        calc_size();
+        set_dirty();
     }
 }
 
@@ -45,19 +53,24 @@ void NumberField::set_step(const int32_t new_step) {
 }
 
 bool NumberField::paint_callback() {
-    char buf[length];
-    format_long(value, buf, length);
 
-    Color c = is_focused() ? C565_TEXT_FG_FOCUS : C565_TEXT_FG;
-
-    display->gotoXY(0, 0);
-    display->setColor(c);
-    display->write(buf);
-
+    bool was_trim_enabled = display->get_trim_enabled();
+    display->set_trim_enabled(false);
+    display->clear();
+    int y = (parent_rect().height() - font->height) / 2;
+    display->gotoXY(0, y);
+    display->print(text);
+    display->print(units);
+    display->set_trim_enabled(was_trim_enabled);
     return true;
 }
 
 void NumberField::before_paint() {
+    if (dirty()) {
+
+        display->setColor(is_focused() ? C565_TEXT_FG_FOCUS : fg_color);
+        display->setBgColor(bg_color);
+    }
 }
 
 void NumberField::add(int32_t v) {

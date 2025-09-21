@@ -28,7 +28,7 @@ bool Label::paint_callback() {
     display->setFont(font); // Note there's no guarantee paint_callback is called right after 'before_paint', so we set the font again
     display->setBgColor(bg_color);
 
-    if (has_border) {
+    if (has_border || style != LABEL_STYLE_HOLLOW) {
         display->setColor(bg_color);
         display->drawRoundedRectangle(0, 0, parent_rect().width(), parent_rect().height(), 3, style != LABEL_STYLE_HOLLOW, border_radius[0], border_radius[1],
                                       border_radius[3], border_radius[2]);

@@ -12,7 +12,7 @@ extern GPIOInputPin FrontPanelInterruptPin;
 extern GPIOInputPin BackBtnInputPin;
 void touchPanelInterruptCallback();
 void backBtnInterruptCallback();
-void frontPanelInterruptCallback();
+void front_panel_interrupt_callback();
 extern int8_t last_pressed_button_id;
 
-#endif //TRX_FRONTEND_INPUT_H
+#endif // TRX_FRONTEND_INPUT_H

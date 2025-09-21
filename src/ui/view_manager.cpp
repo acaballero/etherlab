@@ -24,6 +24,8 @@ MainView mainView;
 SplashView splashView;
 KeypadView keypadView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, KeypadView::HEIGHT}};
 KeyboardView keyboardView{{0, HEADER_HEIGHT, KeyboardView::WIDTH, KeyboardView::HEIGHT}};
+MessageView msg_w{
+    {6, DISPLAY_Y_PIXELS * 2 / 3, DISPLAY_X_PIXELS - 12, INFO_HEIGHT - 6}, (FontDef *)&Font_11x18, (FontDef *)&Font_7x10, C565_GREY_DARK, C565_RED, C565_WHITE};
 // NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
 // OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
 View *breadcrumb[MAX_VIEWS];
@@ -47,7 +49,8 @@ void push(View *view) {
 }
 
 void pop() {
-    if (view_index >= 0) {
+    if (view_index > 0) {
+
         currentView->set_visible(false);
         currentView = breadcrumb[--view_index];
 
@@ -61,33 +64,42 @@ void pop() {
 void main_view_warning_callback(void *, void *args) {
 
     status::Status *st = (status::Status *)args;
-    MessageView *w = ((MessageView *)view_manager::mainView.Message());
+
     static os::periodic_task *t;
 
     if (t) {
         os::task_manager.remove(t);
     }
 
-    t = os::task_manager.set_timeout(4000, []() {
-        view_manager::mainView.Message()->set_visible(false);
+    View *current = breadcrumb[view_index];
+
+    t = os::task_manager.set_timeout(4000, [current]() {
+        current->remove_child(&msg_w);
+        // msg_w.set_visible(false);
     });
 
-    view_manager::mainView.to_top(w);
-    w->set_focus(true);
-    w->add_msg(st->code == status::ST_ERROR ? "W" : "I", st->msg);
+    current->add_child(&msg_w); // does nothing if the child already has a parent
+    current->to_top(&msg_w);
+    //  msg_w.set_focus(true);
+    msg_w.add_msg(st->code == status::ST_ERROR ? "W" : "I", st->msg);
 }
 
 void init() {
     status::status_signal.add(NULL, main_view_warning_callback);
 
-    splashView.paint();
-    HAL_Delay(1500);
-
-    push(&mainView);
     keypadView.on_hide_fn = pop;
     keyboardView.on_hide_fn = pop;
+    msg_w.set_name("msg");
+    mainView.set_visible(false);
     // optionButtonsView.on_hide_fn = pop;
     // numberEditView.on_hide_fn = pop;
+    LOG("Initializing view manager\n");
+    push(&splashView);
+
+    os::task_manager.set_timeout(1500, []() {
+        pop();
+        push(&mainView);
+    });
 }
 
 void view_loop() {

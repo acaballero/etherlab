@@ -26,7 +26,7 @@ void MX_SPI4_Init();
 void MX_I2C1_Init();
 void MX_I2C2_Init();
 void BitBangI2C_setup();
-void setup_connectivity();
+bool setup_connectivity();
 
 #ifdef __cplusplus
 extern "C" {

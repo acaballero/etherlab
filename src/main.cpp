@@ -21,12 +21,14 @@
 #include "os/task_manager.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "types.h"
+#include "ui/frequency_memory_ui.h"
 #include "ui/lock_view.h"
 #include "ui/map_view.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
 #include "usb_device.h"
 
+#include <memory>
 #include <sys/unistd.h>
 
 #if ENABLE_FFT
@@ -167,6 +169,7 @@ void frequency_signal_callback(void *, void *args) {
 }
 
 void test() {
+
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
@@ -202,6 +205,7 @@ int main() {
     standby::signal.add(NULL, standby_signal_callback);
 
     view_manager::init();
+    freq_memory::init_file_buffer();
 
     for (auto task : tasks) {
         os::task_manager.add(task);
@@ -232,6 +236,8 @@ int main() {
             test_sd_card();
 #endif
             // test();
+
+            HAL_Delay(1000);
 
             dsptested = true;
         }

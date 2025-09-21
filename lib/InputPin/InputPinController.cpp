@@ -81,8 +81,6 @@ void InputPinController::handlePinEXTI(uint16_t GPIO_Pin) {
 
     if (pin) {
 
-        // printf_("Pin %d int\n", i);
-
         // Let the pin handle the transition
         pin->handleTransition();
 

@@ -75,6 +75,14 @@ Color Widget::get_bg() {
     return bg_color;
 }
 
+uint16_t Widget::get_fg() const {
+    return fg_color;
+}
+
+void Widget::set_fg(uint16_t fg) {
+    fg_color = fg;
+}
+
 Widget *Widget::parent() const {
     return parent_;
 }
@@ -88,12 +96,11 @@ void Widget::set_parent(Widget *const new_parent) {
         // We have a parent, but are losing it. Update visible status.
         //  dirty_overlapping_children_in_rect(screen_rect());
         set_visible(false);
-        parent_->on_child_update(this);
     }
 
     parent_ = new_parent;
 
-    if (parent_) {
+    if (parent_ && can_be_seen()) {
         parent_->on_child_update(this);
     }
 
@@ -464,9 +471,11 @@ uint16_t Widget::get_z_index() const {
 }
 
 void Widget::set_z_index(uint16_t index) {
-    Widget::z_index = index;
-    if (parent()) {
-        parent()->on_child_update(this);
+    if (z_index != index) {
+        Widget::z_index = index;
+        if (parent()) {
+            parent()->on_child_update(this);
+        }
     }
 }
 

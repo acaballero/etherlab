@@ -29,6 +29,8 @@ void RadioStatusWidget::init() {
     btnSettings.set_value("Mem");
     btnSettings.set_two_lines(true);
 
+    lblMode.set_has_border(true);
+
     lblMode.on_select = [](Label &) {
         MODE mode;
         if (config.mode == ANALOG_RX || config.mode == ANALOG_TX) {

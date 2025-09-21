@@ -890,7 +890,7 @@ void Display::writeString(int16_t x, int16_t y, const char *str, const FontDef *
     uint16_t max_height = this->hasOffset() ? oh : this->curr_area->box.height;
 
     while (*str) {
-        if (*str == '\n' || x + font->width >= max_width) {
+        if (*str == '\n' || x + font->width > max_width) {
 
             y += (font->height + (this->verticalSpacing * 2));
             x = padding_x;
@@ -933,6 +933,9 @@ void Display::writeString(int16_t x, int16_t y, const char *str, const FontDef *
 
 void Display::set_trim_enabled(bool b) {
     trim_enabled = b;
+}
+bool Display::get_trim_enabled() {
+    return trim_enabled;
 }
 
 uint16_t *Display::getBuffer() {

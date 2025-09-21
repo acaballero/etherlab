@@ -9,6 +9,7 @@
 
 void MessageView::init() {
     set_border_width(border_width);
+    set_border_color(C565_GREY_DARK);
     set_shadow_width(shadow_width);
     console.set_bg(C565_DARKEST);
     console.set_padding(4, 4);

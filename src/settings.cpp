@@ -144,7 +144,7 @@ uint8_t settings_write(st_freq_mem *mem) {
         }
     }
 #else
-    return flash_write((uint16_t *)config, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
+    return flash_write((uint16_t *)&config, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
 #endif
 
     return ok ? 0 : 1;

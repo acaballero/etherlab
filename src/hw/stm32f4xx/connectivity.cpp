@@ -30,7 +30,7 @@ SD_HandleTypeDef hsd;
 
 extern void Error_Handler();
 
-bool sdio_high_speed = true;
+bool sdio_high_speed = false;
 
 /*!
  * \brief Initialize the SWO trace port for debug message printing
@@ -462,7 +462,7 @@ void MX_I2C2_Init(void) {
  * @param None
  * @retval None
  */
-static void MX_SDIO_SD_Init(void) {
+static bool sdio_init(void) {
     /* USER CODE BEGIN SDIO_Init 0 */
 
     /* USER CODE END SDIO_Init 0 */
@@ -478,10 +478,10 @@ static void MX_SDIO_SD_Init(void) {
     hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
     hsd.Init.ClockDiv = 1;
     if (HAL_SD_Init(&hsd) != HAL_OK) {
-        Error_Handler();
+        return false;
     }
     if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK) {
-        Error_Handler();
+        return false;
     }
 
     /* USER CODE BEGIN SDIO_Init 2 */
@@ -491,6 +491,8 @@ static void MX_SDIO_SD_Init(void) {
         __HAL_SD_ENABLE(&hsd);
     }
     /* USER CODE END SDIO_Init 2 */
+
+    return true;
 }
 
 /**
@@ -676,8 +678,9 @@ void BitBangI2C_setup() {
     //    mcp23017_write_gpio(&hmcp,MCP23017_PORTB);
 }
 
-void setup_connectivity() {
+bool setup_connectivity() {
 
+    bool b;
     /* SPI */
     MX_SPI2_Init();
     MX_SPI4_Init();
@@ -688,9 +691,13 @@ void setup_connectivity() {
     MX_I2C2_Init();
 
 #if ENABLE_SD_CARD
-    /* SDIO (SD CARD) */
-    MX_SDIO_SD_Init();
+
+    // Until there's a way to detect the presence or not of a card and then skip initializing the SDIO, the following
+    // will fail if a card is not present
+    b = sdio_init();
 #endif
+
+    return b;
 }
 
 void SDIO_IRQHandler(void) {

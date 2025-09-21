@@ -17,9 +17,9 @@ io::filesystem_error LogFile::log(const st_datetime &datetime, const std::string
 }
 
 io::filesystem_error LogFile::write_line(const std::string &message) {
-    auto error = file.write_line(message);
-    if (error.ok()) {
+    auto res = file.write_line(message);
+    if (res.ok()) {
         file.sync();
     }
-    return error;
+    return res;
 }

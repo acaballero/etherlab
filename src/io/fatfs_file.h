@@ -366,12 +366,12 @@ class FatFSFile {
 
     // TODO: Return Result<>.
     io::filesystem_error open(const io::path &filename, bool read_only = true, bool create = false);
-    void close();
+    FRESULT close();
     io::filesystem_error append(const io::path &filename);
     io::filesystem_error create(const io::path &filename);
 
     Offset tell() const;
-    Result<Offset> seek(uint64_t Offset);
+    FRESULT seek(uint64_t Offset);
     Result<Offset> truncate();
     Result<bool> ready(uint16_t timeout_ms = 0);
     Size size() const;
@@ -390,8 +390,14 @@ class FatFSFile {
 
   private:
     FIL f{};
-
-    io::filesystem_error open_fatfs(const io::path &filename, BYTE mode);
+    io::path path;
+    BYTE mode;
+    uint8_t max_seek_retries = 3;
+    io::filesystem_error open_fatfs(const io::path &filename);
+    bool lock();
+    bool unlock();
+    bool opened = false;
+    bool locked = false;
 };
 
 #endif /*__FILE_H__*/

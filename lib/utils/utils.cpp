@@ -430,32 +430,55 @@ char *format_long(int64_t n, char *out) {
     format_long(n, out, 0);
     return out;
 }
+void format_long(int64_t n, char *out, uint8_t length, char thou_separator, int max_length) {
 
-void format_long(int64_t n, char *out, uint8_t length, char thow_separator, int max_length) {
+    char buf[32];
+    char *src, *dst = out;
+    int total_digits;
 
-    int c;
-    char buf[max_length + 3];
-    char *p;
-
-    length = min2(length, max_length);
-
-    if (length) {
-        snprintf(buf, max_length + 3, "%0*lld", length, n);
+    // Format the number (space-padded for justification, not zero-padded)
+    if (length > 0) {
+        length = min2(length, max_length);
+        snprintf(buf, sizeof(buf), "%*lld", length, n); // Note: %* not %0*
     } else {
-        snprintf(buf, max_length + 3, "%lld", n);
+        snprintf(buf, sizeof(buf), "%lld", n);
     }
 
-    c = 2 - strlen(buf) % 3;
-    for (p = buf; *p != 0; p++) {
-        *out++ = *p;
-        if (c == 1) {
-            *out++ = thow_separator;
+    src = buf;
+
+    // Copy any leading spaces
+    while (*src == ' ') {
+        *dst++ = *src++;
+    }
+
+    // Handle negative sign
+    if (*src == '-') {
+        *dst++ = *src++;
+    }
+
+    // Count actual digits
+    total_digits = strlen(src);
+
+    // Only add separators if we have more than 3 digits
+    if (total_digits > 3) {
+        // Insert digits with separators
+        for (int i = 0; i < total_digits; i++) {
+            *dst++ = *src++;
+
+            int remaining = total_digits - i - 1;
+            if (remaining > 0 && remaining % 3 == 0) {
+                *dst++ = thou_separator;
+            }
         }
-        c = (c + 1) % 3;
+    } else {
+        // Just copy the digits without separators
+        while (*src) {
+            *dst++ = *src++;
+        }
     }
-    *--out = 0;
-}
 
+    *dst = '\0';
+}
 int strcicmp(char const *a, char const *b) {
     const unsigned char *us1 = (const unsigned char *)a, *us2 = (const unsigned char *)b;
 
@@ -709,6 +732,7 @@ char *format_double(double v, char *dest, char decimal_separator, char thousand_
 
     format_long(i, dest, 0, thousand_separator, max_length);
 
+    fracPart = abs(fracPart);
     if (fracPart > 0) {
 
         snprintf(dest + strlen(dest), max_length - strlen(dest), "%c", decimal_separator);

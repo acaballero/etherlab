@@ -29,8 +29,8 @@ class MessageView : public View {
     void on_show() override;
 
   protected:
-    static constexpr uint8_t border_width = 2;
-    static constexpr uint8_t shadow_width = 4;
+    static constexpr uint8_t border_width = 1;
+    static constexpr uint8_t shadow_width = 2;
     static constexpr uint8_t padding = shadow_width + border_width + 2;
     int border_color;
     const FontDef *title_font;

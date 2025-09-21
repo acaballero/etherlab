@@ -37,11 +37,3 @@ bool TextWidget::paint_callback() {
 
     return true;
 }
-
-uint16_t TextWidget::get_fg() const {
-    return fg_color;
-}
-
-void TextWidget::set_fg(uint16_t fg) {
-    fg_color = fg;
-}

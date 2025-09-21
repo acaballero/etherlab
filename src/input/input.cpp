@@ -9,11 +9,13 @@
 #include "input_controller.h"
 #include "../lib/ST77XX-STM32/XPT2046_touch.h"
 #include "mcp23017.h"
+#include "menuBase.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "status.h"
+#include <sys/_stdint.h>
 
 int8_t last_pressed_button_id = -1;
-GPIOInputPin FrontPanelInterruptPin(FRONT_PANEL_INTERRUPT_PIN_A, FRONT_PANEL_INTERRUPT_PIN_A_PORT, PINMODE_IT, GPIO_NOPULL, 0, frontPanelInterruptCallback);
+GPIOInputPin FrontPanelInterruptPin(FRONT_PANEL_INTERRUPT_PIN_A, FRONT_PANEL_INTERRUPT_PIN_A_PORT, PINMODE_IT, GPIO_NOPULL, 0, front_panel_interrupt_callback);
 
 GPIOInputPin TouchPanelInterruptPin(TOUCH_IRQ_PIN, TOUCH_IRQ_PORT, PINMODE_IT, GPIO_NOPULL, 2, touchPanelInterruptCallback);
 
@@ -57,7 +59,34 @@ uint8_t get_front_panel_int_pin() {
     return 16;
 }
 
-void frontPanelInterruptCallback() {
+void reset_mcp23017_int_pin() {
+    // LOG("Resetting front panel interrupt: Pin: %d\n", pin);
+
+    uint8_t retries = 3;
+    uint8_t reg = 0, err = 1;
+    while (retries-- && err) {
+
+        err = mcp23017_read(&hmcp03, REGISTER_INTCAPA, &reg);
+        err = err | mcp23017_read(&hmcp03, REGISTER_INTCAPB, &reg);
+
+        if (!err) {
+            GPIO_PinState s = FrontPanelInterruptPin.read();
+            if (s != GPIO_PIN_SET) {
+                err = 10;
+            }
+        }
+
+        // if (err) {
+        //     LOG("Error reseting interrupt pin. Retries: %d, error: %d\n", retries, err);
+        // }
+    }
+
+    if (err) {
+        status::pop_alert(status::ST_ERROR, "Error reseting interrupt pin");
+    }
+}
+
+void front_panel_interrupt_callback() {
     // Note this will be called twice since the interrupt fires also on rising edges
     // and we're using an MCP23017 which makes the interrupt pin go down when the line changes
     // and up when the value is read. On the rising edge, get_front_panel_int_pin wont find a pin value
@@ -73,11 +102,7 @@ void frontPanelInterruptCallback() {
             last_pressed_button_id = pin;
         }
 
-        // LOG("Resetting front panel interrupt: Pin: %d\n", pin);
-
-        uint8_t reg = 0;
-        mcp23017_read(&hmcp03, REGISTER_INTCAPA, &reg);
-        mcp23017_read(&hmcp03, REGISTER_INTCAPB, &reg);
+        reset_mcp23017_int_pin();
     }
 }
 

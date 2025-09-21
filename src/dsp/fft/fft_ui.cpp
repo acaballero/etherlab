@@ -29,7 +29,7 @@ void init_waterfall() {
 
     uint16_t pps = config.fft.waterfall_pixels_per_second;
 
-    if (pps == 0 || pps > (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS)) {
+    if (pps == 0 || pps > (1000 * FFT_WATERFALL_MAX_PIXELS_PER_FRAME / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS)) {
         config.fft.waterfall_pixels_per_second = pps = FFT_WATERFALL_DEFAULT_PPS;
     }
     // Calculate the scroll step size considering the minimum refresh period

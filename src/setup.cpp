@@ -45,6 +45,7 @@ void initPowerControl() {
 // extern void initialise_monitor_handles(void);
 void setup() {
 
+    bool b;
     // No need to init the SWO here. OpenOCD / ST-Link will initialise it. Otherwise, as ITM_SendChar is blocking, if we initialise
     // it when there's no ST-Link connected, it will freeze the MCU.
     //  SWO_Init(0x1, CPU_CORE_FREQUENCY_HZ);
@@ -79,10 +80,15 @@ void setup() {
     // Notice: Input controller depends on ADC, so make sure it is initialized after the ADC
     inputControllerInit();
 
-    setup_connectivity();
+    b = setup_connectivity();
 
 #if ENABLE_SD_CARD
-    sdcard_init();
+    if (!b) {
+        LOG("SDIO initialization error. Card not present or failed.\n");
+    } else {
+        sdcard_init();
+    }
+
 #endif
 
 #if ENABLE_RTC

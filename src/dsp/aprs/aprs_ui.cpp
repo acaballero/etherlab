@@ -254,15 +254,18 @@ void APRSView::on_source_selected(APRSSource &source) {
     if (current_source.has_position) {
 
         if (map) {
-
             map.reset();
         }
-        map = std::make_unique<ui::MapView>(std::string(source.source_formatted), 0, ui::Locator::alt_unit::METERS, ui::Locator::spd_unit::HIDDEN,
+        map = std::make_unique<ui::MapView>(std::string(source.source_formatted), -1, ui::Locator::alt_unit::METERS, ui::Locator::spd_unit::HIDDEN,
                                             source.pos.latitude, source.pos.longitude, 0, [this]() {
                                                 view_manager::mainView.remove_child(map.get());
+                                                table_view.set_visible(true);
                                             });
-        map->set_z_index(10000);
+
+        table_view.set_visible(false);
         view_manager::mainView.add_child(map.get());
+        view_manager::mainView.to_top(map.get());
+        map->set_focus(true);
     }
 }
 

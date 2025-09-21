@@ -2,6 +2,7 @@
 // License: The MIT License (MIT)
 
 #include "mcp23017.h"
+#include <sys/_stdint.h>
 
 #define I2C_TIMEOUT 10
 

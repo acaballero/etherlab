@@ -509,7 +509,7 @@ uint32_t get_timer_params_and_freq(uint32_t factor, bool is16bits, uint32_t clk_
 
     // ARR is 16-bit or 32-bit (on STM32F4/F7/H7, TIM2/TIM5 are 32-bit)
     uint32_t max_psc = 0xFFFF;                         // Prescaler always 16-bit
-    uint32_t max_arr = is16bits ? 0xFFFF : 0xFFFFFFFF; // Default 16-bit ARR
+    uint64_t max_arr = is16bits ? 0xFFFF : 0xFFFFFFFF; // Default 16-bit ARR
 
     uint64_t target_div = ((uint64_t)clk_freq) / hz;
 
@@ -518,7 +518,12 @@ uint32_t get_timer_params_and_freq(uint32_t factor, bool is16bits, uint32_t clk_
     volatile uint32_t min_error = 0xFFFFFFFF;
     uint32_t error = 0;
     uint32_t curr_freq = 0;
-    for (uint32_t psc = 0; psc <= max_psc; ++psc) {
+
+    // No reason to check beyond these boundaries
+    uint32_t start_psc = target_div > (max_arr + 1) ? (uint32_t)((target_div - 1) / (max_arr + 1)) : 0;
+    uint32_t end_psc = target_div > 0 ? min2(max_psc, (uint32_t)(target_div)) : max_psc;
+
+    for (uint32_t psc = start_psc; psc <= end_psc; ++psc) {
         uint64_t denom = (uint64_t)(psc + 1);
         uint64_t arr = target_div / denom;
 

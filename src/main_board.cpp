@@ -460,7 +460,7 @@ bool set_mode(MODE mode) {
 
 void set_mute(GPIO_PinState muteState) {
     if (mute != muteState) {
-        LOG("setMute: %d\n", static_cast<int>(muteState));
+        //  LOG("setMute: %d\n", static_cast<int>(muteState));
         mute = muteState;
         if (mutePin.set(muteState) != HAL_OK) {
             status::pop_alert(status::ST_ERROR, "Error setting mute");

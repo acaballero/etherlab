@@ -47,6 +47,9 @@ bool View::paint_callback() {
     // we can spare from calling children's callback if we draw the background just once (don't set dirty every before_paint)
     // There will be one flickr, but that's all
 
+    // FIXME: This omits calling chidren's before_paint right before rendering, and can lead to them using display settings from the parent's
+    // paint_callback execution.
+
     for (const auto child : this->children()) {
         if (child->can_be_seen()) {
 
@@ -140,7 +143,7 @@ void View::on_child_update(Widget *w) {
         return a->get_z_index() < b->get_z_index(); // Ascending order
     });
 
-    // LOG("on_child_update(%s)\n", w->get_name());
+    //   LOG("on_child_update(%s)\n", w->get_name());
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];
 
@@ -172,17 +175,15 @@ void View::on_child_update(Widget *w) {
 
                     // visible_parts = merge_rectangles(visible_parts);
 
-                    if (r.contains(widget->screen_rect())) {
-                        //   LOG("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
-                    } else {
-                        //   if (strcmp(widget->get_name(), "radio") == 0) {
-                        //       LOG("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(),
-                        //           sibling->get_z_index());
-                        //   }
-                        // Process the overlap in the widget's childs to see if some can be hidden
-                    }
-
-                    // overlaps.push_back(sibling);
+                    // if (r.contains(widget->screen_rect())) {
+                    //     LOG("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
+                    // } else {
+                    //     if (strcmp(widget->get_name(), "waterfa") == 0) {
+                    //         LOG("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(),
+                    //             sibling->get_z_index());
+                    //     }
+                    //     // Process the overlap in the widget's childs to see if some can be hidden
+                    // }
                 }
             }
         }

@@ -6,6 +6,7 @@
 #define NUMBER_FIELD_WIDGET_H
 
 #include "widget.h"
+#include <cstdint>
 
 class NumberField : public Widget {
   public:
@@ -15,12 +16,12 @@ class NumberField : public Widget {
 
     using range_t = std::pair<int32_t, int32_t>;
 
-    NumberField(Point parent_pos, int length, range_t range, int32_t step, char fill_char, bool can_loop);
+    NumberField(Point parent_pos, int length, range_t range, int32_t step, const char *u, bool can_loop);
 
-    NumberField(Point parent_pos, int length, range_t range, int32_t step, char fill_char) : NumberField{parent_pos, length, range, step, fill_char, false} {
+    NumberField(Point parent_pos, int length, range_t range, int32_t step, const char *u) : NumberField{parent_pos, length, range, step, u, false} {
     }
 
-    NumberField() : NumberField{{0, 0}, 1, {0, 1}, 1, ' ', false} {
+    NumberField() : NumberField{{0, 0}, 1, {0, 1}, 1, "", false} {
     }
 
     NumberField(const NumberField &) = delete;
@@ -37,12 +38,15 @@ class NumberField : public Widget {
     bool on_input(const st_inputEvent event) override;
 
   private:
+    static constexpr int max_length = 14;
     range_t range;
     int32_t step;
     const int length;
-    const char fill_char;
-    int32_t value{0};
+    char units[6] = "-";
+    int32_t value{INT32_MAX};
+    char text[max_length];
     bool can_loop{};
+    void calc_size();
 };
 
 #endif

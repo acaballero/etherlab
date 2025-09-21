@@ -347,7 +347,7 @@ void apply_fft_params(st_fft_params params) {
 
         set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate, MAX_DSP_DECIMATION_FACTOR);
 
-        // Since the timer cannot be set to match exacts frequencies, we save the actual ADC frequency
+        // Since the timer cannot be set to match exact frequencies, we store the actual ADC frequency
         fft_params.sample_freq = config.fft.sample_rate = get_adc_timer_frequency();
         LOG("fft_config: Changed sample rate: %lu\n", config.fft.sample_rate);
         signal.emit(nullptr);
@@ -457,8 +457,6 @@ void fft_init() {
     for (int i = 0; i < DISPLAY_X_PIXELS; i++) {
         fft_display[i] = FFT_HEIGHT;
     }
-
-    apply_fft_params(fft_params);
 
     generateSmoothingGainLUT();
 

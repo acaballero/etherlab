@@ -229,6 +229,9 @@ DRESULT SD_read_dma(BYTE lun, BYTE *buff, DWORD sector, UINT count) {
 #if defined(ENABLE_SCRATCH_BUFFER)
     if (!((uint32_t)buff & 0x3)) {
 #endif
+        // FIXME:: Have to disable tasks timer interrupt. Otherwise, this DMA operation timeouts "ramdomly" Fix it with proper priority handling.
+        // Also, this assumes TIM14 as the one it has to disable
+        NVIC_DisableIRQ(TIM8_TRG_COM_TIM14_IRQn);
         if (BSP_SD_ReadBlocks_DMA((uint32_t *)buff, (uint32_t)(sector), count) == MSD_OK) {
             ReadStatus = 0;
             /* Wait that the reading process is completed or a timeout occurs */
@@ -258,6 +261,7 @@ DRESULT SD_read_dma(BYTE lun, BYTE *buff, DWORD sector, UINT count) {
                 }
             }
         }
+        NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
 #if defined(ENABLE_SCRATCH_BUFFER)
     } else {
         /* Slow path, fetch each sector a part and memcpy to destination buffer */

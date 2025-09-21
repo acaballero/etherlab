@@ -5,6 +5,7 @@
 #include "map_view.h"
 #include "Display_afb.h"
 #include "fatfs/fatfs.h"
+#include "ff.h"
 #include "input/inputEvent.h"
 #include "io/fatfs_file.h"
 #include "ips_font.h"
@@ -14,15 +15,23 @@
 #include <cstddef>
 #include <cstring>
 #include <stdio.h>
+#include <stm32f4xx.h>
 
 namespace ui {
 
-Locator::Locator(const Point pos, const alt_unit altitude_unit, const spd_unit speed_unit) : View(), altitude_unit_(altitude_unit), speed_unit_(speed_unit) {
-    set_parent_rect({pos.x(), pos.y(), DISPLAY_X_PIXELS, 3 * 16});
+Locator::Locator(const Point pos, const alt_unit altitude_unit, const spd_unit speed_unit, FontDef *f)
+    : View(), altitude_unit_(altitude_unit), speed_unit_(speed_unit) {
 
-    add_children({&label_alt, &label_lat, &label_lon, &label_spd_position, &text_alt_unit, &text_speed_unit, &text_lat_decimal, &text_lon_decimal});
+    set_font(f);
+    set_parent_rect({pos.x(), pos.y(), (DISPLAY_X_PIXELS / 2), 3 * c_height});
+
+    add_children({&label_alt, &label_lat, &label_lon, &label_spd_position, &text_lat_decimal, &text_lon_decimal});
     add_children({&field_altitude, &field_speed, &field_lat_degrees, &field_lat_minutes, &field_lat_seconds, &field_lon_degrees, &field_lon_minutes,
                   &field_lon_seconds});
+
+    for (auto w : children()) {
+        w->set_font(get_font());
+    }
 
     // Defaults
     set_altitude(0);
@@ -37,9 +46,9 @@ Locator::Locator(const Point pos, const alt_unit altitude_unit, const spd_unit s
 
         char buf[6];
 
-        format_double(lat_value, buf, ' ', ' ', 5);
+        format_double(lat_value, buf, '.', ' ', 5);
         text_lat_decimal.set_label(buf);
-        format_double(lon_value, buf, ' ', ' ', 5);
+        format_double(lon_value, buf, '.', ' ', 5);
         text_lon_decimal.set_label(buf);
 
         if (on_change && report_change) {
@@ -76,20 +85,6 @@ Locator::Locator(const Point pos, const alt_unit altitude_unit, const spd_unit s
     field_lat_minutes.on_wrap = wrapped_lat_minutes;
     field_lon_seconds.on_wrap = wrapped_lon_seconds;
     field_lon_minutes.on_wrap = wrapped_lon_minutes;
-
-    text_alt_unit.set_label(altitude_unit_ ? "m" : "ft");
-
-    if (speed_unit_ == KMPH) {
-        text_speed_unit.set_label("kmph");
-    }
-    if (speed_unit_ == MPH) {
-        text_speed_unit.set_label("mph");
-    }
-    if (speed_unit_ == HIDDEN) {
-        text_speed_unit.hidden(true);
-        label_spd_position.hidden(true);
-        // field_speed.hidden(true);
-    }
 }
 
 void Locator::set_read_only(bool v) {
@@ -108,7 +103,7 @@ void Locator::on_focus() {
 }
 
 void Locator::hide_altandspeed() {
-    // Color altitude grey to indicate it's not updated in manual panning mode
+
     field_altitude.set_visible(false);
     field_speed.set_visible(false);
 }
@@ -163,7 +158,6 @@ Map::Map(Rect parent_rect) : Widget{parent_rect, &lcd}, markerListLen(0) {
 }
 
 bool Map::on_input(const st_inputEvent ev) {
-
     if (ev.type == INPUT_EVENT_TYPE_ENCODER) {
         int delta = ev.value;
         // Valid map_zoom values are -2 to -MAX_MAP_ZOOM_OUT, and +1 to +MAX_MAP_ZOOM_IN (values of 0 and -1 are not permitted)
@@ -203,7 +197,6 @@ bool Map::on_input(const st_inputEvent ev) {
 }
 
 void Map::map_read_line(Color *buffer, uint16_t pixels) {
-
     if (map_zoom == 1) {
         file.read(buffer, pixels << 1);
     } else if (map_zoom > 1) {
@@ -222,14 +215,18 @@ void Map::map_read_line(Color *buffer, uint16_t pixels) {
         }
     } else {
         Color *zoom_out_buffer = new Color[(pixels * (-map_zoom))];
-        file.read(zoom_out_buffer, (pixels * (-map_zoom)) << 1);
+        if (zoom_out_buffer) {
+            file.read(zoom_out_buffer, (pixels * (-map_zoom)) << 1);
 
-        // Zoom out:  Collapse each group of "-map_zoom" pixels into one pixel.
-        // TODO: Use mean value of adjacent pixels.
-        for (int i = 0; i < map_rect_width; i++) {
-            buffer[i] = zoom_out_buffer[i * (-map_zoom)];
+            // Zoom out:  Collapse each group of "-map_zoom" pixels into one pixel.
+            // TODO: Use mean value of adjacent pixels.
+            for (int i = 0; i < map_rect_width; i++) {
+                buffer[i] = zoom_out_buffer[i * (-map_zoom)];
+            }
+            delete[] zoom_out_buffer;
+        } else {
+            status::pop_alert(status::ST_ERROR, "MapView: Can't allocate line buffer");
         }
-        delete[] zoom_out_buffer;
     }
 }
 
@@ -308,7 +305,6 @@ void Map::draw_map_grid() {
 }
 
 bool Map::paint_callback() {
-
     const auto r = parent_rect();
     std::array<Color, map_rect_width> map_line_buffer;
     int16_t zoom_seek_x, zoom_seek_y;
@@ -320,7 +316,7 @@ bool Map::paint_callback() {
 
     // Adjust starting corner position of map per zoom setting;
     // When zooming in the map should technically by shifted left & up by another map_zoom/2 pixels but
-    // the map_read_line() function doesn't handle that yet so we're adjusting markers instead (see zoom_pixel_offset).
+    // the map_locaread_line() function doesn't handle that yet so we're adjusting markers instead (see zoom_pixel_offset).
     if (map_zoom > 1) {
         zoom_seek_x = x_pos - (float)r.width() / (2 * map_zoom);
         zoom_seek_y = y_pos - (float)r.height() / (2 * map_zoom);
@@ -339,13 +335,19 @@ bool Map::paint_callback() {
         for (uint16_t line = 0; line < nlines; line++) {
 
             int widget_line = line + y1;
-            uint16_t seek_line = zoom_seek_y + ((map_zoom >= 0) ? widget_line : (widget_line * (-map_zoom)));
-            file.seek(4 + ((zoom_seek_x + (map_width * seek_line)) << 1)); // skip 4 bytes
-            map_read_line(map_line_buffer.data(), r.width());
+            volatile int seek_line = zoom_seek_y + ((map_zoom >= 0) ? widget_line : (widget_line * (-map_zoom)));
+            if (seek_line >= 0) {
+                auto offset = 4 + ((zoom_seek_x + (map_width * seek_line)) << 1);
+                if (file.seek(offset) == FR_OK) { // skip 4 bytes
+                    map_read_line(map_line_buffer.data(), r.width());
 
-            for (uint16_t j = 0; j < duplicate_lines; j++) {
-                for (uint16_t x = 0; x < r.width(); x++) {
-                    display->setPixel(x, y1 + (line * duplicate_lines) + j, SWAP_BYTES(map_line_buffer[x]));
+                    for (uint16_t j = 0; j < duplicate_lines; j++) {
+                        for (uint16_t x = 0; x < r.width(); x++) {
+                            display->setPixel(x, y1 + (line * duplicate_lines) + j, SWAP_BYTES(map_line_buffer[x]));
+                        }
+                    }
+                } else {
+                    return false;
                 }
             }
         }
@@ -378,7 +380,6 @@ bool Map::paint_callback() {
 }
 
 void Map::pan(const int dx, const int dy) {
-
     float factor = map_zoom > 0 ? (1.0f / map_zoom) : (-map_zoom);
     on_move(dx * factor * lon_ratio, dy * factor * lat_ratio);
 }
@@ -597,7 +598,6 @@ void Map::update_my_orientation(uint16_t angle, bool refresh) {
 }
 
 void Map::before_paint() {
-
     bool dirty = false;
     // Ony redraw map if it moved by at least 1 pixel or the markers list was updated
     if (map_zoom <= 1) {
@@ -670,9 +670,16 @@ void MapView::setup() {
     add_child(&map);
     map.set_focus(true);
 
-    locator.set_altitude(altitude);
+    if (altitude < 0 && speed < 0) {
+        locator.hide_altandspeed();
+    } else {
+        locator.set_altitude(altitude);
+    }
+
     locator.set_lat(lat);
     locator.set_lon(lon);
+
+    locator.set_z_index(100);
 
     locator.on_change = [this](int32_t altitude, float lat, float lon, int32_t speed) {
         this->altitude = altitude;
@@ -740,7 +747,6 @@ MapView::MapView(int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd
 }
 
 void MapView::exit() {
-
     actions_signal.emit(nullptr);
     set_visible(false);
 

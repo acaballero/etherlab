@@ -77,7 +77,7 @@
 
 #define C565_TEXT_FG C565_BLACK
 #define C565_TEXT_FG_DISABLED C565_GREY_LIGHT
-#define C565_TEXT_FG_FOCUS C565_BLACK
+#define C565_TEXT_FG_FOCUS C565_YELLOW
 #define C565_TEXT_BG C565_TRANSPARENT
 #define C565_BG C565_GREY_LIGHT
 #define C565_BG_DISABLED C565_GREY_DARK
@@ -301,6 +301,8 @@ class Display {
     void set_wrap_text(bool wrap_text);
 
     void set_trim_enabled(bool b);
+
+    bool get_trim_enabled();
 
     void set_transparency(uint8_t v);
 

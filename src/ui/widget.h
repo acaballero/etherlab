@@ -99,6 +99,10 @@ class Widget : public Painter {
 
     Color get_bg();
 
+    uint16_t get_fg() const;
+
+    void set_fg(uint16_t fg);
+
     bool dirty() const;
 
     bool set_focus(bool value);
@@ -164,7 +168,7 @@ class Widget : public Painter {
     FontDef *font = (FontDef *)&Font_Tiny8x8;
 
     Color bg_color{C565_BLACK};
-
+    uint16_t fg_color{C565_GREY_LIGHT};
     Align align = ALIGN_LEFT;
 
     // FPS measurement

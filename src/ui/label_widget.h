@@ -26,7 +26,7 @@ class Label : public Widget {
         set_label("");
     }
 
-    Label(Rect parent_rect, Color fg_color, Color bg_color, ButtonStyle style = LABEL_STYLE_HOLLOW) : Widget{parent_rect, &lcd} {
+    Label(Rect parent_rect, Color fg_color, Color bg_color = C565_TEXT_BG, ButtonStyle style = LABEL_STYLE_HOLLOW) : Widget{parent_rect, &lcd} {
         set_label("");
         set_color(fg_color);
         set_bg(bg_color);
@@ -78,7 +78,7 @@ class Label : public Widget {
     uint16_t bg_color = C565_TRANSPARENT;
     uint16_t canvas_bg_color = 0;
     ButtonStyle style = LABEL_STYLE_HOLLOW;
-    bool has_border = true;
+    bool has_border = false;
     uint16_t padding = 4;
     bool border_radius[4] = {1, 1, 1, 1};
 

@@ -308,7 +308,7 @@ bool init_file_buffer() {
     // Mute to avoid SD card EMI. There's a TODO in some place to address this (new board design)
     main_board::set_mute(GPIO_PIN_SET);
     status::pop_alert(status::ST_INFO, "Initializing memory");
-    view_manager::mainView.paint();
+    view_manager::currentView->paint();
     bool res = true;
 
     if (result->load(FREQ_MEMORY_FILE, true)) {
@@ -372,9 +372,9 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
 
     std::vector<uint32_t> line_numbers;
 
-    //  LOG("find_range %d, %d\n", freq_min, freq_max);
+    LOG("find_range %d, %d\n", freq_min, freq_max);
     FRESULT res = db_file->find_range(freq_min, freq_max, extract_freq_func, line_numbers, MAX_RETRIEVED_ITEMS_PER_RANGE);
-    //  LOG("end find:  %d\n", res);
+    LOG("end find:  %d\n", res);
     if (res != FR_OK) {
         // TODO: Remove this once this is stable
         // fix_db();

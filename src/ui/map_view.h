@@ -7,6 +7,7 @@
 
 #include "Display_afb.h"
 #include "io/fatfs_file.h"
+#include "ips_font.h"
 #include "label_widget.h"
 #include "field_widget.h"
 #include "menu_options.h"
@@ -62,7 +63,7 @@ class Locator : public View {
 
     std::function<void(int32_t, float, float, int32_t)> on_change{};
 
-    Locator(const Point pos, const alt_unit altitude_unit, const spd_unit speed_unit);
+    Locator(const Point pos, const alt_unit altitude_unit, const spd_unit speed_unit, FontDef *f = (FontDef *)&Font_7x10);
 
     void on_focus() override;
 
@@ -82,32 +83,32 @@ class Locator : public View {
     void before_paint() override{};
 
   private:
+    static constexpr uint8_t c_width = 7; // Make it match font width
+    static constexpr uint8_t margin = 4;
+    static constexpr uint8_t c_height = 10 + margin;
     bool read_only{false};
     bool report_change{true};
     alt_unit altitude_unit_{};
     spd_unit speed_unit_{};
 
-    Label label_alt{{1 * 8, 0 * 16}, "Alt:", C565_GREY_LIGHT};
-    Label label_lat{{1 * 8, 1 * 16}, "Lat:    \xB0  '  \"", C565_GREY_LIGHT};
-    Label label_lon{{1 * 8, 2 * 16}, "Lon:    \xB0  '  \"", C565_GREY_LIGHT};
+    Label label_alt{{1 * c_width, 0 * c_height}, "Alt:", C565_WHITE};
+    NumberField field_altitude{{6 * c_width, 0 * c_height}, 5, {-1000, 50000}, 1, " m"};
 
-    Label label_spd_position{{15 * 8, 0 * 16}, "Spd:", C565_GREY_LIGHT};
+    Label label_lat{{1 * c_width, 1 * c_height}, "Lat:", C565_WHITE};
+    Label label_lon{{1 * c_width, 2 * c_height}, "Lon:", C565_WHITE};
 
-    NumberField field_altitude{{6 * 8, 0 * 16}, 5, {-1000, 50000}, 1, ' '};
+    Label label_spd_position{{15 * c_width, 0 * c_height}, "Spd:", C565_WHITE};
+    NumberField field_speed{{20 * c_width, 0 * c_height}, 4, {0, 5000}, 1, " Km/h"};
 
-    NumberField field_speed{{19 * 8, 0 * 16}, 4, {0, 5000}, 1, ' '};
-    Label text_alt_unit{{12 * 8, 0 * 16, 2 * 8, 16}};
-    Label text_speed_unit{{25 * 8, 0 * 16, 4 * 8, 16}};
+    NumberField field_lat_degrees{{7 * c_width, 1 * c_height}, 4, {-90, 90}, 1, " "};
+    NumberField field_lat_minutes{{12 * c_width, 1 * c_height}, 2, {0, 59}, 1, "'", true};
+    NumberField field_lat_seconds{{15 * c_width, 1 * c_height}, 2, {0, 59}, 1, "''", true};
+    Label text_lat_decimal{{19 * c_width, 1 * c_height, 13 * c_width, 1 * c_height}, C565_GREY_DARK};
 
-    NumberField field_lat_degrees{{5 * 8, 1 * 16}, 4, {-90, 90}, 1, ' '};
-    NumberField field_lat_minutes{{10 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
-    NumberField field_lat_seconds{{13 * 8, 1 * 16}, 2, {0, 59}, 1, ' ', true};
-    Label text_lat_decimal{{17 * 8, 1 * 16, 13 * 8, 1 * 16}};
-
-    NumberField field_lon_degrees{{5 * 8, 2 * 16}, 4, {-180, 180}, 1, ' '};
-    NumberField field_lon_minutes{{10 * 8, 2 * 16}, 2, {0, 59}, 1, ' ', true};
-    NumberField field_lon_seconds{{13 * 8, 2 * 16}, 2, {0, 59}, 1, ' ', true};
-    Label text_lon_decimal{{{17 * 8, 2 * 16}, {13 * 8, 2 * 16}}};
+    NumberField field_lon_degrees{{7 * c_width, 2 * c_height}, 4, {-180, 180}, 1, " "};
+    NumberField field_lon_minutes{{12 * c_width, 2 * c_height}, 2, {0, 59}, 1, "'", true};
+    NumberField field_lon_seconds{{15 * c_width, 2 * c_height}, 2, {0, 59}, 1, "''", true};
+    Label text_lon_decimal{{{19 * c_width, 2 * c_height}, {13 * c_width, 1 * c_height}}, C565_GREY_DARK};
 };
 
 enum MarkerStorage { MARKER_NOT_STORED, MARKER_STORED, MARKER_LIST_FULL };
@@ -238,8 +239,8 @@ class MapView : public View {
 
     const std::function<void(int32_t, float, float, int32_t)> on_done{};
     MapMode mode{};
-    int32_t altitude{};
-    int32_t speed{};
+    int32_t altitude{-1};
+    int32_t speed{-1};
     Locator::alt_unit altitude_unit{};
     Locator::spd_unit speed_unit{};
     float lat{};
@@ -247,7 +248,7 @@ class MapView : public View {
     uint16_t angle{};
     std::function<void(void)> on_close{nullptr};
 
-    Locator locator{{0, 0}, altitude_unit, speed_unit};
+    Locator locator{{2, 10}, altitude_unit, speed_unit};
 
     Map map{{0, Map::map_top, Map::map_rect_width, Map::map_rect_height}};
 

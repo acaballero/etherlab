@@ -11,20 +11,29 @@
 #include <locale>
 #include "status.h"
 
-io::filesystem_error FatFSFile::open_fatfs(const io::path &filename, BYTE mode) {
-    lock_sd_card();
-    auto result = f_open(&f, reinterpret_cast<const TCHAR *>(filename.c_str()), mode);
-    if (result == FR_OK) {
-        if (mode & FA_OPEN_ALWAYS) {
-            const auto result = f_lseek(&f, f_size(&f));
-            if (result != FR_OK) {
-                f_close(&f);
+io::filesystem_error FatFSFile::open_fatfs(const io::path &filename) {
+    FRESULT result = FR_LOCKED;
+    path = filename;
+    if (lock()) {
+        if (opened) {
+            f_close(&f);
+            opened = false;
+        }
+        result = f_open(&f, reinterpret_cast<const TCHAR *>(filename.c_str()), mode);
+        if (result == FR_OK) {
+            if (mode & FA_OPEN_ALWAYS) {
+                const auto result = f_lseek(&f, f_size(&f));
+                if (result != FR_OK) {
+                    f_close(&f);
+                }
             }
         }
+
+        unlock();
     }
 
-    unlock_sd_card();
     if (result == FR_OK) {
+        opened = true;
         return {};
     } else {
         return {result};
@@ -36,37 +45,66 @@ io::filesystem_error FatFSFile::open_fatfs(const io::path &filename, BYTE mode) 
  * @param create: create if it doesnt exist
  */
 io::filesystem_error FatFSFile::open(const io::path &filename, bool read_only, bool create) {
-    BYTE mode = read_only ? FA_READ : FA_READ | FA_WRITE;
+    mode = read_only ? FA_READ : FA_READ | FA_WRITE;
     if (create) {
         mode |= FA_OPEN_ALWAYS;
     }
 
-    return open_fatfs(filename, mode);
+    return open_fatfs(filename);
 }
 
 io::filesystem_error FatFSFile::append(const io::path &filename) {
-    return open_fatfs(filename, FA_WRITE | FA_OPEN_ALWAYS);
+    mode = FA_WRITE | FA_OPEN_ALWAYS;
+    return open_fatfs(filename);
 }
 
 io::filesystem_error FatFSFile::create(const io::path &filename) {
-    return open_fatfs(filename, FA_WRITE | FA_CREATE_ALWAYS);
+    mode = FA_WRITE | FA_CREATE_ALWAYS;
+    return open_fatfs(filename);
 }
 
 FatFSFile::~FatFSFile() {
-    lock_sd_card();
-    f_close(&f);
-    unlock_sd_card();
+    if (opened) {
+        lock();
+        f_close(&f);
+        unlock();
+    }
 }
 
-void FatFSFile::close() {
-    f_close(&f);
+bool FatFSFile::lock() {
+    if (!locked) {
+        locked = lock_sd_card(0, path.c_str());
+    }
+    return locked;
+}
+bool FatFSFile::unlock() {
+    if (locked) {
+        locked = !unlock_sd_card();
+    }
+    return !locked;
+}
+
+FRESULT FatFSFile::close() {
+    FRESULT res = FR_OK;
+    if (opened) {
+        lock();
+        res = f_close(&f);
+        unlock();
+        if (res == FR_OK) {
+            opened = false;
+        }
+    }
+    return res;
 }
 
 FatFSFile::Result<FatFSFile::Size> FatFSFile::read(void *data, Size bytes_to_read) {
     UINT bytes_read = 0;
-    lock_sd_card();
-    const auto result = f_read(&f, data, bytes_to_read, &bytes_read);
-    unlock_sd_card();
+    FRESULT result = FR_LOCKED;
+    if (lock()) {
+        result = f_read(&f, data, bytes_to_read, &bytes_read);
+        unlock();
+    }
+
     if (result == FR_OK) {
         return {static_cast<size_t>(bytes_read)};
     } else {
@@ -76,9 +114,12 @@ FatFSFile::Result<FatFSFile::Size> FatFSFile::read(void *data, Size bytes_to_rea
 
 FatFSFile::Result<FatFSFile::Size> FatFSFile::write(const void *data, Size bytes_to_write) {
     UINT bytes_written = 0;
-    lock_sd_card();
-    const auto result = f_write(&f, data, bytes_to_write, &bytes_written);
-    unlock_sd_card();
+    FRESULT result = FR_LOCKED;
+    if (lock()) {
+        result = f_write(&f, data, bytes_to_write, &bytes_written);
+        unlock();
+    }
+
     if (result == FR_OK) {
         if (bytes_to_write == bytes_written) {
             return {static_cast<FatFSFile::Size>(bytes_written)};
@@ -98,40 +139,48 @@ bool FatFSFile::eof() {
     return f_eof(&f);
 }
 
-FatFSFile::Result<FatFSFile::Offset> FatFSFile::seek(Offset new_position) {
-    /* NOTE: Returns *old* position, not new position */
-    const auto old_position = tell();
-    if (!lock_sd_card()) {
-        return FR_LOCKED;
-    };
-    const auto result = f_lseek(&f, new_position);
-    unlock_sd_card();
-    if (result != FR_OK) {
-        return {static_cast<Error>(result)};
+FRESULT FatFSFile::seek(Offset new_position) {
+
+    int attempts_left = max_seek_retries + 1;
+    FRESULT result = FR_DISK_ERR;
+    while (attempts_left && result != FR_OK) {
+        if (lock()) {
+            result = f_lseek(&f, new_position);
+        } else {
+            return FR_LOCKED;
+        }
+
+        attempts_left--;
+
+        if (result != FR_OK && attempts_left) {
+            open_fatfs(path);
+        }
     }
-    if (f_tell(&f) != new_position) {
-        return {static_cast<Error>(FR_BAD_SEEK)};
+
+    unlock();
+
+    if (result == FR_OK && f_tell(&f) != new_position) {
+        result = FR_INT_ERR;
     }
-    return {static_cast<FatFSFile::Offset>(old_position)};
+    return result;
 }
 
 FatFSFile::Result<bool> FatFSFile::ready(uint16_t timeout_ms) {
-    if (!lock_sd_card(timeout_ms)) {
+    if (!lock()) {
         return {static_cast<Error>(FR_LOCKED)};
     };
-    unlock_sd_card();
-
+    unlock();
     return true;
 }
 
 FatFSFile::Result<FatFSFile::Offset> FatFSFile::truncate() {
     const auto position = f_tell(&f);
-    if (!lock_sd_card()) {
+    if (!lock()) {
         return FR_LOCKED;
     };
     auto result = f_truncate(&f);
     result = result == FR_OK ? f_sync(&f) : result;
-    unlock_sd_card();
+    unlock();
     if (result != FR_OK) {
         return {static_cast<Error>(result)};
     }
@@ -157,11 +206,11 @@ io::filesystem_error FatFSFile::write_line(const std::string &s) {
 }
 
 io::filesystem_error FatFSFile::sync() {
-    if (!lock_sd_card()) {
+    if (!lock()) {
         return FR_LOCKED;
     };
     const auto result = f_sync(&f);
-    unlock_sd_card();
+    unlock();
     if (result == FR_OK) {
         return {};
     } else {
@@ -267,16 +316,20 @@ std::vector<io::path> scan_root_directories(const io::path &directory) {
 }
 
 io::filesystem_error delete_file(const io::path &file_path) {
-    lock_sd_card();
-    FRESULT res = f_unlink(reinterpret_cast<const TCHAR *>(file_path.c_str()));
-    unlock_sd_card();
+    FRESULT res = FR_LOCKED;
+    if (lock_sd_card()) {
+        res = f_unlink(reinterpret_cast<const TCHAR *>(file_path.c_str()));
+        unlock_sd_card();
+    }
     return {res};
 }
 
 io::filesystem_error rename_file(const io::path &file_path, const io::path &new_name) {
-    lock_sd_card();
-    FRESULT res = f_rename(reinterpret_cast<const TCHAR *>(file_path.c_str()), reinterpret_cast<const TCHAR *>(new_name.c_str()));
-    unlock_sd_card();
+    FRESULT res = FR_LOCKED;
+    if (lock_sd_card()) {
+        res = f_rename(reinterpret_cast<const TCHAR *>(file_path.c_str()), reinterpret_cast<const TCHAR *>(new_name.c_str()));
+        unlock_sd_card();
+    }
     return {res};
 }
 
@@ -318,9 +371,11 @@ io::filesystem_error copy_file(const io::path &file_path, const io::path &dest_p
 FATTimestamp file_created_date(const io::path &file_path) {
     FILINFO filinfo;
 
-    lock_sd_card();
-    f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
-    unlock_sd_card();
+    FRESULT res = FR_LOCKED;
+    if (lock_sd_card()) {
+        res = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
+        unlock_sd_card();
+    }
     return {filinfo.fdate, filinfo.ftime};
 }
 
@@ -345,9 +400,11 @@ io::filesystem_error make_new_file(const io::path &file_path) {
 }
 
 io::filesystem_error make_new_directory(const io::path &dir_path) {
-    lock_sd_card();
-    FRESULT res = f_mkdir(reinterpret_cast<const TCHAR *>(dir_path.c_str()));
-    unlock_sd_card();
+    FRESULT res = FR_LOCKED;
+    if (lock_sd_card()) {
+        res = f_mkdir(reinterpret_cast<const TCHAR *>(dir_path.c_str()));
+        unlock_sd_card();
+    }
     return {res};
 }
 
@@ -482,25 +539,27 @@ bool is_directory(const path &file_path) {
 }
 
 FRESULT check_and_create_folder(const char *path) {
-    FRESULT res;
+
     FILINFO fno;
-    lock_sd_card();
-    // Check if folder exists
-    res = f_stat(path, &fno);
+    FRESULT res = FR_LOCKED;
+    if (lock_sd_card()) {
+        // Check if folder exists
+        res = f_stat(path, &fno);
 
-    if (res == FR_OK) {
-        // Path exists, check if it's a directory
-        if (fno.fattrib & AM_DIR) {
-            res = FR_OK; // Folder exists
-        } else {
-            res = FR_EXIST; // Path exists but it's a file, not a folder
+        if (res == FR_OK) {
+            // Path exists, check if it's a directory
+            if (fno.fattrib & AM_DIR) {
+                res = FR_OK; // Folder exists
+            } else {
+                res = FR_EXIST; // Path exists but it's a file, not a folder
+            }
+        } else if (res == FR_NO_FILE) {
+            // Folder doesn't exist, create it
+            res = f_mkdir(path);
         }
-    } else if (res == FR_NO_FILE) {
-        // Folder doesn't exist, create it
-        res = f_mkdir(path);
-    }
 
-    unlock_sd_card();
+        unlock_sd_card();
+    }
     return res;
 }
 
@@ -512,10 +571,12 @@ bool is_empty_directory(const path &file_path) {
         return false;
     }
 
-    lock_sd_card();
-    auto result = f_findfirst(&dir, &filinfo, reinterpret_cast<const TCHAR *>(file_path.c_str()), (const TCHAR *)"*");
-    unlock_sd_card();
-    return !((result == FR_OK) && (filinfo.fname[0] != (TCHAR)'\0'));
+    FRESULT res = FR_LOCKED;
+    if (lock_sd_card()) {
+        res = f_findfirst(&dir, &filinfo, reinterpret_cast<const TCHAR *>(file_path.c_str()), (const TCHAR *)"*");
+        unlock_sd_card();
+    }
+    return !((res == FR_OK) && (filinfo.fname[0] != (TCHAR)'\0'));
 }
 
 int file_count(const path &directory) {
@@ -532,9 +593,11 @@ int file_count(const path &directory) {
 space_info space(const path &p) {
     DWORD free_clusters{0};
     FATFS *fs;
-    lock_sd_card();
-    FRESULT res = f_getfree(reinterpret_cast<const TCHAR *>(p.c_str()), &free_clusters, &fs);
-    unlock_sd_card();
+    FRESULT res = FR_LOCKED;
+    if (lock_sd_card()) {
+        res = f_getfree(reinterpret_cast<const TCHAR *>(p.c_str()), &free_clusters, &fs);
+        unlock_sd_card();
+    }
     if (res == FR_OK) {
 #if _MAX_SS != _MIN_SS
         static_assert(false, "FatFs not configured for fixed sector size");

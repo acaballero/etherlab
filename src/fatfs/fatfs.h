@@ -42,7 +42,7 @@ extern FATFS FatFS;         /* File system object for USER logical drive */
 extern FIL FatFSFileHandle; /* Shared file object */
 extern sdcard_st_info sdcard_info;
 extern Signal sdcard_signal;
-extern volatile bool sd_card_locked;
+
 extern volatile uint8_t usb_msc_active; /* Defined in usb.cpp */
 void sdcard_loop(void);
 void sdcard_init();

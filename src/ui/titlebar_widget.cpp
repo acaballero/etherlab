@@ -118,7 +118,7 @@ bool TitleBarWidgetInner::paint_callback() {
 
     switch (sdcard_info.status) {
         case sdcard_STATUS::MountError:
-            color = C565_YELLOW;
+            color = C565_GREY_DARKER;
             break;
         case sdcard_STATUS::IOError:
         case sdcard_STATUS::ConnectError:

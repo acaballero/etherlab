@@ -20,13 +20,17 @@
 #include "ffconf.h"
 #include "hw/stm32f4xx/usb.h"
 
+#include "os/periodic_task.h"
+#include "os/task_manager.h"
 #include "status.h"
 #include "hw/stm32_hal.h"
 #include "../../lib/FatFs/ff.h"
 #include "../../lib/FatFs/diskio.h"
 #include "stm32f4xx_hal.h"
 #include "usb/usbd_msc.h"
+#include "utils.hpp"
 #include <stdio.h>
+#include <sys/_stdint.h>
 
 extern Diskio_drvTypeDef SD_CARD_DRIVER; // Defined in the parent project
 extern USBD_HandleTypeDef hUsbDeviceHS;  // Defined in usbd_msc.h
@@ -57,6 +61,7 @@ sdcard_st_info &get_info() {
  * Poll to update the status of the SD card
  */
 void sdcard_loop() {
+
     uint64_t t = HAL_GetTick();
 
     if (usb_msc_active &&
@@ -88,6 +93,7 @@ bool try_lock_sd_card() {
         sd_card_locked = true;
 
         if (SDIO_GetPowerState(SDIO_HANDLE.Instance) == 0) {
+            //  LOG("Powering up SDIO\n");
             SDIO_PowerState_ON(SDIO_HANDLE.Instance);
             HAL_Delay(10);
         }
@@ -102,7 +108,8 @@ bool lock_sd_card(uint32_t timeout_ms, const char *id) {
     // TODO: Save who locked it and prevent other client to unlock.
     // Currently, if someone unlocks the card (and thus shutting power off which, btw, owes to EMI and battery reasons)
     // and some fatfs file is tried, it will timeout.
-    // LOG("%s tries to lock SD card\n", id ? id : "unknown");
+    // LOG("%s tries to lock SD card: current: %d\n", id ? id : "unknown", sd_card_locked);
+
     volatile uint32_t start = HAL_GetTick();
     while (!try_lock_sd_card()) {
         volatile uint32_t elapsed = (HAL_GetTick() - start);
@@ -121,17 +128,29 @@ bool lock_sd_card(uint32_t timeout_ms, const char *id) {
 }
 
 bool unlock_sd_card() {
+    // LOG("UNLOCK:%d\n", sd_card_locked);
     bool b;
+    static os::periodic_task *t;
     if (sd_card_locked && sdcard_info.status != MassStorageDeviceActive) { // note: prevent someone powering the sd device off while MSD is on
 
-        SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
+        if (t) {
+            os::task_manager.remove(t);
+        }
+
+        t = os::task_manager.set_timeout(1000, []() {
+            if (!sd_card_locked) {
+                //      LOG("Powering down SDIO\n");
+                SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
+            }
+        }); // Turn off after a while, but not inmmediatelly, so if the card is locked again we don't waste time turning it on and off
+
         sd_card_locked = false;
         b = true;
     } else {
         b = false;
     }
 
-    // LOG("SDcard unlocked: %d, state: %d\n", b, sd_card_locked);
+    //  LOG("SDcard unlocked: %d, state: %d\n", b, sd_card_locked);
     return b;
 }
 
@@ -146,6 +165,17 @@ FRESULT check_sd_card_health(void) {
 }
 /* USER CODE END Variables */
 bool sdcard_initialized = false;
+
+void log_sdcard_space() {
+    char total[10];
+    char free[10];
+    char u1[4], u2[4];
+    format_eng(total, sdcard_info.total_bytes, "b", u1, 3, false);
+    format_eng(free, sdcard_info.free_bytes, "b", u2, 3, false);
+    if (!sdcard_initialized) { // Show this just one time
+        LOG("SD card space: %s%s / %s%s bytes available / total.\n", free, u2, total, u1);
+    }
+}
 void sdcard_init(void) {
 
     /* Link the USER driver */
@@ -185,7 +215,8 @@ void sdcard_init(void) {
 
         } else {
             // Let's get some statistics from the SD card
-            DWORD free_clusters, free_sectors, total_sectors;
+            DWORD free_clusters;
+            uint64_t free_sectors, total_sectors;
 
             FATFS *getFreeFs;
 
@@ -211,10 +242,10 @@ void sdcard_init(void) {
             sdcard_info = new_status;
             sdcard_signal.emit(&sdcard_info);
 
-            if (!sdcard_initialized) { // Show this just one time
-                LOG("SD card space: %llu / %llu bytes total / available.\n", sdcard_info.total_bytes, sdcard_info.free_bytes);
+            if (sdcard_info.status == Mounted) {
+                log_sdcard_space();
+                sdcard_initialized = true;
             }
-            sdcard_initialized = true;
         }
 
         unlock_sd_card();
