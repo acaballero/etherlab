@@ -21,6 +21,7 @@ namespace fftUI {
 
 const char *fftWindowNames[] = {"None", "Hamming"};
 const char *spectrumStyleNanes[] = {"Fill", "Line", "Line & Fill"};
+const char *waterFallModeNames[] = {"Average", "Peak"};
 
 uint8_t waterfall_step_size;
 uint16_t waterfall_period;
@@ -43,6 +44,7 @@ void init_waterfall() {
     }
 
     view_manager::mainView.Waterfall()->set_step(waterfall_step_size);
+    view_manager::mainView.Waterfall()->set_mode(config.fft.waterfall_mode);
 }
 
 uint16_t get_waterfall_period() {
@@ -132,7 +134,7 @@ TOGGLE(config.fft.removeDC, fftRemoveDC, "Remove DC: ", doNothing, noEvent, noSt
        ,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
-TOGGLE(fft_min_db_auto, autoMinDbToggle, "Auto dB scale ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
+TOGGLE(config.fft.min_db_auto, autoMinDbToggle, "Auto dB scale ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
@@ -169,9 +171,17 @@ Menu::numberPrompt<uint16_t> waterfallSpeedMenu((const char *)"Waterfall speed",
                                                 },
                                                 2, (1000 / FFT_WATERFALL_MIN_REFRESH_PERIOD_MS) * FFT_WATERFALL_MAX_PIXELS_PER_FRAME, 2, 5);
 
+Menu::menu_option_st<WATERFALL_MODE> waterfall_modes[] = {{waterFallModeNames[AVERAGE], AVERAGE}, {waterFallModeNames[MAX_HOLD], MAX_HOLD}};
+
+Menu::optionsPrompt<WATERFALL_MODE> waterfallModeMenu((const char *)"Mode", waterfall_modes, config.fft.waterfall_mode,
+                                                      sizeof(waterfall_modes) / sizeof(waterfall_modes[0]), [](WATERFALL_MODE m) {
+                                                          config.fft.waterfall_mode = m;
+                                                          fftUI::init_waterfall();
+                                                      });
+
 Menu::numberPrompt<int16_t> minDbMenu((const char *)"DB Min", &config.fft.min_db, 0, ' ', '.', "dB",
                                       [](int16_t) {
-                                          fft_min_db_auto = false;
+                                          config.fft.min_db_auto = false;
                                       },
                                       FFT_MIN_DB, FFT_MAX_DB, 1, 5);
 
@@ -186,7 +196,7 @@ Menu::numberPrompt<int32_t> amplitudeMenu((const char *)"Amplitude", &config.fft
                                           },
                                           0x00FF, 0xFFFF, 10, 100);
 
-Menu::numberPrompt<uint8_t> slicesMenu((const char *)"MAx slices", &config.fft.max_slices, 0, ' ', '.', "",
+Menu::numberPrompt<uint8_t> slicesMenu((const char *)"Max slices", &config.fft.max_slices, 0, ' ', '.', "",
                                        [](uint8_t) {
                                            fft::set_max_slices(config.fft.max_slices);
                                        },
@@ -196,7 +206,8 @@ Menu::numberPrompt<int32_t> fCorrectionMenu((const char *)"Freq. correction", &c
 
 MENU(fftSamplingMenu, "Sampling", doNothing, anyEvent, noStyle, OBJ(minSampleRateMenu), OBJ(maxSampleRateMenu), OBJ(maxDSPSampleRateMenu), OBJ(spanMenu))
 
-MENU(fftUIMenu, "Style", doNothing, anyEvent, noStyle, OBJ(fftStyleMenu), OBJ(lineColorMenu), OBJ(fillColorMenu), OBJ(waterfallSpeedMenu));
+MENU(fftUIMenu, "Style", doNothing, anyEvent, noStyle, OBJ(fftStyleMenu), OBJ(lineColorMenu), OBJ(fillColorMenu), OBJ(waterfallSpeedMenu),
+     OBJ(waterfallModeMenu));
 
 MENU(fftMenu, "Spectrum", doNothing, anyEvent, noStyle, SUBMENU(setEnableFFT), OBJ(slicesMenu), OBJ(decimationMenu), SUBMENU(fftSamplingMenu), OBJ(smoothMenu),
      SUBMENU(fftWindowMenu), SUBMENU(fftUIMenu), SUBMENU(fftViewMenu), SUBMENU(fftRemoveDC), SUBMENU(menuIQBalance), SUBMENU(autoMinDbToggle), OBJ(minDbMenu),

@@ -153,7 +153,7 @@ class Widget : public Painter {
     std::vector<Rect> visible_rects;
 
   protected:
-    char name[8]{"-"};
+    char name[4]{"-"};
 
     Rect _parent_rect;
 

@@ -35,7 +35,7 @@ void set_config(dsp::st_dsp_config &c) {
 void set_max_sample_freq(bool dsp) {
 
     // Sanity check
-    config.fft.dsp_max_sample_rate = min2(config.fft.dsp_max_sample_rate, 700000);
+    config.fft.dsp_max_sample_rate = min2(config.fft.dsp_max_sample_rate, 750000);
     // Set the max sample frequency according to the amount of processing we will be doing
     if (!dsp) {
         set_max_sample_freq(config.fft.max_sample_rate);

@@ -29,7 +29,6 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->smeter_w.set_name("smeter");
     this->powmeter_w.set_name("powmeter");
     this->optionButtonsView.set_name("options");
-    this->numberEditView.set_name("numedt");
 
     this->iqbal_w.set_name("iqbal");
     this->status_w.set_name("status");
@@ -50,16 +49,13 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->powmeter_w.set_visible(false);
     this->optionButtonsView.set_visible(false);
     this->optionButtonsView.set_z_index(300);
-    this->numberEditView.set_visible(false);
-    this->numberEditView.set_z_index(300);
 
     this->iqbal_w.set_visible(false);
 
     this->children_.reserve(40);
 
     add_children({&this->menu_w, &this->header_w, &this->tune_w, &this->smeter_w, &this->snr_w, &this->radio_w, &this->powmeter_w, &this->info_w,
-                  &this->status_w, &this->dbscale_w, &this->frequency_w, &this->iqbal_w, &this->waterfall_w, &this->fft_w, &this->optionButtonsView,
-                  &this->numberEditView});
+                  &this->status_w, &this->dbscale_w, &this->frequency_w, &this->iqbal_w, &this->waterfall_w, &this->fft_w, &this->optionButtonsView});
 }
 
 void MainView::before_paint() {
@@ -121,10 +117,6 @@ Widget *MainView::Menu() {
 
 OptionButtonsView *MainView::OptionButtons() {
     return &this->optionButtonsView;
-}
-
-NumberEditView *MainView::NumberEdit() {
-    return &this->numberEditView;
 }
 
 void MainView::on_child_update(Widget *w) {

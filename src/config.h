@@ -37,9 +37,10 @@ struct st_vfo_config {
     uint32_t freq = 127100000UL;
     uint32_t step = 10000;
     int32_t rit = 0; // Receive incremental tuning offset
+    MODULATION_MODE mode = MODULATION_MODE_ALL;
 
     bool operator==(const st_vfo_config &st) const {
-        return freq == st.freq && step == st.step && rit == st.rit;
+        return freq == st.freq && step == st.step && rit == st.rit && mode == st.mode;
     }
     bool operator!=(const st_vfo_config &st) const {
         return !(*this == st);
@@ -88,7 +89,7 @@ typedef struct st_config //__attribute__ ((packed))
 
     // Repeater settings
     uint32_t repeater_offset = 125000;
-    radio::RPT_MODE repeater_mode = radio::RPT_MODE_OFF;
+    RPT_MODE repeater_mode = RPT_MODE_OFF;
 
     // FFT
     st_fft_config fft;

@@ -33,7 +33,7 @@ extern const char *constMEM alphaNum MEMMODE;
 extern const char *constMEM alphaNumMask[1] MEMMODE;
 extern const char *constMEM digit MEMMODE;
 extern optionsPrompt<radio::FRONTEND_PATH> frontendPathMenu;
-extern optionsPrompt<radio::RPT_MODE> repeaterMenu;
+extern optionsPrompt<RPT_MODE> repeaterMenu;
 extern optionsPrompt<MODULATION_MODE> modulationMenu;
 extern optionsPrompt<radio::BAND> bandMenu;
 extern optionsPrompt<radio::BAND> filterMenu;

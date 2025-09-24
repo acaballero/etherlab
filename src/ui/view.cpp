@@ -217,6 +217,7 @@ bool View::remove_child(Widget *const widget) {
         if (it != children_.end()) {
             children_.erase(it, children_.end());
             widget->set_parent(nullptr);
+
             return true;
         }
     }

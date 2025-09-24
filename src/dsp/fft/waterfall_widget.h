@@ -24,9 +24,9 @@ class WaterfallWidget : public Widget {
 
     void set_scroll_period(uint16_t);
 
-    void centerSpectrum();
+    void center();
 
-    void moveSpectrum(int16_t);
+    void move(int16_t);
 
     // Set the scrolled pixels per frame
     void set_step(uint8_t);
@@ -37,8 +37,6 @@ class WaterfallWidget : public Widget {
 
     void scroll();
 
-    enum WATERFALL_MODE { MAX_HOLD, AVERAGE };
-
     void set_mode(WATERFALL_MODE m) {
         mode = m;
     }
@@ -48,11 +46,14 @@ class WaterfallWidget : public Widget {
 
     void before_paint() override;
 
-    const uint32_t waterfall_palette_rgb256[FFT_WATERFALL_NCOLORS] = {0x000066, 0x000085, 0x0000c8, 0x4B00e3, 0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
-                                                                      0xdc6a55, 0xed852a, 0xffa000, 0xffbf55, 0xffcf7f, 0xffdfaa, 0xffefd4, 0xffffff};
+    //    const uint32_t waterfall_palette_rgb256[FFT_WATERFALL_NCOLORS] = {0x000066, 0x000085, 0x0000c8, 0x4B00e3, 0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
+    //                                                                    0xdc6a55, 0xed852a, 0xffa000, 0xffbf55, 0xffcf7f, 0xffdfaa, 0xffefd4, 0xffffff};
 
-    const uint32_t waterfall_palette_rgb256_debug[FFT_WATERFALL_NCOLORS] = {0x000000, 0xffffff, 0x0000c8, 0x4B00e3, 0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
-                                                                            0xdc6a55, 0xed852a, 0xffa000, 0xffbf55, 0xffcf7f, 0xffdfaa, 0xffefd4, 0xffffff};
+    // const uint32_t waterfall_palette_rgb256_debug[FFT_WATERFALL_NCOLORS] = {0x000000, 0xffffff, 0x0000c8, 0x4B00e3, 0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
+    //                                                                       0xdc6a55, 0xed852a, 0xffa000, 0xffbf55, 0xffcf7f, 0xffdfaa, 0xffefd4, 0xffffff};
+
+    const uint32_t waterfall_palette_rgb256_dx[FFT_WATERFALL_NCOLORS] = {0x000010, 0x000040, 0x000070, 0x100090, 0x3000b0, 0x6000d0, 0x8000f0, 0xa000d0,
+                                                                         0xc000b0, 0xe00090, 0xff0060, 0xff0030, 0xff0000, 0xd00000, 0xa00000, 0x600000};
 
     // Buffer to convert the waterfall palette from RGB888 to RGB565
     // TODO: Just create a RGB565 palette

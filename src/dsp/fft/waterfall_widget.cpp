@@ -5,22 +5,24 @@
 #include "waterfall_widget.h"
 #include "Display_afb.h"
 #include "config.h"
+#include "dsp/dsp_common.h"
 #include "dsp/fft/fft_types.h"
 #include "dsp/fft/fft_ui.h"
 #include "fft.h"
 #include "input/inputEvent.h"
 #include "ips_font.h"
+#include <sys/_stdint.h>
 
 #define PIXELS_BYTE 2
 // Map db to color linearly
 #define WATERFALL_LINEAR true
 
 /* 4-bit per pixel, 16-color buffer */
-__attribute__((section(".fccmram"))) uint8_t waterfallBuffer[DISPLAY_X_PIXELS * FFT_WATERFALL_HEIGHT / PIXELS_BYTE];
+CCM_SECTION uint8_t waterfallBuffer[DISPLAY_X_PIXELS * FFT_WATERFALL_HEIGHT / PIXELS_BYTE];
 
 WaterfallWidget::WaterfallWidget(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
 
-    this->display->convertPalette888to565(this->show_fps ? this->waterfall_palette_rgb256_debug : this->waterfall_palette_rgb256,
+    this->display->convertPalette888to565(this->show_fps ? this->waterfall_palette_rgb256_dx : this->waterfall_palette_rgb256_dx,
                                           this->waterfall_palette_rgb565, 16);
 
     memset(waterfallBuffer, FFT_WATERFALL_DEFAULT_COLOR_INDEX + (FFT_WATERFALL_DEFAULT_COLOR_INDEX << 4), sizeof(waterfallBuffer));
@@ -30,7 +32,7 @@ WaterfallWidget::WaterfallWidget(const Rect &parentRect, Display *display) : Wid
     reset();
 }
 
-void WaterfallWidget::centerSpectrum() {
+void WaterfallWidget::center() {
 
     if (waterfallFreq == 0) {
         waterfallFreq = radio::get_frequency(); // initialize it
@@ -46,7 +48,7 @@ void WaterfallWidget::centerSpectrum() {
         // TODO: In order to have 1 pixel per move, we should shift all the bytes in the buffer by 4 bits in the required direction
 
         if (offset_pixels != 0) {
-            moveSpectrum(offset_pixels);
+            move(offset_pixels);
             // Update the waterfall frequency which will differ from f_carrier as we have moved it by multiples of bin_offset
             waterfallFreq -= offset_pixels * fft::fft_params.display_rbw * PIXELS_BYTE;
         }
@@ -75,7 +77,7 @@ void WaterfallWidget::work() {
 /*
  * Displaces the waterfall by frequency offset
  */
-void WaterfallWidget::moveSpectrum(int16_t bin_offset) {
+void WaterfallWidget::move(int16_t bin_offset) {
 
     uint16_t width = this->size().width();
 
@@ -198,28 +200,47 @@ void WaterfallWidget::scroll() {
     float range_inv = 1.0 / (max - min); // Precompute division
 
     uint16_t ix = 0;
+    uint8_t color = 0;
     for (uint16_t i = 0; i < width; i++) {
 
         float db = bins_db[i];
 
         db = constrain(db, min, max);
 
-        uint8_t color = (uint8_t)(((float)(db - min) * range_inv) * (float)FFT_WATERFALL_NCOLORS - 1);
+        float color_f = ((float)(db - min) * range_inv) * (float)FFT_WATERFALL_NCOLORS - 1;
+        int c = (uint8_t)color_f;
 
-        if (show_fps && color < 2) {
-            color = 2; // 0 and 1 are reserved in debug mode to black and white to allow writing debug messages in the pixel buffer
+        if (show_fps && c < 2) {
+            c = 2; // 0 and 1 are reserved in debug mode to black and white to allow writing debug messages in the pixel buffer
         }
+
+        // --- Ditherhing
+        static const uint8_t bayer2x2[2][2] = {{0, 128}, {192, 64}};
+        static int current_line;
+
+        current_line = !current_line;
+        int tx = i & 1;            // pixel X within matrix
+        int ty = current_line & 1; // pixel Y within matrix
+        float frac = color_f - c;
+        if (frac * 256 > bayer2x2[ty][tx] && c < 15) {
+            color = c + 1;
+        } else {
+            color = c;
+        }
+        // --- Dithering
+
         // Set the 4 bits of the pixel in the buffer
         uint8_t shift;
         uint8_t mask;
 
-        ix = ((0 * width) + i) >> 1;
+        ix = i >> 1;
 
         shift = (i % 2) << 2;
 
         mask = waterfallBuffer[ix] & (uint8_t) ~(0x000FU << shift);
 
         waterfallBuffer[ix] = mask | ((color % 16) << shift);
+
         for (int n = 1; n < step; n++) { // repeat as many lines as the step size
             waterfallBuffer[ix + (n * (width >> 1))] = waterfallBuffer[ix];
         }
@@ -253,7 +274,7 @@ void WaterfallWidget::scroll() {
     uint16_t ix = 0;
     for (uint16_t i = 0; i < width; i++) {
 
-        float db = constrain(fft_display_db[i], min, max);
+        float db = constrain(bins_db[i], min, max);
         float normalized = (db - min) * range_inv;
 
         // log10 fast approximation

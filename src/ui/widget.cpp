@@ -96,6 +96,7 @@ void Widget::set_parent(Widget *const new_parent) {
         // We have a parent, but are losing it. Update visible status.
         //  dirty_overlapping_children_in_rect(screen_rect());
         set_visible(false);
+        parent_->on_child_update(this); // Make the parent react (
     }
 
     parent_ = new_parent;
@@ -312,16 +313,15 @@ void Widget::set_visible(bool v) {
          * widget becomes invisible, whether the widget (or parent) is
          * hidden, or the widget (or parent) is removed from the tree.
          */
+        if (parent_) {
+            parent_->on_child_update(this);
+        }
 
         if (v) {
             on_show();
         } else {
             set_focus(false);
             on_hide();
-        }
-
-        if (parent_) {
-            parent_->on_child_update(this);
         }
     }
 }

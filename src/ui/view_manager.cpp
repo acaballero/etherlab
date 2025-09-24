@@ -32,6 +32,9 @@ View *breadcrumb[MAX_VIEWS];
 View *currentView;
 int view_index = -1;
 
+std::unique_ptr<View> aprs_view_p;
+std::unique_ptr<View> view_p;
+
 void view_loop();
 os::periodic_task task(250, view_loop);
 
@@ -112,40 +115,37 @@ void view_loop() {
     currentView->paint();
 }
 
-std::unique_ptr<View> view;
 void open_aprs() {
 
-    view.reset();
+    aprs_view_p.reset();
 
-    view = std::make_unique<dsp_ui::APRSView>(Rect{0, MENU_START_Y - 50, DISPLAY_X_PIXELS, METERS_HEIGHT + 80});
+    aprs_view_p = std::make_unique<dsp_ui::APRSView>(Rect{0, MENU_START_Y - 50, DISPLAY_X_PIXELS, METERS_HEIGHT + 80});
 
-    auto *view_ptr = view.get();
-    view->on_hide_fn = [view_ptr]() {
+    auto *view_ptr = aprs_view_p.get();
+    aprs_view_p->on_hide_fn = [view_ptr]() {
         view_manager::mainView.remove_child(view_ptr);
-        view.reset();
+        aprs_view_p.reset();
         Menu::close();
     };
 
-    view->set_visible(true);
-    view->set_z_index(200);
-    view->set_focus(true);
-    view_manager::mainView.add_child(view.get());
+    aprs_view_p->set_visible(true);
+    aprs_view_p->set_z_index(200);
+    aprs_view_p->set_focus(true);
+    view_manager::mainView.add_child(aprs_view_p.get());
 }
 
 void open(std::unique_ptr<View> v) {
-    view = move(v);
+    view_p = move(v);
 
-    auto *view_ptr = view.get();
-    view->on_hide_fn = [view_ptr]() {
+    auto *view_ptr = view_p.get();
+    view_p->on_hide_fn = [view_ptr]() {
         view_manager::mainView.remove_child(view_ptr);
-        view.reset();
+        view_p.reset();
     };
 
-    view->set_visible(true);
-    view_manager::mainView.add_child(view.get());
-
-    view_manager::mainView.to_top(view.get());
-    view->set_focus(true);
+    view_manager::mainView.add_child(view_ptr);
+    view_manager::mainView.to_top(view_ptr);
+    view_ptr->set_focus(true);
 }
 
 } // namespace view_manager

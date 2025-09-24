@@ -163,7 +163,7 @@ void frequency_signal_callback(void *, void *args) {
                 main_board::set_filter();
                 main_board::set_if_filter(config.if_filter);
             }
-            view_manager::mainView.Waterfall()->centerSpectrum();
+            view_manager::mainView.Waterfall()->center();
             break;
     }
 }

@@ -314,6 +314,7 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
 
 bool ReceiveTaskBase::start() {
 
+    LOG("___ [START] Receive task ___\n");
     auto current_mute = main_board::get_mute();
     main_board::set_mute(GPIO_PIN_SET);
 

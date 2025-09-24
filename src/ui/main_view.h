@@ -48,8 +48,6 @@ class MainView : public View {
 
     OptionButtonsView *OptionButtons();
 
-    NumberEditView *NumberEdit();
-
     bool on_input(const st_inputEvent event) override;
 
   protected:
@@ -69,7 +67,6 @@ class MainView : public View {
     IQBalanceWidget iqbal_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
     MenuWidget menu_w{{0, MENU_START_Y, DISPLAY_X_PIXELS, INFO_HEIGHT}, &lcd};
     OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
-    NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
 
     void before_paint() override;
 

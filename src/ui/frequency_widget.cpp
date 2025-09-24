@@ -74,11 +74,11 @@ void FrequencyWidget::before_paint() {
         }
 
         char buf[20];
-        if (config.repeater_mode != radio::RPT_MODE_OFF) {
+        if (config.repeater_mode != RPT_MODE_OFF) {
 
             sprintf(buf, "%d", (int)config.repeater_offset / 1000);
 
-            if (config.repeater_mode == radio::RPT_MODE_NEGATIVE) {
+            if (config.repeater_mode == RPT_MODE_NEGATIVE) {
                 btnRpt.set_text(ISTX ? "TX+" : "RX-");
             } else {
                 btnRpt.set_text(ISTX ? "RX-" : "TX+");

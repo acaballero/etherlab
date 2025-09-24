@@ -7,6 +7,7 @@
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
 
+#include <sys/_stdint.h>
 #include <sys/types.h>
 #include <utility>
 #include "dsp/blocks/dc_block.h"
@@ -38,20 +39,20 @@
 // Current slice
 uint8_t fft_slice_n;
 
-CCM_SECTION fft_type fft_output[FFT_N];
 CCM_SECTION complex_t_f32 fft_slice_buff[FFT_N];
+fft_type *fft_output = (fft_type *)fft_slice_buff;
 
 // Displayed FFT
-fft_type fft_display[DISPLAY_X_PIXELS];
-fft_type fft_display_db[DISPLAY_X_PIXELS];
+CCM_SECTION fft_type fft_display[DISPLAY_X_PIXELS];
+CCM_SECTION fft_type fft_display_db[DISPLAY_X_PIXELS];
 
 // FFT FIFO
-complex_t fft_fifo_buff[FFT_FIFO_SIZE];
+CCM_SECTION complex_t fft_fifo_buff[FFT_FIFO_SIZE];
 FIFO fft_fifo((char *)fft_fifo_buff, FFT_FIFO_SIZE * sizeof(complex_t));
 
 // We need a decimator for each chanel
-DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_i{};
-DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_q{};
+CCM_SECTION DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_i{};
+CCM_SECTION DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_q{};
 
 buffer_t<float32_t> fft_slice_buffer = {(float32_t *const)(fft_slice_buff), FFT_N * 2};
 
@@ -72,6 +73,12 @@ uint16_t bitRevTableLength = ARMBITREVINDEXTABLE_128_TABLE_LENGTH;
 const float32_t *twiddle = twiddleCoef_256;
 const uint16_t *bitRevTable = armBitRevIndexTable256;
 uint16_t bitRevTableLength = ARMBITREVINDEXTABLE_256_TABLE_LENGTH;
+
+#elif FFT_N == 512
+
+const float32_t *twiddle = twiddleCoef_512;
+const uint16_t *bitRevTable = armBitRevIndexTable512;
+uint16_t bitRevTableLength = ARMBITREVINDEXTABLE_512_TABLE_LENGTH;
 
 #endif
 
@@ -94,9 +101,11 @@ fft_type fft_peak = FFT_MIN_DB;
 uint16_t fft_peak_bin = 0;
 uint64_t fft_peak_f = 0;
 
+uint32_t overlap_factor = 2;
+
 bool first_frame = true;
 // TODO: Move to storable properties
-bool fft_min_db_auto = false;
+
 bool fft_estimateIQBalance = false;
 /* Noise floor calculation */
 uint16_t fft_calc_noise_floor_period_ms = 200; // 0 = noise floor disabled
@@ -105,6 +114,7 @@ unsigned long fft_last_noise_floor_calculation_ms;
 namespace fft {
 
 float fft_noise_floor_db = FFT_MIN_DB; // Noise floor in dB
+float fft_max_db = FFT_MIN_DB;
 float snr = 1e-40f;
 float dbm = FFT_MIN_DB;         // Power in the baseband (low-pass filtered)
 float dbm_instant = FFT_MIN_DB; // Raw (unfiltered) power
@@ -270,7 +280,7 @@ float fft_radio_gain_factor;
 
 volatile FFT_STATUS fft_status = FFT_STATUS_IDLE;
 FFTIQBalancer fftIQBalancer;
-float window[FFT_N];
+CCM_SECTION float window[FFT_N];
 bool initialized = false;
 
 /* ----------- */
@@ -580,26 +590,28 @@ uint32_t get_peak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v) {
  * We estimate it just by taking the median, which yields good enough approximation for our needs
  * For better FFT calculation methods: https://kluedo.ub.uni-kl.de/frontdoor/deliver/index/docId/4293/file/exact_fft_measurements.pdf
  */
-void calculateNoiseFloor() {
+void calculate_noise_floor() {
 
     fft_type copy[FFT_N];
     memcpy(copy, fft_output + fft::fft_params.start_bin, fft::fft_params.nbins * sizeof(fft_type));
 
     std::sort(copy, copy + fft::fft_params.nbins);
     fft_type median = copy[fft_params.nbins >> 1];
+    fft_type max = copy[fft_params.nbins - 1];
 
-    // Exponential filter
+    // LPF for these. The peak value heavily smoothed
     fft_noise_floor_db = (fft_noise_floor_db - (0.1f * (fft_noise_floor_db - median)));
+    fft_max_db = (fft_max_db - (0.02f * (fft_max_db - max)));
 
-    if (fft_min_db_auto) {
+    if (config.fft.min_db_auto) {
         // Set the dB scale automatically
-        // fft_type min_db = copy[0];
 
-        config.fft.min_db = fft_noise_floor_db - 10;
+        config.fft.min_db = floor_multiple(fft_noise_floor_db - 5, 5);
 
-        if (config.fft.min_db > config.fft.max_db) {
-            config.fft.min_db = config.fft.max_db;
-        }
+        // Set max db as the next multiple of 10 that is FFT_HEADROOM db higher
+        config.fft.max_db = ceil_multiple(fft_max_db + FFT_HEADROOM_DB, 20);
+
+        config.fft.min_db = constrain(config.fft.min_db, FFT_MIN_DB, config.fft.max_db);
     }
 }
 
@@ -770,7 +782,8 @@ void process_fft(float32_t *v) {
                 fft_display[display_ix] = FFT_HEIGHT;
             }
 
-            fft_display_db[display_ix] = fft_display_db[display_ix] - (config.fft.smooth_factor * (fft_display_db[display_ix] - db));
+            //  fft_display_db[display_ix] = fft_display_db[display_ix] - (config.fft.smooth_factor * (fft_display_db[display_ix] - db));
+            fft_display_db[display_ix] = db;
             display_ix += x_inc;
             bin_pos += fft::fft_params.bin_width_px;
         }
@@ -806,7 +819,8 @@ void process_fft(float32_t *v) {
 
                 // IIR filter
                 fft_display[display_ix] = fft_display[display_ix] - (gain * (fft_display[display_ix] - (float)start));
-                fft_display_db[display_ix] = fft_display_db[display_ix] - (config.fft.smooth_factor * (fft_display_db[display_ix] - db));
+                // fft_display_db[display_ix] = fft_display_db[display_ix] - (config.fft.smooth_factor * (fft_display_db[display_ix] - db));
+                fft_display_db[display_ix] = db;
 
                 next_display_ix += x_inc;
                 db = FFT_MIN_DB;
@@ -816,7 +830,8 @@ void process_fft(float32_t *v) {
         }
 
         fft_display[nix] = fft_display[nix] - (gain * (fft_display[nix] - (float)start));
-        fft_display_db[nix] = fft_display_db[nix] - (gain * (fft_display_db[nix] - db));
+        fft_display_db[nix] = db;
+        // fft_display_db[nix] = fft_display_db[nix] - (gain * (fft_display_db[nix] - db));
     }
 
     // If the slice is not fully shown, set the fft_output to min_db so they're not used in further calculations (getPeak, for example)
@@ -830,7 +845,7 @@ void process_fft(float32_t *v) {
     if (fft_calc_noise_floor_period_ms > 0) {
         unsigned long ms = HAL_GetTick();
         if (ms - fft_last_noise_floor_calculation_ms > fft_calc_noise_floor_period_ms) {
-            calculateNoiseFloor();
+            calculate_noise_floor();
             fft_last_noise_floor_calculation_ms = ms;
         }
     }
@@ -960,10 +975,6 @@ void fft_work() {
 
     adquire_fft_async();
 
-    // Estimate only in the first slice
-    // IQ imbalance varies with IF frequency so we are only estimating it in the first slice
-    // TODO: Account for IF frequency dependent IQ imbalances
-
     doFFT();
 
     if (config.fft.view_mode == FFT_VIEW_TIME_DOMAIN) {
@@ -1002,7 +1013,7 @@ void fft_work() {
 /*
  * Performance with -Og optimizations for FFT_N=128: 15ms * number slices + 19ms for the rendering in a 240*80 display buffer at 18Mhz SPI
  */
-void updateFFT() {
+void update_fft() {
 
     uint64_t m;
     uint8_t slices;
@@ -1013,7 +1024,7 @@ void updateFFT() {
     fft_config(fft::fft_params.span);
 
     if (last_start_freq != fft::fft_params.span_f_start) {
-        // If the span has changed, cancel the smoot factor for a frame so the current values are preserved
+        // If the span has changed, cancel the smooth factor for a frame so the current values are preserved
         first_frame = true;
     } else {
         first_frame = false;
@@ -1076,7 +1087,7 @@ void updateFFT() {
 }
 
 void fft_loop() {
-    updateFFT();
+    update_fft();
     view_manager::mainView.paint();
 
     snr_task.run();

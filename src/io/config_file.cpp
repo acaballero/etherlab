@@ -54,10 +54,11 @@ template <> bool ConfigFile<st_config>::save(const st_config *cfg) {
     WRITE_FIELD("f_if_fm_tx=%u", cfg->f_if_fm_tx);
 
     WRITE_FIELD("vfo_ix=%d", cfg->vfo_ix);
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 3; ++i) {
         WRITE_FIELD("vfo[%d].freq=%u", i, cfg->vfo[i].freq);
         WRITE_FIELD("vfo[%d].step=%u", i, cfg->vfo[i].step);
         WRITE_FIELD("vfo[%d].rit=%d", i, cfg->vfo[i].rit);
+        WRITE_FIELD("vfo[%d].modulation=%d", i, cfg->vfo[i].mode);
     }
 
     WRITE_FIELD("memory_mode=%d", cfg->memory_mode);
@@ -73,6 +74,7 @@ template <> bool ConfigFile<st_config>::save(const st_config *cfg) {
     WRITE_FIELD("fft.bw=%u", cfg->fft.bw);
     WRITE_FIELD("fft.min_db=%d", cfg->fft.min_db);
     WRITE_FIELD("fft.max_db=%d", cfg->fft.max_db);
+    WRITE_FIELD("fft.min_db_auto=%d", cfg->fft.min_db_auto);
     WRITE_FIELD("fft.view_mode=%d", cfg->fft.view_mode);
     WRITE_FIELD("fft.smooth_factor=%f", cfg->fft.smooth_factor);
     WRITE_FIELD("fft.enabled=%d", cfg->fft.enabled);
@@ -83,6 +85,7 @@ template <> bool ConfigFile<st_config>::save(const st_config *cfg) {
     WRITE_FIELD("fft.enable_iq_balance=%d", cfg->fft.enable_iq_balance);
     WRITE_FIELD("fft.conversion_time_us=%d", cfg->fft.conversion_time_us);
     WRITE_FIELD("fft.waterfall_pixels_per_second=%d", cfg->fft.waterfall_pixels_per_second);
+    WRITE_FIELD("fft.waterfall_mode=%d", cfg->fft.waterfall_mode);
     WRITE_FIELD("fft.DCOffset_I=%d", cfg->fft.DCOffset_I);
     WRITE_FIELD("fft.DCOffset_Q=%d", cfg->fft.DCOffset_Q);
     WRITE_FIELD("fft.iq_balance_estimate_period_ms=%d", cfg->fft.iq_balance_estimate_period_ms);
@@ -315,13 +318,15 @@ template <> bool ConfigFile<st_config>::load(st_config *cfg) {
     read_uint("f_if_fm_tx=", &cfg->f_if_fm_tx);
     read_uint8("vfo_ix=", &cfg->vfo_ix);
 
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 3; ++i) {
         sprintf(fmt, "vfo[%d].freq=", i);
         read_uint(fmt, &cfg->vfo[i].freq);
         sprintf(fmt, "vfo[%d].step=", i);
         read_uint(fmt, &cfg->vfo[i].step);
         sprintf(fmt, "vfo[%d].rit=", i);
         read_int(fmt, &cfg->vfo[i].rit);
+        sprintf(fmt, "vfo[%d].modulation=", i);
+        read_int(fmt, (int32_t *)&cfg->vfo[i].mode);
     }
 
     read_bool("memory_mode=", &cfg->memory_mode);
@@ -337,6 +342,7 @@ template <> bool ConfigFile<st_config>::load(st_config *cfg) {
     read_uint("fft.bw=", &cfg->fft.bw);
     read_int16("fft.min_db=", &cfg->fft.min_db);
     read_int16("fft.max_db=", &cfg->fft.max_db);
+    read_bool("fft.min_db_auto=", &cfg->fft.min_db_auto);
     read_uint8("fft.view_mode=", &cfg->fft.view_mode);
     read_float("fft.smooth_factor=", &cfg->fft.smooth_factor);
     read_bool("fft.enabled=", &cfg->fft.enabled);
@@ -347,6 +353,8 @@ template <> bool ConfigFile<st_config>::load(st_config *cfg) {
     read_bool("fft.enable_iq_balance=", &cfg->fft.enable_iq_balance);
     read_uint8("fft.conversion_time_us=", &cfg->fft.conversion_time_us);
     read_uint16("fft.waterfall_pixels_per_second=", &cfg->fft.waterfall_pixels_per_second);
+    read_int("fft.waterfall_mode=", (int32_t *)&cfg->fft.waterfall_mode);
+
     read_int16("fft.DCOffset_I=", &cfg->fft.DCOffset_I);
     read_int16("fft.DCOffset_Q=", &cfg->fft.DCOffset_Q);
     read_uint8("fft.iq_balance_estimate_period_ms=", &cfg->fft.iq_balance_estimate_period_ms);

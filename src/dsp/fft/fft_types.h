@@ -6,11 +6,12 @@
 
 #include "../../../lib/utils/utils.hpp"
 #include "Display_afb.h"
+
 #include "hw/stm32.h"
 #include "dsp/dsp_common.h"
 
 enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_SPECTRUM_STYLE_LINE_FILL };
-
+enum WATERFALL_MODE { AVERAGE, MAX_HOLD };
 #define FFT_TYPE FFT_TYPE_FLOAT
 
 #define FFT_IQBALANCE_REFRESH_PERIOD_MS 1000
@@ -21,7 +22,7 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 #define FFT_WATERFALL_MAX_PIXELS_PER_FRAME 4 // max scrolled pixels per frame
 
 // Length (number of bins) of a single fourier transform
-#define FFT_N 256
+#define FFT_N 512
 
 // Needs to be >= DSP_BANDWIDTH*2 by a safe margin, depending on the width of
 // the transition band of the low pass filter
@@ -47,9 +48,11 @@ enum FFT_SPECTRUM_STYLE { FFT_SPECTRUM_STYLE_FILL, FFT_SPECTRUM_STYLE_LINE, FFT_
 // Referred to the radio frontend
 #define FFT_MIN_DB -145
 #define FFT_MAX_DB -30
+// When the min/max is auto, the desired headroom
+#define FFT_HEADROOM_DB 40
 
 // Threshold above noise floor to take a signal into account
-#define FFT_SIGNAL_THRESHOLD_DB 10
+#define FFT_SIGNAL_THRESHOLD_DB 20
 
 #define FFT_TYPE_Q31 2
 #define FFT_TYPE_FLOAT 3
@@ -88,6 +91,7 @@ typedef struct {
     bool enabled = true;
     uint8_t refresh_period_ms = 33; // Aim for 30 fps
     uint16_t waterfall_pixels_per_second = FFT_WATERFALL_DEFAULT_PPS;
+    WATERFALL_MODE waterfall_mode = MAX_HOLD;
 
     int16_t DCOffset_I = 0;
     int16_t DCOffset_Q = 0;
@@ -99,6 +103,7 @@ typedef struct {
     uint8_t iq_balance_estimate_period_ms = 10;
 
     bool removeDC = true;
+    bool min_db_auto = true;
 
     uint8_t window = FFT_WINDOW_HAMMING;
     uint32_t sample_rate = 200000;

@@ -159,6 +159,10 @@ int analogMedian(int pin, int n);
 
 float roundDownToNearest(float d, float t);
 
+int ceil_multiple(int n, int mult);
+
+int floor_multiple(int n, int m);
+
 int splitString(char *str, char **parts, int length, char separator);
 
 void printMemory();

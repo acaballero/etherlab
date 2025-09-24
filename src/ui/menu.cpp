@@ -49,9 +49,9 @@ const char *constMEM digitMask[] MEMMODE = {digit, digit, digit, ","};
 
 MenuStatus menuStatus = IDLE;
 
-menu_option_st<radio::RPT_MODE> rpt_mode_options[] = {{radio::repeaterNames[radio::RPT_MODE_OFF], radio::RPT_MODE_OFF},
-                                                      {radio::repeaterNames[radio::RPT_MODE_POSITIVE], radio::RPT_MODE_POSITIVE},
-                                                      {radio::repeaterNames[radio::RPT_MODE_NEGATIVE], radio::RPT_MODE_NEGATIVE}};
+menu_option_st<RPT_MODE> rpt_mode_options[] = {{radio::repeaterNames[RPT_MODE_OFF], RPT_MODE_OFF},
+                                               {radio::repeaterNames[RPT_MODE_POSITIVE], RPT_MODE_POSITIVE},
+                                               {radio::repeaterNames[RPT_MODE_NEGATIVE], RPT_MODE_NEGATIVE}};
 
 MODULATION_MODE modulation;
 optionsPrompt<MODULATION_MODE> modulationMenu((const char *)"Modulation", modulation_options, modulation,
@@ -78,10 +78,10 @@ optionsPrompt<radio::IF_FILTER> IFFilterMenu((const char *)"IF filter", if_filte
                                                  }
                                              });
 
-optionsPrompt<radio::RPT_MODE> repeaterMenu((const char *)"Repeater mode", rpt_mode_options, config.repeater_mode,
-                                            sizeof(rpt_mode_options) / sizeof(rpt_mode_options[0]), [](radio::RPT_MODE) {
-                                                radio::update_freq();
-                                            });
+optionsPrompt<RPT_MODE> repeaterMenu((const char *)"Repeater mode", rpt_mode_options, config.repeater_mode,
+                                     sizeof(rpt_mode_options) / sizeof(rpt_mode_options[0]), [](RPT_MODE) {
+                                         radio::update_freq();
+                                     });
 
 void open_gain() {
     close();

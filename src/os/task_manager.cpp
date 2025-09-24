@@ -50,6 +50,7 @@ periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
 
     // To create a timeout we set a period of same length and duration AND a delay, so the task will finish after its first execution
     periodic_task *task = new periodic_task(delay, c, delay, delay);
+    task->set_high_priority(true); // Timeouts must be respected
     add(task);
     return task;
 }

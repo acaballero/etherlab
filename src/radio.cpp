@@ -3,6 +3,7 @@
 //
 
 //#include "main_board.h"
+#include "main_board.h"
 #include "status.h"
 #include "stdio.h"
 #include "radio.h"
@@ -79,11 +80,11 @@ Signal freq_signal;
 Signal band_signal;
 mixer mixers[2];
 
-const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
+const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true, FM},
                          {270000000, 295000000, FLT_6_CODE, ANY_SIDE, true},
-                         {143000000, 158000000, FLT_2_CODE, HIGH_SIDE, true},
-                         {118000000, 137000000, FLT_1_CODE, ANY_SIDE, false},
-                         {85000000, 110000000, FLT_3_CODE, ANY_SIDE, false},
+                         {143000000, 158000000, FLT_2_CODE, HIGH_SIDE, true, FM},
+                         {118000000, 137000000, FLT_1_CODE, ANY_SIDE, false, AM},
+                         {85000000, 110000000, FLT_3_CODE, ANY_SIDE, false, WFM},
                          // From this band down the injection has to be high side since the ADF4351 can't go below 35 MHz
                          {50000000, 54000000, FLT_3_CODE, HIGH_SIDE, false},
                          {28000000, 29700000, FLT_5_CODE, HIGH_SIDE, false},
@@ -91,7 +92,7 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true},
                          {24890000, 24990000, FLT_5_CODE, HIGH_SIDE, false},
                          {21000000, 21450000, FLT_5_CODE, HIGH_SIDE, false},
                          {18068000, 18168000, FLT_5_CODE, HIGH_SIDE, false},
-                         {13100000, 14800000, FLT_5_CODE, HIGH_SIDE, false},
+                         {13100000, 14800000, FLT_5_CODE, HIGH_SIDE, false, AM},
                          {10100000, 10150000, FLT_5_CODE, HIGH_SIDE, false},
                          {6900000, 7900000, FLT_5_CODE, HIGH_SIDE, false},
                          {5351500, 5366500, FLT_5_CODE, HIGH_SIDE, false},
@@ -268,6 +269,7 @@ void set_vfo(uint8_t vfo_ix) {
     if (vfo_ix != config.vfo_ix) {
         config.vfo_ix = vfo_ix;
         update_freq();
+        main_board::set_modulation_mode(config.vfo[vfo_ix].mode, false);
     }
 }
 
@@ -301,10 +303,10 @@ uint64_t get_vfo_frequency(uint8_t vfo_ix) {
     // TODO: Are we sure we don't need repeater offset in digital mode? That's true for DSP capture & replay
     // but not necessarily in case other DSP modes of operation are implemented
 
-    if (ISTX && ISANALOG && config.repeater_mode != radio::RPT_MODE_OFF) {
+    if (ISTX && ISANALOG && config.repeater_mode != RPT_MODE_OFF) {
         // If repeater mode is enabled, carrier frequency is changed accordingly
         int32_t offset = config.repeater_offset;
-        if (config.repeater_mode == radio::RPT_MODE_NEGATIVE) {
+        if (config.repeater_mode == RPT_MODE_NEGATIVE) {
             offset *= -1;
         }
         f += offset;
@@ -431,6 +433,10 @@ void set_band(BAND band) {
         // } else {
         set_frequency((config.f_min + config.f_max) / 2);
         //}
+    }
+
+    if (bands[config.band].modulation != MODULATION_MODE_ALL) {
+        main_board::set_modulation_mode(bands[config.band].modulation, false);
     }
 
     band_signal.emit(nullptr);

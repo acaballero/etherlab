@@ -54,7 +54,7 @@ void CaptureTask::work() {
                 }
             } else if (fres != FR_DISK_ERR || status.status == DSP_STATUS_RUNNING) {
                 // We check again for the status because the ADC interrupt could've stopped the capture before
-                // TODO:
+
                 halt(DSP_ERR_FILEWRITE);
             }
         }

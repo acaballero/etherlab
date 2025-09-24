@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <cstring>
 #include <cstdint>
-#include "radio.h"
 #include "dsp/dsp_common.h"
 
 enum IF_PROCESSING_MODE { ANALOG, DSP };
@@ -26,6 +25,9 @@ enum DIRECTION { BACKWARDS, STOP, FORWARD };
 enum LO_POWER { LO_POWER_LOW, LO_POWER_MEDIUM, LO_POWER_HIGH };
 
 enum FREQ_TYPE { STATION, BAND_START, BAND_END, ALL };
+
+// Repeater modes
+enum RPT_MODE { RPT_MODE_POSITIVE, RPT_MODE_NEGATIVE, RPT_MODE_OFF };
 /*
  * Frequency station
  */
@@ -106,7 +108,7 @@ struct st_topBar {
 struct st_freqInfo {
     unsigned long f_carrier;
     unsigned long f_step;
-    radio::RPT_MODE repeater_mode;
+    RPT_MODE repeater_mode;
     uint8_t vfo_ix;
     bool memory_mode;
 

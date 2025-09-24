@@ -573,6 +573,41 @@ double round_to_nearest_double(double n, double m) {
     }
 }
 
+int ceil_multiple(int n, int m) {
+    if (m == 0) {
+        return n; // undefined, but guard
+    }
+    int r = n % m;
+    if (r == 0) {
+        return n;
+    }
+    if (n >= 0) {
+        return n + (m - r); // bump up to next multiple
+    } else {
+        return n - r; // already ≥ n
+    }
+}
+
+int floor_multiple(int n, int m) {
+    if (m == 0) {
+        return n; // guard against division by zero
+    }
+
+    int r = n % m;
+
+    if (r == 0) {
+        // already a multiple
+        return n;
+    }
+
+    if (n >= 0) {
+        // drop down to the previous multiple
+        return n - r;
+    } else {
+        // for negatives, go further down
+        return n - (m + r);
+    }
+}
 /*
 float roundDownToNearest(float d, float t) {
     // 105.5 down to nearest 1 = 105

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "Signal.h"
 #include "mixer.h"
+#include "types.h"
 #include <cstdint>
 
 namespace radio {
@@ -33,6 +34,9 @@ typedef struct {
 
     // Whether TX is allowed in the band
     bool tx_enabled;
+
+    // Default modulation mode
+    MODULATION_MODE modulation{MODULATION_MODE_ALL};
 
 } st_band;
 
@@ -89,9 +93,6 @@ enum IF_FILTER {
 };
 
 enum IF_FILTER_2 { IF_FILTER_2_AUTO, IF_FILTER_2_AUTO_THRU, IF_FILTER_2_NONE };
-
-// Repeater modes
-enum RPT_MODE { RPT_MODE_POSITIVE, RPT_MODE_NEGATIVE, RPT_MODE_OFF };
 
 enum FRONTEND_PATH { FRONTEND_PATH_ATT, FRONTEND_PATH_THRU, FRONTEND_PATH_LNA, FRONTEND_PATH_AUTO };
 

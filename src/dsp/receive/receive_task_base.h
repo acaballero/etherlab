@@ -103,12 +103,12 @@ class ReceiveTaskBase : public Task {
     // Skips demodulation step for testing purposes, echoing the baseband signal
     bool baseband_echo = false;
 
-    /* Bandwidth of the output audio stream */
+    /* Bandwidth of the output audio stream (IIR LPF config will match this) */
     virtual uint32_t get_audio_bw_hz() const {
         return get_modulation_mode() == WFM ? 15000 : 4000;
     };
 
-    /* Rate of the output audio stream */
+    /* Sample rate of the output audio stream */
     virtual uint32_t get_audio_sample_rate() const {
         return get_modulation_mode() == WFM ? 24000 : 12000;
     };

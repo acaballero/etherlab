@@ -372,9 +372,8 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
 
     std::vector<uint32_t> line_numbers;
 
-    LOG("find_range %d, %d\n", freq_min, freq_max);
     FRESULT res = db_file->find_range(freq_min, freq_max, extract_freq_func, line_numbers, MAX_RETRIEVED_ITEMS_PER_RANGE);
-    LOG("end find:  %d\n", res);
+
     if (res != FR_OK) {
         // TODO: Remove this once this is stable
         // fix_db();
@@ -410,7 +409,7 @@ char tempFreqBuf[] = "00 000 000 000";
 using namespace Menu;
 
 // A function to save the edited data record
-void saveTarget() {
+void save_target() {
     char *ptr;
     removePunct(tempFreqBuf);
     tempFreqMem.freq = strtol(tempFreqBuf, &ptr, 10);
@@ -512,7 +511,7 @@ result edit_freq_name(eventMask, navNode &) {
     view_manager::keyboardView.set_size(FREQ_MEM_NAME_SIZE);
     view_manager::keyboardView.on_changed = [](char *str) {
         strncpy(tempFreqMem.name, str, FREQ_MEM_NAME_SIZE);
-        saveTarget();
+        save_target();
     };
     view_manager::push((View *)&view_manager::keyboardView);
     return proceed;
@@ -527,7 +526,7 @@ result edit_freq(eventMask, navNode &) {
             char buf[16];
             format_long(tempFreqMem.freq, buf);
             sprintf(tempFreqBuf, "%s", buf);
-            saveTarget();
+            save_target();
         },
         radio::get_min_frequency(), radio::get_max_frequency());
 
@@ -647,7 +646,7 @@ labelPrompt freqEditMenu((const char *)"Frequency", tempFreqBuf, edit_freq, ente
 
 optionsPrompt<MODULATION_MODE> modulationModeMenu((const char *)"Modulation", modulation_options, config.modulation,
                                                   sizeof(modulation_options) / sizeof(modulation_options[0]), [](MODULATION_MODE) {
-                                                      saveTarget();
+                                                      save_target();
                                                   });
 
 MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqNameMenu), OBJ(modulationModeMenu), OBJ(freqEditMenu));
