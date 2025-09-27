@@ -16,7 +16,7 @@ void set_spectrum_colors(uint16_t line, uint16_t fill);
 uint16_t get_waterfall_period();
 uint8_t get_waterfall_step_size();
 void init_waterfall();
-void initIQorWaterfall();
+void init_IQ_or_waterfall();
 void open_waterfall_config();
 void open_dbscale_config();
 void open_span_config();

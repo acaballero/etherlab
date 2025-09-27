@@ -100,11 +100,12 @@ static usb_request_handler_fn request_handlers[] = {NULL,
 // os::periodic_task task(100, process_command_queue);
 
 void print_hex(char *buf, int size, bool response = false) {
+#if DEBUG_MSGS
     char *byte = buf;
     char str[4];
 
     if (response) {
-        printf(" => ");
+        printf_(" => ");
     }
     while (size > 0) {
         if (*byte == '\r') {
@@ -115,9 +116,10 @@ void print_hex(char *buf, int size, bool response = false) {
         printf_("%s ", str);
         byte++;
     }
-    if (response) {
-        printf_("\n");
-    }
+
+    printf_("\n");
+
+#endif
 }
 
 uint64_t uint64_to_bcd(uint64_t n) {
@@ -198,8 +200,6 @@ uint8_t from_modulation_mode(MODULATION_MODE mode) {
 
 void process_command(st_usb_cdc_command *command) {
 
-    // print_hex((char *)command->data, command->size);
-
     uint8_t *buf = command->data;
 
     // The response is the request ending with the device address
@@ -208,20 +208,24 @@ void process_command(st_usb_cdc_command *command) {
 
     if (buf[0] == START_BYTE && buf[1] == START_BYTE) {
         if (buf[2] == RADIO_ADDRESS || buf[2] == BROADCAST_ADDRESS) {
+
             usb_request_handler_fn handler = request_handlers[buf[4]];
             if (handler) {
+                LOG("Received cmd 0x%.2x (%d) | ", buf[4], buf[4]);
                 handler(command, response, &size);
             } else {
-                // printf_("Command 0x%.2x (%d) not recognized\n", buf[4], buf[4]);
+                LOG("ERROR: Command 0x%.2x (%d) not recognized | ", buf[4], buf[4]);
                 memcpy(response, nok_response_data, 5);
             }
 
+            print_hex((char *)command->data, command->size);
+
             response[size++] = STOP_BYTE;
 
-            // print_hex((char *)response, size, true);
-
             CDC_Transmit_HS(response, size);
-            // LOG("%d: Sent response. Size: %d\n", HAL_GetTick(), size);
+            LOG("Sent | size: %d ", size);
+
+            print_hex((char *)response, size, true);
         } else {
             // printf_(" => not for me\n");
         }
@@ -286,7 +290,7 @@ void cmd_read_meters(st_usb_cdc_command *command, uint8_t *response, uint8_t *si
 
 void cmd_read_freq_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *size) {
     uint64_t bcdfreq = 0;
-
+    LOG_RAW("Read freq |");
     // response[*size++] = buf[5];
     bcdfreq = uint64_to_bcd(radio::get_frequency());
     memcpy(response + *size, &bcdfreq, sizeof(bcdfreq));
@@ -294,22 +298,25 @@ void cmd_read_freq_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *siz
 }
 
 void cmd_read_mode_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *size) {
+    LOG_RAW("Read mode | ");
     response[(*size)++] = from_modulation_mode(main_board::get_modulation_mode());
 }
 
 void cmd_set_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *) {
+    LOG_RAW("Set freq | ");
     radio::set_frequency(parse_freq(command->data + 5));
     memcpy(response, ok_response_data, 5);
 }
 
 void cmd_set_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *) {
-
+    LOG_RAW("Set mode | ");
     main_board::set_modulation_mode(to_modulation_mode(command->data[5]), false);
     memcpy(response, ok_response_data, 5);
 }
 
 void cmd_set_vfo_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *) {
 
+    LOG_RAW("Set VFO | ");
     uint8_t *buf = command->data;
     if (buf[5] == 0x00) {
         radio::set_vfo(0);
@@ -323,6 +330,7 @@ void cmd_set_vfo_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t
 }
 
 void cmd_read_split_mode_handler(st_usb_cdc_command *, uint8_t *response, uint8_t *size) {
+    LOG_RAW("Read split mode | ");
     response[(*size)++] = 0; // OFF
 }
 
@@ -388,6 +396,7 @@ void cmd_extended_handler(st_usb_cdc_command *command, uint8_t *response, uint8_
 
     switch (buf[5]) {
         case SUBCMD_READ_IF_WIDTH:
+            LOG_RAW("Read IF bw | ");
             response[(*size)++] = buf[5]; // repeat subcommand
             response[(*size)++] = 0;
             break;
@@ -408,19 +417,22 @@ void cmd_extended_handler(st_usb_cdc_command *command, uint8_t *response, uint8_
 
 void cmd_set_vfo_freq_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
 
+    LOG_RAW("VFO | ");
     uint8_t *buf = command->data;
-    uint8_t vfo = buf[5] ? radio::get_vfo() : abs(radio::get_vfo() - 1); // Current or alternate VFO
+    uint8_t vfo = buf[5] ? abs(radio::get_vfo() - 1) : radio::get_vfo(); // Current or alternate VFO
 
-    radio::set_vfo(vfo);
-
+    uint64_t f;
     if (command->size > 8) { // Write (we don't care of data mode or filter settings, just operating mode)
+        f = parse_freq(command->data + 6);
+        LOG_RAW("set | id: %d | freq: %llu | ", vfo, f);
 
-        radio::set_frequency(parse_freq(command->data + 6));
+        radio::set_frequency(f, vfo);
         memcpy(response, ok_response_data, 5);
     } else {
-        uint64_t bcdfreq = 0;
-        response[(*size)++] = 0; // Always VFO_A
-        bcdfreq = uint64_to_bcd(radio::get_frequency());
+        f = radio::get_vfo_frequency(vfo);
+        uint64_t bcdfreq = uint64_to_bcd(f);
+        LOG_RAW("read | id: %d | freq: %llu | ", vfo, f);
+        response[(*size)++] = vfo;
         memcpy(response + *size, &bcdfreq, sizeof(bcdfreq));
         *size += 5;
     }
@@ -568,12 +580,17 @@ void cmd_set_read_mem(st_usb_cdc_command *command, uint8_t *response, uint8_t *s
 
 void cmd_set_vfo_mode_handler(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
 
+    LOG_RAW("Set VFO mode | ");
     uint8_t *buf = command->data;
     uint8_t vfo = buf[5]; // VFO
 
     if (vfo == 0) { // Consider only changes in current VFO
 
-        main_board::set_modulation_mode(to_modulation_mode(command->data[6]), false);
+        auto mode = to_modulation_mode(command->data[6]);
+
+        LOG_RAW("%s | ", radio::modulation_names[mode]);
+
+        main_board::set_modulation_mode(mode, false);
 
         response[*size++] = 0;
         response[*size++] = from_modulation_mode(main_board::get_modulation_mode());

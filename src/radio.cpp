@@ -150,9 +150,15 @@ void calculate_freqs() {
 
     mixers[1].setIf(if_filters[if_filter].freq);
 
-    // Here is where we apply RIT, since we don't want it to appear in the VFO frequency value
+    // Here is where we apply RIT and analog frequency shifs so it doesn't change the displayed VFO frequency value
 
     carrier_freq += get_rit();
+
+    if (config.modulation == CW) {
+        // Displace the CW tone to the desired pitch
+        carrier_freq -= CW_PITCH_HZ;
+    }
+
     mixers[0].setRf(carrier_freq);
 
     switch (config.modulation) {
@@ -175,7 +181,7 @@ void calculate_freqs() {
             mixers[1].setLoInjection(config.modulation != SSB_LSB ? (LO_INJECTION)(mixers[0].getLoInjection() * -1) : mixers[0].getLoInjection());
             mixers[1].setRf(config.f_1st_if);
 
-            // Apply an offset to put the left sideband onto the filter passband
+            // Apply an offset to put the left sideband onto the filter passband (impacts analog path only)
             offset = (int)(if_bw / 2) + (is_freq_inverted() ? 1000 : 500); // +500 to account for the skirt
 
             mixers[1].setIf(mixers[1].getIf() + offset);
@@ -284,12 +290,15 @@ void change_frequency(int amount) {
 
 // This does not change the frequency immediatelly so it can be called from an IRQhandler.
 // Otherwise, SPI might clash
-bool set_frequency(uint64_t f) {
+bool set_frequency(uint64_t f, int vfo_ix) {
 
+    if (vfo_ix < 0) {
+        vfo_ix = config.vfo_ix;
+    }
     uint64_t min_f = get_min_frequency();
     uint64_t max_f = get_max_frequency();
     if (f >= min_f && f <= max_f) {
-        config.vfo[config.vfo_ix].freq = f;
+        config.vfo[vfo_ix].freq = f;
         return true;
     } else {
         return false;
@@ -325,6 +334,7 @@ int32_t get_rit() {
 
 void set_rit(int32_t v) {
     config.vfo[config.vfo_ix].rit = v;
+    update_freq();
 }
 
 int64_t get_dsp_frequency_shift() {

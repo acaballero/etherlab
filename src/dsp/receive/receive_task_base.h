@@ -96,6 +96,13 @@ class ReceiveTaskBase : public Task {
     uint32_t modulation_bandwidth_hz; // Minimum bandwidth for demodulation (measured as double sideband)
     uint32_t demodulation_sample_rate;
 
+    // Demodulated samples accumulated
+    uint32_t demod_samples_count = 0;
+
+    // Pointers to the half-decimation buffer and output buffer
+    float32_t *half_accum_p;
+    float32_t *out_accum_p;
+
     virtual MODULATION_MODE get_modulation_mode() const = 0;
     virtual bool init() = 0;
     virtual void process_audio(buffer_t<float32_t> &buff_out_f32) = 0;

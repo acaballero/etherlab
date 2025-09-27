@@ -142,13 +142,13 @@ void CCMMemoryAllocator::free(void *ptr) {
         }
     }
 
-    printf("CMM free: invalid pointer\n");
+    LOG("CMM free: invalid pointer\n");
 }
 
 void CCMMemoryAllocator::print_usage() {
-    printf("Allocator Usage:\n");
-    printf("  Total:     %lu bytes\n", sizeof(ccm_memory_pool));
-    printf("  Allocated: %lu bytes (%.1f%%)\n", total_allocated, (float)total_allocated / sizeof(ccm_memory_pool) * 100.0f);
-    printf("  Free:      %lu bytes (%.1f%%)\n", sizeof(ccm_memory_pool) - total_allocated,
-           (float)(sizeof(ccm_memory_pool) - total_allocated) / sizeof(ccm_memory_pool) * 100.0f);
+    LOG("Allocator Usage:\n");
+    LOG("  Total:     %lu bytes\n", sizeof(ccm_memory_pool));
+    LOG("  Allocated: %lu bytes (%.1f%%)\n", total_allocated, (float)total_allocated / sizeof(ccm_memory_pool) * 100.0f);
+    LOG("  Free:      %lu bytes (%.1f%%)\n", sizeof(ccm_memory_pool) - total_allocated,
+        (float)(sizeof(ccm_memory_pool) - total_allocated) / sizeof(ccm_memory_pool) * 100.0f);
 }

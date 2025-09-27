@@ -163,6 +163,8 @@ template <int order> bool DspIIRDecimator<order>::init() {
 #else
     arm_biquad_cascade_df1_init_f32(&iir_instance, n_stages, coeffs, state);
 #endif
+
+    return true;
 }
 
 template <int order> bool DspIIRDecimator<order>::config(uint32_t input_rate, uint32_t cutoff_freq, uint16_t factor, filter_type type) {

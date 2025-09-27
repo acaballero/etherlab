@@ -105,11 +105,11 @@ TOGGLE(config.fft.enable_iq_balance, setIQBalance, "Enable: ", doNothing, noEven
        VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
 result toggleIQorWaterfall() {
-    initIQorWaterfall();
+    init_IQ_or_waterfall();
     return proceed;
 }
 
-void initIQorWaterfall() {
+void init_IQ_or_waterfall() {
     if (config.fft.view_IQBalance) {
         fft::iqbalance_task.set_enabled(true);
         fft::waterfall_task.set_enabled(false);
@@ -185,7 +185,11 @@ Menu::numberPrompt<int16_t> minDbMenu((const char *)"DB Min", &config.fft.min_db
                                       },
                                       FFT_MIN_DB, FFT_MAX_DB, 1, 5);
 
-Menu::numberPrompt<int16_t> maxDbMenu((const char *)"DB Max", &config.fft.max_db, 0, ' ', '.', "dB", nullptr, FFT_MIN_DB, FFT_MAX_DB, 1, 5);
+Menu::numberPrompt<int16_t> maxDbMenu((const char *)"DB Max", &config.fft.max_db, 0, ' ', '.', "dB",
+                                      [](int16_t) {
+                                          config.fft.min_db_auto = false;
+                                      },
+                                      FFT_MIN_DB, FFT_MAX_DB, 1, 5);
 
 Menu::numberPrompt<uint16_t> fftCalcNoisePeriodMenu((const char *)"Noise floor calc period", &fft_calc_noise_floor_period_ms, 0, ' ', '.', "ms", nullptr, 0,
                                                     1000, 10, 100);

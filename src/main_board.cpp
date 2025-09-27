@@ -478,9 +478,17 @@ MODULATION_MODE get_modulation_mode() {
 
 void set_modulation_mode(MODULATION_MODE mod_val, bool force) {
 
+    volatile static bool setting_modulation;
+
+    if (setting_modulation) {
+        return;
+    }
+
     if (mod_val >= MODULATION_MODE_ALL) {
         return;
     }
+
+    setting_modulation = true;
 
     if (battery::battery_info.status == battery::BATTERY_STATUS_VERY_LOW) { // Disble all if low power
         setGPIOExpPort(&hmcp01, MCP23017_PORTA, 0x00);
@@ -578,6 +586,8 @@ void set_modulation_mode(MODULATION_MODE mod_val, bool force) {
 
         set_mute(muteState);
     }
+
+    setting_modulation = false;
 }
 
 void setPowerCtrl(uint8_t value, bool force, bool oneByOne) {

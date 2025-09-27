@@ -71,7 +71,7 @@ void FFTWidget::draw_freq_marks() {
 
         if (data.type == STATION) {
 
-            uint16_t x = ((float)(data.freq - fft::fft_params.span_f_start) / (float)(fft::fft_params.span)) * FTT_DISPLAY_WIDTH;
+            uint16_t x = ((float)(data.freq - fft::fft_params.span_f_start) / (float)(fft::fft_params.span)) * FFT_DISPLAY_WIDTH;
             text_width = strlen(data.name) * font->width;
             int x0 = x - (text_width / 2) - padding;
             int x1 = x0 + padding * 2 + text_width;

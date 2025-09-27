@@ -20,6 +20,7 @@
 #include "hw/stm32f4xx/adc.h"
 #include "hw/stm32f4xx/timers.h"
 #include "itemsTemplates.hpp"
+#include "main_board.h"
 #include "menuIO/SWOOut.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
@@ -144,10 +145,7 @@ std::pair<int, int> get_bandwidth_pixel_range() {
 
         bm_s = bm_m + 1;
         bm_e = bm_m + (px_if_width << 1) - 1;
-    } else if (config.modulation == CW) {
-        int16_t px_pitch_offset = (int16_t)(CW_PITCH_HZ / fft::fft_params.display_rbw);
-        bm_s = bm_m + px_pitch_offset - px_if_width;
-        bm_e = bm_m + px_pitch_offset + px_if_width;
+
     } else if (config.modulation == SSB_LSB) {
         bm_s = bm_m - (px_if_width << 1) + 1;
         bm_e = bm_m - 1;
@@ -321,6 +319,10 @@ void apply_fft_params(st_fft_params params) {
 
     fft::fft_params = params;
 
+    // Offset for centering CW signals that would otherwise appear displaced by the frequency shift that is applied to create a tone.
+    float bin_offset = main_board::get_modulation_mode() == CW ? ((float32_t)CW_PITCH_HZ / fft_params.rbw) : 0;
+    fft_params.start_bin -= (uint16_t)(bin_offset + 0.5f); // integer round
+
     config.fft.sample_rate = fft::fft_params.sample_freq;
 
     // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
@@ -431,7 +433,7 @@ void calc_fft_range() {
 /*
  * Generates the smoothing gain factors lookup table
  */
-void generateSmoothingGainLUT() {
+void generate_smoothing_gain_lut() {
 
     int db = FFT_MIN_DB;
     int lut_size = (sizeof(smoothingGainLUT) / sizeof(smoothingGainLUT[0]));
@@ -468,7 +470,7 @@ void fft_init() {
         fft_display[i] = FFT_HEIGHT;
     }
 
-    generateSmoothingGainLUT();
+    generate_smoothing_gain_lut();
 
     calc_fft_range();
 
@@ -477,7 +479,7 @@ void fft_init() {
     fftUI::set_spectrum_style(config.fft.spectrum_style);
     fftUI::set_spectrum_colors(config.fft.spectrum_line_color, config.fft.spectrum_fill_color);
     fft::set_waterfall_speed(config.fft.waterfall_pixels_per_second);
-    fftUI::initIQorWaterfall();
+    fftUI::init_IQ_or_waterfall();
 
     // When the gain changes, the FIFO is reset so the new gain gets reflected immediatelly. Otherwise the AGC itself, which relies in the FFT DB values, gets
     // laggy.
@@ -763,7 +765,7 @@ void process_fft(float32_t *v) {
             if (bin_ix != last_bin_ix) {
                 db = fft_output_db(fft_output[bin_ix]);
                 fft_output[bin_ix] = db;
-                gain = first_frame ? 0.8 : get_smooth_gain(db);
+                gain = first_frame ? 0.4 : get_smooth_gain(db);
                 last_bin_ix = bin_ix;
             }
 

@@ -29,7 +29,7 @@
 typedef float32_t fft_type;
 
 #define FFT_SCALE_FACTOR 0
-#define FTT_DISPLAY_WIDTH DISPLAY_X_PIXELS
+#define FFT_DISPLAY_WIDTH DISPLAY_X_PIXELS
 
 extern arm_cfft_instance_f32 S_cfft;
 
@@ -83,8 +83,8 @@ extern volatile FFT_STATUS fft_status;
 extern fft_type fft_peak_v;
 
 extern FIFO fft_fifo;
-extern fft_type fft_display[FTT_DISPLAY_WIDTH];
-extern fft_type fft_display_db[FTT_DISPLAY_WIDTH];
+extern fft_type fft_display[FFT_DISPLAY_WIDTH];
+extern fft_type fft_display_db[FFT_DISPLAY_WIDTH];
 extern complex_t_f32 fft_slice_buff[FFT_N];
 extern float window[FFT_N];
 

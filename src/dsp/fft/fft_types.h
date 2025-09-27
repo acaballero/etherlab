@@ -21,7 +21,7 @@ enum WATERFALL_MODE { AVERAGE, MAX_HOLD };
 #define FFT_WATERFALL_DEFAULT_PPS (1000 / (FFT_WATERFALL_MIN_REFRESH_PERIOD_MS + 10));
 #define FFT_WATERFALL_MAX_PIXELS_PER_FRAME 4 // max scrolled pixels per frame
 
-// Length (number of bins) of a single fourier transform
+// Length (number of bins) of the Fourier transform
 #define FFT_N 512
 
 // Needs to be >= DSP_BANDWIDTH*2 by a safe margin, depending on the width of

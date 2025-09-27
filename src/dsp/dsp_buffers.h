@@ -9,15 +9,17 @@
 #include "buffer.hpp"
 
 // DSP processing block size. Defines the number of samples adquired in each DMA cycle
-#define DSP_BLOCK 64
+#define DSP_BLOCK 128
 
 // Must be a multiple of any chunk that a stream processor taks will try to read
 // For example, if the capture task needs to write 1024 bytes per block and the receive task 64 bytes, that's ok.
 // If one task needs,for example, 512 bytes and another 1500, the FIFO block cannot be either 1500 or 3000
 // TODO: This is a consequence of using a FIFO of contiguous memory blocks. A better approach is using a FIFO of memory "buckets", so the fifo contains
 // pointers to memory blocks of arbirary size. However, note that the current implementation ensures all fifo operations are O(1) and very fast.
-#define DSP_FIFO_BLOCK_BYTES (512) * 8 * 2     // 512 is the default SD sector size. Also, this must be more than MAX_DECIMATION_FACTOR*DSP_BLOCK
-#define DSP_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 3 // Must be multiple of DSP_FIFO_BLOCK_BYTES
+// 512 is the default SD sector size. Also, this must be more than MAX_DECIMATION_FACTOR*DSP_BLOCK*(4 bytes per sample) so
+#define DSP_FIFO_BLOCK_BYTES (512) * 8 * 2
+// FIFO size must be multiple of DSP_FIFO_BLOCK_BYTES. The number of BLOCK_BYTES blocks in it
+#define DSP_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 3
 #define DSP_OUTPUT_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 2
 // ACD DMA buffer
 extern adc_type adc_buff[DSP_BLOCK * 4];

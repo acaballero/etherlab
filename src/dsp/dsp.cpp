@@ -135,6 +135,26 @@ void dsp_init(dsp::st_dsp_config &config) {
 //     }
 // }
 
+void dsp_stop_task() {
+    for (int i = 0; i < DSP_BLOCK * 2; i++) {
+        dac_buff[i] = (adc_type)config.hw.dac_offset;
+    }
+
+    // LOG("dspStop\n");
+    if (current_processor) {
+        //  LOG("dspStop:processor stop\n");
+        current_processor->stop();
+    }
+
+    if (current_task) {
+        //  LOG("dspStop:task stop\n");
+        current_task->stop();
+    }
+
+    current_task = NULL;
+    current_processor = NULL;
+}
+
 uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_status *)> cb) {
 
     LOG("dsp_command: cmd:%d, id:%d\n", (int)command.command, command.id);
@@ -147,6 +167,8 @@ uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_statu
             return 1;
         }
     }
+
+    dsp_stop();
 
     on_event = cb;
     pending_command = command;
@@ -425,24 +447,9 @@ void dsp_stop() {
         // TODO: If we don't clear it first thing after the process is done and before DMA interrupts cease, a repeating buffer will appear at the DAC. However,
         // there are other approaches I need to explore. E.g. flushing a "zero tail" in the output buffer so the constraints over the timing of the
         // multiple objects that are stopped is not that critical
+        Task *current_t = current_task;
 
-        for (int i = 0; i < DSP_BLOCK * 2; i++) {
-            dac_buff[i] = (adc_type)config.hw.dac_offset;
-        }
-
-        // LOG("dspStop\n");
-        if (current_processor) {
-            //  LOG("dspStop:processor stop\n");
-            current_processor->stop();
-        }
-
-        if (current_task) {
-            //  LOG("dspStop:task stop\n");
-            current_task->stop();
-        }
-
-        current_task = NULL;
-        current_processor = NULL;
+        dsp_stop_task();
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
         execute_task = false;
@@ -457,7 +464,7 @@ void dsp_stop() {
 
         dspstatus = DSP_STATUS_STOPPED;
 
-        if (!ISANALOG) {
+        if (!ISANALOG && current_t != dsp::tasks[DSP_PROCESSOR_RECEIVE]) {
             // TODO: This forces the receive task to start again. But its ugly
             fft_config(fft::fft_params.span);
         }

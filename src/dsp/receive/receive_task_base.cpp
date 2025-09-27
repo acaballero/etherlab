@@ -48,9 +48,6 @@ void ReceiveTaskBase::work() {
         uint32_t free = output_stream.free(&out_p);
         uint32_t av = input_stream.available(&in_p);
         uint32_t output_samples = 0;
-        uint32_t demod_samples = 0;
-        float32_t *half_accum_p = half_accum_buff_f32_p;
-        float32_t *out_accum_p = out_accum_buff_f32_p;
 
         if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
 
@@ -103,9 +100,9 @@ void ReceiveTaskBase::work() {
                 }
 
                 half_accum_p += block_size_in;
-                demod_samples += block_size_in;
+                demod_samples_count += block_size_in;
 
-                if (demod_samples == samples_per_batch) {
+                if (demod_samples_count == samples_per_batch) {
 
                     half_accum_p = half_accum_buff_f32_p;
 
@@ -162,9 +159,10 @@ void ReceiveTaskBase::work() {
 
                         out_p += bytes_per_batch_real;
                         output_samples = 0;
+                        output_stream.feed(bytes_per_batch_real);
                     }
 
-                    demod_samples = 0;
+                    demod_samples_count = 0;
                 }
 
                 in_p += bytes_per_batch;
@@ -174,7 +172,6 @@ void ReceiveTaskBase::work() {
             uint32_t processed = DSP_FIFO_BLOCK_BYTES - av;
 
             input_stream.consume(processed, &in_start);
-            output_stream.feed(processed / 2 / status.decimation_factor); // /2 since we output a real signal
 
         } else {
             if (free < (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
@@ -379,6 +376,10 @@ bool ReceiveTaskBase::start() {
 
     demodulator = get_modulator();
 
+    demod_samples_count = 0;
+    half_accum_p = half_accum_buff_f32_p;
+    out_accum_p = out_accum_buff_f32_p;
+
     ret = init();
 
     ret = ret && radio_config({.direction = RF_DIRECTION_RX,
@@ -407,6 +408,11 @@ bool ReceiveTaskBase::start() {
 void ReceiveTaskBase::stop() {
 
     if (status.status != DSP_STATUS_STOPPED) {
+
+        // Free decimators memory (wish this wouldn't be necessary but there must be room for other allocations while stopped)
+        decimators[0].reset();
+        decimators[1].reset();
+        signal_decimator.reset();
 
         status.status = DSP_STATUS_STOPPED;
 
