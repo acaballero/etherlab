@@ -214,12 +214,6 @@ int main() {
     fft::fft_task.set_high_priority(true);
     input_controller::task.set_high_priority(true);
 
-    // DEBUG
-    // fft::fft_task.set_name("FFT");
-    // radio::task.set_name("RDIO");
-    // board::task.set_name("BRD");
-    // DEBUG
-
     os::task_manager.add(&blink_task);
     blink_task.set_enabled(false);
 

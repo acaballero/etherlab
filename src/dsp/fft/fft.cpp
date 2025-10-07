@@ -353,7 +353,7 @@ void apply_fft_params(st_fft_params params) {
         decimator_q.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
 
         if (!b) {
-            // Failed decimator initialization. Should't happen but we could've mess with the fft params calculation
+            // Failed decimator initialization. Should't happen, but we could've mess with the fft params calculation
             status::pop_alert(status::ST_ERROR, "Error initializing FFT decimator");
         }
 

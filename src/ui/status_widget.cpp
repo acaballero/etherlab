@@ -236,7 +236,7 @@ void StatusWidget::before_paint() {
             disabled_color = C565_GREY_DARK;
             disabled_bg = C565_GREY_LIGHT;
             fg_color_auto = C565_MAGENTA;
-
+            buttons[AGC].set_enabled(true);
             buttons[AGC].set_dimmed(!config.agc_enabled);
         }
 

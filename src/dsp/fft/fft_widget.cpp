@@ -5,6 +5,8 @@
 #include "Display_afb.h"
 #include "config.h"
 #include "dsp/dsp.h"
+#include "dsp/fft/fft_params.h"
+#include "dsp/fft/fft_types.h"
 #include "dsp/fft/fft_ui.h"
 #include "fft_widget.h"
 #include "fft.h"
@@ -91,8 +93,17 @@ void FFTWidget::draw_freq_marks() {
     }
 }
 
-bool FFTWidget::on_touch(const st_inputEvent) {
-    fftUI::open_span_config();
+bool FFTWidget::on_touch(const st_inputEvent e) {
+    if (e.ms > LONG_PRESS_MS) {
+        // Toggle between max span and configured span
+        if (fft::fft_params.span == config.fft.span) {
+            fft_config(FFT_MAX_SPAN);
+        } else {
+            fft_config(config.fft.span);
+        }
+    } else {
+        fftUI::open_span_config();
+    }
     return true;
 }
 

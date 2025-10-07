@@ -155,14 +155,7 @@ void processEvent(st_inputEvent *e) {
                 switch (e->value) {
 
                     case FPANEL_PAD_BUTTON_1: // PTT
-                        MODE mode;
-                        if (config.mode == ANALOG_RX || config.mode == ANALOG_TX) {
-                            mode = config.mode == ANALOG_RX ? ANALOG_TX : ANALOG_RX;
-                        } else {
-                            mode = config.mode == DIGITAL_RX ? DIGITAL_TX : DIGITAL_RX;
-                        }
-
-                        main_board::set_mode(mode);
+                        main_board::toggle_mode();
                         break;
 
                     case BTN_ENCODER:
@@ -186,7 +179,7 @@ void processEvent(st_inputEvent *e) {
                 switch (e->value) {
                     case FPANEL_PAD_BUTTON_1: // Release TX
                         if (lastEvent.type != INPUT_EVENT_TYPE_BUTTON_DBL_PRESS || lastEvent.value != e->value) {
-                            main_board::set_mode(config.mode == DIGITAL_TX ? DIGITAL_RX : ANALOG_RX);
+                            main_board::toggle_mode();
                         }
                         break;
                 }

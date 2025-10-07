@@ -32,14 +32,7 @@ void RadioStatusWidget::init() {
     lblMode.set_has_border(true);
 
     lblMode.on_select = [](Label &) {
-        MODE mode;
-        if (config.mode == ANALOG_RX || config.mode == ANALOG_TX) {
-            mode = config.mode == ANALOG_RX ? ANALOG_TX : ANALOG_RX;
-        } else {
-            mode = config.mode == DIGITAL_RX ? DIGITAL_TX : DIGITAL_RX;
-        }
-
-        main_board::set_mode(mode);
+        main_board::toggle_mode();
     };
 
     add_children({&lblMode, &btnSquelch, &btnGain, &btnVFO, &btnRIT, &btnSettings});

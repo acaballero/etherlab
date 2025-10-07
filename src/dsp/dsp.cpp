@@ -10,6 +10,7 @@
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_config.h"
 #include "dsp/fft/fft.h"
+#include "dsp/fft/fft_params.h"
 #include "dsp/fft/fft_types.h"
 #include "handlers.h"
 #include "radio.h"
@@ -79,8 +80,6 @@ std::function<void(st_dsp_status *)> on_event;
 void dsp_set_real_time(bool b) {
 
     // LOG("Setting real time: %d\n", b);
-    //  Update FFT and sample rate parameters
-    dsp::set_max_sample_freq(b);
 
     if (b) {
         // When doing real-time DSP, we can only process one slice (no frequency hops allowed)
@@ -89,7 +88,8 @@ void dsp_set_real_time(bool b) {
         fft::current_max_slices = config.fft.max_slices;
     }
 
-    fft_config(config.fft.span);
+    //  Update FFT and sample rate parameters
+    dsp::set_max_sample_freq(b);
 }
 
 void restart_callback(void *, void *) {

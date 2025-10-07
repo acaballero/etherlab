@@ -46,7 +46,7 @@ void set_max_sample_freq(bool dsp) {
 
 void set_max_sample_freq(uint32_t rate) {
     dsp_max_sample_rate = min2(config.fft.dsp_max_sample_rate, rate);
-    fft_config(config.fft.span);
+    fft_config(fft::fft_params.span);
 }
 
 void set_tx_gain_db(int8_t gain_db) {

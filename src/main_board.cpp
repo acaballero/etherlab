@@ -41,6 +41,8 @@ ShiftReg PowControlShiftReg(&powCtrlDataPin, &powCtrlClkPin, &powCtrlSetPin);
 GPIO_PinState mute = GPIO_PIN_RESET;
 bool analog_mute_enabled = true;
 
+MODE last_mode = MODE_NONE;
+
 Signal mode_signal{"mode_signal"};
 Signal if_filter_signal{"if_filter_signal"};
 
@@ -269,10 +271,21 @@ void toggle_dsp() {
 
 bool _set_mode(MODE mode, bool force) {
 
-    // LOG("_setMode: mode: %s,%b\n", radio::modeNames[mode], force);
+    volatile static bool setting_mode;
+
+    if (setting_mode) {
+        return false;
+    }
+
+    setting_mode = true;
+
     bool changed = false;
 
+    MODE current_mode = config.mode; // Remember last mode for toggling back
+
     if (force || mode != config.mode) {
+
+        LOG("_setMode: mode: %s, current: %s, forced: %b\n", radio::modeNames[mode], radio::modeNames[current_mode], force);
 
         if (TXMODE(mode) && !radio::tx_enabled()) {
             status::pop_alert(status::ST_WARN, "TX disabled for current band");
@@ -313,21 +326,21 @@ bool _set_mode(MODE mode, bool force) {
                 power_ctrl = (config.power_ctrl & POWCRL_P12) | power_ctrl;
             }
 
-            setPowerCtrl(power_ctrl, false);
+            set_power_ctrl(power_ctrl, false);
 
             setGPIO();
 
             if (config.hpa_enabled) {
                 power_ctrl = config.power_ctrl | POWCRL_P12;
 
-                setPowerCtrl(power_ctrl, force);
+                set_power_ctrl(power_ctrl, force);
             }
 
             HAL_Delay(10);
 
             if (ISANALOG) {
                 // We just want to see the signal being sent
-                fft_config(radio::get_bandwidth_hz());
+                fft_config(radio::get_bandwidth_hz() * 4);
 
                 /*
 
@@ -370,7 +383,7 @@ bool _set_mode(MODE mode, bool force) {
             HAL_Delay(10);
 
             power_ctrl = config.power_ctrl & ~POWCRL_P12;
-            setPowerCtrl(power_ctrl, false);
+            set_power_ctrl(power_ctrl, false);
 
             if (battery::battery_info.status == battery::BATTERY_STATUS_VERY_LOW) {
                 // In low battery mode. Disable all power rails
@@ -380,15 +393,13 @@ bool _set_mode(MODE mode, bool force) {
                 power_ctrl = POWCRL_PB1 | POWCRL_P5 | POWCRL_PA2 | (config.modulation == SSB_LSB || config.modulation == SSB_USB ? POWCRL_PC2 : 0);
             }
 
-            setPowerCtrl(power_ctrl, force);
+            set_power_ctrl(power_ctrl, force);
 
             HAL_Delay(10);
 
             setGPIO();
 
-            if (ISANALOG) { // Restore analog span (in digital mode it is set by the current dsp task)
-                fft_config(config.fft.span);
-            }
+            fft_config(config.fft.span);
         }
 
         set_filter();
@@ -413,18 +424,34 @@ bool _set_mode(MODE mode, bool force) {
         }
 
         if (changed) {
+            LOG("Last mode %s = current %s\n", radio::modeNames[last_mode], radio::modeNames[current_mode]);
+            last_mode = current_mode;
             mode_signal.emit(nullptr);
         }
 
         set_mute(muteState);
     }
 
+    setting_mode = false;
     return true;
+}
+
+bool set_mode(MODE mode) {
+    // LOG("------ [BEGIN] setMode %s ------\n", radio::modeNames[mode]);
+    bool b = false;
+
+    if (_set_mode(mode, false)) {
+        set_modulation_mode(config.modulation, true);
+        b = true;
+    }
+
+    // LOG("------ [END] setMode %s: %d ------\n", radio::modeNames[mode], b);
+    return b;
 }
 
 void sleep() {
     if (!ISTX) {
-        setPowerCtrl(0, true);
+        set_power_ctrl(0, true);
         setGPIOExpPort(&hmcp01, MCP23017_PORTA, 0);
         setGPIOExpPort(&hmcp01, MCP23017_PORTB, 0xF8); // inverted logic in lines 3 - 7
         setGPIOExpPort(&hmcp02, MCP23017_PORTA, 0);
@@ -441,21 +468,16 @@ void update() {
     _set_mode(config.mode, true);
 }
 
-bool set_mode(MODE mode) {
-    // LOG("------ [BEGIN] setMode %s ------\n", radio::modeNames[mode]);
-    bool b = false;
-    volatile static bool setting_mode;
-
-    if (!setting_mode) {
-        setting_mode = true;
-        if (_set_mode(mode, false)) {
-            set_modulation_mode(config.modulation, true);
-            b = true;
-        }
-        setting_mode = false;
+bool toggle_mode() {
+    MODE mode;
+    if (ISTX) {
+        mode = ANALOGMODE(last_mode) ? ANALOG_RX : DIGITAL_RX;
+    } else {
+        // TODO: Still only analog modulation for TX
+        mode = ANALOG_TX;
     }
-    // LOG("------ [END] setMode %s: %d ------\n", radio::modeNames[mode], b);
-    return b;
+
+    return main_board::set_mode(mode);
 }
 
 void set_mute(GPIO_PinState muteState) {
@@ -517,8 +539,8 @@ void set_modulation_mode(MODULATION_MODE mod_val, bool force) {
             config.mode = ISTX ? DIGITAL_TX : DIGITAL_RX;
         }
 
-        // Set RX/TX mode to set the power lines according to the new modulation
-        _set_mode(config.mode, true);
+        // Update mode if modulation changes so power lines are set according to the new modulation
+        _set_mode(config.mode, changed);
 
         // Set some GPIO pins according to the new modulation
         // NOTE: hmcp01 has negative logic
@@ -577,9 +599,8 @@ void set_modulation_mode(MODULATION_MODE mod_val, bool force) {
             commitGPIOExpPort(&hmcp01, MCP23017_PORTB);
             commitGPIOExpPort(&hmcp02, MCP23017_PORTA);
             commitGPIOExpPort(&hmcp02, MCP23017_PORTB);
-            radio::update_freq();
-            // Set the mute in its original state
-            // HAL_Delay(100); // skip the audio transient if any
+
+            radio::update_freq(); // So intermediate frequencies are recalculated
 
             mode_signal.emit(nullptr);
         }
@@ -629,7 +650,7 @@ void setPowerCtrl(uint8_t value, bool force, bool oneByOne) {
     }
 }
 
-void setPowerCtrl(uint8_t value, bool force) {
+void set_power_ctrl(uint8_t value, bool force) {
 
     uint8_t curr_ctrl_bits = PowControlShiftReg.getValue();
 

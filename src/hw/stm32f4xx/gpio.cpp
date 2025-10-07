@@ -5,6 +5,7 @@
 #include <stm32f4xx.h>
 #include "gpio.h"
 #include "hw/hw_config.h"
+#include "stm32f4xx_hal_gpio.h"
 
 // MCP23017 GPIO expansion port descriptors
 MCP23017_HandleTypeDef hmcp01;
@@ -70,12 +71,13 @@ void MX_GPIO_Init(void) {
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-    /* PD5 LED pin */
-    GPIO_InitStruct.Pin = GPIO_PIN_5;
+    /* PD5 LCD backlight pin */
+    GPIO_InitStruct.Pin = DISP_LED_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+    HAL_GPIO_Init(DISP_LED_PORT, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(DISP_LED_PORT, DISP_LED_PIN, GPIO_PIN_SET); // Backlight off
 
     /*Configure GPIO pins : PD12 PD13 */
     GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13;

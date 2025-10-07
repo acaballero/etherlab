@@ -138,7 +138,7 @@ void APRSView::start_rx() {
             }
         }
     });
-    // To execute a task other than DSP_TASK_RECEIVE, setMode has to be called so
+    // To execute a task other than DSP_TASK_RECEIVE, set_mode has to be called
     main_board::set_mode(DIGITAL_RX);
 
     set_agc_enabled(false); // Prevent sudden changes in gain from the digital AGC. TODO: Whether digital AGC is enabled or not should be a property of the

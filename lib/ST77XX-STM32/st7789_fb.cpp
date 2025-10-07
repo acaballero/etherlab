@@ -130,15 +130,19 @@ int16_t ST7789::begin(void) {
     writeCommand(ST7796S_DISPON);
     HAL_Delay(50);
 
-    // Backlight on
-    HAL_GPIO_WritePin(ST7789_LED_PORT, ST7789_LED_PIN, GPIO_PIN_RESET);
+    backlight(false);
 
     return HAL_OK;
 }
 
 int16_t ST7789::stop() {
-    writeCommand(0x10);                                               // Enter sleep mode
-    HAL_GPIO_WritePin(ST7789_LED_PORT, ST7789_LED_PIN, GPIO_PIN_SET); // Backlight off
+    writeCommand(0x10); // Enter sleep mode
+    backlight(false);
+    return HAL_OK;
+}
+
+int16_t ST7789::backlight(bool b) {
+    HAL_GPIO_WritePin(ST7789_LED_PORT, ST7789_LED_PIN, b ? GPIO_PIN_RESET : GPIO_PIN_SET); // Backlight off
     return HAL_OK;
 }
 

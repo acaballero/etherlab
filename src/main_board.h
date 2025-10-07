@@ -25,9 +25,9 @@ void set_modulation_mode(MODULATION_MODE mod_val, bool force);
 
 MODULATION_MODE get_modulation_mode();
 
-void setSquelch();
+void set_squelch();
 
-void setPowerCtrl(uint8_t, bool);
+void set_power_ctrl(uint8_t, bool);
 
 void set_filter();
 
@@ -40,6 +40,8 @@ void sleep();
 void toggle_dsp();
 
 bool set_mode(MODE mode);
+
+bool toggle_mode();
 
 void set_mute(GPIO_PinState);
 

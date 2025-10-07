@@ -420,8 +420,7 @@ bool radio_config(st_radio_config radioConfig) {
         if (radioConfig.mode == ANALOG) {
 
             // LOG("ANA RX\n");
-
-            main_board::set_mode(ANALOG_RX);
+            main_board::set_mode(ISTX ? ANALOG_TX : ANALOG_RX);
 
             if_direction(RF_DIRECTION_RX);
 

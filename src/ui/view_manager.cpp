@@ -99,6 +99,8 @@ void init() {
     LOG("Initializing view manager\n");
     push(&splashView);
 
+    lcd.backlight(true);
+
     os::task_manager.set_timeout(1500, []() {
         pop();
         push(&mainView);

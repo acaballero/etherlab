@@ -143,6 +143,8 @@ class ST7789 : public Display {
 
     int16_t stop() override;
 
+    int16_t backlight(bool b) override;
+
   private:
     HAL_StatusTypeDef writeCommand(uint8_t data) override;
 

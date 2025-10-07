@@ -112,6 +112,8 @@ class Display {
 
     virtual int16_t stop() = 0;
 
+    virtual int16_t backlight(bool b) = 0;
+
     virtual void select() = 0;
 
     virtual void unselect() = 0;
