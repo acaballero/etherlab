@@ -128,12 +128,18 @@ void View::paint(Area *area) {
 
 void View::add_child(Widget *const widget) {
     if (widget) {
-        if (widget->parent() == nullptr) {
-            //   printf_("Adding child %s to %s\n", widget->get_name(), name);
-            children_.push_back(widget);
-
-            widget->set_parent(this);
+        if (widget->parent() == this) {
+            return;
         }
+
+        if (widget->parent() != nullptr) {
+            ((View *)widget->parent())->remove_child(widget);
+        }
+
+        //   printf_("Adding child %s to %s\n", widget->get_name(), name);
+        children_.push_back(widget);
+
+        widget->set_parent(this);
     }
 }
 
@@ -143,56 +149,41 @@ void View::on_child_update(Widget *w) {
         return a->get_z_index() < b->get_z_index(); // Ascending order
     });
 
-    //   LOG("on_child_update(%s)\n", w->get_name());
+    LOG("on_child_update(%s)\n", w->get_name());
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];
 
-        //  std::vector<Widget *> &overlaps = overlap_map[widget];
-        //  overlaps.clear();
+        widget->visible_rects = {widget->screen_rect()};
 
-        widget->visible_rects.clear();
-        //  LOG("Cleared %s visible parts\n", widget->get_name());
-
+        if (STR_IN(widget->get_name(), "snr")) {
+            LOG("Cleared %s visible parts\n", widget->get_name());
+        }
         // To improve performance, a "sweeping algorightm" can be used (see commented method at the end of the file)
 
-        std::vector<Rect> visible_parts = {widget->screen_rect()};
+        // std::vector<Rect> visible_parts = {widget->screen_rect()};
         bool overlapped = false;
 
         for (uint16_t j = i + 1; j < children_.size(); j++) {
             Widget *sibling = children_[j];
             if (sibling->visible() && sibling->get_z_index() >= get_z_index()) {
-                const Rect r = widget->screen_rect().intersect(sibling->screen_rect());
+
+                Rect r = widget->clip(sibling->screen_rect());
                 if (!r.is_empty()) {
+
                     overlapped = true;
 
-                    std::vector<Rect> new_visible_parts;
-                    for (auto &part : visible_parts) {
-                        std::vector<Rect> subtracted = (part - sibling->screen_rect());
-
-                        new_visible_parts.insert(new_visible_parts.end(), subtracted.begin(), subtracted.end());
+                    //  if (STR_IN(widget->get_name(), "snr")) {
+                    if (r.contains(widget->screen_rect())) {
+                        LOG("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
+                    } else {
+                        LOG("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(), sibling->get_z_index());
                     }
-                    visible_parts = new_visible_parts;
-
-                    // visible_parts = merge_rectangles(visible_parts);
-
-                    // if (r.contains(widget->screen_rect())) {
-                    //     LOG("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
-                    // } else {
-                    //     if (strcmp(widget->get_name(), "waterfa") == 0) {
-                    //         LOG("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(),
-                    //             sibling->get_z_index());
-                    //     }
-                    //     // Process the overlap in the widget's childs to see if some can be hidden
-                    // }
+                    //  }
                 }
             }
         }
 
-        if (overlapped) {
-            widget->visible_rects = visible_parts;
-        }
-
-        if (visible_parts.size() == 0) {
+        if (widget->visible_rects.size() == 0) {
             // Note a widget may be partially hidden by several widgets, but completelly by all of them
             if (!widget->hidden()) {
                 widget->hidden(true);
@@ -201,6 +192,10 @@ void View::on_child_update(Widget *w) {
             if (widget->hidden()) {
                 widget->hidden(false);
             }
+        }
+
+        if (!overlapped) {
+            widget->visible_rects.clear();
         }
     }
 }

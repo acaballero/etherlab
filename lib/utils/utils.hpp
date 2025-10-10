@@ -15,6 +15,18 @@
 #define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 #endif
 
+#define STR_IN(str, ...)                                                                                                                                       \
+    ({                                                                                                                                                         \
+        const char *targets[] = {__VA_ARGS__, NULL};                                                                                                           \
+        bool found = false;                                                                                                                                    \
+        for (int i = 0; targets[i]; i++)                                                                                                                       \
+            if (strcmp((str), targets[i]) == 0) {                                                                                                              \
+                found = true;                                                                                                                                  \
+                break;                                                                                                                                         \
+            }                                                                                                                                                  \
+        found;                                                                                                                                                 \
+    })
+
 #define delayUS_ASM(us)                                                                                                                                        \
     do {                                                                                                                                                       \
         asm volatile("MOV R0,%[loops]\n\t"                                                                                                                     \

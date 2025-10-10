@@ -22,7 +22,7 @@ namespace standby {
 Signal signal;
 POWER_MODE power_mode = POWER_MODE_ON;
 
-os::periodic_task *power_save_timeout;
+int power_save_timeout_id;
 
 void init() {
     power_save(config.power_save_period_seconds);
@@ -63,14 +63,12 @@ int sleep() {
 
 int power_save(int timeout_seconds) {
 
-    if (power_save_timeout) {
-        if (os::task_manager.remove(power_save_timeout)) {
-            delete power_save_timeout;
-        }
+    if (power_save_timeout_id != -1) {
+        os::task_manager.remove(power_save_timeout_id);
     }
 
     if (timeout_seconds) {
-        power_save_timeout = os::task_manager.set_timeout(timeout_seconds * 1000, []() {
+        power_save_timeout_id = os::task_manager.set_timeout(timeout_seconds * 1000, []() {
             enable_display(false);
             power_mode = POWER_MODE_SAVE;
             signal.emit(NULL);

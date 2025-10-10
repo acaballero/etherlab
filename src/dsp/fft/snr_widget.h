@@ -17,6 +17,8 @@ class SNRWidget : public View {
   public:
     SNRWidget(Rect parent_rect) : View(parent_rect) {
 
+        set_name("snr");
+
         lblSNR.set_font((FontDef *)&Font_7x10);
         lblSNR.set_label("S/N ");
         lblSNR.set_unit(" dB");

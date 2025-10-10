@@ -46,7 +46,7 @@ void dsp_loop();
 void dsp_stop();
 
 namespace dsp {
-os::periodic_task task(50, dsp_loop, 0, 0, "loop");
+os::periodic_task task(50, dsp_loop, 0, 0);
 bool adc_overload{false};
 
 bool apply_audio_bpf() {

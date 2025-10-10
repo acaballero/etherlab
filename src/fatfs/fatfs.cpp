@@ -130,17 +130,17 @@ bool lock_sd_card(uint32_t timeout_ms, const char *id) {
 bool unlock_sd_card() {
     // LOG("UNLOCK:%d\n", sd_card_locked);
     bool b;
-    static os::periodic_task *t;
+    static int task_id;
     if (sd_card_locked && sdcard_info.status != MassStorageDeviceActive) { // note: prevent someone powering the sd device off while MSD is on
 
         // Turn off SDIO clock after a while, but not inmmediatelly, so if the card is locked again we don't waste time turning it on and off
         // The drawback is this clock (until I put the SD card in the main board) emits EMI like hell and can leak to the ADC and everywhere
 
-        if (t) {
-            os::task_manager.remove(t);
+        if (task_id != -1) {
+            os::task_manager.remove(task_id);
         }
 
-        t = os::task_manager.set_timeout(50, []() {
+        task_id = os::task_manager.set_timeout(50, []() {
             if (!sd_card_locked) {
                 //  LOG("SDIO clock power down\n");
                 SDIO_PowerState_OFF(SDIO_HANDLE.Instance);

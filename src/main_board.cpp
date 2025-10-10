@@ -287,9 +287,15 @@ bool _set_mode(MODE mode, bool force) {
 
         LOG("_setMode: mode: %s, current: %s, forced: %b\n", radio::modeNames[mode], radio::modeNames[current_mode], force);
 
-        if (TXMODE(mode) && !radio::tx_enabled()) {
-            status::pop_alert(status::ST_WARN, "TX disabled for current band");
-            return false;
+        if (TXMODE(mode)) {
+            if (!radio::tx_enabled()) {
+                status::pop_alert(status::ST_WARN, "TX disabled for current band");
+                return false;
+            }
+
+            if (!config.hpa_enabled) {
+                status::pop_alert(status::ST_WARN, "Power amplifier disabled");
+            }
         }
 
         changed = config.mode != mode;

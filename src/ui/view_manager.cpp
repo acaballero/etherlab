@@ -68,18 +68,21 @@ void main_view_warning_callback(void *, void *args) {
 
     status::Status *st = (status::Status *)args;
 
-    static os::periodic_task *t;
-
-    if (t) {
-        os::task_manager.remove(t);
-    }
+    static int task_id;
 
     View *current = breadcrumb[view_index];
 
-    t = os::task_manager.set_timeout(4000, [current]() {
-        current->remove_child(&msg_w);
-        // msg_w.set_visible(false);
-    });
+    if (task_id != -1) {
+        os::task_manager.remove(task_id);
+    }
+
+    task_id = os::task_manager.set_timeout(
+        20000,
+        [current]() {
+            current->remove_child(&msg_w);
+            // msg_w.set_visible(false);
+        },
+        "msgv");
 
     current->add_child(&msg_w); // does nothing if the child already has a parent
     current->to_top(&msg_w);

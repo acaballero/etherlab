@@ -144,7 +144,7 @@ bool MainView::on_input(const st_inputEvent event) {
             consumed = menu_w.on_input(event); // First try to consume it by the menu
 
             if (consumed) {
-                Menu::open();
+                //   Menu::open();
             }
         } else if (!event.is_touch()) {
             consumed = View::on_input(event);

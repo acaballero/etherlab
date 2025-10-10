@@ -8,6 +8,7 @@
 #include "message_view.h"
 
 void MessageView::init() {
+
     set_border_width(border_width);
     set_border_color(C565_GREY_DARK);
     set_shadow_width(shadow_width);
@@ -24,7 +25,7 @@ bool MessageView::on_input(const st_inputEvent e) {
         switch (e.type) {
 
             case INPUT_EVENT_TYPE_TOUCH_START:
-            case INPUT_EVENT_TYPE_BUTTON_RELEASE:
+                //    case INPUT_EVENT_TYPE_BUTTON_RELEASE:
                 consumed = true; // swallow
                 break;
 

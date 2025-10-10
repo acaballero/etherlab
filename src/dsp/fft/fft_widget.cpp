@@ -20,15 +20,16 @@
 
 FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {
 
-    static os::periodic_task *t;
     // Update the frequencies in the range every time the frequency changes
     radio::freq_signal.add(this, [this](void *, void *) {
+        static int task_id;
+
         if (visible()) {
-            if (t) {
-                os::task_manager.remove(t);
+            if (task_id != -1) {
+                os::task_manager.remove(task_id);
             }
 
-            t = os::task_manager.set_timeout(500, [this]() { // Debounce
+            task_id = os::task_manager.set_timeout(500, [this]() { // Debounce
                 fetch_stations_in_range();
             });
         }

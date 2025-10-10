@@ -149,11 +149,26 @@ class Widget : public Painter {
 
     char *get_name();
 
+    Rect clip(const Rect &rect) {
+        const Rect r = screen_rect().intersect(rect);
+        if (!r.is_empty()) {
+
+            std::vector<Rect> new_visible_parts;
+            for (auto &part : visible_rects) {
+                std::vector<Rect> subtracted = (part - r);
+                new_visible_parts.insert(new_visible_parts.end(), subtracted.begin(), subtracted.end());
+            }
+            visible_rects = new_visible_parts;
+        }
+
+        return r;
+    }
+
     // Vector of visible rectangles. There are no overlaps if empty
     std::vector<Rect> visible_rects;
 
   protected:
-    char name[4]{"-"};
+    char name[5]{"-"};
 
     Rect _parent_rect;
 

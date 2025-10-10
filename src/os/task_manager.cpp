@@ -17,6 +17,13 @@
 
 namespace os {
 int TaskManager::add(periodic_task *t) {
+
+#if DEBUG_MSGS
+    if (t->get_name()) {
+        LOG("Adding task '%s'\n", t->get_name());
+    }
+#endif
+
     t->set_id(++last_id);
     tasks.push_back(std::unique_ptr<periodic_task>(t));
 
@@ -28,10 +35,20 @@ bool TaskManager::remove(int task_id) {
         return item->get_id() == task_id;
     });
 
-    return remove(it->get());
+    if (it != tasks.end()) {
+        tasks.erase(it, tasks.end());
+        return true;
+    }
+    return false;
 }
 
 bool TaskManager::remove(periodic_task *t) {
+
+#if DEBUG_MSGS
+    if (t->get_name()) {
+        LOG("Removing task '%s'\n", t->get_name());
+    }
+#endif
 
     auto it = std::remove_if(tasks.begin(), tasks.end(), [t](const std::unique_ptr<periodic_task> &item) {
         return item.get() == t; // Compare raw pointers
@@ -46,13 +63,12 @@ bool TaskManager::remove(periodic_task *t) {
     return false;
 }
 
-periodic_task *TaskManager::set_timeout(uint32_t delay, callback_t c) {
+int TaskManager::set_timeout(uint32_t delay, callback_t c, char *name) {
 
     // To create a timeout we set a period of same length and duration AND a delay, so the task will finish after its first execution
-    periodic_task *task = new periodic_task(delay, c, delay, delay);
+    periodic_task *task = new periodic_task(delay, c, delay, delay, name);
     task->set_high_priority(true); // Timeouts must be respected
-    add(task);
-    return task;
+    return add(task);
 }
 
 #if !WITH_PRIORITIES
@@ -87,11 +103,13 @@ void TaskManager::run() {
         while (i < tasks.size()) {
             auto task = tasks[i].get();
             if (predicate(task, i)) {
-                // if (task->get_name()) {
-                //     int elapsed = current_time - task->get_last_time();
-                //     LOG("%llu: Executing %s task %s", current_time, log_prefix, task->get_name());
-                //     LOG(": %llu ms, e: %d ms\n", task->get_period(), elapsed);
-                // }
+#if DEBUG_MSGS
+                if (task->get_name()) {
+                    int elapsed = current_time - task->get_last_time();
+                    LOG("%llu: Executing %s task '%s'", current_time, log_prefix, task->get_name());
+                    LOG_RAW(": %llu ms, e: %d ms\n", task->get_period(), elapsed);
+                }
+#endif
                 task->run();
                 if (task->finished()) {
                     remove(task);
@@ -123,7 +141,7 @@ void TaskManager::run() {
         [&](const auto &task, size_t) {
             return task->is_high_priority() && task->ready_to_run(current_time);
         },
-        "PRIORITY ");
+        "PRIORITY");
 
     for (size_t i = 0; i < tasks.size() && !tasks.empty(); i++) {
         round_robin_index %= tasks.size();

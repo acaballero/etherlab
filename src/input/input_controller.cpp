@@ -109,6 +109,7 @@ Widget *processTouch(Widget *w, st_inputEvent *e) {
 void processEvent(st_inputEvent *e) {
 
     // LOG("processEvent %d\n", e->type);
+    static bool pending_release;
 
     if (e->type == INPUT_EVENT_TYPE_BUTTON_RELEASE || e->type == INPUT_EVENT_TYPE_TOUCH_START || e->type == INPUT_EVENT_TYPE_ENCODER) {
         if (standby::power_mode != standby::POWER_MODE_ON) {
@@ -143,7 +144,7 @@ void processEvent(st_inputEvent *e) {
             // between touch start and end.
             w->paint();
         }
-    } else if (!view_manager::currentView->on_input(*e)) {
+    } else if (pending_release || !view_manager::currentView->on_input(*e)) {
 
         // TODO: Consume these events in their appropriate views/widget
 
@@ -172,6 +173,8 @@ void processEvent(st_inputEvent *e) {
                         break;
                 }
 
+                pending_release = true;
+
                 break;
 
             case INPUT_EVENT_TYPE_BUTTON_RELEASE:
@@ -183,6 +186,8 @@ void processEvent(st_inputEvent *e) {
                         }
                         break;
                 }
+
+                pending_release = false;
 
                 break;
 
