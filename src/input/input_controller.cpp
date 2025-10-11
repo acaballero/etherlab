@@ -181,7 +181,7 @@ void processEvent(st_inputEvent *e) {
 
                 switch (e->value) {
                     case FPANEL_PAD_BUTTON_1: // Release TX
-                        if (lastEvent.type != INPUT_EVENT_TYPE_BUTTON_DBL_PRESS || lastEvent.value != e->value) {
+                        if (lastEvent.type != INPUT_EVENT_TYPE_BUTTON_DBL_PRESS && pending_release) {
                             main_board::toggle_mode();
                         }
                         break;

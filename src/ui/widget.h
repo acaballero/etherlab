@@ -10,6 +10,7 @@
 #include <vector>
 #include <printf.h>
 #include "menu_options.h"
+#include "status.h"
 
 enum Align { ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER };
 
@@ -149,21 +150,7 @@ class Widget : public Painter {
 
     char *get_name();
 
-    Rect clip(const Rect &rect) {
-        const Rect r = screen_rect().intersect(rect);
-        if (!r.is_empty()) {
-
-            std::vector<Rect> new_visible_parts;
-            for (auto &part : visible_rects) {
-                std::vector<Rect> subtracted = (part - r);
-                new_visible_parts.insert(new_visible_parts.end(), subtracted.begin(), subtracted.end());
-            }
-            visible_rects = new_visible_parts;
-        }
-
-        return r;
-    }
-
+    Rect clip(const Rect &rect);
     // Vector of visible rectangles. There are no overlaps if empty
     std::vector<Rect> visible_rects;
 
@@ -217,6 +204,8 @@ class Widget : public Painter {
     void paint_overlapped();
 
     Box getOffset(Rect &r, Box &offset, bool apply_pad);
+
+    friend class View;
 };
 
 class HasPadding {

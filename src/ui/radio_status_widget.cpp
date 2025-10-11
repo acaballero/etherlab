@@ -30,12 +30,13 @@ void RadioStatusWidget::init() {
     btnSettings.set_two_lines(true);
 
     lblMode.set_has_border(true);
+    lblMode.set_name("mode");
 
     lblMode.on_select = [](Label &) {
         main_board::toggle_mode();
     };
 
-    add_children({&lblMode, &btnSquelch, &btnGain, &btnVFO, &btnRIT, &btnSettings});
+    add_children({&btnSquelch, &btnGain, &btnVFO, &btnRIT, &btnSettings, &lblMode});
 
     for (Widget *btn : View::children()) {
         btn->set_font((FontDef *)&Font_Tiny8x8);

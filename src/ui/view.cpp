@@ -149,53 +149,56 @@ void View::on_child_update(Widget *w) {
         return a->get_z_index() < b->get_z_index(); // Ascending order
     });
 
-    LOG("on_child_update(%s)\n", w->get_name());
+    // if (STR_IN(w->get_name(), "msg")) {
+    //     LOG("on_child_update(%s)\n", w->get_name());
+    // }
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];
 
-        widget->visible_rects = {widget->screen_rect()};
-
-        if (STR_IN(widget->get_name(), "snr")) {
-            LOG("Cleared %s visible parts\n", widget->get_name());
-        }
         // To improve performance, a "sweeping algorightm" can be used (see commented method at the end of the file)
 
-        // std::vector<Rect> visible_parts = {widget->screen_rect()};
-        bool overlapped = false;
+        // if (STR_IN(widget->get_name(), "mode")) {
+        //     LOG("Clearing 'mode' rects\n");
+        // }
+
+        // Start with children's area intersection to parent visible regions
+        size_t prev_visible_rects_count = widget->visible_rects.size();
+        widget->visible_rects.clear();
+        Rect wr = widget->screen_rect();
+        for (Rect &r : visible_rects) {
+            auto intersection = r.intersect(wr);
+            if (!intersection.is_empty()) {
+                widget->visible_rects.emplace_back(intersection);
+            }
+        }
+
+        //  LOG("Cleared %s visible parts\n", widget->get_name());
 
         for (uint16_t j = i + 1; j < children_.size(); j++) {
             Widget *sibling = children_[j];
             if (sibling->visible() && sibling->get_z_index() >= get_z_index()) {
-
-                Rect r = widget->clip(sibling->screen_rect());
+                const Rect r = widget->clip(sibling->screen_rect());
                 if (!r.is_empty()) {
+                    // #if DEBUG_MSGS
+                    //                     if (STR_IN(widget->get_name(), "mode")) {
+                    //                         if (r.contains(widget->screen_rect())) {
+                    //                             LOG("Widget %s hidden by %s. %d visible parts", widget->get_name(), sibling->get_name(),
+                    //                             widget->visible_rects.size());
+                    //                         } else {
 
-                    overlapped = true;
-
-                    //  if (STR_IN(widget->get_name(), "snr")) {
-                    if (r.contains(widget->screen_rect())) {
-                        LOG("Widget %s hidden by %s\n", widget->get_name(), sibling->get_name());
-                    } else {
-                        LOG("Widget %s (%d) overlapped by %s (%d)\n", widget->get_name(), widget->get_z_index(), sibling->get_name(), sibling->get_z_index());
-                    }
-                    //  }
+                    //                             LOG("Widget %s (%d) overlapped by %s (%d).", widget->get_name(), widget->get_z_index(), sibling->get_name(),
+                    //                                 sibling->get_z_index());
+                    //                             LOG_RAW(" %d visible parts\n", widget->visible_rects.size());
+                    //                         }
+                    //                     }
+                    // #endif
                 }
             }
         }
 
-        if (widget->visible_rects.size() == 0) {
-            // Note a widget may be partially hidden by several widgets, but completelly by all of them
-            if (!widget->hidden()) {
-                widget->hidden(true);
-            }
-        } else {
-            if (widget->hidden()) {
-                widget->hidden(false);
-            }
-        }
-
-        if (!overlapped) {
-            widget->visible_rects.clear();
+        if (prev_visible_rects_count != widget->visible_rects.size()) {
+            // TODO: This only takes into account changes in the number of visible regions, but not if they have changed
+            widget->on_child_update(this);
         }
     }
 }

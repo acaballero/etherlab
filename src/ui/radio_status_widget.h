@@ -14,7 +14,9 @@
 
 class RadioStatusWidget : public View {
   public:
-    RadioStatusWidget(Rect parent_rect) : View(parent_rect) { init(); }
+    RadioStatusWidget(Rect parent_rect) : View(parent_rect) {
+        init();
+    }
 
   protected:
     st_radio_status _status;

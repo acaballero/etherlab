@@ -21,7 +21,7 @@ class TaskManager {
     bool remove(periodic_task *t);
     bool remove(int task_id);
     void run();
-    int set_timeout(uint32_t delay, callback_t c, char *name = nullptr);
+    int set_timeout(uint32_t delay, callback_t c, const char *name = nullptr);
 
   private:
     std::vector<std::unique_ptr<periodic_task>> tasks{};

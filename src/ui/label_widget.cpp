@@ -24,6 +24,17 @@ void Label::set_border_radius(bool top_left, bool top_right, bool bottom_right, 
 
 bool Label::paint_callback() {
 
+    // #if DEBUG_MSGS
+    //     if (STR_IN(get_name(), "mode")) {
+    //         LOG("Painting %s with visible_rects: %d\n", get_name(), visible_rects.size());
+    //         if (visible_rects.size()) {
+    //             for (auto p : visible_rects) {
+    //                 LOG("%d,%d,%d,%d\n", p.left(), p.top(), p.width(), p.height());
+    //             }
+    //         }
+    //     }
+    // #endif
+
     display->clear(canvas_bg_color);
     display->setFont(font); // Note there's no guarantee paint_callback is called right after 'before_paint', so we set the font again
     display->setBgColor(bg_color);

@@ -96,7 +96,7 @@ void Widget::set_parent(Widget *const new_parent) {
         // We have a parent, but are losing it. Update visible status.
         //  dirty_overlapping_children_in_rect(screen_rect());
         set_visible(false);
-        parent_->on_child_update(this); // Make the parent react (
+        parent_->on_child_update(this); // Make the parent react
     }
 
     parent_ = new_parent;
@@ -477,6 +477,57 @@ void Widget::set_z_index(uint16_t index) {
             parent()->on_child_update(this);
         }
     }
+}
+
+Rect Widget::clip(const Rect &rect) {
+
+    std::vector<Rect> parts = visible_rects;
+    bool overlapped = false;
+
+    if (parts.size() == 0) {
+
+        parts = {screen_rect()};
+    }
+
+    const Rect r = screen_rect().intersect(rect);
+    if (!r.is_empty()) {
+
+        overlapped = true;
+        std::vector<Rect> new_visible_parts;
+        for (auto &part : parts) {
+            std::vector<Rect> subtracted = (part - rect);
+            new_visible_parts.insert(new_visible_parts.end(), subtracted.begin(), subtracted.end());
+        }
+        parts = new_visible_parts;
+
+        // if (STR_IN(get_name(), "mode")) {
+        //     LOG("Clipping widget %s with rect %d,%d", get_name(), rect.left(), rect.top());
+        //     LOG_RAW(",%d,%d\n", rect.width(), rect.height());
+        //     LOG("New parts (%d)\n", parts.size());
+        //     if (parts.size()) {
+        //         for (auto p : parts) {
+        //             LOG("%d,%d,%d,%d\n", p.left(), p.top(), p.width(), p.height());
+        //         }
+        //     }
+        // }
+    }
+
+    if (parts.size() == 0) {
+        hidden(true);
+    } else {
+        hidden(false);
+    }
+
+    if (overlapped) {
+        visible_rects = parts;
+    }
+
+    // Recursively clip children
+    for (const auto child : this->children()) {
+        child->clip(rect);
+    }
+
+    return r;
 }
 
 void Widget::set_name(const char *str) {

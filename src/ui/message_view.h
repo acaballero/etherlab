@@ -22,7 +22,7 @@ class MessageView : public View {
 
     bool on_input(const st_inputEvent event) override;
 
-    void add_msg(const char *, const char *);
+    void add_msg(const char *header, const char *msg);
 
     void clear();
 
