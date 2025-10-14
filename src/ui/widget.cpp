@@ -352,7 +352,8 @@ void Widget::paint(Area *area) {
         bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
 
         // LOG("Drawing widget %s\n", get_name());
-        display->drawArea(area, this, apply_pad);
+
+        display->draw_area(area, this, apply_pad);
 
         refresh_fps();
     }
@@ -360,7 +361,7 @@ void Widget::paint(Area *area) {
 
 void Widget::paint_overlapped() {
 
-    Box current_offset = display->getOffset();
+    Box current_offset = display->get_offset();
 
     // if (strcmp("msg", get_name()) == 0 || strcmp("waterfall", get_name()) == 0 || strcmp("radio", get_name()) == 0) {
     //     LOG("[paint_overlapped] Child %s has %d visible rect/s\n", get_name(), visible_rects.size());
@@ -446,7 +447,7 @@ void Widget::refresh_fps() {
 #endif
 }
 
-void Widget::set_font(FontDef *font) {
+void Widget::set_font(const FontDef *font) {
     Widget::font = font;
 }
 

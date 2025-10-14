@@ -225,7 +225,7 @@ void dsp_start_task() {
             if (current_processor->status.direction != DSP_DIRECTION_OUT) {
                 bool ok = current_processor->start();
                 if (!ok) {
-                    status::pop_alert(status::ST_ERROR, "Error starting DSP processor");
+                    status::pop_alert(status::ERROR, "Error starting DSP processor");
                     return;
                 }
             } else {
@@ -237,7 +237,7 @@ void dsp_start_task() {
                 on_event(dsp::dsp_status);
             }
         } else {
-            status::pop_alert(status::ST_ERROR, "Error starting DSP task");
+            status::pop_alert(status::ERROR, "Error starting DSP task");
         }
     } else {
         //   LOG(": already running task, skipping\n");
@@ -482,28 +482,28 @@ void dspError(DSP_ERROR err) {
     switch (err) {
 
         case DSP_ERR_FILEOPEN:
-            pop_alert(status::ST_ERROR, "Wave file open error");
+            pop_alert(status::ERROR, "Wave file open error");
             break;
         case DSP_ERR_FILECLOSE:
-            pop_alert(status::ST_ERROR, "Wave file close error");
+            pop_alert(status::ERROR, "Wave file close error");
             break;
         case DSP_ERR_FILEWRITE:
-            pop_alert(status::ST_ERROR, "Wave write error");
+            pop_alert(status::ERROR, "Wave write error");
             break;
         case DSP_ERR_FILEREAD:
-            pop_alert(status::ST_ERROR, "Wave read error");
+            pop_alert(status::ERROR, "Wave read error");
             break;
         case DSP_ERR:
-            pop_alert(status::ST_ERROR, "DSP error");
+            pop_alert(status::ERROR, "DSP error");
             break;
         case DSP_ERR_DMAOVERRUN:
-            pop_alert(status::ST_ERROR, "DMA overrun");
+            pop_alert(status::ERROR, "DMA overrun");
             break;
         case DSP_ERR_FIFO_OVERRUN:
-            pop_alert(status::ST_ERROR, "FIFO overrun");
+            pop_alert(status::ERROR, "FIFO overrun");
             break;
         case DSP_ERR_FIFO_UNDERRUN:
-            pop_alert(status::ST_ERROR, "FIFO underrun");
+            pop_alert(status::ERROR, "FIFO underrun");
             break;
         default:
             break;

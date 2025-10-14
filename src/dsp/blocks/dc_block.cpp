@@ -21,6 +21,7 @@ inline float32_t DCBlock::filter(const float32_t input) {
 }
 
 void DCBlock::filter(const buffer_t<int16_t> &src, uint8_t n_channels, uint8_t channel_n) {
+
     for (size_t i = channel_n; i < src.count; i += n_channels) {
         src.p[i] = filter(src.p[i]);
     }

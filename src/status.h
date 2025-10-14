@@ -40,10 +40,10 @@ namespace status {
 
 extern Signal status_signal;
 
-enum StatusCode { ST_ERROR, ST_WARN, ST_INFO, ST_OK };
+enum Level { ERROR, WARN, INFO, OK };
 
 typedef struct status_t {
-    StatusCode code = ST_OK;
+    Level code = OK;
     char msg[30];
 } Status;
 
@@ -70,7 +70,7 @@ struct st_status {
 extern Status system_status;
 void debug_print(const char *str, int timestamp, ...);
 void hide_alert();
-void pop_alert(StatusCode code, const char *msg);
+void pop_alert(Level code, const char *msg);
 } // namespace status
 
 #endif // TRX_FRONTEND_STATUS_H

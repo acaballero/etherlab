@@ -25,7 +25,7 @@ SplashView splashView;
 KeypadView keypadView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, KeypadView::HEIGHT}};
 KeyboardView keyboardView{{0, HEADER_HEIGHT, KeyboardView::WIDTH, KeyboardView::HEIGHT}};
 MessageView msg_w{
-    {6, DISPLAY_Y_PIXELS * 3 / 4, DISPLAY_X_PIXELS - 12, INFO_HEIGHT - 6}, (FontDef *)&Font_11x18, (FontDef *)&Font_7x10, C565_GREY_DARK, C565_RED, C565_WHITE};
+    {6, DISPLAY_Y_PIXELS * 2 / 3, DISPLAY_X_PIXELS - 12, INFO_HEIGHT - 6}, (FontDef *)&Font_11x18, (FontDef *)&Font_7x10, C565_GREY_DARK, C565_RED, C565_WHITE};
 // NumberEditView numberEditView{{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT}};
 // OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
 View *breadcrumb[MAX_VIEWS];
@@ -68,7 +68,7 @@ void main_view_warning_callback(void *, void *args) {
 
     status::Status *st = (status::Status *)args;
 
-    static int task_id;
+    static int task_id; // Ugly. Functions should be stateless, but 'static' exist so what shoud I say... ;)
 
     View *current = breadcrumb[view_index];
 
@@ -84,11 +84,15 @@ void main_view_warning_callback(void *, void *args) {
         },
         "msgv");
 
+    bool was_visible = msg_w.parent() && msg_w.visible();
     current->add_child(&msg_w); // does nothing if the child already has a parent
     current->to_top(&msg_w);
-    //  msg_w.set_focus(true);
-    msg_w.clear();
-    msg_w.add_msg(st->code == status::ST_ERROR ? "ERROR" : "INFO", st->msg);
+
+    if (was_visible) {
+        msg_w.add_log(st->code == status::ERROR ? "ERROR" : "INFO", st->msg);
+    } else {
+        msg_w.show_msg(st->code == status::ERROR ? "ERROR" : "INFO", st->msg);
+    }
 }
 
 void init() {

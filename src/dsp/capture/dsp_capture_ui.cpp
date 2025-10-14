@@ -80,7 +80,7 @@ io::path get_file_name() {
                 found = ix == 0;
             }
         } else {
-            status::pop_alert(status::ST_ERROR, "Error in get_file_name()");
+            status::pop_alert(status::ERROR, "Error in get_file_name()");
             return "capture.wav";
         }
     }
@@ -125,7 +125,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
                 menu_size(DISPLAY_X_PIXELS, INFO_HEIGHT);
                 view_manager::mainView.remove_child(&capture_w);
             } else {
-                status::pop_alert(status::ST_ERROR, "Capturing!");
+                status::pop_alert(status::ERROR, "Capturing!");
                 return Menu::quit;
             }
             break;

@@ -241,10 +241,6 @@ void Button::set_shadow(uint16_t shadow) {
     Button::shadow = shadow;
 }
 
-FontDef *Button::get_font() const {
-    return font;
-}
-
 ButtonStyle Button::get_style() const {
     return style;
 }

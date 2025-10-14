@@ -15,7 +15,9 @@
 #include "ips_font.h"
 #include "os/task_manager.h"
 #include "radio.h"
+#include "types.h"
 #include "ui/frequency_memory_ui.h"
+#include <sys/_stdint.h>
 #include <utility>
 
 FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {
@@ -59,37 +61,56 @@ void FFTWidget::draw_bandwidth() {
 
 void FFTWidget::fetch_stations_in_range() {
     unsigned long fft_span_f_end = fft::fft_params.span_f_start + config.fft.span;
-    freq_memory::find_in_freq_range(fft::fft_params.span_f_start, fft_span_f_end, stations_in_range);
+    freq_memory::find_in_freq_range(fft::fft_params.span_f_start, fft_span_f_end, stations_in_range, STATION);
+    int64_t f = radio::get_frequency();
+
+    // Sort by distance to center
+    std::sort(stations_in_range.begin(), stations_in_range.end(), [f](const st_freq_mem &a, const st_freq_mem &b) {
+        int64_t da = f - (int64_t)a.freq;
+        int64_t db = f - (int64_t)b.freq;
+        return fabs(da) > fabs(db);
+    });
 }
 
 void FFTWidget::draw_freq_marks() {
 
-    int text_width, padding = 3, padding_v = 3;
+    uint32_t padding = 6, padding_v = 3;
     FontDef *font = (FontDef *)&Font_Fixed5x7;
     display->setFont(font);
-    int height = font->height + padding_v * 2 - 1;
-    int margin_top = 1;
+    uint32_t height = font->height + padding_v * 2 - 1;
+    uint32_t margin_top = 1;
+    Color bg = C565_DARKEST;
 
-    for (auto data : stations_in_range) {
+    // Closest to center are drawn later so the last one is not overlapped
 
-        if (data.type == STATION) {
+    for (size_t i = 0; i < stations_in_range.size(); i++) {
 
-            uint16_t x = ((float)(data.freq - fft::fft_params.span_f_start) / (float)(fft::fft_params.span)) * FFT_DISPLAY_WIDTH;
-            text_width = strlen(data.name) * font->width;
-            int x0 = x - (text_width / 2) - padding;
-            int x1 = x0 + padding * 2 + text_width;
-            if (x0 >= 0 && x1 < FFT_ZONE_WIDTH) {
+        auto data = stations_in_range[i];
 
-                // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
-                display->writeVertLine(x, margin_top + height, FFT_HEIGHT, C565_GREY_DARKER);
+        int16_t x = ((float)(data.freq - fft::fft_params.span_f_start) / (float)(fft::fft_params.span)) * FFT_DISPLAY_WIDTH;
 
-                display->setColor(C565_GREY_DARKER);
-                display->setBgColor(C565_DARKEST);
-                display->drawRoundedRectangle(x0, margin_top, text_width + padding * 2, height, 3, false);
-                display->gotoXY(x - (text_width / 2), margin_top + padding_v);
-                display->setColor(C565_GREY_LIGHT);
-                display->write(data.name);
-            }
+        if (x > bw_bins.first && x < bw_bins.second && i == stations_in_range.size() - 1) {
+            font = (FontDef *)&Font_7x10;
+            display->setFont(font);
+            height = font->height + padding_v * 2 - 1;
+            bg = C565_GREY_DARKER;
+        }
+
+        Size ts = display->get_text_size(data.name);
+        int32_t x0 = x - (ts.width() / 2) - padding;
+        int x1 = x0 + padding * 2 + ts.width();
+        if (x0 >= 0 && x1 < FFT_ZONE_WIDTH) {
+
+            // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
+            display->writeVertLine(x, margin_top + height, FFT_HEIGHT, C565_GREY_DARKER);
+
+            display->setBgColor(bg);
+            display->fill({(uint32_t)x0, margin_top}, {ts.width() + padding * 2, height}, bg);
+            display->writeRect(x0, margin_top - 1, x0 + ts.width() + padding * 2, margin_top + height - 1, C565_BLACK);
+
+            display->gotoXY(x - (ts.width() / 2), margin_top + padding_v);
+            display->setColor(C565_GREY_LIGHT);
+            display->write(data.name);
         }
     }
 }
@@ -243,6 +264,8 @@ void FFTWidget::draw_spectrum() {
 
     display->setBgColor(C565_BLACK);
 
+    display->setFont((FontDef *)&Font_Fixed5x7);
+
     if (dsp::adc_overload) {
 
         display->gotoXY(10, FFT_HEIGHT - 20);
@@ -285,6 +308,7 @@ void FFTWidget::before_paint() {
 
     if (this->dirty()) {
         refresh_x_axis = f_start != fft::fft_params.span_f_start || fft_span != fft::fft_params.span;
+        bw_bins = fft::get_bandwidth_pixel_range();
     }
 }
 

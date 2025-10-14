@@ -60,11 +60,11 @@ bool Display::hasOffset() {
     return ow;
 }
 
-Box Display::getOffset() {
+Box Display::get_offset() {
     return {ox, oy, ow, oh};
 }
 
-void Display::clearOffset() {
+void Display::clear_offset() {
     ox = 0;
     oy = 0;
     ow = 0;
@@ -79,8 +79,8 @@ bool Display::getEnabled() {
     return this->enabled;
 }
 
-bool Display::drawArea(Area *area, Painter *painter) {
-    return drawArea(area, painter, true);
+bool Display::draw_area(Area *area, Painter *painter) {
+    return draw_area(area, painter, true);
 }
 
 uint32_t Display::calculate_buffer_checksum() {
@@ -133,7 +133,7 @@ void Display::spi_transfer(uint16_t size) {
     }
 }
 
-bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
+bool Display::draw_area(Area *area, Painter *painter, bool pad_display) {
 
     if (this->enabled) {
 
@@ -204,7 +204,7 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
         }
 #endif
 
-        // bool address_window_set = true;
+        bool address_window_set = true;
 
         while (current_line < area->box.height) {
 
@@ -235,48 +235,50 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
             // if (interrupted) {
             //     continue;
             // }
-#if ENABLE_BUFFER_SKIP
-            if (curr_buffer == b565_buffer) {
-                int16_t slice_index = find_zone(area->box.x, area->box.y, current_line);
-                uint32_t current_checksum = calculate_buffer_checksum();
+#if 0
+            if (enable_skips) {
 
-                if (slice_index >= 0 && slice_checksums[slice_index].checksum == current_checksum) {
-                    // Zone unchanged - skip DMA transfer
+                if (curr_buffer == b565_buffer) {
+                    int16_t slice_index = find_zone(area->box.x, area->box.y, current_line);
+                    uint32_t current_checksum = calculate_buffer_checksum();
 
-                    // NOTE: This optimization does not have much impact on the performance. The current buffer still needs to be painted to calculate the
-                    // checksum and that, except for the first half slice, is done in parallel with the DMA transfer. Also, when a slice is skipped, we need to
-                    // wait for a current transfer to stop and then start a new DMA transfer. All in all, the performance gain is probably not worth the added
-                    // Also, we are only skipping the first half buffers (curr_buffer == b565_buffer)
-                    // complexity. This "slice skipping" approach has been implemented for widgets that, albeit dirty, only update a small portion of their area
-                    // (e.g. plots, fft...)
+                    if (slice_index >= 0 && slice_checksums[slice_index].checksum == current_checksum) {
+                        // Zone unchanged - skip DMA transfer
 
-                    address_window_set = false;
+                        // NOTE: This optimization does not have much impact on the performance. The current buffer still needs to be painted to calculate the
+                        // checksum and that, except for the first half slice, is done in parallel with the DMA transfer. Also, when a slice is skipped, we need
+                        // to wait for a current transfer to stop and then start a new DMA transfer. All in all, the performance gain is probably not worth the
+                        // added Also, we are only skipping the first half buffers (curr_buffer == b565_buffer) complexity. This "slice skipping" approach has
+                        // been implemented for widgets that, albeit dirty, only update a small portion of their area (e.g. plots, fft...)
 
-                    current_line += chunk_height;
+                        address_window_set = false;
 
-                    check_dma_transfer_length();
+                        current_line += chunk_height;
 
-                    continue;
+                        check_dma_transfer_length();
+
+                        continue;
+                    }
+
+                    // Store new checksum for this zone
+                    if (slice_index >= 0) {
+                        slice_checksums[slice_index].checksum = current_checksum;
+                    } else {
+                        slice_checksums[next_slice_index] = {area->box.x, area->box.y, current_line, current_checksum};
+                        next_slice_index = (next_slice_index + 1) % MAX_SLICES;
+                    }
                 }
 
-                // Store new checksum for this zone
-                if (slice_index >= 0) {
-                    slice_checksums[slice_index].checksum = current_checksum;
-                } else {
-                    slice_checksums[next_slice_index] = {area->box.x, area->box.y, current_line, current_checksum};
-                    next_slice_index = (next_slice_index + 1) % MAX_SLICES;
+                // Set address window for this zone
+                if (!address_window_set) {
+                    // First transfer - set window for remaining area
+                    END_DMA_TRANSFER
+                    //  printf_("Last zone was skipped: Setting window(%d,%d,%d,%d)\n", x, y + current_line, x + area->box.width - 1, y + area->box.height - 1);
+                    setAddressWindow(x, y + current_line, x + area->box.width - 1, y + area->box.height - 1);
+
+                    InitDisplayDataTransfer();
+                    address_window_set = true;
                 }
-            }
-
-            // Set address window for this zone
-            if (!address_window_set) {
-                // First transfer - set window for remaining area
-                END_DMA_TRANSFER
-                //  printf_("Last zone was skipped: Setting window(%d,%d,%d,%d)\n", x, y + current_line, x + area->box.width - 1, y + area->box.height - 1);
-                setAddressWindow(x, y + current_line, x + area->box.width - 1, y + area->box.height - 1);
-
-                InitDisplayDataTransfer();
-                address_window_set = true;
             }
 #endif
             current_line += chunk_height;
@@ -333,7 +335,7 @@ bool Display::drawArea(Area *area, Painter *painter, bool pad_display) {
 }
 
 // Function to draw a single corner using midpoint circle algorithm
-void Display::drawCorner(int16_t centerX, int16_t centerY, uint8_t radius, uint8_t quadrant, bool filled) {
+void Display::draw_corner(int16_t centerX, int16_t centerY, uint8_t radius, uint8_t quadrant, bool filled) {
 
     int x = 0;
     int y = radius;
@@ -416,16 +418,16 @@ void Display::drawRoundedRectangle(int16_t x0, int16_t y0, uint16_t width, uint1
     }
     // Draw the four cornerscd
     if (top_right) {
-        drawCorner(x0 + width - radius - 1, y0 + radius, radius, 1, filled); // Top-right
+        draw_corner(x0 + width - radius - 1, y0 + radius, radius, 1, filled); // Top-right
     }
     if (top_left) {
-        drawCorner(x0 + radius, y0 + radius, radius, 2, filled); // Top-left
+        draw_corner(x0 + radius, y0 + radius, radius, 2, filled); // Top-left
     }
     if (bottom_left) {
-        drawCorner(x0 + radius, y0 + height - radius - 1, radius, 3, filled); // Bottom-left
+        draw_corner(x0 + radius, y0 + height - radius - 1, radius, 3, filled); // Bottom-left
     }
     if (bottom_right) {
-        drawCorner(x0 + width - radius - 1, y0 + height - radius - 1, radius, 4, filled); // Bottom-right
+        draw_corner(x0 + width - radius - 1, y0 + height - radius - 1, radius, 4, filled); // Bottom-right
     }
 }
 
@@ -1053,11 +1055,11 @@ size_t Display::print(long n, int base) {
         if (n < 0) {
             int t = print('-');
             n = -n;
-            return printNumber(n, 10) + t;
+            return print_number(n, 10) + t;
         }
-        return printNumber(n, 10);
+        return print_number(n, 10);
     } else {
-        return printNumber(n, base);
+        return print_number(n, base);
     }
 }
 
@@ -1065,15 +1067,15 @@ size_t Display::print(unsigned long n, int base) {
     if (base == 0) {
         return write(n);
     } else {
-        return printNumber(n, base);
+        return print_number(n, base);
     }
 }
 
 size_t Display::print(double n, int digits) {
-    return printFloat(n, digits);
+    return print_float(n, digits);
 }
 
-size_t Display::printNumber(unsigned long n, uint8_t base) {
+size_t Display::print_number(unsigned long n, uint8_t base) {
     char buf[8 * sizeof(long) + 1]; // Assumes 8-bit chars plus zero byte.
     char *str = &buf[sizeof(buf) - 1];
 
@@ -1094,7 +1096,7 @@ size_t Display::printNumber(unsigned long n, uint8_t base) {
     return write(str);
 }
 
-size_t Display::printFloat(double number, uint8_t digits) {
+size_t Display::print_float(double number, uint8_t digits) {
     size_t n = 0;
 
     if (isnan(number)) {

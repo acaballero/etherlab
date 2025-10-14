@@ -63,6 +63,7 @@ class MainView : public View {
     InfoWidget info_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + TUNE_INFO_HEIGHT, METER_WIDTH, FFT_INFO_HEIGHT}, &lcd};
     FrequencyWidget frequency_w{{DISPLAY_X_PIXELS / 2 - 40, 0, DISPLAY_X_PIXELS / 2 + 40, HEADER_HEIGHT}};
     FFTWidget fft_w{{0, HEADER_HEIGHT, FFT_ZONE_WIDTH, FFT_WIDGET_HEIGHT}, &lcd, config.fft.spectrum_style};
+
     WaterfallWidget waterfall_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
     IQBalanceWidget iqbal_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
     MenuWidget menu_w{{0, MENU_START_Y, DISPLAY_X_PIXELS, INFO_HEIGHT}, &lcd};

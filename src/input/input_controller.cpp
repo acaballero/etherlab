@@ -165,9 +165,9 @@ void processEvent(st_inputEvent *e) {
 
                         if (very_long_press) {
                             if (settings_write(&config) == HAL_FLASH_ERROR_NONE) {
-                                status::pop_alert(status::ST_INFO, "Configuration saved");
+                                status::pop_alert(status::INFO, "Configuration saved");
                             } else {
-                                status::pop_alert(status::ST_ERROR, "Error saving configuration");
+                                status::pop_alert(status::ERROR, "Error saving configuration");
                             }
                         }
                         break;

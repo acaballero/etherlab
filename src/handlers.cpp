@@ -94,7 +94,7 @@ void Error_Handler(void) {
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
 
-    status::pop_alert(status::ST_ERROR, "Fatal error");
+    status::pop_alert(status::ERROR, "Fatal error");
 
     /* USER CODE END Error_Handler_Debug */
 }

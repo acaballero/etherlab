@@ -55,7 +55,7 @@ int sleep() {
     }
 
     if (ret < 0) {
-        status::pop_alert(status::ST_ERROR, "Error powering down devide");
+        status::pop_alert(status::ERROR, "Error powering down devide");
     }
 
     return ret;

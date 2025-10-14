@@ -134,7 +134,7 @@ void APRSView::start_rx() {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();
-                status::pop_alert(status::ST_ERROR, "Error starting APRS task");
+                status::pop_alert(status::ERROR, "Error starting APRS task");
             }
         }
     });
@@ -284,7 +284,7 @@ void APRSView::send_packet(std::string info) {
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &aprs_tx_task}, [this](st_dsp_status *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->fifo_underruns) {
-                status::pop_alert(status::ST_ERROR, "FIFO underruns");
+                status::pop_alert(status::ERROR, "FIFO underruns");
             }
             start_rx();
         }

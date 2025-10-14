@@ -32,11 +32,11 @@ void debug_print(const char *str, int timestamp, ...) {
 }
 
 void hide_alert() {
-    system_status.code = ST_OK;
+    system_status.code = OK;
     status_signal.emit(&system_status);
 }
 
-void pop_alert(StatusCode code, const char *msg) {
+void pop_alert(Level code, const char *msg) {
 
     LOG("%s\n", msg) // Print to console, if enabled
 

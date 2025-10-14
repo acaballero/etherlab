@@ -226,7 +226,7 @@ void sdcard_init(void) {
             fres = f_getfree("", &free_clusters, &getFreeFs);
 
             if (fres != FR_OK) {
-                pop_alert(status::ST_ERROR, "f_getfree error");
+                pop_alert(status::ERROR, "f_getfree error");
                 new_status.status = IOError;
             } else {
 

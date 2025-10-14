@@ -96,7 +96,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
                 radio::freq_signal.remove(signal_token);
                 dsp_set_real_time(false);
             } else {
-                status::pop_alert(status::ST_ERROR, "Playing!");
+                status::pop_alert(status::ERROR, "Playing!");
                 return Menu::quit; // Cancel exit
             }
             break;

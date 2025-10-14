@@ -354,7 +354,7 @@ void apply_fft_params(st_fft_params params) {
 
         if (!b) {
             // Failed decimator initialization. Should't happen, but we could've mess with the fft params calculation
-            status::pop_alert(status::ST_ERROR, "Error initializing FFT decimator");
+            status::pop_alert(status::ERROR, "Error initializing FFT decimator");
         }
 
         set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate, MAX_DSP_DECIMATION_FACTOR);
@@ -1073,7 +1073,7 @@ void update_fft() {
             bool b = if_freq(RF_DIRECTION_RX, f);
 
             if (!b) {
-                status::pop_alert(status::ST_ERROR, "updateFFT: Error setting IF freq");
+                status::pop_alert(status::ERROR, "updateFFT: Error setting IF freq");
             }
 
             // Clear the FIFO since it will likely contain samples of the previous slice

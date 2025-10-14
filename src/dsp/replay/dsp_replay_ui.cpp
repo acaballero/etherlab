@@ -137,7 +137,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
                 view_manager::mainView.remove_child(&replay_w);
             } else {
 
-                status::pop_alert(status::ST_ERROR, "Replaying!");
+                status::pop_alert(status::ERROR, "Replaying!");
                 return Menu::quit; // Cancel exit
             }
             break;

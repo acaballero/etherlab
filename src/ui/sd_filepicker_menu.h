@@ -156,7 +156,7 @@ class SDMenuT : public Menu::menuNode {
                         FRESULT res = f_unlink(file_path.c_str());
 
                         if (res != FR_OK) {
-                            status::pop_alert(status::ST_ERROR, "Error deleting file");
+                            status::pop_alert(status::ERROR, "Error deleting file");
                         }
                     }
 

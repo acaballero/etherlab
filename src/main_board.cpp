@@ -92,7 +92,7 @@ void check_status() {
     if (battery_status != battery::battery_info.status) {
         // Shuts down power amp if battery is low
         if (battery::battery_info.voltage > 6 && battery::battery_info.status == battery::BATTERY_STATUS_LOW) {
-            status::pop_alert(status::ST_INFO, "Battery low");
+            status::pop_alert(status::INFO, "Battery low");
             set_modulation_mode(config.modulation, true);
         }
 
@@ -100,15 +100,15 @@ void check_status() {
     }
 
     if (battery::battery_info.voltage > 6 && power_amp::status == power_amp::HIGH_TEMP) {
-        status::pop_alert(status::ST_ERROR, "Power amp high temperature");
+        status::pop_alert(status::ERROR, "Power amp high temperature");
     }
 
     if (rf_coupler::info.swr >= rf_coupler::HIGH_SWR) {
-        status::pop_alert(status::ST_ERROR, "High SWR");
+        status::pop_alert(status::ERROR, "High SWR");
     }
 
     if (rf_coupler::info.p_for_dbm >= config.max_power_dbm) {
-        status::pop_alert(status::ST_ERROR, "HPA max power exceeded");
+        status::pop_alert(status::ERROR, "HPA max power exceeded");
     }
 
     // Shuts down/turns on power amp bias as needed
@@ -263,7 +263,7 @@ void toggle_dsp() {
             if (allow_modulation_in_mode(config.mode, config.modulation)) {
                 set_mode(ANALOG_RX);
             } else {
-                status::pop_alert(status::ST_WARN, "Modulation disabled in analog");
+                status::pop_alert(status::WARN, "Modulation disabled in analog");
             }
         }
     }
@@ -289,12 +289,12 @@ bool _set_mode(MODE mode, bool force) {
 
         if (TXMODE(mode)) {
             if (!radio::tx_enabled()) {
-                status::pop_alert(status::ST_WARN, "TX disabled for current band");
+                status::pop_alert(status::WARN, "TX disabled for current band");
                 return false;
             }
 
             if (!config.hpa_enabled) {
-                status::pop_alert(status::ST_WARN, "Power amplifier disabled");
+                status::pop_alert(status::WARN, "Power amplifier disabled");
             }
         }
 
@@ -429,7 +429,7 @@ bool _set_mode(MODE mode, bool force) {
             set_if_filter(config.if_filter);
         }
 
-        if (changed) {
+        if (changed || force) {
             LOG("Last mode %s = current %s\n", radio::modeNames[last_mode], radio::modeNames[current_mode]);
             last_mode = current_mode;
             mode_signal.emit(nullptr);
@@ -491,7 +491,7 @@ void set_mute(GPIO_PinState muteState) {
         //  LOG("setMute: %d\n", static_cast<int>(muteState));
         mute = muteState;
         if (mutePin.set(muteState) != HAL_OK) {
-            status::pop_alert(status::ST_ERROR, "Error setting mute");
+            status::pop_alert(status::ERROR, "Error setting mute");
         }
     }
 }
@@ -714,7 +714,7 @@ bool getGPIOExpPin(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort, uint8_t pin, b
 void commitGPIOExpPort(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort) {
     uint32_t error = mcp23017_write_gpio(hmcp, mcpPort);
     if (error != I2CBB_ERROR_NONE) {
-        status::pop_alert(status::ST_ERROR, "GPIO expander port error");
+        status::pop_alert(status::ERROR, "GPIO expander port error");
     }
 }
 

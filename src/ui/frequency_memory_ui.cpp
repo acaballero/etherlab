@@ -288,7 +288,7 @@ void init_memory_mode() {
         freq_memory::set(mem);
     } else {
         using namespace status;
-        pop_alert(ST_ERROR, "Frequency memory empty");
+        pop_alert(Level::ERROR, "Frequency memory empty");
     }
 }
 
@@ -307,7 +307,7 @@ bool init_file_buffer() {
 
     // Mute to avoid SD card EMI. There's a TODO in some place to address this (new board design)
     main_board::set_mute(GPIO_PIN_SET);
-    status::pop_alert(status::ST_INFO, "Initializing memory");
+    status::pop_alert(status::INFO, "Initializing memory");
     view_manager::currentView->paint();
     bool res = true;
 
@@ -364,7 +364,7 @@ auto extract_freq_func = [](const std::string &line) {
     return m.freq;
 };
 
-void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories) {
+void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories, FREQ_TYPE type) {
 
     //  LOG("find_in_freq_range %d, %d\n", freq_min, freq_max);
     INIT_OR_ABORT()
@@ -390,7 +390,10 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
 
         for (auto line : lines) {
             if (!line.empty()) {
-                out_memories.push_back(deserialize_freq_mem(line.c_str()));
+                auto item = deserialize_freq_mem(line.c_str());
+                if (type == ALL || item.type == type) {
+                    out_memories.push_back(item);
+                }
             }
         }
     }
@@ -538,10 +541,10 @@ void del_freq(int i) {
     if (i >= 0 && i < get_freq_mem_count()) {
         db_file->delete_line(i);
         using namespace status;
-        pop_alert(ST_INFO, "Deleted");
+        pop_alert(Level::INFO, "Deleted");
     } else {
         using namespace status;
-        pop_alert(ST_ERROR, "Error deleting");
+        pop_alert(Level::ERROR, "Error deleting");
     }
 }
 
@@ -568,7 +571,7 @@ void set(st_freq_mem &mem) {
         main_board::set_modulation_mode(mem.mode, false);
     } else {
         using namespace status;
-        pop_alert(ST_ERROR, "radio::set_frequency() was false");
+        pop_alert(Level::ERROR, "radio::set_frequency() was false");
     }
 }
 

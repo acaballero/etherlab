@@ -224,7 +224,3 @@ uint16_t Field::get_bg() const {
 void Field::set_bg(uint16_t bg) {
     Field::bg_color = bg;
 }
-
-FontDef *Field::get_font() const {
-    return font;
-}

@@ -136,9 +136,9 @@ class Widget : public Painter {
 
     void set_z_index(uint16_t z_index);
 
-    void set_font(FontDef *);
+    void set_font(const FontDef *);
 
-    FontDef *get_font() {
+    FontDef const *get_font() {
         return font;
     };
 
@@ -167,7 +167,7 @@ class Widget : public Painter {
 
     Widget *parent_{nullptr};
 
-    FontDef *font = (FontDef *)&Font_Tiny8x8;
+    FontDef const *font = (FontDef *)&Font_Tiny8x8;
 
     Color bg_color{C565_BLACK};
     uint16_t fg_color{C565_GREY_LIGHT};

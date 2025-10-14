@@ -19,6 +19,10 @@ class ModalView : public View {
   public:
     ModalView(const std::string &title, const std::string &message, modal_t type, std::function<void(bool)> on_select);
 
+    static std::unique_ptr<ModalView> info(const std::string &title, const std::string &message) {
+        return std::make_unique<ModalView>(title, message, INFO, nullptr);
+    }
+
     void on_focus() override;
 
     void before_paint() override;
@@ -30,7 +34,7 @@ class ModalView : public View {
   private:
     const std::string message;
     const modal_t type;
-    const std::function<void(bool)> on_select;
+    const std::function<void(bool)> on_select{nullptr};
 
     TextWidget text_w{};
 

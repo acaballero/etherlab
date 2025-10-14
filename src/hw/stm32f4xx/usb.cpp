@@ -89,7 +89,7 @@ bool init_USB_MSC() {
 
         return true;
     } else {
-        status::pop_alert(status::ST_ERROR, "Timeout waiting for SD card");
+        status::pop_alert(status::ERROR, "Timeout waiting for SD card");
         return false;
     }
 }

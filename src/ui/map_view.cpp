@@ -225,7 +225,7 @@ void Map::map_read_line(Color *buffer, uint16_t pixels) {
             }
             delete[] zoom_out_buffer;
         } else {
-            status::pop_alert(status::ST_ERROR, "MapView: Can't allocate line buffer");
+            status::pop_alert(status::ERROR, "MapView: Can't allocate line buffer");
         }
     }
 }
@@ -326,7 +326,7 @@ bool Map::paint_callback() {
     }
 
     if (map_visible) {
-        int16_t oy = display->getOffset().y;
+        int16_t oy = display->get_offset().y;
         int16_t y1 = display->current_line - oy;
 
         // Read from map file and disqqplay to zoomed scale
@@ -627,7 +627,7 @@ void MapView::on_focus() {
     locator.set_focus(true);
 
     if (!map.map_file_opened()) {
-        status::pop_alert(status::ST_ERROR, "No world_map.bin file");
+        status::pop_alert(status::ERROR, "No world_map.bin file");
     }
 }
 

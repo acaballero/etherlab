@@ -114,7 +114,7 @@ void *CCMMemoryAllocator::alloc(size_t size, size_t alignment) {
         current = current->next;
     }
 
-    status::pop_alert(status::ST_ERROR, "CCM memory allocation failed\n");
+    status::pop_alert(status::ERROR, "CCM memory allocation failed\n");
     return nullptr;
 }
 

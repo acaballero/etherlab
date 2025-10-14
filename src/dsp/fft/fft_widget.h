@@ -48,6 +48,8 @@ class FFTWidget : public Widget {
 
     std::vector<st_freq_mem> stations_in_range{};
 
+    std::pair<int, int> bw_bins;
+
     bool refresh_x_axis;
 };
 

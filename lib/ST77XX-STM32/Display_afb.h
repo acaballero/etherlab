@@ -120,9 +120,9 @@ class Display {
 
     virtual void reset() = 0;
 
-    bool drawArea(Area *area, Painter *painter);
+    bool draw_area(Area *area, Painter *painter);
 
-    bool drawArea(Area *, Painter *, bool pad_display);
+    bool draw_area(Area *, Painter *, bool pad_display);
 
     uint8_t renderString(int8_t x, int8_t y, uint16_t length);
 
@@ -284,9 +284,9 @@ class Display {
 
     bool hasOffset();
 
-    Box getOffset();
+    Box get_offset();
 
-    void clearOffset();
+    void clear_offset();
 
     void set_enabled(bool);
 
@@ -332,7 +332,7 @@ class Display {
     Area *curr_area = 0;
 
   protected:
-    static void fillCallback(Display *, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+    static void fill_callback(Display *, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 
     SPI_HandleTypeDef *spi_port;
 
@@ -374,15 +374,15 @@ class Display {
 
     virtual HAL_StatusTypeDef setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) = 0;
 
-    size_t printNumber(unsigned long, uint8_t);
+    size_t print_number(unsigned long, uint8_t);
 
-    size_t printFloat(double, uint8_t);
+    size_t print_float(double, uint8_t);
 
     uint32_t calculate_buffer_checksum();
 
-    void drawCorner(int16_t centerX, int16_t centerY, uint8_t radius, uint8_t quadrant, bool filled);
+    void draw_corner(int16_t centerX, int16_t centerY, uint8_t radius, uint8_t quadrant, bool filled);
 
-#if LCD_ENABLE_BUFFER_SKIP
+#if 0 // LCD_ENABLE_BUFFER_SKIP
 
     struct Slice {
         int16_t area_x, area_y;

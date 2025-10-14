@@ -31,7 +31,7 @@ void del_freq(int ix);
 void set(st_freq_mem &);
 st_freq_mem next_prev(bool next);
 st_freq_mem find_closest(uint64_t frequency, DIRECTION d = FORWARD, FREQ_TYPE t = STATION);
-void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories);
+void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories, FREQ_TYPE type = ALL);
 void set_next_prev(DIRECTION d, FREQ_TYPE t = ALL);
 uint8_t toggle_memory_mode();
 bool get_memory_mode();

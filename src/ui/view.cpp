@@ -23,7 +23,7 @@ bool View::paint_callback() {
 
     Rect r = parent_rect();
     bool apply_pad = r.width() <= DISPLAY_X_PIXELS;
-    Box current_offset = display->getOffset();
+    Box current_offset = display->get_offset();
 
     display->fillBuffer(bg_color);
 
@@ -103,7 +103,7 @@ void View::paint(Area *area) {
 
             // TODO: Take into account if we've received another 'Area' as parameter, other than the full view area
             // LOG("Drawing view %s\n", get_name());
-            display->drawArea(area, this, apply_pad);
+            display->draw_area(area, this, apply_pad);
 
             for (const auto child : this->children()) {
                 if (child->can_be_seen()) {
@@ -164,6 +164,7 @@ void View::on_child_update(Widget *w) {
         // Start with children's area intersection to parent visible regions
         size_t prev_visible_rects_count = widget->visible_rects.size();
         widget->visible_rects.clear();
+        widget->hidden(false);
         Rect wr = widget->screen_rect();
         for (Rect &r : visible_rects) {
             auto intersection = r.intersect(wr);

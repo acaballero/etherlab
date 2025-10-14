@@ -110,7 +110,7 @@ void setup() {
 
         // Wrong config version, write the new one
         settings_write(&config);
-        status::pop_alert(status::ST_ERROR, "Settings read error");
+        status::pop_alert(status::ERROR, "Settings read error");
     }
 
     main_board::init();

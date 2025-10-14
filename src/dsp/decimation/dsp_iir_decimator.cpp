@@ -25,7 +25,7 @@ template <int order> void DspIIRDecimator<order>::decimate(buffer_t<int16_t> &sr
 }
 
 template <int order> void DspIIRDecimator<order>::decimate(int16_t *src_i, int16_t *src_q, int16_t *dst_i, int16_t *dst_q, size_t n_samples) {
-    status::pop_alert(status::ST_ERROR, "Not implemented");
+    status::pop_alert(status::ERROR, "Not implemented");
 }
 
 /*

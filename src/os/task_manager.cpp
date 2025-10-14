@@ -18,11 +18,11 @@
 namespace os {
 int TaskManager::add(periodic_task *t) {
 
-#if DEBUG_MSGS
-    if (t->get_name()) {
-        LOG("Adding task '%s'\n", t->get_name());
-    }
-#endif
+    // #if DEBUG_MSGS
+    //     if (t->get_name()) {
+    //         LOG("Adding task '%s'\n", t->get_name());
+    //     }
+    // #endif
 
     t->set_id(++last_id);
     tasks.push_back(std::unique_ptr<periodic_task>(t));
@@ -44,11 +44,11 @@ bool TaskManager::remove(int task_id) {
 
 bool TaskManager::remove(periodic_task *t) {
 
-#if DEBUG_MSGS
-    if (t->get_name()) {
-        LOG("Removing task '%s'\n", t->get_name());
-    }
-#endif
+    // #if DEBUG_MSGS
+    //     if (t->get_name()) {
+    //         LOG("Removing task '%s'\n", t->get_name());
+    //     }
+    // #endif
 
     auto it = std::remove_if(tasks.begin(), tasks.end(), [t](const std::unique_ptr<periodic_task> &item) {
         return item.get() == t; // Compare raw pointers
@@ -103,13 +103,13 @@ void TaskManager::run() {
         while (i < tasks.size()) {
             auto task = tasks[i].get();
             if (predicate(task, i)) {
-#if DEBUG_MSGS
-                if (task->get_name()) {
-                    int elapsed = current_time - task->get_last_time();
-                    LOG("%llu: Executing %s task '%s'", current_time, log_prefix, task->get_name());
-                    LOG_RAW(": %llu ms, e: %d ms\n", task->get_period(), elapsed);
-                }
-#endif
+                // #if DEBUG_MSGS
+                //                 if (task->get_name()) {
+                //                     int elapsed = current_time - task->get_last_time();
+                //                     LOG("%llu: Executing %s task '%s'", current_time, log_prefix, task->get_name());
+                //                     LOG_RAW(": %llu ms, e: %d ms\n", task->get_period(), elapsed);
+                //                 }
+                // #endif
                 task->run();
                 if (task->finished()) {
                     remove(task);

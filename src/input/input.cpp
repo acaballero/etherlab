@@ -82,7 +82,7 @@ void reset_mcp23017_int_pin() {
     }
 
     if (err) {
-        status::pop_alert(status::ST_ERROR, "Error reseting interrupt pin");
+        status::pop_alert(status::ERROR, "Error reseting interrupt pin");
     }
 }
 

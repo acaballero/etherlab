@@ -193,7 +193,7 @@ uint8_t from_modulation_mode(MODULATION_MODE mode) {
             return MODE_TYPE_USB;
 
         default:
-            status::pop_alert(status::ST_ERROR, "Modulation mode not found");
+            status::pop_alert(status::ERROR, "Modulation mode not found");
             return 0;
     }
 }
