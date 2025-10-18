@@ -137,7 +137,14 @@ void Widget::set_clean() {
 }
 
 void Widget::hidden(bool hide) {
+
     if (hide != flags.hidden) {
+
+        // #if DEBUG_MSGS
+        //         if (STR_IN(get_name(), "info", "smet", "radi", "snr")) {
+        //             LOG("Widget %s hidden: %d\n", get_name(), hide);
+        //         }
+        // #endif
 
         flags.hidden = hide;
 
@@ -486,7 +493,6 @@ Rect Widget::clip(const Rect &rect) {
     bool overlapped = false;
 
     if (parts.size() == 0) {
-
         parts = {screen_rect()};
     }
 
@@ -513,10 +519,8 @@ Rect Widget::clip(const Rect &rect) {
         // }
     }
 
-    if (parts.size() == 0) {
+    if (parts.size() == 0) { // Widget is now hidden
         hidden(true);
-    } else {
-        hidden(false);
     }
 
     if (overlapped) {

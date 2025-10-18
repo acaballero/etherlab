@@ -258,8 +258,9 @@ int32_t adf4350_setup(adf4350_init_param init_param) {
     // st->pdata = (struct adf4350_platform_data *)malloc(sizeof(*st->pdata));
     st->pdata = &platdata; // static assign memory.
 
-    if (!st->pdata)
+    if (!st->pdata) {
         return -1;
+    }
 
     st->pdata->clkin = init_param.clkin;
 

@@ -163,6 +163,7 @@ void View::on_child_update(Widget *w) {
 
         // Start with children's area intersection to parent visible regions
         size_t prev_visible_rects_count = widget->visible_rects.size();
+        bool was_hidden = widget->hidden();
         widget->visible_rects.clear();
         widget->hidden(false);
         Rect wr = widget->screen_rect();
@@ -172,32 +173,38 @@ void View::on_child_update(Widget *w) {
                 widget->visible_rects.emplace_back(intersection);
             }
         }
-
-        //  LOG("Cleared %s visible parts\n", widget->get_name());
-
+#if DEBUG_MSGS
+        // if (STR_IN(widget->get_name(), "info", "smet", "radi", "snr")) {
+        //     LOG("Cleared %s visible parts: %d\n", widget->get_name(), widget->visible_rects.size());
+        // }
+#endif
         for (uint16_t j = i + 1; j < children_.size(); j++) {
             Widget *sibling = children_[j];
             if (sibling->visible() && sibling->get_z_index() >= get_z_index()) {
                 const Rect r = widget->clip(sibling->screen_rect());
                 if (!r.is_empty()) {
-                    // #if DEBUG_MSGS
-                    //                     if (STR_IN(widget->get_name(), "mode")) {
-                    //                         if (r.contains(widget->screen_rect())) {
-                    //                             LOG("Widget %s hidden by %s. %d visible parts", widget->get_name(), sibling->get_name(),
-                    //                             widget->visible_rects.size());
-                    //                         } else {
+#if DEBUG_MSGS
+                    // if (STR_IN(widget->get_name(), "info", "smet", "radi", "snr")) {
+                    //     if (r.contains(widget->screen_rect())) {
+                    //         LOG("Widget %s hidden by %s. %d visible parts\n", widget->get_name(), sibling->get_name(), widget->visible_rects.size());
+                    //     } else {
 
-                    //                             LOG("Widget %s (%d) overlapped by %s (%d).", widget->get_name(), widget->get_z_index(), sibling->get_name(),
-                    //                                 sibling->get_z_index());
-                    //                             LOG_RAW(" %d visible parts\n", widget->visible_rects.size());
-                    //                         }
-                    //                     }
-                    // #endif
+                    //         LOG("Widget %s (%d) overlapped by %s (%d).", widget->get_name(), widget->get_z_index(), sibling->get_name(),
+                    //             sibling->get_z_index());
+                    //         LOG_RAW(" %d visible parts\n", widget->visible_rects.size());
+                    //     }
+                    // }
+#endif
                 }
             }
         }
 
-        if (prev_visible_rects_count != widget->visible_rects.size()) {
+        if (was_hidden && !widget->hidden()) {
+            //    LOG("Widget %s is not hidden anymore\n", widget->get_name());
+            widget->set_dirty(); // Was hidden, but not anymore. We need to repaint it.
+        }
+
+        if ((was_hidden && !widget->hidden()) || prev_visible_rects_count != widget->visible_rects.size()) {
             // TODO: This only takes into account changes in the number of visible regions, but not if they have changed
             widget->on_child_update(this);
         }

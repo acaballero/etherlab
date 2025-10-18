@@ -231,8 +231,8 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
         } else {
 
             if (stage_sr >= modulation_bandwidth_hz * 4 && modulation_bandwidth_hz > status.bandwidth) {
-                // When the demodulation bandwidth is higher than the target bandwidth and the current sample rate is can be decimated
-                // before demodulation, we find the highest decimation factor we can apply before demodulate
+                // When the demodulation bandwidth is higher than the target bandwidth and the current sample rate can be decimated
+                // before demodulation, we find the highest decimation factor we can apply before demodulating
                 factor = 1;
                 uint32_t next_stage_fs = stage_sr;
                 while (next_stage_fs >= modulation_bandwidth_hz * 4) {
@@ -324,15 +324,6 @@ bool ReceiveTaskBase::start() {
 
     uint32_t dac_sample_rate = get_audio_sample_rate();
 
-    // Set the nearest sample rate that's a multiple of the target DAC sample rate
-    // Note I've seen it working with an arbitrary sample rate (the APRS decoder figures out the phase increment for the clock synchronization), but even so...
-    // status.sample_rate = round_to_nearest_double(status.sample_rate, dac_sample_rate * 8);
-
-    // fft::st_fft_params params = fft::fft_params;
-    // params.sample_freq = status.sample_rate;
-    // params.freq_mult = 1200 * MAX_DSP_DECIMATION_FACTOR;
-    // fft::apply_fft_params(params);
-
     modulation_bandwidth_hz = get_modulation_bw_hz();
 
     MODULATION_MODE mod = get_modulation_mode();
@@ -365,6 +356,8 @@ bool ReceiveTaskBase::start() {
     status.block_size_bytes = DSP_BLOCK * sizeof(complex_t);
     status.decimated_block_size = DSP_BLOCK / dec_factor;
     status.decimated_block_size_bytes = status.decimated_block_size * sizeof(complex_t);
+
+    LOG("Bandwidth: %d | Sample rate: %d | Modulation bandwidth: %d\n", status.bandwidth, status.sample_rate, modulation_bandwidth_hz);
 
     bool ret = init_decimators(mod);
 
@@ -400,7 +393,7 @@ bool ReceiveTaskBase::start() {
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
     // Se the fifo processing frequency
-    update_timer(TASKS_TIMER_TYPEDEF, 20, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
+    update_timer(TASKS_TIMER_TYPEDEF, 40, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
     status.status = DSP_STATUS_RUNNING;
     return true;
 }

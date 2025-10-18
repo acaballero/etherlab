@@ -84,8 +84,9 @@ const st_band bands[] = {{420000000, 450000000, FLT_4_CODE, LOW_SIDE, true, FM},
                          {270000000, 295000000, FLT_6_CODE, ANY_SIDE, true},
                          {143000000, 158000000, FLT_2_CODE, HIGH_SIDE, true, FM},
                          {118000000, 137000000, FLT_1_CODE, ANY_SIDE, false, AM},
-                         {85000000, 110000000, FLT_3_CODE, ANY_SIDE, false, WFM},
                          // From this band down the injection has to be high side since the ADF4351 can't go below 35 MHz
+                         {85000000, 110000000, FLT_3_CODE, HIGH_SIDE, false, WFM},
+
                          {50000000, 54000000, FLT_3_CODE, HIGH_SIDE, false},
                          {28000000, 29700000, FLT_5_CODE, HIGH_SIDE, false},
                          {26960000, 27990000, FLT_5_CODE, HIGH_SIDE, false},
@@ -119,7 +120,7 @@ const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 150000, 6000, 0}
 const char *IFFilterNames[] = {"300 Hz", "3 k", "6 k", "7.5 k", "9 k", "15 k", "150 k", "180 k", "Auto"};
 const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
-const char *modeNames[] = {"ANA RX", "ANA TX", "DIG RX", "DIG TX"};
+const char *modeNames[] = {"ANA RX", "ANA TX", "DIG RX", "DIG TX", "NONE"};
 BAND filter = BAND_NONE;
 IF_FILTER if_filter = IF_FILTER_NONE;
 IF_FILTER_2 if_filter_2 = IF_FILTER_2_AUTO;
@@ -160,6 +161,7 @@ void calculate_freqs() {
     }
 
     mixers[0].setRf(carrier_freq);
+    mixers[0].set_harmonic_index(band.harmonic_index);
 
     switch (config.modulation) {
 

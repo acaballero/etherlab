@@ -11,6 +11,7 @@
 #include "mixer.h"
 #include "types.h"
 #include <cstdint>
+#include <sys/_stdint.h>
 
 namespace radio {
 
@@ -37,6 +38,9 @@ typedef struct {
 
     // Default modulation mode
     MODULATION_MODE modulation{MODULATION_MODE_ALL};
+
+    // Use nth-harmonic
+    uint8_t harmonic_index{1};
 
 } st_band;
 

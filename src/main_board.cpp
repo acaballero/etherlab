@@ -283,7 +283,7 @@ bool _set_mode(MODE mode, bool force) {
 
     MODE current_mode = config.mode; // Remember last mode for toggling back
 
-    if (force || mode != config.mode) {
+    if (force || mode != last_mode) {
 
         LOG("_setMode: mode: %s, current: %s, forced: %b\n", radio::modeNames[mode], radio::modeNames[current_mode], force);
 
@@ -298,7 +298,7 @@ bool _set_mode(MODE mode, bool force) {
             }
         }
 
-        changed = config.mode != mode;
+        changed = last_mode != mode;
         config.mode = mode;
 
         GPIO_PinState muteState = get_mute();
@@ -429,7 +429,7 @@ bool _set_mode(MODE mode, bool force) {
             set_if_filter(config.if_filter);
         }
 
-        if (changed || force) {
+        if (changed) {
             LOG("Last mode %s = current %s\n", radio::modeNames[last_mode], radio::modeNames[current_mode]);
             last_mode = current_mode;
             mode_signal.emit(nullptr);
@@ -737,6 +737,7 @@ void set_filter() {
     uint8_t new_bits = (hmcp01.gpio[MCP23017_PORTA] & 0xFF0F) + radio::bands[radio::filter].filter_bank_code;
 
     if (hmcp01.gpio[MCP23017_PORTA] != new_bits) {
+        LOG("Setting filter GPIO for band %s\n", radio::bandNames[new_filter]);
         hmcp01.gpio[MCP23017_PORTA] = new_bits;
         mcp23017_write_gpio(&hmcp01, MCP23017_PORTA);
     }
@@ -756,6 +757,8 @@ void set_if_filter(radio::IF_FILTER fil) {
     }
 
     if (new_filter != radio::if_filter) {
+
+        LOG("Setting IF filter %s\n", radio::IFFilterNames[new_filter]);
 
         radio::if_filter = new_filter;
 

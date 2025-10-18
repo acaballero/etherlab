@@ -5,33 +5,38 @@
 #define TRX_FRONTEND_MIXER_H
 
 #include "hw/stm32.h"
+#include <sys/_stdint.h>
 
 enum LO_INJECTION { LOW_SIDE = -1, HIGH_SIDE = 1, ANY_SIDE = 0 };
 
 class mixer {
 
- public:
-   uint64_t getRf();
-   uint64_t calcRf();
-   void setRf(uint64_t fRf);
+  public:
+    uint64_t getRf();
+    uint64_t calcRf();
+    void setRf(uint64_t fRf);
 
-   uint64_t getLo();
-   uint64_t calcLo();
-   void setLo(uint64_t fLo);
+    uint64_t getLo();
+    uint64_t calcLo();
+    void setLo(uint64_t fLo);
 
-   uint64_t getIf();
-   uint64_t calcIf();
-   void setIf(uint64_t fIf);
+    uint64_t getIf();
+    uint64_t calcIf();
+    void setIf(uint64_t fIf);
 
-   LO_INJECTION getLoInjection() const;
+    uint8_t get_harmonic_index();
+    void set_harmonic_index(uint8_t);
 
-   void setLoInjection(LO_INJECTION injection_side);
+    LO_INJECTION getLoInjection() const;
 
- private:
-   uint64_t f_rf = 0;
-   uint64_t f_lo = 0;
-   uint64_t f_if = 0;
-   LO_INJECTION lo_injection = LOW_SIDE;
+    void setLoInjection(LO_INJECTION injection_side);
+
+  private:
+    uint64_t f_rf = 0;
+    uint64_t f_lo = 0;
+    uint64_t f_if = 0;
+    uint8_t harmonic_index = 1;
+    LO_INJECTION lo_injection = LOW_SIDE;
 };
 
 #endif // TRX_FRONTEND_MIXER_H

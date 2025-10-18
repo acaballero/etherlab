@@ -215,6 +215,8 @@ int board_gain() {
 }
 
 void lo_enable(uint8_t stage, bool enabled) {
+
+    LOG("LO for mixer #%d %s\n", stage, enabled ? "enabled" : "disabled");
     switch (stage) {
         case 0:
             status::pop_alert(status::ERROR, "The 1st LO can't be disabled");
@@ -232,6 +234,7 @@ bool lo_freq(uint8_t stage, uint64_t freq) {
 
     bool ok = false;
 
+    LOG("Setting mixer #%d LO frequency : %llu\n", stage, freq);
     switch (stage) {
         case 0:
 
@@ -257,7 +260,9 @@ void lo_setup() {
     // each time we change it using the value in config.f_correction
     adf4350Params.clkin = ADF4351_XTAL_FREQ + config.f_correction;
     adf4350Params.output_power = lo_power_to_adf4350_drive_strength(config.lo_drive_strength_0);
-    adf4350_setup(adf4350Params);
+    auto ret = adf4350_setup(adf4350Params);
+
+    LOG("ADF4351 setup: %s", ret == 0 ? "OK" : "ERR");
 }
 
 void calibrate_freq() {

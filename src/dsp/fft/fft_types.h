@@ -22,7 +22,7 @@ enum WATERFALL_MODE { AVERAGE, MAX_HOLD };
 #define FFT_WATERFALL_MAX_PIXELS_PER_FRAME 4 // max scrolled pixels per frame
 
 // Length (number of bins) of the Fourier transform
-#define FFT_N 256
+#define FFT_N 512
 
 // Needs to be >= DSP_BANDWIDTH*2 by a safe margin, depending on the width of
 // the transition band of the low pass filter
