@@ -59,7 +59,7 @@ template <typename PreambleMatcher, typename UnstuffMatcher, typename EndMatcher
                     // brings in "_ZSt25__throw_bad_function_callv" and a lot of extra code.
                     // TODO: Make payload_handler known at compile time.
                     if (payload_handler) {
-                        packet.set_timestamp(Timestamp::now());
+                        packet.set_timestamp(rtc_get_date_time());
                         payload_handler(packet);
                     }
                     reset_state();

@@ -2,6 +2,7 @@
 #ifndef __BASEBAND_PACKET_H__
 #define __BASEBAND_PACKET_H__
 
+#include "hw/stm32f4xx/rtc.h"
 #include <cstddef>
 #include <bitset>
 
@@ -9,11 +10,11 @@ namespace baseband {
 
 class Packet {
   public:
-    void set_timestamp(const Timestamp &value) {
+    void set_timestamp(const st_datetime &value) {
         timestamp_ = value;
     }
 
-    Timestamp timestamp() const {
+    st_datetime timestamp() const {
         return timestamp_;
     }
 
@@ -41,7 +42,7 @@ class Packet {
 
   private:
     std::bitset<2560> data{};
-    Timestamp timestamp_{};
+    st_datetime timestamp_{};
     size_t count{0};
 };
 

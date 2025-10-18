@@ -33,7 +33,7 @@ class Label : public Widget {
         set_style(style);
     }
 
-    Label(Point position, const char *text, Color fg_color) : Widget{} {
+    Label(Point position, const char *text, Color fg_color = C565_TEXT_FG) : Widget{} {
 
         int w = strlen(text) * font->width;
         int h = font->height + display->getVerticalLineSpacing() * 2;
