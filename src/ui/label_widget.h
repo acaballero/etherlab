@@ -8,6 +8,7 @@
 #include "Display_afb.h"
 #include "button_widget.h"
 #include "input/inputEvent.h"
+#include "ips_font.h"
 #include "widget.h"
 #include "types.h"
 #include <stdint.h>
@@ -33,11 +34,13 @@ class Label : public Widget {
         set_style(style);
     }
 
-    Label(Point position, const char *text, Color fg_color = C565_TEXT_FG) : Widget{} {
+    Label(Point position, const char *text, Color fg_color = C565_TEXT_FG, FontDef *f = (FontDef *)&Font_7x10) : Widget{} {
 
-        int w = strlen(text) * font->width;
+        set_font(f);
+        display->setFont(f);
+        Size s = display->get_text_size(text);
         int h = font->height + display->getVerticalLineSpacing() * 2;
-        set_parent_rect({position, {w, h}});
+        set_parent_rect({position, {s.width() + padding * 2, h}});
         set_label(text);
         set_color(fg_color);
     }

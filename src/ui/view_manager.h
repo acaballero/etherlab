@@ -24,7 +24,7 @@ void push(View *);
 void pop();
 void init();
 
-void open_aprs();
+void open_app(std::unique_ptr<View> view);
 void open(std::unique_ptr<View> v);
 } // namespace view_manager
 

@@ -19,7 +19,7 @@
 
 void FrequencyWidget::init() {
 
-    scanner::signal.add(nullptr, [this](void *, void *) {
+    scanner::signal.add(nullptr, [this](void *, const void *) {
         set_dirty();
     });
 

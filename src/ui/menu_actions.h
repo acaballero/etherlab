@@ -13,8 +13,7 @@
 namespace Menu {
 
 enum NAVIGATION_ACTIONS { UP = 0, DOWN };
-extern menu_action_st navigation_actions_arr[];
-extern menu_actions_st navigation_actions;
+const menu_actions_st &get_navigation_actions();
 
 } // namespace Menu
 

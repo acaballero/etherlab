@@ -30,6 +30,10 @@ menu_action_st navigation_actions_arr[] = {{"<-",
                                            {"Back", []() {
                                                 input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, KEY_BACK, 0});
                                             }}};
-menu_actions_st navigation_actions = {navigation_actions_arr, 4};
+
+const menu_actions_st &get_navigation_actions() {
+    static menu_actions_st actions = {navigation_actions_arr, 4};
+    return actions;
+}
 
 } // namespace Menu

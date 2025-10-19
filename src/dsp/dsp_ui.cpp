@@ -1,9 +1,11 @@
 //
 // Created by Angel Dust on 16/04/2021.
 //
+#include "aprs/aprs_ui.h"
 #include "config.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
+#include "dsp/radiosonde/radiosonde_ui.hpp"
 #include "dsp/receive/receive_task.h"
 #include "ui/menu.h"
 #include "dsp_ui.h"
@@ -84,14 +86,20 @@ TOGGLE(dsp::dsp_config.baseband_echo, toggleBasebandEcho, "Baseband echo: ", doN
 
 result open_aprs(eventMask) {
     Menu::close();
-    view_manager::open_aprs();
+    view_manager::open_app(std::make_unique<dsp_ui::APRSView>(Rect{0, MENU_START_Y - 50, DISPLAY_X_PIXELS, METERS_HEIGHT + 80}));
+    return proceed;
+}
+
+result open_radiosonde(eventMask) {
+    Menu::close();
+    view_manager::open_app(std::make_unique<dsp_ui::RadiosondeView>(Rect{0, MENU_START_Y - 50, DISPLAY_X_PIXELS, METERS_HEIGHT + 80}));
     return proceed;
 }
 
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), SUBMENU(toggleDSP), SUBMENU(toggleAGC), SUBMENU(toggleBasebandEcho),
-     SUBMENU(toggleAudioBPF), SUBMENU(toggleFMDeemph), SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu), OBJ(dspWFMMaxDev),
-     OBJ(dspFMMaxDev));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), OP("Radiosonde", open_radiosonde, enterEvent), SUBMENU(toggleDSP),
+     SUBMENU(toggleAGC), SUBMENU(toggleBasebandEcho), SUBMENU(toggleAudioBPF), SUBMENU(toggleFMDeemph), SUBMENU(toggleDSPCompressor),
+     OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu), OBJ(dspWFMMaxDev), OBJ(dspFMMaxDev));
 
 } // namespace dsp_ui

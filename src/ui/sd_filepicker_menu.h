@@ -92,8 +92,8 @@ class SDMenuT : public Menu::menuNode {
         }
 
         uint16_t i = 0;
-        for (i = 0; i < Menu::navigation_actions.size; i++) {
-            menu_actions_arr[i] = Menu::navigation_actions_arr[i];
+        for (i = 0; i < Menu::get_navigation_actions().size; i++) {
+            menu_actions_arr[i] = Menu::get_navigation_actions().actions[i];
         }
 
         menu_actions_arr[OPEN] = {"Open", []() {

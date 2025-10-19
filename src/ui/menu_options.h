@@ -19,7 +19,7 @@ enum MenuStatus { ACTIVE, IDLE, UNKNOWN };
 template <typename T> struct menu_option_st {
     const char *name;
     T value;
-    uint16_t fg_color = C565_TEXT_FG;
+    uint16_t fg_color = C565_BUTTON_TEXT_FG;
     uint16_t bg_color = C565_TEXT_BG;
     bool enabled = true;
 };
@@ -27,7 +27,7 @@ template <typename T> struct menu_option_st {
 struct menu_action_st {
     std::string name;
     std::function<void(void)> action;
-    uint16_t fg_color = C565_TEXT_FG;
+    uint16_t fg_color = C565_BUTTON_TEXT_FG;
     uint16_t bg_color = C565_TEXT_BG;
     std::function<void(void)> fn_writer{nullptr};
     bool enabled{true};

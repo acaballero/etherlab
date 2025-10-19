@@ -23,7 +23,7 @@
 FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYLE s) : Widget(parentRect, display), style{s} {
 
     // Update the frequencies in the range every time the frequency changes
-    radio::freq_signal.add(this, [this](void *, void *) {
+    radio::freq_signal.add(this, [this](void *, const void *) {
         static int task_id;
 
         if (visible()) {

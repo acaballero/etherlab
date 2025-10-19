@@ -32,7 +32,7 @@ View *breadcrumb[MAX_VIEWS];
 View *currentView;
 int view_index = -1;
 
-std::unique_ptr<View> aprs_view_p;
+std::unique_ptr<View> app_view_p;
 std::unique_ptr<View> view_p;
 
 void view_loop();
@@ -64,7 +64,7 @@ void pop() {
     }
 }
 
-void main_view_warning_callback(void *, void *args) {
+void main_view_warning_callback(void *, const void *args) {
 
     status::Status *st = (status::Status *)args;
 
@@ -125,23 +125,20 @@ void view_loop() {
     currentView->paint();
 }
 
-void open_aprs() {
+void open_app(std::unique_ptr<View> view) {
+    app_view_p = std::move(view);
 
-    aprs_view_p.reset();
-
-    aprs_view_p = std::make_unique<dsp_ui::APRSView>(Rect{0, MENU_START_Y - 50, DISPLAY_X_PIXELS, METERS_HEIGHT + 80});
-
-    auto *view_ptr = aprs_view_p.get();
-    aprs_view_p->on_hide_fn = [view_ptr]() {
+    auto *view_ptr = app_view_p.get();
+    app_view_p->on_hide_fn = [view_ptr]() {
         view_manager::mainView.remove_child(view_ptr);
-        aprs_view_p.reset();
+        app_view_p.reset();
         Menu::close();
     };
 
-    aprs_view_p->set_visible(true);
-    aprs_view_p->set_z_index(200);
-    aprs_view_p->set_focus(true);
-    view_manager::mainView.add_child(aprs_view_p.get());
+    app_view_p->set_visible(true);
+    app_view_p->set_z_index(200);
+    app_view_p->set_focus(true);
+    view_manager::mainView.add_child(app_view_p.get());
 }
 
 void open(std::unique_ptr<View> v) {

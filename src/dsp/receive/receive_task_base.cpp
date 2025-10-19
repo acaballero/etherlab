@@ -285,10 +285,12 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
 
     std::unique_ptr<dsp::demodulator> demod;
 
-    if (get_baseband_echo()) {
+    auto mode = get_modulation_mode();
+
+    if (get_baseband_echo() || mode == NONE) {
         return std::make_unique<dsp::ssb_demodulator>();
     } else {
-        switch (get_modulation_mode()) {
+        switch (mode) {
             case AM:
                 return std::make_unique<dsp::am_demodulator>();
             case CW:

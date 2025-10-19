@@ -29,7 +29,7 @@ RF_DIRECTION mode;
 int command = DSP_COMMAND_START;
 SignalToken signal_token;
 
-void on_freq_signal(void *thisptr, void *args) {
+void on_freq_signal(void *thisptr, const void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
     if (event.event == radio::AFTER_UPDATE) {
         // TODO: Update signal

@@ -28,9 +28,9 @@ enum WATERFALL_MODE { AVERAGE, MAX_HOLD };
 // the transition band of the low pass filter
 #define FFT_MIN_SAMPLE_RATE (DSP_BANDWIDTH * 2 / USABLE_BW_FACTOR)
 // Minimum allowed span for the FTT
-#define FFT_MIN_SPAN 8192
+#define FFT_MIN_SPAN 10000
 // Maximum allowed span for the FTT
-#define FFT_MAX_SPAN 1048576
+#define FFT_MAX_SPAN 1200000
 
 // If the desired span is higher than the maximum bandwidth that can be computed
 // using a single FFT, we use multiple slices. Max number of slices (FFTs)

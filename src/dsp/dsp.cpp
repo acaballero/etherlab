@@ -92,7 +92,7 @@ void dsp_set_real_time(bool b) {
     dsp::set_max_sample_freq(b);
 }
 
-void restart_callback(void *, void *) {
+void restart_callback(void *, const void *) {
 
     //  TODO: This assumes the current task is 'receive'
     if (config.mode != DIGITAL_RX && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {

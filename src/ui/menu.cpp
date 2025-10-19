@@ -354,14 +354,14 @@ result idle(menuOut &o, idleEvent e) {
             Menu::menuStatus = ACTIVE;
 
             // Add custom actions (they'll be captured by the bottom button bar)
-            actions_signal.emit(&navigation_actions);
+            actions_signal.emit(&get_navigation_actions());
             break;
     }
 
     return proceed;
 }
 
-void menu_sdcard_callback(void *, void *args) {
+void menu_sdcard_callback(void *, const void *args) {
 
     sdcard_st_info *info = (sdcard_st_info *)args;
 
@@ -398,7 +398,7 @@ void update_options() {
     dsp_ui::apply_dsp_changes();
 }
 
-void mode_signal_handler(void *, void *) {
+void mode_signal_handler(void *, const void *) {
     update_options();
 }
 

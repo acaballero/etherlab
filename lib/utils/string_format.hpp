@@ -72,9 +72,8 @@ void generateRandomMacAddress(char *macAddress);
 std::string unit_auto_scale(double n, const uint32_t base_unit, uint32_t precision);
 double get_decimals(double num, int16_t mult, bool round = false);
 
-std::string trim(std::string_view str);  // Remove whitespace at ends.
 std::string trimr(std::string_view str); // Remove trailing spaces
-std::string truncate(std::string_view, size_t length);
+std::string truncate(std::string_view str, size_t length);
 
 /* Gets the int value for a character given the radix.
  * e.g. '5' => 5, 'D' => 13. Out of bounds => 0. */

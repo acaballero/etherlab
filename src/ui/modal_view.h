@@ -58,7 +58,7 @@ class ModalView : public View {
         "NO",
     };
 
-    Menu::menu_actions_st quick_actions = {Menu::navigation_actions.actions, 4};
+    Menu::menu_actions_st quick_actions = {Menu::get_navigation_actions().actions, 4};
 };
 
 #endif

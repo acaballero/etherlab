@@ -31,7 +31,7 @@ SignalToken signal_token;
 WaveInfo wi;
 ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y - 35, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 6 + 35}, &lcd, "replay"};
 
-void on_freq_signal(void *thisptr, void *args) {
+void on_freq_signal(void *thisptr, const void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
     if (event.event == radio::AFTER_UPDATE) {
         wi.carrier_freq = event.frequency;

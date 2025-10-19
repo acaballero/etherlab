@@ -303,7 +303,7 @@ bool APRSTask::init() {
     }
 
     if (!squelch_signal_token) {
-        squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
+        squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, const void *) {
             set_squelch();
         });
     }

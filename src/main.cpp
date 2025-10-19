@@ -125,7 +125,7 @@ void stop_blink() {
     blink_task.set_enabled(false);
 }
 
-void standby_signal_callback(void *, void *) {
+void standby_signal_callback(void *, const void *) {
 
     bool sleep = standby::power_mode == standby::POWER_MODE_SLEEP;
     bool power_save = standby::power_mode == standby::POWER_MODE_SAVE;
@@ -145,7 +145,7 @@ void standby_signal_callback(void *, void *) {
 
 GPIO_PinState mute_state;
 
-void frequency_signal_callback(void *, void *args) {
+void frequency_signal_callback(void *, const void *args) {
 
     radio::st_freq_event event = *((radio::st_freq_event *)args);
 
@@ -173,7 +173,7 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 3)); // replay/capture
+    nav.doNav(Menu::navCmd(Menu::idxCmd, 4)); // replay/capture
 
     // nav.doNav(Menu::navCmd(Menu::enterCmd));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // select file

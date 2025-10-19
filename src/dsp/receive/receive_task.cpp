@@ -133,7 +133,7 @@ bool ReceiveTask::init() {
     }
 
     if (!squelch_signal_token) {
-        squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, void *) {
+        squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, const void *) {
             if (status.status == DSP_STATUS_RUNNING) {
                 set_squelch();
             }

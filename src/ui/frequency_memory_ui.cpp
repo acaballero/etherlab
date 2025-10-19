@@ -314,13 +314,13 @@ bool init_file_buffer() {
     if (result->load(FREQ_MEMORY_FILE, true)) {
         db_file = std::move(result);
 
-        sdcard_signal.add(NULL, [](void *, void *) {
+        sdcard_signal.add(NULL, [](void *, const void *) {
             if (sdcard_info.status != sdcard_STATUS::Mounted) {
                 db_file.reset();
             }
         });
 
-        radio::band_signal.add(NULL, [](void *, void *) {
+        radio::band_signal.add(NULL, [](void *, const void *) {
             if (get_memory_mode()) {
                 init_memory_mode();
             }
@@ -656,16 +656,20 @@ MENU(freqMemEditMenu, "Frequency edit", doNothing, noEvent, wrapStyle, OBJ(freqN
 
 result freqMemorySelectedEvent(eventMask e, navNode &nav);
 
-FreqMemoryMenu freqMemMenu("Frequency memory", 255, nullptr, freqMemEditMenu, freqMemorySelectedEvent, (eventMask)(enterEvent | exitEvent));
+FreqMemoryMenu freqMemMenu("Frequency memory", 512, nullptr, freqMemEditMenu, freqMemorySelectedEvent, (eventMask)(enterEvent | exitEvent));
 
-menu_action_st menu_actions[] = {navigation_actions_arr[Menu::UP], navigation_actions_arr[Menu::DOWN], {"Delete", []() {
-                                                                                                            if (freqMemMenu.curr_ix >= 0) {
-                                                                                                                del_freq(freqMemMenu.curr_ix);
-                                                                                                            }
-                                                                                                        }}};
+const menu_actions_st &get_actions() {
+    static menu_action_st menu_actions[] = {
+        get_navigation_actions().actions[Menu::UP], get_navigation_actions().actions[Menu::DOWN], {"Delete", []() {
+                                                                                                       if (freqMemMenu.curr_ix >= 0) {
+                                                                                                           del_freq(freqMemMenu.curr_ix);
+                                                                                                       }
+                                                                                                   }}};
 
-menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(menu_action_st)};
+    static menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(menu_action_st)};
 
+    return actions;
+}
 /*
  * This will be called whenever an entry is selected in the frequency memory
  * It copies the currently selected index st_freq_mem in the temporary struct
@@ -690,12 +694,7 @@ result freqMemorySelectedEvent(eventMask e, navNode &nav) {
     }
 
     if (e == Menu::enterEvent) {
-        if (!actions.actions[0].action) {
-            for (size_t i = 0; i < navigation_actions.size; i++) {
-                actions.actions[i] = navigation_actions.actions[i];
-            }
-        }
-        actions_signal.emit(&actions);
+        actions_signal.emit(&get_actions());
     } else if (e == Menu::exitEvent) {
         // Remove context actions
         actions_signal.emit(nullptr);

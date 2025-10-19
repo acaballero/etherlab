@@ -19,7 +19,7 @@ extern Signal if_filter_signal;
 
 void init();
 
-void main_board_signal_static_callback(void *thisptr, void *args);
+void main_board_signal_static_callback(void *thisptr, const void *args);
 
 void set_modulation_mode(MODULATION_MODE mod_val, bool force);
 

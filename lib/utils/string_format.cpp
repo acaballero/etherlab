@@ -364,15 +364,6 @@ double get_decimals(double num, int16_t mult, bool round) {
 
 static const char *whitespace_str = " \t\r\n";
 
-std::string trim(std::string_view str) {
-    auto first = str.find_first_not_of(whitespace_str);
-    if (first == std::string::npos)
-        return {};
-
-    auto last = str.find_last_not_of(whitespace_str);
-    return std::string{str.substr(first, last - first + 1)};
-}
-
 std::string trimr(std::string_view str) {
     size_t last = str.find_last_not_of(whitespace_str);
     return std::string{last != std::string::npos ? str.substr(0, last + 1) : ""};

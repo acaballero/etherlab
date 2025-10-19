@@ -262,7 +262,7 @@ void lo_setup() {
     adf4350Params.output_power = lo_power_to_adf4350_drive_strength(config.lo_drive_strength_0);
     auto ret = adf4350_setup(adf4350Params);
 
-    LOG("ADF4351 setup: %s", ret == 0 ? "OK" : "ERR");
+    LOG("ADF4351 setup: %s\n", ret == 0 ? "OK" : "ERR");
 }
 
 void calibrate_freq() {

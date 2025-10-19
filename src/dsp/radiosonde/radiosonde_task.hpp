@@ -75,6 +75,7 @@
 #define RSSI_PITCH_WEIGHT (float(BEEP_MAX_FREQ - BEEP_BASE_FREQ) / RSSI_CEILING)
 #define DEFAULT_AUDIO_SAMPLE_RATE 24000
 
+namespace dsp {
 extern Signal radiosonde_signal;
 
 class RadiosondeTask : public ReceiveTaskBase {
@@ -153,7 +154,11 @@ class RadiosondeTask : public ReceiveTaskBase {
 
     bool init() override;
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;
-    MODULATION_MODE get_modulation_mode() const override;
+
+    MODULATION_MODE get_modulation_mode() const override {
+        return NONE;
+    };
+
     uint32_t get_audio_sample_rate() const override {
         return 12000;
     };
@@ -167,5 +172,5 @@ class RadiosondeTask : public ReceiveTaskBase {
         return 2800;
     };
 };
-
+} // namespace dsp
 #endif /*__PROC_ERT_H__*/

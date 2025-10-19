@@ -18,9 +18,9 @@ class TitleBarWidgetInner : public Widget {
     static constexpr uint8_t MARGIN = 3;
     TitleBarWidgetInner(const Rect &parentRect, Display *display);
 
-    void on_info_changed_signal(void *params);
+    void on_info_changed_signal(const void *params);
     bool paint_callback() override;
-    static void signal_static_callback(void *thisptr, void *args) {
+    static void signal_static_callback(void *thisptr, const void *args) {
         ((TitleBarWidgetInner *)thisptr)->on_info_changed_signal(args);
     }
 

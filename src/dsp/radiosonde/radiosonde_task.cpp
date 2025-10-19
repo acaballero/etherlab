@@ -2,6 +2,16 @@
 #include "radiosonde_task.hpp"
 #include "agc.h"
 
+namespace dsp {
+
+Signal radiosonde_signal;
+
+RadiosondeTask::~RadiosondeTask() {
+    // if (squelch_signal_token) {
+    //     sstrength::squelch_signal.remove(squelch_signal_token);
+    // }
+}
+
 void RadiosondeTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
 
     for (size_t i = 0; i < buff_out_f32.count; i++) {
@@ -10,6 +20,22 @@ void RadiosondeTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
             clock_recovery_fsk_4800(mf.get_output());
         }
     }
+}
+
+void RadiosondeTask::set_beeper() {
+    beeper.set_sample_rate(status.sample_rate);
+}
+
+bool RadiosondeTask::init() {
+
+    bool ok = true;
+
+    if (beeper_enabled) {
+        set_beeper();
+        beeper.stop(); // stopped at first
+    }
+
+    return ok;
 }
 
 void RadiosondeTask::on_packet() {
@@ -34,3 +60,4 @@ void RadiosondeTask::update_rssi() {
     beep_freq = fft::dbm * RSSI_PITCH_WEIGHT + BEEP_BASE_FREQ;
     last_rssi = fft::dbm;
 }
+} // namespace dsp

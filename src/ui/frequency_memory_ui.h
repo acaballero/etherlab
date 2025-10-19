@@ -53,7 +53,7 @@ struct FreqMemoryMenu : Menu::UserMenu {
             char buf[buf_size], sf[14];
             bool empty;
 
-            // Get frequency memory from FileBuffer instead of config.freqs
+            // Get frequency memory from the file buffer
             st_freq_mem fm = get_by_index(idx);
             empty = fm.freq == 0;
 

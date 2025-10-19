@@ -25,11 +25,11 @@
 TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
     sdcard_signal.add(this, TitleBarWidgetInner::signal_static_callback);
     battery::battery_signal.add(this, TitleBarWidgetInner::signal_static_callback);
-    power_amp::temp_signal.add(this, [this](void *, void *) {
+    power_amp::temp_signal.add(this, [this](void *, const void *) {
         set_dirty();
     });
     rf_coupler::rf_coupler_signal.add(this, TitleBarWidgetInner::signal_static_callback);
-    rtc_signal.add(this, [this](void *, void *) {
+    rtc_signal.add(this, [this](void *, const void *) {
         // Repaing every 5 seconds
         static int i;
         if (i++ % 5 == 0) {
@@ -233,7 +233,7 @@ void TitleBarWidgetInner::before_paint() {
     }
 }
 
-void TitleBarWidgetInner::on_info_changed_signal(void *) {
+void TitleBarWidgetInner::on_info_changed_signal(const void *) {
     this->set_dirty();
 }
 
@@ -256,12 +256,12 @@ void TitleBarWidget::init() {
     }
 
     // Update every mode update event
-    main_board::mode_signal.add(this, [this](void *, void *) {
+    main_board::mode_signal.add(this, [this](void *, const void *) {
         set_dirty();
     });
 
     // And every clock tick, so the DSP status label is regularly updated
-    rtc_signal.add(this, [this](void *, void *) {
+    rtc_signal.add(this, [this](void *, const void *) {
         set_dirty();
     });
 }

@@ -5,6 +5,7 @@
 #include "status_widget.h"
 #include "../config.h"
 #include "../main_board.h"
+#include "Display_afb.h"
 #include "input/inputEvent.h"
 #include "printf.h"
 #include "radio.h"
@@ -51,23 +52,18 @@ void StatusWidget::init() {
     StatusWidget::default_actions = {default_actions_arr, n_buttons};
 
     for (Button &b : buttons) {
+        b.set_fg(C565_BLACK);
         add_child(&b);
     }
 
-    // int i = 0;
     for (Widget *btn : View::children()) {
         ((Button *)btn)->set_font((FontDef *)&Font_Tiny8x8);
-
-        // DEBUG (otherwise we don't need names
-        // char name[6];
-        // sprintf(name, "stb-%d", i++);
-        // btn->set_name(name);
     }
 
     push(&default_actions);
 
     // Subscribe to published actions
-    actions_signal.add(this, [this](void *, void *params) {
+    actions_signal.add(this, [this](void *, const void *params) {
         if (params == nullptr) {
             pop();
         } else if (params != actions_stack.back()) {

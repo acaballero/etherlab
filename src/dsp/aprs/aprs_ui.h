@@ -83,7 +83,7 @@ class APRSView : public View {
                                              [this]() {
                                                  toggle_beacon();
                                              },
-                                             C565_TEXT_FG, C565_BG_DISABLED},
+                                             C565_BUTTON_TEXT_FG, C565_BG_DISABLED},
                                             {"Text",
                                              [this]() {
                                                  settings();

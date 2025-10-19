@@ -83,7 +83,7 @@ void APRSView::init() {
         this->on_source_selected(source);
     };
 
-    aprs_signal_token = aprs_signal.add(this, [this](void *, void *data) {
+    aprs_signal_token = aprs_signal.add(this, [this](void *, const void *data) {
         on_packet((APRSPacket *)data);
     });
 
@@ -106,6 +106,7 @@ void APRSView::stop() {
     paused = true;
     actions_signal.emit(&actions);
 }
+
 void APRSView::resume() {
     menu_actions[0].name = "Pause";
     paused = false;
@@ -122,12 +123,13 @@ void APRSView::toggle_beacon() {
         menu_actions[2].fg_color = C565_GREEN;
         beacon_task_id = os::task_manager.add(p);
     } else {
-        menu_actions[2].fg_color = C565_TEXT_FG;
+        menu_actions[2].fg_color = C565_BUTTON_TEXT_FG;
         menu_actions[2].bg_color = C565_BG_DISABLED;
     }
 
     actions_signal.emit(&actions);
 }
+
 void APRSView::start_rx() {
     //  LOG("START RX\n");
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_status *status) {

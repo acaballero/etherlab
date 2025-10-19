@@ -483,7 +483,7 @@ void fft_init() {
 
     // When the gain changes, the FIFO is reset so the new gain gets reflected immediatelly. Otherwise the AGC itself, which relies in the FFT DB values, gets
     // laggy.
-    agc::signal_gain.add(nullptr, [](void *, void *) {
+    agc::signal_gain.add(nullptr, [](void *, const void *) {
         fft_fifo.reset();
     });
 }

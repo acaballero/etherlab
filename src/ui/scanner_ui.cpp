@@ -50,7 +50,7 @@ void configure() {
     scanner::configure(scanner_config);
 }
 
-void scanner_callback(void *, void *args) {
+void scanner_callback(void *, const void *args) {
     scanner::st_scanner_info *config = (scanner::st_scanner_info *)args;
     scanner_config = *config;
 }

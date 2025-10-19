@@ -7,7 +7,7 @@
 #define MAX_LISTENERS 6
 
 typedef uint32_t SignalToken;
-typedef std::function<void(void *caller, void *params)> Callback;
+typedef std::function<void(void *caller, const void *params)> Callback;
 
 struct Signal {
 
@@ -64,7 +64,7 @@ struct Signal {
         return found;
     }
 
-    void emit(void *args) {
+    void emit(const void *args) {
 
         int i = 0;
         while (listeners[i].token > 0) {

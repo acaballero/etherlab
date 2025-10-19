@@ -62,7 +62,7 @@ void enable_analog_mute(bool b) {
     }
 }
 
-void s_strength_callback(void *, void *args) {
+void s_strength_callback(void *, const void *args) {
 
     if (analog_mute_enabled) {
         sstrength::st_sstrength_info info = *((sstrength::st_sstrength_info *)args);
@@ -118,19 +118,19 @@ void check_status() {
     setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_POW_AMP_BIAS, biased, true);
 }
 
-void power_amp_status_callback(void *, void *) {
+void power_amp_status_callback(void *, const void *) {
     check_status();
 }
 
-void rf_coupler_info_callback(void *, void *) {
+void rf_coupler_info_callback(void *, const void *) {
     check_status();
 }
 
-void battery_callback(void *, void *) {
+void battery_callback(void *, const void *) {
     check_status();
 }
 
-void if_filter_signal_callback(void *, void *) {
+void if_filter_signal_callback(void *, const void *) {
     if (config.mode == DIGITAL_RX) { // Restart receive task
         dsp_restart();
     }
@@ -220,7 +220,7 @@ void setGPIO() {
     changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_AGC, !ISTX && config.agc_enabled, false);
 
     // Experimental: In DIGITAL modes, the RSSI is the output from the logamp that's fed with the 1st IF.
-    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_IF_RSSI_5V, !ISANALOG, false);
+    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_IF_RSSI_5V, !ISANALOG && !ISTX, false);
 
     changed = changed | setGPIOExpPin(&hmcp03, MCP23017_PORTA, GPIOEXP_FPANEL_TX_LED, ISTX, false);
 
@@ -283,7 +283,7 @@ bool _set_mode(MODE mode, bool force) {
 
     MODE current_mode = config.mode; // Remember last mode for toggling back
 
-    if (force || mode != last_mode) {
+    if (force || mode != current_mode || last_mode == MODE_NONE) {
 
         LOG("_setMode: mode: %s, current: %s, forced: %b\n", radio::modeNames[mode], radio::modeNames[current_mode], force);
 
@@ -430,7 +430,7 @@ bool _set_mode(MODE mode, bool force) {
         }
 
         if (changed) {
-            LOG("Last mode %s = current %s\n", radio::modeNames[last_mode], radio::modeNames[current_mode]);
+            LOG("Changed: Last mode %s | current %s\n", radio::modeNames[last_mode], radio::modeNames[current_mode]);
             last_mode = current_mode;
             mode_signal.emit(nullptr);
         }
@@ -737,7 +737,7 @@ void set_filter() {
     uint8_t new_bits = (hmcp01.gpio[MCP23017_PORTA] & 0xFF0F) + radio::bands[radio::filter].filter_bank_code;
 
     if (hmcp01.gpio[MCP23017_PORTA] != new_bits) {
-        LOG("Setting filter GPIO for band %s\n", radio::bandNames[new_filter]);
+        LOG("Setting filter GPIO for band '%s'\n", radio::bandNames[new_filter]);
         hmcp01.gpio[MCP23017_PORTA] = new_bits;
         mcp23017_write_gpio(&hmcp01, MCP23017_PORTA);
     }
