@@ -13,6 +13,7 @@
 #include <sys/_stdint.h>
 
 namespace main_board {
+
 extern ShiftReg PowControlShiftReg;
 extern Signal mode_signal;
 extern Signal if_filter_signal;
@@ -46,6 +47,8 @@ bool toggle_mode();
 void set_mute(GPIO_PinState);
 
 GPIO_PinState get_mute();
+
+bool alc_enabled();
 
 void enable_analog_mute(bool);
 

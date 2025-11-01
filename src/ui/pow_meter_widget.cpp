@@ -8,26 +8,25 @@
 
 PowerMeterWidget::PowerMeterWidget(Rect parent_rect, Display *display) : Widget(parent_rect, display) {
 
-    float f_swr_block_size = 0.1;
-    float f_dbm_block_size = 0.1;
+    int max_watts = toWatts(max_dbm);
 
     dbm_nblocks = ((float)max_dbm / (float)dbm_tick_spacing);
+    watts_nblocks = ((float)max_watts / (float)watts_tick_spacing);
 
-    while (f_swr_block_size != round(f_swr_block_size) || f_dbm_block_size != round(f_dbm_block_size)) {
-        // Adjust the margin so the block size is an integer number of pixels for both bars
-        f_swr_block_size = ((float)(this->area.box.width - margin_right - margin) / ((float)max_swr - 1.0));
-        f_dbm_block_size = ((float)(this->area.box.width - margin_right - margin) / (float)dbm_nblocks);
-        margin_right++;
-    }
+    meter_width = (this->area.box.width - margin_right - margin);
 
-    dbm_block_size = f_dbm_block_size;
-    swr_block_size = f_swr_block_size;
+    swr_block_size = ((float)meter_width / ((float)max_swr - 1.0));
+
+    w_k = (float)meter_width / pow(max_watts, scale);
 }
 
 bool PowerMeterWidget::paint_callback() {
-    display->clear();
+
     display->setFont((FontDef *)&Font_Fixed5x7);
     display->setBgColor(C565_BLACK);
+
+    display->clear();
+    paint_power_watts();
 
     paint_power();
     paint_swr();
@@ -35,28 +34,32 @@ bool PowerMeterWidget::paint_callback() {
     return true;
 }
 
-void PowerMeterWidget::paint_power() {
-    char buf[6];
+float PowerMeterWidget::toWatts(float dbm) {
+    return dbm == -FLT_MAX ? 0 : pow(10, ((dbm - 30.0) / 10.0));
+}
 
-    int max_x = margin + (dbm_nblocks * dbm_block_size);
-    int x = (info.p_for_dbm / (float)max_dbm) * max_x;
+void PowerMeterWidget::paint_power_watts() {
+    char buf[10];
+
+    int max_x = margin + meter_width;
+
     int y1 = margin_top + font->height + 1;
-    int y2 = y1 + DBM_BAR_HEIGHT;
+
     uint16_t color;
 
     // Tick values
-    for (int level = 0; level <= dbm_nblocks; level++) {
+    for (int level = 0; level <= watts_nblocks; level++) {
         buf[0] = 0;
-        int px = dbm_block_size * level + margin;
+        int px = w_k * pow(level * watts_tick_spacing, scale) + margin;
         int tick_size = 1;
 
         if (level == 0) {
-            sprintf(buf, "dBm");
+            sprintf(buf, "Watts");
             color = C565_WHITE;
-        } else if (level % 2 == 0) {
+        } else if (level < 5 || level % 2 == 0) {
             tick_size = 2;
             color = C565_GREY_LIGHT;
-            sprintf(buf, "%i", level * dbm_tick_spacing);
+            sprintf(buf, "%i", level * watts_tick_spacing);
         }
 
         if (buf[0]) {
@@ -71,11 +74,53 @@ void PowerMeterWidget::paint_power() {
 
     // Horizontal line
     display->writeLine(margin, y1, max_x, y1, C565_GREY_DARK);
+}
+
+void PowerMeterWidget::paint_power() {
+    char buf[6];
+
+    int max_x = margin + meter_width;
+    int x = w_k * pow(toWatts(info.p_for_dbm), scale) + margin;
+    int y1 = margin_top + font->height + 1 + watts_line_height;
+    int y2 = y1 + DBM_BAR_HEIGHT;
+    uint16_t color;
+    int ticks[dbm_nblocks];
+
+    // Tick values
+    for (int level = 0; level <= dbm_nblocks; level++) {
+        buf[0] = 0;
+        int px = w_k * pow(toWatts(level * dbm_tick_spacing), scale) + margin;
+        ticks[level] = px;
+        int tick_size = 1;
+
+        if (level == 0) {
+            sprintf(buf, "dBm");
+            color = C565_WHITE;
+        } else if (px > margin + 10 + font->size * 3) { // Don't put the first label if it's too close to the axis label
+            tick_size = 2;
+            color = C565_GREY_LIGHT;
+            sprintf(buf, "%i", level * dbm_tick_spacing);
+        }
+
+        if (buf[0]) {
+            display->setColor(color);
+            display->gotoXY(px, margin_top + watts_line_height);
+            display->write(buf);
+        }
+
+        // Tick
+        display->writeLine(px, y1, px, y1 + tick_size, C565_GREY_DARK);
+    }
+
+    // Horizontal line
+    display->writeLine(margin, y1, max_x, y1, C565_GREY_DARK);
 
     // Bar
-    for (int ix = margin; ix < x; ix++) {
-        if ((ix - margin) % (dbm_block_size) != 0) {
+    for (int ix = margin, t = 0; ix < x; ix++) {
+        if (ix % ticks[t] != 0) {
             display->writeVertLine(ix, y1 + 3, y2, C565_WHITE);
+        } else {
+            t++;
         }
     }
 }
@@ -85,7 +130,7 @@ void PowerMeterWidget::paint_swr() {
 
     int max_x = margin + (max_swr - 1) * swr_block_size;
     int x = ((info.swr - 1.0) / ((float)max_swr - 1)) * ((float)max_x - margin);
-    int y1 = margin_top + font->height + DBM_BAR_HEIGHT + 4;
+    int y1 = margin_top + font->height + DBM_BAR_HEIGHT + watts_line_height + 4;
     int y2 = y1 + SWR_BAR_HEIGHT;
     uint16_t color;
 

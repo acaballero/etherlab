@@ -154,9 +154,10 @@ bool if_freq(RF_DIRECTION direction, uint64_t freq) {
         si5351.output_enable(clk, true);
 
         // A shift is applied so the frequency of interest does not lie around DC to avoid DC leakage and flickr noise
-        if (!ISTX) {
-            freq += radio::get_dsp_frequency_shift();
-        }
+
+        freq += radio::get_dsp_frequency_shift();
+
+        // LOG("Setting DSP IF frequency: %llu (%d shift)\n", freq, radio::get_dsp_frequency_shift());
 
         uint64_t f = freq * SI5351_FREQ_MULT * (div ? 2 : 4);
 
@@ -279,6 +280,8 @@ void calibrate_freq() {
  * Sets the direction of the quadrature mod/demod
  */
 void if_direction(RF_DIRECTION direction) {
+
+    LOG("Setting DSP IF path: %s\n", direction == RF_DIRECTION_RX ? "RX" : "TX");
 
     if (direction == RF_DIRECTION_TX) {
 

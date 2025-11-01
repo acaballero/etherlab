@@ -60,7 +60,9 @@ void enable_frequency_shift(bool b) {
 }
 
 bool get_freq_shift_enabled() {
-    return fft::fft_params.n_slices == 1 && !ISANALOG && freq_shift_enabled;
+    // The frequency shift sacrifices some fft bandwidth so it is not applied if not absolutely necessary.
+
+    return fft::fft_params.n_slices == 1 && freq_shift_enabled; // && (!ISANALOG || ISTX);
 }
 
 void set_agc_enabled(bool v) {

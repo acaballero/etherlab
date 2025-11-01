@@ -75,7 +75,7 @@ typedef struct st_config //__attribute__ ((packed))
     uint8_t power_save_period_seconds = 0;
 
     uint32_t f_1st_if = 73000000L;
-    uint32_t f_if_fm_tx = 73320000L; // FM modulator IF frequency
+    uint32_t f_if_fm_tx = 73128500L; // FM modulator IF frequency
 
     // VFO config
     uint8_t vfo_ix = 0;

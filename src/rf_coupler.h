@@ -46,7 +46,9 @@ struct rf_coupler_info {
         return v_for == st.v_for && v_ref == st.v_ref && p_for_dbm == st.p_for_dbm && p_ref_dbm == st.p_ref_dbm && swr == st.swr;
     }
 
-    bool operator!=(const rf_coupler_info &st) const { return !(*this == st); }
+    bool operator!=(const rf_coupler_info &st) const {
+        return !(*this == st);
+    }
 };
 
 extern Signal rf_coupler_signal;
@@ -54,7 +56,7 @@ extern struct rf_coupler_info info;
 extern os::periodic_task task;
 void set_offset(uint16_t offset_mv);
 uint16_t get_offset();
-float toWatts(float dbm);
+float to_watts(float dbm);
 void enable();
 void disable();
 

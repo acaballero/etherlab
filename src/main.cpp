@@ -204,6 +204,15 @@ int main() {
     radio::freq_signal.add(NULL, frequency_signal_callback);
     standby::signal.add(NULL, standby_signal_callback);
 
+    // Update every mode update event
+    main_board::mode_signal.add(NULL, [](void *, const void *) {
+        if (ISTX) {
+            rf_coupler::task.set_enabled(true);
+        } else {
+            rf_coupler::task.set_enabled(false);
+        }
+    });
+
     view_manager::init();
     freq_memory::init_file_buffer();
 

@@ -2,6 +2,8 @@
 #include "hw/stm32.h"
 #include "os/periodic_task.h"
 #include "config.h"
+#include "status.h"
+#include "stm32f4xx_hal.h"
 
 // Coefficients for  curve fitting the measured temperature (C) vs voltage(mV) at the detector
 // This is using a 3.3k NTC shunt thermistor pulled up to 5.1v through 3.3k
@@ -24,25 +26,32 @@ namespace power_amp {
 // private forward declarations
 void calculate_temp();
 
-void check_temp();
+void loop();
 
 void set_status(enum status);
 
 bool enabled = false;
 st_power_amp_params params;
+
 float hysteresis = 0.94;
-os::periodic_task task(2000, check_temp);
+uint64_t last_hpa_shutdown_ms{0};
+bool hpa_shutdown{true};
+
+uint32_t hpa_shutdown_timeout_ms{10000}; // Once shut down, the HPA remains at least 10 seconds off
+
+os::periodic_task task(2000, loop);
 Signal temp_signal, status_signal;
-enum status last_status = OFF, status = OFF;
+enum status status = OFF;
 float voltage;
 int temp = params.MIN_TEMP - 1;
 int curr_temp;
 int prev_temp;
+
 bool debug = false;
 
 void enable() {
     enabled = true;
-    check_temp();
+    loop();
     task.set_enabled(true);
 }
 
@@ -51,6 +60,10 @@ void disable() {
     temp = params.MIN_TEMP - 1;
     set_status(OFF);
     task.set_enabled(false);
+}
+
+void shutdown() {
+    set_status(SHUTDOWN);
 }
 
 void test() {
@@ -90,16 +103,28 @@ void calculate_temp() {
 }
 
 void set_status(enum status s) {
-    status = s;
-    if (status != last_status) {
+    if (s != status) {
+
+        status = s;
+        if (status == SHUTDOWN) {
+            last_hpa_shutdown_ms = HAL_GetTick();
+        }
         status_signal.emit(&status);
-        last_status = status;
     }
 }
 
-void check_temp() {
+void loop() {
     calculate_temp();
     temp_signal.emit(&temp);
+    auto t = HAL_GetTick();
+
+    if (status == SHUTDOWN) {
+        if (t < last_hpa_shutdown_ms + hpa_shutdown_timeout_ms) {
+            return;
+        }
+        LOG("Power amp exits shutdown mode\n");
+        status = OK;
+    }
 
     int max = params.MAX_TEMP;
     if (status == HIGH_TEMP) {

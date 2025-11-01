@@ -99,21 +99,25 @@ void check_status() {
         battery_status = battery::battery_info.status;
     }
 
-    if (battery::battery_info.voltage > 6 && power_amp::status == power_amp::HIGH_TEMP) {
-        status::pop_alert(status::ERROR, "Power amp high temperature");
-    }
-
-    if (rf_coupler::info.swr >= rf_coupler::HIGH_SWR) {
-        status::pop_alert(status::ERROR, "High SWR");
-    }
-
-    if (rf_coupler::info.p_for_dbm >= config.max_power_dbm) {
-        status::pop_alert(status::ERROR, "HPA max power exceeded");
-    }
-
     // Shuts down/turns on power amp bias as needed
     bool biased = ISTX && power_amp::status == power_amp::OK && rf_coupler::info.swr < rf_coupler::HIGH_SWR &&
                   rf_coupler::info.p_for_dbm < config.max_power_dbm && battery::battery_info.status != battery::BATTERY_STATUS_LOW;
+
+    if (!biased && power_amp::status == power_amp::OK) {
+
+        power_amp::shutdown();
+        if (battery::battery_info.voltage > 6 && power_amp::status == power_amp::HIGH_TEMP) {
+            status::pop_alert(status::ERROR, "Power amp high temperature");
+        }
+
+        if (rf_coupler::info.swr >= rf_coupler::HIGH_SWR) {
+            status::pop_alert(status::ERROR, "High SWR");
+        }
+
+        if (rf_coupler::info.p_for_dbm >= config.max_power_dbm) {
+            status::pop_alert(status::ERROR, "HPA max power exceeded");
+        }
+    }
 
     setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_POW_AMP_BIAS, biased, true);
 }
@@ -192,6 +196,10 @@ bool change_frontend_gain(int direction) {
     return false;
 }
 
+bool alc_enabled() {
+    return ISTX;
+}
+
 void setGPIO() {
 
     bool changed = false;
@@ -211,8 +219,8 @@ void setGPIO() {
     // Set digital TX or analog RX&TX signal between the 1st and 2nd mixers
     changed = changed | setGPIOExpPin(&hmcp01, MCP23017_PORTA, GPIOEXP_ANALOG_RXTX_DIGITAL_TX_SWITCH, config.mode != DIGITAL_TX, false);
 
-    // ALC (Automatic level control) is Off in RX
-    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_ALC, ISTX, false);
+    // ALC (Automatic level control) is Off during RX
+    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTA, GPIOEXP_ALC, alc_enabled(), false);
 
     // AGC (Automatic gain control) is Off in TX
     // In FM and AM the RSSI signal from the log amplifier (of the particular demodulator board) is fed to the RSSI level adapter and then to the AGC board just
@@ -332,21 +340,17 @@ bool _set_mode(MODE mode, bool force) {
                 power_ctrl = (config.power_ctrl & POWCRL_P12) | power_ctrl;
             }
 
-            set_power_ctrl(power_ctrl, false);
-
             setGPIO();
+            set_power_ctrl(power_ctrl, false);
 
             if (config.hpa_enabled) {
                 power_ctrl = config.power_ctrl | POWCRL_P12;
-
                 set_power_ctrl(power_ctrl, force);
             }
 
             HAL_Delay(10);
 
             if (ISANALOG) {
-                // We just want to see the signal being sent
-                fft_config(radio::get_bandwidth_hz() * 4);
 
                 /*
 
@@ -377,11 +381,13 @@ bool _set_mode(MODE mode, bool force) {
             if (config.hpa_enabled) {
                 power_amp::enable();
             }
+
             rf_coupler::enable();
 
         } else { // RX
 
             rf_coupler::disable();
+
             if (config.hpa_enabled) {
                 power_amp::disable();
             }
@@ -421,12 +427,19 @@ bool _set_mode(MODE mode, bool force) {
             // Turn off 3rd mixer LO
             lo_enable(2, 0);
             set_if_filter(config.if_filter);
+
         } else {
+
             lo_enable(1, 1);
             if ((config.modulation == SSB_LSB || config.modulation == SSB_USB)) {
                 lo_enable(2, 1);
             }
             set_if_filter(config.if_filter);
+        }
+
+        if (ISTX) {
+            // We just want to see the signal being sent
+            fft_config(max2(radio::get_bandwidth_hz() * 4, 40000));
         }
 
         if (changed) {
@@ -617,13 +630,11 @@ void set_modulation_mode(MODULATION_MODE mod_val, bool force) {
     setting_modulation = false;
 }
 
-void setPowerCtrl(uint8_t value, bool force, bool oneByOne) {
+void set_power_rails(uint8_t value, bool force, bool oneByOne) {
 
     if (force || value != config.power_ctrl) {
 
         config.power_ctrl = value;
-
-        HAL_Delay(10);
 
         if (oneByOne) {
 
@@ -660,11 +671,11 @@ void set_power_ctrl(uint8_t value, bool force) {
 
     uint8_t curr_ctrl_bits = PowControlShiftReg.getValue();
 
-    // 1: Turn off required lines
-    setPowerCtrl(curr_ctrl_bits & value, true, false);
+    // 1: Turn off the lines that will be off
+    set_power_rails(curr_ctrl_bits & value, true, false);
 
     // 1: Turn on remaining lines one by one
-    setPowerCtrl(value, force, true);
+    set_power_rails(value, force, true);
 }
 
 bool setGPIOExpPin(MCP23017_HandleTypeDef *hmcp, uint8_t mcpPort, uint8_t pin, bool set) {

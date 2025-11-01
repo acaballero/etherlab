@@ -75,9 +75,14 @@ float get_agc(bool filter) {
 
 int get_analog_gain() {
 
-    // 27 is a rough estimate of max gain after 1st and 2nd mixers. It does not account for frequency-variable gain or LO power
-    int if_gain = max2(0, 28 - round(AGC_FITTING_COEFF_A + (AGC_FITTING_COEFF_B * exp(-AGC_FITTING_COEFF_C * agc_voltage))));
-    return if_gain + main_board::get_frontend_gain();
+    if (ISTX) {
+        // TODO: Estimate tx path signal gain before DSP
+        return 0;
+    } else {
+        // 28 is a rough estimate of max gain after 1st and 2nd mixers. It does not account for frequency-variable gain or LO power
+        int if_gain = max2(0, 28 - round(AGC_FITTING_COEFF_A + (AGC_FITTING_COEFF_B * exp(-AGC_FITTING_COEFF_C * agc_voltage))));
+        return if_gain + main_board::get_frontend_gain();
+    }
 }
 
 void set_release_ms(uint32_t v) {
@@ -92,10 +97,6 @@ void check_agc() {
 
     get_agc(false);
     signal_agc_voltage.emit(&agc_voltage);
-
-    if (ISTX) {
-        return;
-    }
 
     const fft_type power_dbm = fft::dbm_peak + get_analog_gain();
     volatile const int max_dbm = get_max_input_dbm();
@@ -177,7 +178,7 @@ void check_agc() {
         overload = power_overload;
     }
 
-    if (dsp::dsp_config.agc_enabled) { // Won't change gain if DSP AGC is disabled
+    if (dsp::dsp_config.agc_enabled && !ISTX) { // Won't change gain if DSP AGC is disabled or while transmitting
         const uint64_t time_since_change = t - last_overload_state_change;
         const bool adc_lockout = (t - last_adc_reduction) < ADC_LOCKOUT_MS;
 

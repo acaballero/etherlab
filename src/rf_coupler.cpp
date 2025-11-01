@@ -6,6 +6,7 @@
 #include "hw/stm32.h"
 #include "os/periodic_task.h"
 #include "config.h"
+#include "status.h"
 #include <printf.h>
 #include <cfloat>
 
@@ -65,9 +66,11 @@ void calculate_power() {
 
     // IIR exponential filter
     // Transients and different time constants in the output of the forward and reverse power detectors
-    // can led to wrong SWR values. A trade-off between accuracy and response speed has to be found.
-    info.v_for = (info.v_for - (0.2 * (info.v_for - vfor)));
-    info.v_ref = (info.v_ref - (0.2 * (info.v_ref - vref)));
+    // can led to wrong SWR values. In addition, both values should change accordingly because their ratio matters
+    // A trade-off between accuracy and response speed has to be found.
+
+    info.v_for = (info.v_for - (0.4 * (info.v_for - vfor)));
+    info.v_ref = (info.v_ref - (0.4 * (info.v_ref - vref)));
 
     // if (v_ref<5) v_ref=0; // Below 5mV at the detector, SWR measurements are too inaccurate to be accounted for
 
@@ -94,8 +97,8 @@ void calculate_power() {
 
     info.p_ref_dbm = info.v_ref * 1000 < CPL_LOGAMP_MIN_MV ? -FLT_MAX : (info.v_ref * 1000 - cpl_offset) / CPL_LOGAMP_SLOPE_MV;
 
-    float p_for = toWatts(info.p_for_dbm);
-    float p_ref = toWatts(info.p_ref_dbm);
+    float p_for = to_watts(info.p_for_dbm);
+    float p_ref = to_watts(info.p_ref_dbm);
 
     if (p_for > 0) {
         // Peak voltages
@@ -109,7 +112,7 @@ void calculate_power() {
         info.swr = 0;
     }
 
-    // printf("%ld; %.4f; %.4f; %.4f; %.4f; %.4f\n", HAL_GetTick(), vfor, vref, info.v_for, info.v_ref, info.swr);
+    // LOG("%.4f; %.4f; %.4f\n", info.v_for, info.v_ref, info.p_for_dbm);
 
     if (last_info != info) {
         rf_coupler_signal.emit(&info);
@@ -117,7 +120,7 @@ void calculate_power() {
     }
 }
 
-float toWatts(float dbm) {
+float to_watts(float dbm) {
     return dbm == -FLT_MAX ? 0 : pow(10, ((dbm - 30.0) / 10.0));
 }
 } // namespace rf_coupler

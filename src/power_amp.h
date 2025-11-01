@@ -6,7 +6,7 @@
 
 namespace power_amp {
 
-enum status { OFF, OK, HIGH_TEMP };
+enum status { OFF, OK, HIGH_TEMP, SHUTDOWN };
 
 // Temperature is relative to the thermistor
 struct st_power_amp_params {
@@ -24,6 +24,7 @@ extern Signal status_signal;
 extern os::periodic_task task;
 void enable();
 void disable();
+void shutdown();
 
 } // namespace power_amp
 

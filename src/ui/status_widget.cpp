@@ -223,7 +223,8 @@ void StatusWidget::before_paint() {
             disabled_bg = C565_GREY_DARK;
             fg_color_auto = C565_MAGENTA;
 
-            buttons[AGC].set_enabled(false);
+            buttons[AGC].set_enabled(main_board::alc_enabled());
+            buttons[AGC].set_dimmed(false);
 
         } else {
             fg_color = C565_BLACK;

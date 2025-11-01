@@ -243,7 +243,7 @@ Menu::numberPrompt<uint32_t> ifFMTXFreqMenu((const char *)"FM IF TX Frequency", 
                                             [](uint32_t) {
                                                 board::change_calibration = true;
                                             },
-                                            10000, 100000000, 1000, 10000);
+                                            10000, 100000000, 100, 1000);
 
 result settings_reset(eventMask) {
     config = Config();

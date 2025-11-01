@@ -63,7 +63,7 @@ bool TuneWidget::paint_callback() {
         if (rf_coupler::info.p_for_dbm == -FLT_MAX) {
             sprintf(buf, " dBm:-");
         } else {
-            sprintf(buf, " W:%.1f dBm:%d", rf_coupler::toWatts(rf_coupler::info.p_for_dbm), (int)rf_coupler::info.p_for_dbm);
+            sprintf(buf, " W:%.1f dBm:%d", rf_coupler::to_watts(rf_coupler::info.p_for_dbm), (int)rf_coupler::info.p_for_dbm);
         }
 
         display->print(buf);

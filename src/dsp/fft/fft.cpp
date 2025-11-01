@@ -601,17 +601,31 @@ void calculate_noise_floor() {
     fft_type median = copy[fft_params.nbins >> 1];
     fft_type max = copy[fft_params.nbins - 1];
 
-    // LPF for these. The peak value heavily smoothed
-    fft_noise_floor_db = (fft_noise_floor_db - (0.1f * (fft_noise_floor_db - median)));
-    fft_max_db = (fft_max_db - (0.02f * (fft_max_db - max)));
+    float32_t alpha_noise = ISTX ? 0.5 : 0.1;
+    float32_t alpha_max_db = ISTX ? 0.5 : 0.02;
+
+    // LPF for these. The peak value heavily smoothed (bot not in TX since is more predictable)
+    fft_noise_floor_db = (fft_noise_floor_db - (alpha_noise * (fft_noise_floor_db - median)));
+    fft_max_db = (fft_max_db - (alpha_max_db * (fft_max_db - max)));
 
     if (config.fft.min_db_auto) {
         // Set the dB scale automatically
 
-        config.fft.min_db = floor_multiple(fft_noise_floor_db - 5, 5);
+        if (ISTX) {
 
-        // Set max db as the next multiple of 10 that is FFT_HEADROOM db higher
-        config.fft.max_db = ceil_multiple(fft_max_db + FFT_HEADROOM_DB, 20);
+            config.fft.min_db = -110;
+
+            // Set max db as the next multiple of 10 that is FFT_HEADROOM db higher
+            config.fft.max_db = ceil_multiple(fft_max_db + 30, 30);
+
+        } else {
+            int noise_floor_bottom_margin = 5;
+
+            config.fft.min_db = floor_multiple(fft_noise_floor_db - noise_floor_bottom_margin, 5);
+
+            // Set max db as the next multiple of 10 that is FFT_HEADROOM db higher
+            config.fft.max_db = ceil_multiple(fft_max_db + FFT_HEADROOM_DB, 10);
+        }
 
         config.fft.min_db = constrain(config.fft.min_db, FFT_MIN_DB, config.fft.max_db);
     }
