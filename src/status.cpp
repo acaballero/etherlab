@@ -8,6 +8,8 @@
 #include "stm32f4xx_hal.h"
 #include <printf.h>
 
+int debug_indent = 0;
+
 namespace status {
 
 Status system_status;
@@ -17,12 +19,19 @@ void debug_print(const char *str, int timestamp, ...) {
     va_list argptr;
     va_start(argptr, timestamp);
     auto t = HAL_GetTick();
+
 #if SWO_ENABLED
+    if (debug_indent) {
+        printf_("%*s", debug_indent, "");
+    }
     if (timestamp) {
         printf_("%d: ", t);
     }
     vprintf_(str, argptr);
 #elif USB_PRINT_ENABLED
+    if (debug_indent) {
+        usb.print("%*s", debug_indent, "");
+    }
     if (timestamp) {
         usb.print("%d: ", t);
     }

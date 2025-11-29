@@ -13,8 +13,8 @@
 
 namespace dsp {
 
-// TX gain for the digital domain
-int8_t dsp_tx_gain = 0;
+// Gain
+int8_t dsp_gain_factor = 0;
 
 bool freq_shift_enabled = true;
 
@@ -25,7 +25,9 @@ Signal dsp_common_params_signal;
 
 const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
 
-st_dsp_status *dsp_status;
+const char *commandNames[] = {"NONE", "STOP", "START"};
+
+st_dsp_params *dsp_params;
 
 st_dsp_config dsp_config;
 void set_config(dsp::st_dsp_config &c) {
@@ -49,10 +51,10 @@ void set_max_sample_freq(uint32_t rate) {
     fft_config(fft::fft_params.span);
 }
 
-void set_tx_gain_db(int8_t gain_db) {
-    dsp_tx_gain = constrain(gain_db, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB);
-    dsp_status->gain = pow(10.0, (float)dsp_tx_gain / 20.0);
-    dsp_common_params_signal.emit(&dsp_status);
+void set_gain_db(int8_t gain_db) {
+    dsp_gain_factor = constrain(gain_db, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB);
+    dsp_params->gain = pow(10.0, (float)dsp_gain_factor / 20.0);
+    dsp_common_params_signal.emit(&dsp_params);
 }
 
 void enable_frequency_shift(bool b) {

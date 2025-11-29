@@ -15,13 +15,13 @@ class CaptureWidget : public Widget {
     using Widget::Widget;
 
     bool paint_callback() override;
-    void setProcessorStatus(st_dsp_status *status);
-    void setTaskStatus(st_dsp_status *status);
+    void setProcessorStatus(st_dsp_params *status);
+    void setTaskStatus(st_dsp_params *status);
 
   protected:
     void before_paint() override;
-    st_dsp_status *processor_status;
-    st_dsp_status *task_status;
+    st_dsp_params *processor_status;
+    st_dsp_params *task_status;
 };
 
 #endif // TRX_FRONTEND_REPLAY_WIDGET_H

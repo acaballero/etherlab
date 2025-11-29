@@ -53,10 +53,10 @@ void SignalGeneratorWidget::before_paint() {
     }
 }
 
-void SignalGeneratorWidget::setTaskStatus(st_dsp_status *status) {
+void SignalGeneratorWidget::setTaskStatus(st_dsp_params *status) {
     SignalGeneratorWidget::task_status = status;
 }
 
-void SignalGeneratorWidget::setProcessorStatus(st_dsp_status *status) {
+void SignalGeneratorWidget::setProcessorStatus(st_dsp_params *status) {
     SignalGeneratorWidget::processor_status = status;
 }

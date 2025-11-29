@@ -17,6 +17,7 @@
 #include "s_strength.h"
 #include "menu.h"
 #include "ui/frequency_memory_ui.h"
+#include "ui/view_manager.h"
 
 void RadioStatusWidget::init() {
 
@@ -60,13 +61,13 @@ void RadioStatusWidget::on_button(Button &button, st_inputEvent e) {
     } else if (&button == &btnGain) {
         Menu::open(Menu::frontendPathMenu);
     } else if (&button == &btnVFO) {
-        if (freq_memory::get_memory_mode()) {
+        if (freq_memory::memory_mode_on()) {
             freq_memory::set_next_prev(BACKWARDS, STATION);
         } else {
             radio::toggle_vfo();
         }
     } else if (&button == &btnRIT) {
-        if (freq_memory::get_memory_mode()) {
+        if (freq_memory::memory_mode_on()) {
             freq_memory::set_next_prev(FORWARD, STATION);
         } else {
             Menu::open_number_edit<int32_t>(
@@ -80,6 +81,11 @@ void RadioStatusWidget::on_button(Button &button, st_inputEvent e) {
         if (e.ms > LONG_PRESS_MS) {
             freq_memory::toggle_memory_mode();
         } else {
+            Menu::open();
+            if (freq_memory::memory_mode_on()) {
+                nav.useMenu(freq_memory::freqMemMenu);
+                nav.node().sel = freq_memory::get_current().id + 1;
+            }
         }
     }
 }
@@ -122,7 +128,7 @@ char *RadioStatusWidget::squelch() {
 
 void RadioStatusWidget::before_paint() {
 
-    st_radio_status status = {config.squelch_level, ISTX, radio::get_vfo(), agc::get_gain(), freq_memory::get_memory_mode()};
+    st_radio_status status = {config.squelch_level, ISTX, radio::get_vfo(), agc::get_gain(), freq_memory::memory_mode_on()};
 
     if (this->dirty() || !(status == _status)) { // Update only if status has changed
 
@@ -177,7 +183,7 @@ void RadioStatusWidget::before_paint() {
             lblMode.set_style(ButtonStyle::LABEL_STYLE_HOLLOW);
         }
 
-        if (freq_memory::get_memory_mode()) {
+        if (freq_memory::memory_mode_on()) {
             btnVFO.set_text("\x80 Mem");
             btnVFO.set_two_lines(false);
             btnVFO.set_value("");

@@ -73,7 +73,7 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
         // LOG_RAW("I:");
         // for (size_t i = 0; i < buffer->count; i += 2) {
-        //     LOG_RAW("%d,", ((adc_type *)p)[i]);
+        //     LOG_RAW("%d,", out_p[i]);
         // }
         // LOG_RAW("\nQ:");
         // for (size_t i = 1; i < buffer->count; i += 2) {

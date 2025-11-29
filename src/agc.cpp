@@ -168,17 +168,17 @@ void check_agc() {
         return;
     }
 
-    // Power-based AGC
-    const bool power_overload = power_dbm >= max_dbm;
-
-    // LOG("dbm:%.1f,max:%d,g:%d", power_dbm, max_dbm, get_gain());
-    // LOG_RAW(",p:%.1f,ag:%d\n", fft::dbm_peak, get_analog_gain());
-    if (power_overload != overload) {
-        last_overload_state_change = t;
-        overload = power_overload;
-    }
-
     if (dsp::dsp_config.agc_enabled && !ISTX) { // Won't change gain if DSP AGC is disabled or while transmitting
+        // Power-based AGC
+        const bool power_overload = power_dbm >= max_dbm;
+
+        // LOG("dbm:%.1f,max:%d,g:%d", power_dbm, max_dbm, get_gain());
+        // LOG_RAW(",p:%.1f,ag:%d\n", fft::dbm_peak, get_analog_gain());
+        if (power_overload != overload) {
+            last_overload_state_change = t;
+            overload = power_overload;
+        }
+
         const uint64_t time_since_change = t - last_overload_state_change;
         const bool adc_lockout = (t - last_adc_reduction) < ADC_LOCKOUT_MS;
 

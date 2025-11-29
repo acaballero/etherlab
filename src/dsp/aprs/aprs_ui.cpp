@@ -115,7 +115,7 @@ void APRSView::resume() {
 
 void APRSView::toggle_beacon() {
     auto *p = new os::periodic_task{5000, [this]() {
-                                        send_packet("Beacon");
+                                        send_packet("Angel Dust Beacon Online");
                                     }};
 
     if (!os::task_manager.remove(beacon_task_id)) {
@@ -132,7 +132,7 @@ void APRSView::toggle_beacon() {
 
 void APRSView::start_rx() {
     //  LOG("START RX\n");
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_status *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();
@@ -178,7 +178,7 @@ void APRSView::threshold() {
 
 void APRSView::exit() {
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_status *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
 
             os::task_manager.remove(beacon_task_id);
@@ -280,14 +280,17 @@ void APRSView::send_packet(std::string info) {
     trim(config.callsign);
     aprs::build_frame(config.callsign, 0, "rig   ", 0, ":" + info, buffer);
 
-    aprs_tx_task.configure(1200, 2200, 1, 8, 10000, 200, 100); // APRS uses fixed 10k bandwidth
+    LOG("Sending APRS packet: Address: %s, | payload: %s\n", config.callsign, info.c_str());
+
+    aprs_tx_task.configure(1200, 2200, 1, 8, 10000, 300, 300); // APRS uses fixed 10k bandwidth
     aprs_tx_task.set_data(buffer);
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &aprs_tx_task}, [this](st_dsp_status *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &aprs_tx_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->fifo_underruns) {
                 status::pop_alert(status::ERROR, "FIFO underruns");
             }
+            LOG("Finished sending APRS packet\n");
             start_rx();
         }
     });

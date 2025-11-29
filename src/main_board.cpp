@@ -70,7 +70,7 @@ void s_strength_callback(void *, const void *args) {
     }
 }
 
-void on_dsp_event(st_dsp_status *status) {
+void on_dsp_event(st_dsp_params *status) {
     switch (status->status) {
 
         case DSP_STATUS_RUNNING:

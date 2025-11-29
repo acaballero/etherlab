@@ -159,7 +159,7 @@ enum DSP_DIRECTION {
     DSP_DIRECTION_INOUT // BOTH
 };
 
-struct st_dsp_status {
+struct st_dsp_params {
 
     uint8_t id;
     volatile DSP_STATUS status = DSP_STATUS_STOPPED;
@@ -185,7 +185,7 @@ struct st_dsp_status {
     uint64_t stop_ms;
     uint64_t last_error_ms;
 
-    bool operator==(const st_dsp_status &st) const {
+    bool operator==(const st_dsp_params &st) const {
         return status == st.status && error == st.error && fifo_underruns == st.fifo_underruns && fifo_overruns == st.fifo_overruns &&
                sample_rate == st.sample_rate && processed_blocks == st.processed_blocks && block_size_bytes == st.block_size_bytes &&
                bits_per_sample == st.bits_per_sample && n_channels == st.n_channels && id == st.id && gain == st.gain &&
@@ -220,6 +220,8 @@ struct st_dsp_status {
 
 namespace dsp {
 
+extern const char *commandNames[];
+
 struct st_test_signal_params {
     int8_t pulse_duty = 50;
     uint32_t baseband_frequency = 1000;
@@ -252,7 +254,7 @@ extern st_dsp_config dsp_config;
 
 extern Signal dsp_common_params_signal;
 
-extern st_dsp_status *dsp_status;
+extern st_dsp_params *dsp_params;
 
 // Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
 extern uint32_t dsp_max_sample_rate;
@@ -267,7 +269,7 @@ void set_max_sample_freq(uint32_t rate);
 int32_t get_frequency_shift(uint32_t sample_rate = 0);
 
 /* Sets the digital domain TX direction gain */
-void set_tx_gain_db(int8_t gain_db);
+void set_gain_db(int8_t gain_db);
 
 void s16_to_q15(const adc_type *src, q15_t *dst, size_t size);
 void s16_to_f32(const adc_type *src, float32_t *dst, size_t size);

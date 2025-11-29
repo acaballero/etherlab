@@ -90,15 +90,14 @@ bool SMeterWidget::paint_callback() {
     display->writeVertLine(peak_x + padding, y1 + major_tick_size + 1, y2 - major_tick_size - 1, C565_CYAN);
     display->writeVertLine(peak_x + 1 + padding, y1 + major_tick_size + 1, y2 - major_tick_size - 1, C565_CYAN);
 
-    // AGC flag
-    if (config.agc_enabled) {
-        display->setColor(C565_GREY_LIGHT);
-        display->setFont((FontDef *)&Font_Fixed5x7);
-        display->gotoXY(max_x - (display->getFont()->width * 7) - 5, y1 + (((y2 - y1) - display->getFont()->height + 1) / 2));
+    // Gain volgate
 
-        snprintf(buf, 4, "%.1f", agc::agc_voltage);
-        display->print("AGC: ", buf, " V");
-    }
+    display->setColor(C565_GREY_LIGHT);
+    display->setFont((FontDef *)&Font_Fixed5x7);
+    display->gotoXY(max_x - (display->getFont()->width * 7) - 5, y1 + (((y2 - y1) - display->getFont()->height + 1) / 2));
+
+    snprintf(buf, 4, "%.1f", agc::agc_voltage);
+    display->print(config.agc_enabled ? "AGC: " : "Gain: ", buf, " V");
 
     return true;
 }

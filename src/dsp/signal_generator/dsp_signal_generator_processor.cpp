@@ -16,8 +16,8 @@ void DspSignalGeneratorProcessor::work(const buffer_t<adc_type> *buffer) {
 
     for (size_t i = 0; i < buffer->count * 2; i += 2) {
         // TODO: Gain should be a generic and stackable block
-        out_p[i] *= dsp::dsp_status->gain;
-        out_p[i + 1] *= dsp::dsp_status->gain;
+        out_p[i] *= dsp::dsp_params->gain;
+        out_p[i + 1] *= dsp::dsp_params->gain;
     }
 }
 

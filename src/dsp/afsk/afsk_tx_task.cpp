@@ -117,13 +117,13 @@ void AFSKTXTask::work() {
                 re = (sine_table_i8[r_ix]);
                 im = (sine_table_i8[i_ix]);
 
-                // LOG("%d,", tone_sample);
+                //   LOG_RAW("%d,", tone_sample);
 
-                //((complex_t *)out_p)[i] = {{(adc_type)tone_sample, (adc_type)tone_sample}};
+                ((complex_t *)out_p)[i] = {{(adc_type)tone_sample, (adc_type)tone_sample}};
                 ((complex_t *)out_p)[i] = {{re, im}};
             }
 
-            // LOG("\n");
+            // LOG_RAW("\n");
 
             output_stream.feed(status.block_size_bytes);
 
@@ -139,7 +139,7 @@ void AFSKTXTask::configure(uint32_t phase_inc_mark, uint32_t phase_inc_space, ui
 
     afsk_delta_coeff = ((1ULL << 32) / config.fft.sample_rate);
 
-    uint32_t samples_per_bit = config.fft.sample_rate / phase_inc_mark; // Assumes mark=1200 and divisor of sample_rate
+    uint32_t samples_per_bit = config.fft.sample_rate / phase_inc_mark; // Assumes mark=1200 hz and divisor of sample_rate
     afsk_samples_per_bit = samples_per_bit;
     afsk_phase_inc_mark = phase_inc_mark * afsk_delta_coeff;
     afsk_phase_inc_space = phase_inc_space * afsk_delta_coeff;
@@ -151,6 +151,9 @@ void AFSKTXTask::configure(uint32_t phase_inc_mark, uint32_t phase_inc_space, ui
     fill_bits = (float)afsk_samples_per_bit * (float)delay_front_ms * ((float)phase_inc_mark / 1000.0f); // Start fill bits
     delay_tail_ms = min2(tail_ms, AFSK_MAX_TAIL_MS);
     tail_sent = false;
+
+    LOG("AFSK TX config: samples/bit: %d, symbol count: %d, ", afsk_samples_per_bit, symbol_count);
+    LOG_RAW("delay: %d, tail: %d, mark: %d, space: %d\n", delay_front_ms, delay_tail_ms, phase_inc_mark, phase_inc_space);
 
     status.reset();
     output_stream.reset();
@@ -177,7 +180,7 @@ void AFSKTXTask::set_data(uint16_t *data) {
 
 bool AFSKTXTask::start() {
 
-    //   LOG("------ [BEGIN] AFSKTX task START------\n");
+    LOG("___ [START] AFSKTX task ___\n");
     status.reset();
     status.direction = DSP_DIRECTION_OUT;
     status.sample_rate = config.fft.sample_rate;
@@ -215,7 +218,7 @@ bool AFSKTXTask::start() {
 
 void AFSKTXTask::stop() {
 
-    // LOG("------ [BEGIN] AFSKTX task STOP------\n");
+    LOG("___ [STOP] AFSKTX task ___\n");
     if (this->status.status != DSP_STATUS_STOPPED) {
 
         output_stream.close();

@@ -74,7 +74,7 @@ void RadiosondeView::open_map() {
 
 void RadiosondeView::exit() {
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE, &radiosonde_task}, [this](st_dsp_status *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE, &radiosonde_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
 
             radiosonde_signal.remove(radiosonde_signal_token);
@@ -111,7 +111,7 @@ void RadiosondeView::before_paint() {
 
 void RadiosondeView::start_rx() {
     //  LOG("START RX\n");
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE, &radiosonde_task}, [this](st_dsp_status *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE, &radiosonde_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();

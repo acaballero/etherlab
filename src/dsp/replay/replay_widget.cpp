@@ -122,11 +122,11 @@ void ReplayWidget::before_paint() {
     }
 }
 
-void ReplayWidget::setTaskStatus(st_dsp_status *status) {
+void ReplayWidget::setTaskStatus(st_dsp_params *status) {
     ReplayWidget::task_status = status;
 }
 
-void ReplayWidget::setProcessorStatus(st_dsp_status *status) {
+void ReplayWidget::setProcessorStatus(st_dsp_params *status) {
     ReplayWidget::processor_status = status;
 }
 

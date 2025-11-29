@@ -111,7 +111,7 @@ void processEvent(st_inputEvent *e) {
     // LOG("processEvent %d\n", e->type);
     static bool pending_release;
 
-    if (e->type == INPUT_EVENT_TYPE_BUTTON_RELEASE || e->type == INPUT_EVENT_TYPE_TOUCH_START || e->type == INPUT_EVENT_TYPE_ENCODER) {
+    if (e->type == INPUT_EVENT_TYPE_BUTTON_RELEASE || e->type == INPUT_EVENT_TYPE_TOUCH_END || e->type == INPUT_EVENT_TYPE_ENCODER) {
         if (standby::power_mode != standby::POWER_MODE_ON) {
             standby::wakeup();
             return;
@@ -120,6 +120,7 @@ void processEvent(st_inputEvent *e) {
             standby::power_save(config.power_save_period_seconds);
         }
     } else if (standby::power_mode != standby::POWER_MODE_ON) {
+
         return;
     }
 

@@ -37,7 +37,7 @@ extern "C" {
 
 void dsp_init(dsp::st_dsp_config &);
 void dsp_set_real_time(bool);
-uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_status *)> cb);
+uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_params *)> cb);
 bool dsp_restart();
 inline void dsp_work();
 

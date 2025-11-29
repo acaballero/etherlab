@@ -321,12 +321,12 @@ bool init_file_buffer() {
         });
 
         radio::band_signal.add(NULL, [](void *, const void *) {
-            if (get_memory_mode()) {
+            if (memory_mode_on()) {
                 init_memory_mode();
             }
         });
 
-        if (get_memory_mode() && curr_index < 0) {
+        if (memory_mode_on() && curr_index < 0) {
             init_memory_mode();
         }
 
@@ -571,13 +571,19 @@ void set(st_freq_mem &mem) {
         main_board::set_modulation_mode(mem.mode, false);
     } else {
         using namespace status;
-        pop_alert(Level::ERROR, "radio::set_frequency() was false");
+        if (radio::get_curr_freq_band() != radio::find_band(mem.freq)) {
+
+            pop_alert(Level::ERROR, "Out of currently selected band");
+        } else {
+
+            pop_alert(Level::ERROR, "radio::set_frequency() was false");
+        }
     }
 }
 
 /* Sets the next frequency in a given direction */
 void set_next_prev(DIRECTION d, FREQ_TYPE t) {
-    if (get_memory_mode()) {
+    if (memory_mode_on()) {
         if (curr_index >= 0) {
             st_freq_mem curr_mem = get_by_index(curr_index);
             st_freq_mem mem = find_closest(curr_mem.freq, d, t);
@@ -626,12 +632,12 @@ st_freq_mem find_closest(uint64_t f, DIRECTION direction, FREQ_TYPE t) {
     return {};
 }
 
-bool get_memory_mode() {
+bool memory_mode_on() {
     return config.memory_mode;
 }
 
 uint8_t toggle_memory_mode() {
-    bool memory_mode = (get_memory_mode() == 0 ? 1 : 0);
+    bool memory_mode = (memory_mode_on() == 0 ? 1 : 0);
 
     if (memory_mode) {
         init_memory_mode();
@@ -642,6 +648,14 @@ uint8_t toggle_memory_mode() {
     config.memory_mode = memory_mode;
 
     return 0;
+}
+
+st_freq_mem get_current() {
+    if (curr_index) {
+        return get_by_index(curr_index);
+    }
+
+    return {};
 }
 
 labelPrompt freqNameMenu((const char *)"Name", tempFreqMem.name, edit_freq_name, enterEvent, noStyle);

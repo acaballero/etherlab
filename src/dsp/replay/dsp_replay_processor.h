@@ -17,5 +17,9 @@ class DspReplayProcessor : public DspProcessor {
     }
 
     void work(const buffer_t<adc_type> *buffer) override;
+
+    const char *get_name() override {
+        return "DspReplayProcessor";
+    }
 };
 #endif // TRX_FRONTEND_DSP_REPLAY_PROCESSOR_H

@@ -16,7 +16,7 @@ class DspProcessor : public Task {
     virtual void work(const buffer_t<int16_t> *buffer) = 0;
 
     bool start() override {
-        // LOG("DspProcessor START\n");
+        LOG("Starting %s processor\n", get_name());
         this->reset();
         this->status.status = DSP_STATUS_RUNNING;
         this->status.start_ms = HAL_GetTick();
@@ -24,12 +24,13 @@ class DspProcessor : public Task {
     }
 
     void stop() override {
-        // LOG("DspProcessor STOP\n");
+        LOG("Stoppinng %s processor\n", get_name());
         this->status.status = DSP_STATUS_STOPPED;
         this->status.stop_ms = HAL_GetTick();
     }
 
     void reset() override {
+        LOG("Resetting %s processor\n", get_name());
         this->status.status = DSP_STATUS_STOPPED;
         this->status.stop_ms = HAL_GetTick();
         this->status.reset();

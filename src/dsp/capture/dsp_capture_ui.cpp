@@ -144,7 +144,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
     return Menu::proceed;
 }
 
-void on_event(st_dsp_status *status) {
+void on_event(st_dsp_params *status) {
 
     switch (status->status) {
         case DSP_STATUS_RUNNING:

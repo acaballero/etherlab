@@ -71,10 +71,10 @@ bool check_overload_pending{false};
 volatile bool execute_task = false;
 #endif
 
-DCBlock dc_block_i{0.999};
-DCBlock dc_block_q{0.999};
+DCBlock dc_block_i{0.987};
+DCBlock dc_block_q{0.987};
 
-std::function<void(st_dsp_status *)> on_event;
+std::function<void(st_dsp_params *)> on_event;
 
 /** Sets or unsets the real-time DSP mode, for which only one slice of FFT can be used **/
 void dsp_set_real_time(bool b) {
@@ -95,7 +95,7 @@ void dsp_set_real_time(bool b) {
 void restart_callback(void *, const void *) {
 
     //  TODO: This assumes the current task is 'receive'
-    if (config.mode != DIGITAL_RX && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
+    if (config.mode != DIGITAL_RX && current_task && dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING) {
         //   LOG("restart_callback: sending stop receive commandxs\n");
         dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE}, nullptr);
     } else if (config.mode == DIGITAL_RX && !current_task) {
@@ -136,34 +136,35 @@ void dsp_init(dsp::st_dsp_config &config) {
 // }
 
 void dsp_stop_task() {
-    for (int i = 0; i < DSP_BLOCK * 2; i++) {
+    for (int i = 0; i < DSP_DAC_BUFF_SIZE; i++) {
         dac_buff[i] = (adc_type)config.hw.dac_offset;
     }
 
-    // LOG("dspStop\n");
+    LOG_IND(2, "dsp_stop_task\n");
     if (current_processor) {
-        //  LOG("dspStop:processor stop\n");
+        LOG("stopping processor\n");
         current_processor->stop();
     }
 
     if (current_task) {
-        //  LOG("dspStop:task stop\n");
+        LOG("stopping task\n");
         current_task->stop();
     }
 
+    LOG_IND(-2, "");
     current_task = NULL;
     current_processor = NULL;
 }
 
-uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_status *)> cb) {
+uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_params *)> cb) {
 
-    LOG("dsp_command: cmd:%d, id:%d\n", (int)command.command, command.id);
+    LOG("dsp_command: Scheduling cmd: %s, processor: %s\n", dsp::commandNames[command.command], dsp::taskNames[command.id]);
     Task *task = command.task ? command.task : dsp::tasks[command.id];
     if (current_task == task) {
         DSP_STATUS s = current_task->status.status;
         if ((command.command == DSP_COMMAND_START && s == DSP_STATUS_RUNNING) || (command.command == DSP_COMMAND_STOP && s == DSP_STATUS_STOPPED) ||
             s == DSP_STATUS_PENDING) {
-            LOG("WARN: Skipping command %d: current task status: %d\n", command.command, s);
+            LOG("WARN: Skipping command %s: current task status: %d\n", dsp::commandNames[command.command], s);
             return 1;
         }
     }
@@ -178,19 +179,19 @@ uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_statu
     current_task->status.id = pending_command.id;
 
     // FIXME: Ugly
-    dsp::dsp_status = &current_task->status;
+    dsp::dsp_params = &current_task->status;
 
     return 0;
 }
 
 void dsp_start_task() {
-    LOG("dsp_start_task:");
+    LOG_IND(2, "dsp_start_task:");
 
     //  current_task = tasks[pending_command.id];
     //  dsp_status = &current_task->status;
-    if (!dsp::dsp_status || dsp::dsp_status->status != DSP_STATUS_RUNNING) {
+    if (!dsp::dsp_params || dsp::dsp_params->status != DSP_STATUS_RUNNING) {
 
-        LOG_RAW(": No running task. Starting new.\n");
+        LOG_RAW(" Starting new task. Processor %s\n", dsp::taskNames[pending_command.id]);
 
         input_stream.reset();
         output_stream.reset();
@@ -203,7 +204,7 @@ void dsp_start_task() {
         if (current_processor->status.direction == DSP_DIRECTION_OUT) {
             // Link the start of the processor with the 1st block processed event of the task to prevent false underruns
             current_task->on_first_block = []() {
-                //     LOG("On first block\n");
+                LOG("First block ready: starting processor\n");
 
                 current_processor->start();
             };
@@ -223,30 +224,33 @@ void dsp_start_task() {
             current_processor->status.n_channels = current_task->status.n_channels;
 
             if (current_processor->status.direction != DSP_DIRECTION_OUT) {
+                LOG("Starting processor\n");
                 bool ok = current_processor->start();
                 if (!ok) {
                     status::pop_alert(status::ERROR, "Error starting DSP processor");
                     return;
                 }
             } else {
-                current_processor->status.status = DSP_STATUS_PENDING;
+                // current_processor->status.status = DSP_STATUS_PENDING;
             }
 
-            dsp::dsp_status = current_task->status.direction != DSP_DIRECTION_IN ? &current_processor->status : &current_task->status;
+            dsp::dsp_params = current_task->status.direction != DSP_DIRECTION_IN ? &current_processor->status : &current_task->status;
             if (on_event) {
-                on_event(dsp::dsp_status);
+                on_event(dsp::dsp_params);
             }
         } else {
             status::pop_alert(status::ERROR, "Error starting DSP task");
         }
     } else {
-        //   LOG(": already running task, skipping\n");
+        LOG(" Already running task, skipping\n");
     }
+
+    LOG_IND(-2, "");
 }
 
 bool dsp_restart() {
     // LOG("dsp_restart");
-    if (!ISANALOG && current_task && dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING) {
+    if (!ISANALOG && current_task && dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING) {
 
         //   LOG(": will restart\n");
         current_task->status.status = DSP_STATUS_PENDING;
@@ -257,8 +261,8 @@ bool dsp_restart() {
         return true;
     } else if (!current_task) {
         //   LOG(": wont restart: no task\n");
-    } else if (current_task && dsp::dsp_status) {
-        int b = dsp::dsp_status->status == DSP_STATUS_RUNNING ? 0 : 1;
+    } else if (current_task && dsp::dsp_params) {
+        int b = dsp::dsp_params->status == DSP_STATUS_RUNNING ? 0 : 1;
         //   LOG(": wont restart: current task is running=%d\n", b);
     }
 
@@ -283,6 +287,7 @@ void dsp_loop() {
     dsp::st_dsp_command command = pending_command;
 
     if (command.command != DSP_COMMAND_NONE) {
+        LOG("Processing pending DSP command %s\n", dsp::commandNames[command.command]);
         switch (command.command) {
 
             case DSP_COMMAND_START:
@@ -322,7 +327,7 @@ inline void dac_work() {
         current_processor->work(current_buffer);
     }
 
-    if (dsp::dsp_status && dsp::dsp_status->direction == DSP_DIRECTION_OUT) {
+    if (dsp::dsp_params && dsp::dsp_params->direction == DSP_DIRECTION_OUT) {
         // DSP TX direction: The FFT is fed from the produced data stream
         FIFO_ERROR err = fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
         UNUSED(err);
@@ -349,9 +354,11 @@ inline void adc_work() {
         //   removed by the low pass filters
         // The drawback is we have to rotate it there (fft module)too after DC removal
 
-        buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
-        dc_block_i.filter(bb, 2, 0);
-        dc_block_q.filter(bb, 2, 1);
+        if (config.fft.removeDC) {
+            buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
+            dc_block_i.filter(bb, 2, 0);
+            dc_block_q.filter(bb, 2, 1);
+        }
 
         if (fft::fft_params.decimation_factor > 1) {
             // TODO: Decimate here vs in both FFT and current DSP task?
@@ -360,7 +367,7 @@ inline void adc_work() {
         dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
     }
 
-    if (!dsp::dsp_status || dsp::dsp_status->direction == DSP_DIRECTION_IN || dsp::dsp_status->direction == DSP_DIRECTION_INOUT) {
+    if (!dsp::dsp_params || dsp::dsp_params->direction == DSP_DIRECTION_IN || dsp::dsp_params->direction == DSP_DIRECTION_INOUT) {
 
         // If the direction is input or bidirectional...
 
@@ -431,9 +438,9 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
     HAL_TIM_IRQHandler(&TASKS_TIMER_HANDLE);
 }
 
-void dsp_test_cb(st_dsp_status *) {
+void dsp_test_cb(st_dsp_params *) {
 
-    if (dsp::dsp_status->error == DSP_ERR_NONE && dsp::dsp_status->id != dsp::DSP_TASK_REPLAY) {
+    if (dsp::dsp_params->error == DSP_ERR_NONE && dsp::dsp_params->id != dsp::DSP_TASK_REPLAY) {
         dsp_command({DSP_COMMAND_START, dsp::DSP_TASK_REPLAY}, dsp_test_cb);
     }
 }
@@ -457,10 +464,10 @@ void dsp_stop() {
 
         if (on_event) {
             //  LOG("dspStop: onEvent\n");
-            on_event(dsp::dsp_status);
+            on_event(dsp::dsp_params);
         }
 
-        dsp::dsp_status = NULL;
+        dsp::dsp_params = NULL;
 
         dspstatus = DSP_STATUS_STOPPED;
 

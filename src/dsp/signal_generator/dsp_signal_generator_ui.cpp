@@ -36,7 +36,7 @@ void on_freq_signal(void *thisptr, const void *args) {
     }
 }
 
-void on_event(st_dsp_status *status) {
+void on_event(st_dsp_params *status) {
 
     switch (status->status) {
 
@@ -65,7 +65,7 @@ Menu::result change_dsp_status(Menu::eventMask e) {
     if (e == Menu::activateEvent) {
         DSP_COMMAND nextCommand = command == DSP_COMMAND_START ? DSP_COMMAND_STOP : DSP_COMMAND_START;
         dsp_command({(DSP_COMMAND)nextCommand, dsp::DSP_TASK_SIGNAL_GENERATOR}, on_event);
-        dsp::set_tx_gain_db(dsp::dsp_config.gain);
+        dsp::set_gain_db(dsp::dsp_config.gain);
 
         set_signal_params();
     }
@@ -131,7 +131,7 @@ Menu::result on_freq_updated() {
 
 Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &dsp::dsp_config.gain, 0, ' ', '.', "dB",
                                     [](int8_t v) {
-                                        dsp::set_tx_gain_db(v);
+                                        dsp::set_gain_db(v);
                                     },
                                     DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 5);
 

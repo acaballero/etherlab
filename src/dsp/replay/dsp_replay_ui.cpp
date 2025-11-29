@@ -39,7 +39,7 @@ void on_freq_signal(void *thisptr, const void *args) {
     }
 }
 
-void on_event(st_dsp_status *status) {
+void on_event(st_dsp_params *status) {
 
     switch (status->status) {
 
@@ -155,7 +155,7 @@ result set_sampling_params(eventMask) {
 
 result change_gain(eventMask) {
 
-    dsp::set_tx_gain_db(gain);
+    dsp::set_gain_db(gain);
     return proceed;
 }
 

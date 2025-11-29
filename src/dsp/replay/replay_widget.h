@@ -18,9 +18,9 @@ class ReplayWidget : public Widget {
 
     void setWaveInfo(WaveInfo wi);
 
-    void setProcessorStatus(st_dsp_status *status);
+    void setProcessorStatus(st_dsp_params *status);
 
-    void setTaskStatus(st_dsp_status *status);
+    void setTaskStatus(st_dsp_params *status);
 
     void setShowActions(bool b) {
         show_actions = b;
@@ -34,8 +34,8 @@ class ReplayWidget : public Widget {
     void before_paint() override;
 
     bool show_actions = false;
-    st_dsp_status *processor_status;
-    st_dsp_status *task_status;
+    st_dsp_params *processor_status;
+    st_dsp_params *task_status;
     WaveInfo wi;
 };
 

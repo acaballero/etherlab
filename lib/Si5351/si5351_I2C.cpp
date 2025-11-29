@@ -172,6 +172,10 @@ void Si5351::reset(void) {
     }
 }
 
+uint64_t Si5351::get_freq(enum si5351_clock clk) {
+    return clk_freq[clk] / SI5351_FREQ_MULT;
+}
+
 /*
  * update_freq(uint64_t freq, enum si5351_clock clk)
  *

@@ -553,6 +553,8 @@ class Si5351 {
 
     uint8_t wakeup();
 
+    uint64_t get_freq(enum si5351_clock clk);
+
     struct Si5351Status dev_status = {.SYS_INIT = 0, .LOL_B = 0, .LOL_A = 0, .LOS = 0, .REVID = 0};
     struct Si5351IntStatus dev_int_status = {.SYS_INIT_STKY = 0, .LOL_B_STKY = 0, .LOL_A_STKY = 0, .LOS_STKY = 0};
     enum si5351_pll pll_assignment[8];

@@ -11,6 +11,9 @@
 // DSP processing block size. Defines the number of samples adquired in each DMA cycle
 #define DSP_BLOCK 128
 
+#define DSP_DAC_BUFF_SIZE (DSP_BLOCK << 2)
+#define DSP_ADC_BUFF_SIZE (DSP_BLOCK << 2)
+
 // Must be a multiple of any chunk that a stream processor taks will try to read
 // For example, if the capture task needs to write 1024 bytes per block and the receive task 64 bytes, that's ok.
 // If one task needs,for example, 512 bytes and another 1500, the FIFO block cannot be either 1500 or 3000

@@ -156,10 +156,13 @@ bool if_freq(RF_DIRECTION direction, uint64_t freq) {
         // A shift is applied so the frequency of interest does not lie around DC to avoid DC leakage and flickr noise
 
         freq += radio::get_dsp_frequency_shift();
-
-        // LOG("Setting DSP IF frequency: %llu (%d shift)\n", freq, radio::get_dsp_frequency_shift());
-
         uint64_t f = freq * SI5351_FREQ_MULT * (div ? 2 : 4);
+
+#if DEBUG_MSGS
+        if (si5351.get_freq(clk) != f) {
+            LOG("Setting DSP IF %s frequency: %llu (%d shift)\n", clk == SI5351_TX_CLK ? "TX" : "RX", freq, radio::get_dsp_frequency_shift());
+        }
+#endif
 
         ret = si5351.set_freq(f, clk);
     }
@@ -390,11 +393,10 @@ void if_setup() {
 
 bool radio_config(st_radio_config radioConfig) {
 
-    // LOG("---START--- radio_config: ");
+    LOG_IND(2, "radio_config | direction: %s | mode: %s | sample rate: %d\n", radioConfig.direction == RF_DIRECTION_TX ? "TX" : "RX",
+            radioConfig.mode == ANALOG ? "Analog" : "DSP", radioConfig.sample_freq);
 
     if (radioConfig.direction == RF_DIRECTION_TX) {
-
-        // LOG("DIG TX\n");
 
         bool ret = main_board::set_mode(DIGITAL_TX);
 
@@ -427,7 +429,6 @@ bool radio_config(st_radio_config radioConfig) {
 
         if (radioConfig.mode == ANALOG) {
 
-            // LOG("ANA RX\n");
             main_board::set_mode(ISTX ? ANALOG_TX : ANALOG_RX);
 
             if_direction(RF_DIRECTION_RX);
@@ -442,8 +443,6 @@ bool radio_config(st_radio_config radioConfig) {
             HAL_DAC_DeInit(&hdac1);
 
         } else { // DSP
-
-            // LOG("DIG RX\n");
 
             main_board::set_mode(DIGITAL_RX);
 
@@ -483,7 +482,7 @@ bool radio_config(st_radio_config radioConfig) {
     // We need to set the frequency for the IF value to be calculated
     radio::update_freq();
 
-    // LOG("---END--- radio_config: %d\n", (int)radioConfig.direction);
+    LOG_IND(-2, "radio_config: Finished\n");
     return true;
 }
 

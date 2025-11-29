@@ -173,7 +173,7 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 4)); // replay/capture
+    nav.doNav(Menu::navCmd(Menu::idxCmd, 3)); // replay/capture
 
     // nav.doNav(Menu::navCmd(Menu::enterCmd));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // select file
@@ -238,7 +238,7 @@ int main() {
 #if DEBUG_SD_CARD
             test_sd_card();
 #endif
-            // test();
+            test();
 
             HAL_Delay(1000);
 

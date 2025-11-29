@@ -280,14 +280,14 @@ void TitleBarWidget::before_paint() {
         if (ISANALOG) {
             btnDSP.set_text("ANA");
         } else {
-            float drop_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->drop_rate() : 0;
-            float starve_freq = dsp::dsp_status && dsp::dsp_status->status == DSP_STATUS_RUNNING ? dsp::dsp_status->starve_rate() : 0;
+            float drop_freq = dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING ? dsp::dsp_params->drop_rate() : 0;
+            float starve_freq = dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING ? dsp::dsp_params->starve_rate() : 0;
             bool error = true;
 
-            if (!dsp::dsp_status) {
+            if (!dsp::dsp_params) {
                 color = C565_GREY_DARKER;
                 error = false;
-            } else if (dsp::dsp_status->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
+            } else if (dsp::dsp_params->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
                 color = C565_ORANGE;
             } else if (drop_freq * 100 > 0.1 || starve_freq * 100 > 0.1) {
                 color = C565_YELLOW;
@@ -295,7 +295,7 @@ void TitleBarWidget::before_paint() {
                 error = false;
             }
 
-            dsp::dsp_status->reset();
+            dsp::dsp_params->reset();
             char buf[20];
             MODULATION_MODE mod = main_board::get_modulation_mode();
             bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod) || dsp::apply_audio_bpf() || dsp::dsp_config.baseband_echo;

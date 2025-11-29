@@ -7,6 +7,7 @@
 #include <algorithm> // for sdt:sort
 #include <arm_math.h>
 
+#include <cstring>
 #include <sys/_stdint.h>
 #include <sys/types.h>
 #include <utility>
@@ -361,7 +362,18 @@ void apply_fft_params(st_fft_params params) {
 
         // Since the timer cannot be set to match exact frequencies, we store the actual ADC frequency
         fft_params.sample_freq = config.fft.sample_rate = get_adc_timer_frequency();
-        LOG("fft_config: Changed sample rate: %lu\n", config.fft.sample_rate);
+
+        if (current_sample_rate != config.fft.sample_rate) {
+            LOG("fft_config: Changed sample rate: %lu\n", config.fft.sample_rate);
+        }
+
+        if (current_bw != config.fft.bw) {
+            LOG("fft_config: Changed bandwidth: %d\n", config.fft.bw);
+        }
+
+        // Clear FFT
+        memset(fft_display, FFT_HEIGHT, sizeof(fft_display));
+
         signal.emit(nullptr);
     } else {
         decimator_i.set_factor(fft::fft_params.decimation_factor);

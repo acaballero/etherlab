@@ -7,10 +7,10 @@
 #include "dsp/dsp_common.h"
 
 // ACD DMA buffer
-ALIGN_32 adc_type adc_buff[DSP_BLOCK * 4];
+ALIGN_32 adc_type adc_buff[DSP_ADC_BUFF_SIZE];
 
 // DAC DMA buffer
-ALIGN_32 adc_type dac_buff[DSP_BLOCK * 4];
+ALIGN_32 adc_type dac_buff[DSP_ADC_BUFF_SIZE];
 
 //__attribute__((section(".fccmram"))) // Can't be in CCM RAM if DMA is used
 ALIGN_32 uint8_t dsp_output_fifo_buff[DSP_OUTPUT_FIFO_SIZE];

@@ -54,7 +54,7 @@ void FrequencyWidget::init() {
 void FrequencyWidget::before_paint() {
 
     st_freqInfo freqInfo = {(unsigned long)radio::get_frequency(), config.vfo[config.vfo_ix].step, config.repeater_mode, radio::get_vfo(),
-                            freq_memory::get_memory_mode()};
+                            freq_memory::memory_mode_on()};
 
     if (this->dirty() || !(freqInfo == this->status)) {
 
@@ -92,7 +92,7 @@ void FrequencyWidget::before_paint() {
             btnRpt.set_value("");
         }
 
-        sprintf(buf, "%s%s", freq_memory::get_memory_mode() ? "M:" : "", radio::get_vfo() == 0 ? "A" : "B");
+        sprintf(buf, "%s%s", freq_memory::memory_mode_on() ? "M:" : "", radio::get_vfo() == 0 ? "A" : "B");
 
         btnVFO.set_text(buf);
 

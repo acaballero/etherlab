@@ -13,12 +13,15 @@ class Task {
     Task(){};
     Task(void (*onSucess)(), void (*onError)(DSP_ERROR));
     virtual ~Task() = default;
+    virtual const char *get_name() {
+        return "-";
+    };
     virtual bool start();
     virtual void stop();
     virtual void work() = 0;
     virtual void reset();
     void halt(DSP_ERROR);
-    st_dsp_status status;
+    st_dsp_params status;
 
     // Callback for the first processed block
     std::function<void()> on_first_block{};

@@ -15,5 +15,6 @@ SignalGeneratorTask signalGeneratorTask(dspSuccess, dspError);
 ReceiveTask receiveTask(dspSuccess, dspError);
 
 namespace dsp {
+const char *taskNames[] = {"Capture", "Replay", "Signal generator", "Receive"};
 Task *tasks[]{&captureTask, &replayTask, &signalGeneratorTask, &receiveTask};
-}
+} // namespace dsp

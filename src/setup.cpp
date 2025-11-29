@@ -28,6 +28,8 @@
 
 void initPowerControl() {
 
+    LOG("Setting up mother board power rails\n");
+
     // Make sure all power lines start off
     main_board::PowControlShiftReg.write(0);
 
