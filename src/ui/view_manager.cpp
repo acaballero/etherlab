@@ -3,9 +3,11 @@
 //
 #include "view_manager.h"
 #include "Display_afb.h"
+#include "input/inputEvent.h"
 #include "os/periodic_task.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
+#include "types.h"
 #include "ui/keyboard_view.h"
 #include "ui/keypad_view.h"
 #include "ui/number_edit_view.h"
@@ -153,6 +155,171 @@ void open(std::unique_ptr<View> v) {
     view_manager::mainView.add_child(view_ptr);
     view_manager::mainView.to_top(view_ptr);
     view_ptr->set_focus(true);
+}
+
+using test_result_t = std::pair<Widget *const, const uint32_t>;
+using test_fn = std::function<test_result_t(Widget *const)>;
+using test_collection_t = std::vector<test_result_t>;
+
+/* Walk all visible widgets in hierarchy, collecting those that pass test */
+template <typename TestFn> static void widget_collect_visible(Widget *const w, TestFn test, test_collection_t &collection) {
+    for (auto child : w->children()) {
+        if (!child->hidden()) {
+            const auto result = test(child);
+            if (result.first) {
+                collection.push_back(result);
+            }
+            widget_collect_visible(child, test, collection);
+        }
+    }
+}
+
+int32_t rect_distances(const ui::DIRECTION direction, const Rect &rect_from, const Rect &rect_to) {
+    Coord direction_axis_end, direction_axis_start;
+
+    switch (direction) {
+        case ui::RIGHT:
+            direction_axis_end = rect_to.left();
+            direction_axis_start = rect_from.right();
+            break;
+
+        case ui::LEFT:
+            direction_axis_end = rect_from.left();
+            direction_axis_start = rect_to.right();
+            break;
+
+        case ui::UP:
+            direction_axis_end = rect_to.top();
+            direction_axis_start = rect_from.bottom();
+            break;
+
+        case ui::DOWN:
+            direction_axis_end = rect_from.top();
+            direction_axis_start = rect_to.bottom();
+            break;
+
+        default:
+            return -1;
+    }
+
+    Coord on_axis_distance = direction_axis_end - direction_axis_start;
+    if (on_axis_distance < 0) {
+        return -1;
+    }
+
+    Coord perpendicular_axis_start, perpendicular_axis_end;
+
+    switch (direction) {
+        case ui::RIGHT:
+        case ui::LEFT:
+            perpendicular_axis_start = rect_from.center().y();
+            perpendicular_axis_end = rect_to.center().y();
+            break;
+
+        case ui::UP:
+        case ui::DOWN:
+            perpendicular_axis_start = rect_from.center().x();
+            perpendicular_axis_end = rect_to.center().x();
+            break;
+
+        default:
+            return -1;
+    }
+
+    auto abs_perp_dist = std::abs(perpendicular_axis_end - perpendicular_axis_start) + 1;
+    auto axis_dist = on_axis_distance + 1;
+
+    switch (direction) {
+        case ui::RIGHT:
+        case ui::LEFT:
+            return abs_perp_dist * abs_perp_dist * axis_dist;
+            break;
+
+        case ui::UP:
+        case ui::DOWN:
+            return abs_perp_dist * axis_dist * axis_dist;
+            break;
+
+        default:
+            return 0;
+    }
+}
+
+bool on_input(st_inputEvent &e) {
+    bool consumed = currentView->on_input(e);
+    if (!consumed && e.type == INPUT_EVENT_TYPE_ENCODER) {
+        consumed = change_focus(currentView, e.value ? ui::RIGHT : ui::LEFT);
+    }
+
+    return consumed;
+}
+
+bool change_focus(Widget *const top_widget, ui::DIRECTION direction) {
+
+    bool changed = false;
+    const Widget *w = currentView->focused_widget();
+
+    LOG_IND(2, "change_focus: direction %d\n", direction, top_widget->get_name());
+
+    if (w) {
+        const auto focus_screen_rect = w->screen_rect();
+
+        const auto test_fn = [&focus_screen_rect, direction](Widget *const w) -> test_result_t {
+            if (w->visible() && w->focusable()) {
+
+                const auto distance = rect_distances(direction, focus_screen_rect, w->screen_rect());
+                if (distance >= 0) {
+                    return {w, distance};
+                }
+            }
+
+            return {nullptr, 0};
+        };
+
+        const auto find_back_fn = [](Widget *const w) -> test_result_t {
+            if (w->focusable() && (w->id == -1)) {
+                return {w, 0};
+            } else {
+                return {nullptr, 0};
+            }
+        };
+
+        test_collection_t collection;
+        widget_collect_visible(top_widget, test_fn, collection);
+
+        LOG("Found %d focusable widgets\n", collection.size());
+
+        const auto compare_fn = [](const test_result_t &a, const test_result_t &b) {
+            return a.second < b.second;
+        };
+
+        const auto nearest = std::min_element(collection.cbegin(), collection.cend(), compare_fn);
+
+        // Up and left to indicate back
+
+        if (nearest != collection.cend()) {
+            LOG("Nearest widget is %s\n", nearest->first->get_name());
+
+            changed = (*nearest).first->set_focus(true);
+
+        } else {
+            LOG("No nearest widget found\n");
+
+            if ((w->id >= 0) && (direction == ui::LEFT)) {
+                // Stuck left, move to back button
+                collection.clear();
+                widget_collect_visible(top_widget, find_back_fn, collection);
+                if (!collection.empty()) {
+                    changed = collection[0].first->set_focus(true);
+                }
+            }
+        }
+    } else {
+        LOG("No focused widget found\n");
+    }
+
+    LOG_IND(-2, "");
+    return changed;
 }
 
 } // namespace view_manager

@@ -2,6 +2,7 @@
 #define _DISPLAY_H
 
 #include "Display_afb.h"
+#include "label_widget.h"
 #include "ui/menu_options.h"
 #include "ui_types.h"
 #include "widget.h"
@@ -13,10 +14,22 @@
 class View : public Widget {
 
   public:
-    View() : Widget({0, 0, DISPLAY_X_PIXELS, DISPLAY_Y_PIXELS}, &lcd) {
+    View() : View({0, 0, DISPLAY_X_PIXELS, DISPLAY_Y_PIXELS}) {
     }
 
-    View(Rect parent_rect) : Widget(parent_rect, &lcd) {
+    View(Rect parent_rect, const char *title = nullptr) : Widget(parent_rect, &lcd) {
+
+        if (title) {
+
+            title_w.set_parent_rect({3, 3, parent_rect.width() - 6, 20});
+            title_w.set_border_radius(false, false, false, false);
+            title_w.set_aling(Align::ALIGN_CENTER);
+            title_w.set_label(title);
+            set_border_width(1);
+            set_border_color(C565_GREY_DARK);
+            set_shadow_width(2);
+            add_child(&title_w);
+        }
     }
 
     View(View &&) = delete;
@@ -49,6 +62,14 @@ class View : public Widget {
         shadow_width = w;
     }
 
+    int16_t get_border_width() {
+        return border_width;
+    }
+
+    int16_t get_shadow_width() {
+        return shadow_width;
+    }
+
     void set_border_color(Color c) {
         border_color = c;
     }
@@ -69,6 +90,8 @@ class View : public Widget {
     uint16_t border_width{0};
     uint16_t shadow_width{0};
     Color border_color{C565_GREY_LIGHT};
+
+    Label title_w{{}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
 };
 
 #endif

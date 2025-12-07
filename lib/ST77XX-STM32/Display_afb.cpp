@@ -1204,7 +1204,11 @@ Size Display::get_text_size(const std::string &text) {
     return get_text_size(text.c_str());
 }
 
-Size Display::get_text_size(const char *text) {
+Size Display::get_text_size(const char *text, const FontDef *f) {
+
+    if (!f) {
+        f = font;
+    }
 
     if (!text[0]) {
         return {0, 0};
@@ -1225,7 +1229,7 @@ Size Display::get_text_size(const char *text) {
             current_width += get_punctuation_width();
         } else {
             // Regular character
-            current_width += font->width;
+            current_width += f->width;
         }
 
         c = text[++i];
@@ -1234,7 +1238,7 @@ Size Display::get_text_size(const char *text) {
     // Don't forget the last line if it doesn't end with newline
     max_width = std::max(max_width, current_width);
 
-    return {max_width, line_count * (font->height + getVerticalLineSpacing() * 2)};
+    return {max_width, line_count * (f->height + getVerticalLineSpacing() * 2)};
 }
 // Helper function to extract RGB components from RGB565 format
 static inline void extract_rgb565(uint16_t pixel, uint8_t *r, uint8_t *g, uint8_t *b) {

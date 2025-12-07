@@ -10,6 +10,8 @@
 
 void MessageView::init() {
 
+    set_focusable(true);
+
     set_border_width(border_width);
     set_border_color(C565_GREY_DARK);
     set_shadow_width(shadow_width);

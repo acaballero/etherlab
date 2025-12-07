@@ -4,6 +4,7 @@
 #include "aprs_ui.h"
 #include "Display_afb.h"
 #include "arm_math.h"
+#include "beacon_settings_view.h"
 #include "dsp/aprs/aprs_packet.h"
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/dsp_common.h"
@@ -20,6 +21,7 @@
 #include "radio.h"
 #include "s_strength.h"
 #include "status.h"
+#include "memory.h"
 #include "types.h"
 #include "ui/console_widget.h"
 #include <cstddef>
@@ -34,6 +36,7 @@
 #include "ui/widget.h"
 
 namespace dsp_ui {
+using Menu::actions_signal;
 
 void APRSView::init() {
 
@@ -87,7 +90,7 @@ void APRSView::init() {
         on_packet((APRSPacket *)data);
     });
 
-    actions_signal.emit(&actions);
+    Menu::actions_signal.emit(Menu::menu_actions_event{Menu::ADD, &actions});
 
     // Get some current parameters so they can be restored on exit
     previous_mode = config.mode;
@@ -114,20 +117,29 @@ void APRSView::resume() {
 }
 
 void APRSView::toggle_beacon() {
-    auto *p = new os::periodic_task{5000, [this]() {
-                                        send_packet("Angel Dust Beacon Online");
-                                    }};
 
     if (!os::task_manager.remove(beacon_task_id)) {
-        menu_actions[2].bg_color = C565_BG_ENABLED;
-        menu_actions[2].fg_color = C565_GREEN;
-        beacon_task_id = os::task_manager.add(p);
+        // Was disabled
+        auto settings_view = std::make_unique<BeaconSettingsView>(
+
+            [this](bool ok) {
+                if (ok) {
+
+                    auto *p = new os::periodic_task{5000, [this]() {
+                                                        send_packet("Angel Dust Beacon Online");
+                                                    }};
+
+                    menu_actions[2].bg_color = C565_BG_ENABLED;
+                    menu_actions[2].fg_color = C565_GREEN;
+                    beacon_task_id = os::task_manager.add(p);
+                }
+            });
+
+        view_manager::open(move(settings_view));
     } else {
         menu_actions[2].fg_color = C565_BUTTON_TEXT_FG;
         menu_actions[2].bg_color = C565_BG_DISABLED;
     }
-
-    actions_signal.emit(&actions);
 }
 
 void APRSView::start_rx() {

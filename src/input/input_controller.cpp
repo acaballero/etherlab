@@ -145,7 +145,9 @@ void processEvent(st_inputEvent *e) {
             // between touch start and end.
             w->paint();
         }
-    } else if (pending_release || !view_manager::currentView->on_input(*e)) {
+    } else
+
+        if (pending_release || !view_manager::on_input(*e)) {
 
         // TODO: Consume these events in their appropriate views/widget
 
@@ -204,6 +206,7 @@ void processEvent(st_inputEvent *e) {
                         radio::change_frequency(e->value);
                     }
                 }
+
                 break;
             default:
                 break;

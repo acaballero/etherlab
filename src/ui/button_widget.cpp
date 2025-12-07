@@ -139,10 +139,14 @@ bool Button::paint_callback() {
         }
     }
 
+    Widget::paint_callback();
+
     return true;
 }
 
 void Button::on_blur() {
+
+    LOG("Button %s on_blur\n", this->text);
     // Paint immediatelly
     paint();
     set_clean();
@@ -150,7 +154,7 @@ void Button::on_blur() {
 
 void Button::on_focus() {
 
-    // printf_("Button %s on_focus\n", this->text);
+    LOG("Button %s on_focus\n", this->text);
 
     if (on_highlight) {
         on_highlight(*this);

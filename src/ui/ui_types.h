@@ -20,6 +20,10 @@
 #define MENU_START_Y (HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT)
 //#define MENU_START_Y 0
 
+namespace ui {
+enum DIRECTION { LEFT, RIGHT, UP, DOWN };
+}
+
 using Coord = int16_t;
 using Dim = int16_t;
 
@@ -218,7 +222,5 @@ struct Rect {
 };
 
 Area to_area(Rect &r);
-
-extern Signal actions_signal;
 
 #endif // UI_TYPES_H

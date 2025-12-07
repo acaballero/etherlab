@@ -10,7 +10,9 @@
 
 class MenuWidget : public Widget {
   public:
-    using Widget::Widget;
+    MenuWidget(Rect r) : Widget(r, &lcd) {
+        set_focusable(true);
+    };
 
     bool paint_callback() override;
 

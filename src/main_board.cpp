@@ -233,10 +233,19 @@ void setGPIO() {
     changed = changed | setGPIOExpPin(&hmcp03, MCP23017_PORTA, GPIOEXP_FPANEL_TX_LED, ISTX, false);
 
     if (changed) {
-        commitGPIOExpPort(&hmcp01, MCP23017_PORTA);
-        commitGPIOExpPort(&hmcp01, MCP23017_PORTB);
-        commitGPIOExpPort(&hmcp02, MCP23017_PORTA);
-        commitGPIOExpPort(&hmcp02, MCP23017_PORTB);
+        // To prevent RX/TX paths from being simultaneously off, the sequencing needs to be inverted
+        // TODO: It wouldn't be necessary if they were sourced by the same module and port
+        if (ISTX) {
+            commitGPIOExpPort(&hmcp01, MCP23017_PORTA);
+            commitGPIOExpPort(&hmcp01, MCP23017_PORTB);
+            commitGPIOExpPort(&hmcp02, MCP23017_PORTA);
+            commitGPIOExpPort(&hmcp02, MCP23017_PORTB);
+        } else {
+            commitGPIOExpPort(&hmcp02, MCP23017_PORTA);
+            commitGPIOExpPort(&hmcp02, MCP23017_PORTB);
+            commitGPIOExpPort(&hmcp01, MCP23017_PORTA);
+            commitGPIOExpPort(&hmcp01, MCP23017_PORTB);
+        }
         commitGPIOExpPort(&hmcp03, MCP23017_PORTA);
     }
 }
@@ -639,7 +648,9 @@ void set_power_rails(uint8_t value, bool force, bool oneByOne) {
         if (oneByOne) {
 
             // Start power lines one by one to limit inrush current (which can trip the regulator's overcurrent protection)
-            uint8_t ctrl = PowControlShiftReg.getValue(), new_ctrl = config.power_ctrl, mask = 1;
+            uint8_t ctrl = PowControlShiftReg.getValue();
+            uint8_t new_ctrl = config.power_ctrl;
+            uint8_t mask = 1;
             uint8_t current_ctrl = ctrl;
             bool set;
 
@@ -648,7 +659,7 @@ void set_power_rails(uint8_t value, bool force, bool oneByOne) {
                 set = new_ctrl & mask;
                 ctrl = set ? ctrl | mask : ctrl & ~mask;
 
-                // Change the register when there's a change, and only if it is from 0 to 1 (no need to go one by one when powering off) or it's
+                // Set the register when its value has changed, and only if it is from 0 to 1 (no need to go one by one when powering off) or it's
                 // the last bit
                 if (current_ctrl != ctrl && (set || i == 7)) {
 

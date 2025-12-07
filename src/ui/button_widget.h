@@ -31,6 +31,8 @@ class Button : public Widget {
         variable_width = parent_rect.width() == 0;
         set_text(t);
         this->id = id;
+
+        set_focusable(true);
     };
 
     void set_text(char const *value);

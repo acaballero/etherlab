@@ -76,6 +76,7 @@
 #define C565_TRANSPARENT 0xFFFE
 
 #define C565_TEXT_FG C565_WHITE
+#define C565_FIELD_FG C565_CYAN
 #define C565_BUTTON_TEXT_FG C565_BLACK
 #define C565_TEXT_FG_DISABLED C565_GREY_LIGHT
 #define C565_TEXT_FG_FOCUS C565_YELLOW
@@ -84,6 +85,7 @@
 #define C565_BG_DISABLED C565_GREY_DARK
 #define C565_BG_FOCUS C565_WHITE
 #define C565_BG_ENABLED C565_WHITE
+#define C565_UNITS_FG C565_GREY_LIGHT
 
 #define END_DMA_TRANSFER                                                                                                                                       \
     {                                                                                                                                                          \
@@ -310,7 +312,7 @@ class Display {
     void set_transparency(uint8_t v);
 
     Size get_text_size(const std::string &str);
-    Size get_text_size(const char *r);
+    Size get_text_size(const char *r, const FontDef *f = nullptr);
 
     uint8_t get_transparency();
 

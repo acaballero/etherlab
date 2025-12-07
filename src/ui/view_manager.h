@@ -4,6 +4,7 @@
 #ifndef VIEW_MANAGER_H
 #define VIEW_MANAGER_H
 
+#include "input/inputEvent.h"
 #include "ui/keyboard_view.h"
 #include "ui/option_buttons_view.h"
 #include "ui/number_edit_view.h"
@@ -26,6 +27,10 @@ void init();
 
 void open_app(std::unique_ptr<View> view);
 void open(std::unique_ptr<View> v);
+
+bool on_input(st_inputEvent &e);
+bool change_focus(Widget *const top_widget, ui::DIRECTION direction);
+
 } // namespace view_manager
 
 #endif // VIEW_MANAGER_H

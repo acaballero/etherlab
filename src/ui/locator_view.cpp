@@ -8,6 +8,8 @@ namespace ui {
 Locator::Locator(const Point pos, const alt_unit altitude_unit, const spd_unit speed_unit, FontDef *f)
     : View(), altitude_unit_(altitude_unit), speed_unit_(speed_unit) {
 
+    set_focusable(true);
+
     set_font(f);
     set_parent_rect({pos.x(), pos.y(), (DISPLAY_X_PIXELS / 2), 3 * c_height});
 

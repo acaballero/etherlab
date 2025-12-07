@@ -23,7 +23,7 @@
 //#define __FPU_USED 1U
 #define ARM_MATH_CM4 1
 
-#define DSP_MIN_TX_GAIN_DB -20
+#define DSP_MIN_TX_GAIN_DB -40
 #define DSP_MAX_TX_GAIN_DB 20
 
 #ifdef __clang__
@@ -166,7 +166,7 @@ struct st_dsp_params {
     volatile DSP_ERROR error = DSP_ERR_NONE;
     DSP_DIRECTION direction = DSP_DIRECTION_IN;
 
-    volatile float gain{1.0}; // This is the gain factor. Not in DB
+    volatile float gain_factor{1.0}; // This is the gain factor. Not in DB
 
     uint32_t bandwidth;
     uint32_t sample_rate;
@@ -188,7 +188,7 @@ struct st_dsp_params {
     bool operator==(const st_dsp_params &st) const {
         return status == st.status && error == st.error && fifo_underruns == st.fifo_underruns && fifo_overruns == st.fifo_overruns &&
                sample_rate == st.sample_rate && processed_blocks == st.processed_blocks && block_size_bytes == st.block_size_bytes &&
-               bits_per_sample == st.bits_per_sample && n_channels == st.n_channels && id == st.id && gain == st.gain &&
+               bits_per_sample == st.bits_per_sample && n_channels == st.n_channels && id == st.id && gain_factor == st.gain_factor &&
                decimation_factor == st.decimation_factor && bandwidth == st.bandwidth && last_error_ms == st.last_error_ms;
         ;
     }
@@ -291,7 +291,7 @@ void set_config(st_dsp_config &);
 st_dsp_config get_config();
 
 void enable_frequency_shift(bool b);
-bool get_freq_shift_enabled();
+bool get_freq_shift_allowed();
 
 void set_agc_enabled(bool);
 bool get_agc_enabled();

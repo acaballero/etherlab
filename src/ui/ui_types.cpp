@@ -8,9 +8,9 @@
 #include "../../lib/utils/utils.hpp"
 #include "Signal.h"
 
-Signal actions_signal;
-
-bool Rect::contains(const Point p) const { return (p.x() >= left()) && (p.y() >= top()) && (p.x() < right()) && (p.y() < bottom()); }
+bool Rect::contains(const Point p) const {
+    return (p.x() >= left()) && (p.y() >= top()) && (p.x() < right()) && (p.y() < bottom());
+}
 
 Rect Rect::intersect(const Rect &o) const {
     const auto x1 = max2(left(), o.left());
@@ -24,7 +24,9 @@ Rect Rect::intersect(const Rect &o) const {
     }
 }
 
-bool Rect::contains(const Rect &o) const { return left() <= o.left() && right() >= o.right() && top() <= o.top() && bottom() >= o.bottom(); }
+bool Rect::contains(const Rect &o) const {
+    return left() <= o.left() && right() >= o.right() && top() <= o.top() && bottom() >= o.bottom();
+}
 
 // TODO: This violates the principle of least surprise!
 // This does a union, but that might not be obvious from "+=" syntax.
@@ -102,7 +104,9 @@ std::vector<Rect> Rect::operator-(const Rect &r) {
 // Merge adjacent or overlapping rectangles
 std::vector<Rect> merge_rectangles(std::vector<Rect> &parts) {
 
-    std::sort(parts.begin(), parts.end(), [](const Rect &a, const Rect &b) { return (a.top() == b.top()) ? a.left() < b.left() : a.top() < b.top(); });
+    std::sort(parts.begin(), parts.end(), [](const Rect &a, const Rect &b) {
+        return (a.top() == b.top()) ? a.left() < b.left() : a.top() < b.top();
+    });
 
     std::vector<Rect> merged;
     for (auto &part : parts) {
@@ -124,4 +128,6 @@ std::vector<Rect> merge_rectangles(std::vector<Rect> &parts) {
     return merged;
 }
 
-Area to_area(Rect &r) { return {{(int16_t)r.left(), (int16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), 0, 0}; }
+Area to_area(Rect &r) {
+    return {{(int16_t)r.left(), (int16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), 0, 0};
+}

@@ -7,6 +7,10 @@
 #include "ui/button_widget.h"
 #include <math.h>
 
+void Label::set_font(const FontDef *f) {
+    Widget::set_font(f);
+}
+
 void Label::set_padding(uint16_t p) {
     padding = p;
 }
@@ -73,6 +77,8 @@ bool Label::paint_callback() {
     display->gotoXY(x, y);
     display->print(label, value, unit, fg_color, fg_color_value, fg_color_unit);
 
+    Widget::paint_callback();
+
     return true;
 }
 
@@ -107,6 +113,7 @@ void Label::calc_widths() {
 void Label::set_label(const char *t) {
     strncpy(label, t, MAX_CHARS);
     set_dirty();
+
     calc_widths();
 }
 

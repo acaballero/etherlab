@@ -707,11 +707,12 @@ result freqMemorySelectedEvent(eventMask e, navNode &nav) {
         sprintf(tempFreqBuf, "%s", buf);
     }
 
+    auto actions = get_actions();
     if (e == Menu::enterEvent) {
-        actions_signal.emit(&get_actions());
+        actions_signal.emit(&actions);
     } else if (e == Menu::exitEvent) {
         // Remove context actions
-        actions_signal.emit(nullptr);
+        actions_signal.emit({REMOVE, &actions});
     }
 
     return proceed;

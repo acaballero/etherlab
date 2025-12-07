@@ -89,6 +89,7 @@ bool Field::paint_callback() {
     // Cursor
     display->fill(x + cursor_x - 1, y + font->height + 1, x + cursor_x + font->width, y + font->height + 2, C565_BLACK);
 
+    Widget::paint_callback();
     return true;
 }
 

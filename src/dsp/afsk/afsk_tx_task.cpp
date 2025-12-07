@@ -97,7 +97,7 @@ void AFSKTXTask::work() {
                     }
                 }
 
-                if (cur_bit) {
+                if (false && cur_bit) {
                     tone_phase += afsk_phase_inc_mark;
                 } else {
                     tone_phase += afsk_phase_inc_space;
@@ -120,7 +120,7 @@ void AFSKTXTask::work() {
                 //   LOG_RAW("%d,", tone_sample);
 
                 ((complex_t *)out_p)[i] = {{(adc_type)tone_sample, (adc_type)tone_sample}};
-                ((complex_t *)out_p)[i] = {{re, im}};
+                // ((complex_t *)out_p)[i] = {{re, im}};
             }
 
             // LOG_RAW("\n");

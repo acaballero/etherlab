@@ -53,7 +53,7 @@ void set_max_sample_freq(uint32_t rate) {
 
 void set_gain_db(int8_t gain_db) {
     dsp_gain_factor = constrain(gain_db, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB);
-    dsp_params->gain = pow(10.0, (float)dsp_gain_factor / 20.0);
+    dsp_params->gain_factor = pow(10.0, (float)dsp_gain_factor / 20.0);
     dsp_common_params_signal.emit(&dsp_params);
 }
 
@@ -61,10 +61,10 @@ void enable_frequency_shift(bool b) {
     freq_shift_enabled = b;
 }
 
-bool get_freq_shift_enabled() {
-    // The frequency shift sacrifices some fft bandwidth so it is not applied if not absolutely necessary.
+bool get_freq_shift_allowed() {
+    // The frequency shift to prevent DC issues sacrifices some fft bandwidth so it is not applied if not absolutely necessary.
 
-    return fft::fft_params.n_slices == 1 && freq_shift_enabled; // && (!ISANALOG || ISTX);
+    return fft::fft_params.n_slices == 1 && freq_shift_enabled && !ISTX; // && (!ISANALOG || ISTX);
 }
 
 void set_agc_enabled(bool v) {

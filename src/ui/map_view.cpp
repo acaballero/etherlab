@@ -20,6 +20,7 @@
 namespace ui {
 
 Map::Map(Rect parent_rect) : Widget{parent_rect, &lcd}, markerListLen(0) {
+    set_focusable(true);
 }
 
 bool Map::on_input(const st_inputEvent ev) {
@@ -571,7 +572,7 @@ void MapView::setup() {
         map.set_dirty();
     };
 
-    actions_signal.emit(&actions);
+    Menu::actions_signal.emit(&actions);
 }
 
 // Display mode
@@ -612,7 +613,7 @@ MapView::MapView(int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd
 }
 
 void MapView::exit() {
-    actions_signal.emit(nullptr);
+    Menu::actions_signal.emit(nullptr);
     set_visible(false);
 
     if (on_close) {

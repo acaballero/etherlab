@@ -16,6 +16,7 @@
 class FrequencyWidgetInner : public Widget {
   public:
     FrequencyWidgetInner(Rect parent_rect, Display *display) : Widget(parent_rect, display) {
+        set_focusable(true);
     }
     bool paint_callback() override;
 
@@ -44,7 +45,7 @@ class FrequencyWidget : public View {
     Button btnRpt{{0, MARGIN, LBLRPT_WIDTH, area.box.height - MARGIN * 2}, display, ""};
     Button btnScan{{LBLRPT_WIDTH + MARGIN, MARGIN, LBLSCAN_WIDTH, area.box.height - MARGIN * 2}, display, ""};
     Button btnVFO{{LBLRPT_WIDTH + LBLSCAN_WIDTH + 2 * MARGIN, MARGIN, LBLVFO_WIDTH, area.box.height - MARGIN * 2}, display, ""};
-    FrequencyWidgetInner freqWidget{{freq_xpos, MARGIN, area.box.width - freq_xpos, area.box.height}, &lcd};
+    FrequencyWidgetInner freqWidget{{freq_xpos, MARGIN, area.box.width - freq_xpos, area.box.height - 1}, &lcd};
 };
 
 #endif // TRX_FRONTEND_FREQUENCY_WIDGET_H

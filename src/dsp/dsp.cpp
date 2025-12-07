@@ -235,6 +235,10 @@ void dsp_start_task() {
             }
 
             dsp::dsp_params = current_task->status.direction != DSP_DIRECTION_IN ? &current_processor->status : &current_task->status;
+
+            // TODO: Do this elsewhere
+            dsp::set_gain_db(dsp::dsp_config.gain);
+
             if (on_event) {
                 on_event(dsp::dsp_params);
             }
@@ -328,7 +332,7 @@ inline void dac_work() {
     }
 
     if (dsp::dsp_params && dsp::dsp_params->direction == DSP_DIRECTION_OUT) {
-        // DSP TX direction: The FFT is fed from the produced data stream
+        // DSP TX direction: The FFT is fed from the produced data upstream
         FIFO_ERROR err = fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
         UNUSED(err);
     }
@@ -346,7 +350,7 @@ inline void adc_work() {
 
 #if DSP_FS4_SHIFT
 
-    if (dsp::get_freq_shift_enabled()) {
+    if (dsp::get_freq_shift_allowed()) {
 
         // Removing DC here and thus not having to do it in subsequent stages (FFT, DSP processing) is not as efficient as it seems at first glance since:
         // - FFT processing is not done in real-time so no need to do the work for it

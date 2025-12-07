@@ -43,7 +43,7 @@ class StatusWidget : public View {
 
     static Menu::menu_actions_st default_actions;
 
-    RingBuffer<Menu::menu_actions_st *, 4> actions_stack;
+    RingBuffer<Menu::menu_actions_st *, 6> actions_stack;
 
     char buf[20];
 
@@ -65,7 +65,7 @@ class StatusWidget : public View {
 
     void before_paint() override;
 
-    void set_actions(Menu::menu_actions_st *);
+    void set_actions(const Menu::menu_actions_st *);
     void set_action(uint8_t index, Menu::menu_action_st &action);
     bool push(Menu::menu_actions_st *);
     void pop();

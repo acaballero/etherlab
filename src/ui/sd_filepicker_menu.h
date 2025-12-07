@@ -196,7 +196,7 @@ class SDMenuT : public Menu::menuNode {
                         }
                     }
                     if (&item == this) {
-                        actions_signal.emit(&menu_actions);
+                        Menu::actions_signal.emit(&menu_actions);
                     }
                 }
 
@@ -254,7 +254,7 @@ class SDMenuT : public Menu::menuNode {
         menu_actions_arr[DELETE].enabled = (!sel_items.empty() || can_delete) && !is_dir(fso->fileinfo.fattrib) && sel;
 
         if (nav.node().target == this) {
-            actions_signal.emit(&menu_actions);
+            Menu::actions_signal.emit(&menu_actions);
         }
     }
 
@@ -348,7 +348,7 @@ class SDMenuT : public Menu::menuNode {
             }
 
             if (bubble_cmd == Menu::escCmd) {
-                actions_signal.emit(nullptr); // Will exit: unstack quick actions
+                Menu::actions_signal.emit(nullptr); // Will exit: unstack quick actions
             } else {
                 update_actions();
             }

@@ -54,16 +54,28 @@ bool View::paint_callback() {
         if (child->can_be_seen()) {
 
             Rect rect = child->parent_rect();
+
             Box offset = getOffset(rect, current_offset, !apply_pad);
 
             if (display->current_line <= offset.y + offset.height - 1 && display->current_last_line >= offset.y) {
                 display->setOffset(offset);
                 child->paint_callback();
             }
+
+            // DEBUG FOCUS
+            if (child->focusable()) {
+                display->setOffset(current_offset);
+                display->writeRect(rect.left(), rect.top(), rect.right(), rect.bottom(), is_focused() ? C565_YELLOW : C565_CYAN);
+            }
         }
     }
 
     display->setOffset(current_offset);
+
+    // DEBUG FOCUS
+    if (focusable()) {
+        display->writeRect(0, 0, area.box.width - 1, area.box.height - 1, is_focused() ? C565_BLUE : C565_RED);
+    }
 
     return true;
 }
@@ -140,6 +152,10 @@ void View::add_child(Widget *const widget) {
         children_.push_back(widget);
 
         widget->set_parent(this);
+
+        if (widget->is_focused() || widget->focused_widget()) { // Tell parent there's a new focused widget so it blurs the current focused widget, if any
+            widget_focused(widget);
+        }
     }
 }
 

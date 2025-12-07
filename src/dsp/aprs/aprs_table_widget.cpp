@@ -55,6 +55,8 @@ bool APRSTableWidget::paint_callback() {
 
     display->set_trim_enabled(true);
 
+    Widget::paint_callback();
+
     return true;
 }
 

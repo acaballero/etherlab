@@ -29,6 +29,9 @@ typedef struct {
      */
     uint16_t dac_offset = 1000;
 
+    // Difference between I and Q DAC channels
+    int16_t dac_balance = 0;
+
 } st_hw_config;
 
 #endif // TRX_FRONTEND_BOARD_V2_CONFIG_H

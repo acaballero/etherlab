@@ -330,7 +330,7 @@ void apply_fft_params(st_fft_params params) {
     // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
 
 #if DSP_FS4_SHIFT
-    if (dsp::get_freq_shift_enabled()) {
+    if (dsp::get_freq_shift_allowed()) {
         // TODO: With more than 1 slice, the start frequency of each slice should also be shifted since bins from one slice
         // move to the adjacent slice. Not done yet.
         radio::set_dsp_frequency_shift(-dsp::get_frequency_shift());
@@ -982,7 +982,7 @@ void adquire_fft_async() {
         fft_dcremoval(fft_slice_buffer);
     }
 #else
-    if (config.fft.removeDC && !dsp::get_freq_shift_enabled()) {
+    if (config.fft.removeDC && !dsp::get_freq_shift_allowed()) {
         // In digital mode, the DC is removed in the DSP processor in some cases
 
         fft_dcremoval(fft_slice_buffer);

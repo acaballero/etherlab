@@ -130,6 +130,23 @@ void MainView::on_child_update(Widget *w) {
     }
 }
 
+void MainView::widget_focused(Widget *w) {
+
+    View::widget_focused(w);
+
+    Menu::menu_actions_st *actions = w->get_quick_actions();
+    while (w && !actions) {
+        w = w->parent();
+        if (w) {
+            actions = w->get_quick_actions();
+        }
+    }
+
+    if (actions) {
+        Menu::actions_signal.emit({Menu::ADD, w->get_quick_actions()});
+    }
+}
+
 bool MainView::on_input(const st_inputEvent event) {
 
     bool consumed{false};

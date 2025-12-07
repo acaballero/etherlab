@@ -64,14 +64,14 @@ class RadiosondeView : public View {
                                              [this]() {
                                                  enable_crc = !enable_crc;
                                                  menu_actions[0].enabled = enable_crc;
-                                                 actions_signal.emit(&actions);
+                                                 Menu::actions_signal.emit(&actions);
                                              }},
                                             {"Log",
 
                                              [this]() {
                                                  enable_log = !enable_log;
                                                  menu_actions[1].enabled = enable_log;
-                                                 actions_signal.emit(&actions);
+                                                 Menu::actions_signal.emit(&actions);
                                              }},
                                             {"Map",
                                              [this]() {

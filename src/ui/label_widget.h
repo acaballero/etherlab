@@ -38,10 +38,11 @@ class Label : public Widget {
 
         set_font(f);
         display->setFont(f);
-        Size s = display->get_text_size(text);
-        int h = font->height + display->getVerticalLineSpacing() * 2;
-        set_parent_rect({position, {s.width() + padding * 2, h}});
+
+        set_top(position.y());
+        set_left(position.x());
         set_label(text);
+        resize();
         set_color(fg_color);
     }
 
@@ -69,7 +70,16 @@ class Label : public Widget {
     void set_padding(uint16_t p);
     uint16_t get_padding();
 
+    void set_font(const FontDef *f) override;
+
     std::function<void(Label &)> on_select;
+
+    void resize() {
+
+        Size s = display->get_text_size(label, font);
+        int h = font->height + display->getVerticalLineSpacing() * 2;
+        set_parent_rect({parent_rect().location(), {s.width() + padding * 2, h}});
+    };
 
   protected:
     char label[MAX_CHARS] = {};

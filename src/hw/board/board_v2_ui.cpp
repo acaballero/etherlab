@@ -65,7 +65,8 @@ MENU(boardMenu, "Hardware", doNothing, noEvent, noStyle, SUBMENU(CMX973VGAGainMe
      FIELD(adf4350Params.low_spur_mode_enable, "Low spur", "", 0, 1, 1, 0, resetPLL, exitEvent, noStyle),
      FIELD(adf4350Params.reference_div2_enable, "Ref div2", "", 0, 1, 1, 0, resetPLL, exitEvent, noStyle),
      FIELD(adf4350Params.reference_doubler_enable, "Ref x2", "", 0, 1, 1, 0, resetPLL, exitEvent, noStyle),
-     FIELD(config.hw.dac_offset, "DAC offset", "", 0, 1000, 1, 0, doNothing, noEvent, noStyle),
+     FIELD(config.hw.dac_offset, "DAC offset", "", 0, 3000, 1, 100, doNothing, noEvent, noStyle),
+     FIELD(config.hw.dac_balance, "DAC balance", "", -500, 500, 1, 10, doNothing, noEvent, noStyle),
      FIELD(config.hw.sd_write_max_kbps, "SD card max. write speed", "Kbps.", 500, SD_CARD_WRITE_MAX_KBPS, 25, 0, doNothing, noEvent, noStyle)
 
 )

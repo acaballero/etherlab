@@ -38,6 +38,8 @@ struct APRSSource {
 class APRSTableWidget : public Widget {
   public:
     APRSTableWidget(Rect parent_rect, int max_rows) : Widget(parent_rect, &lcd) {
+        set_name("atbl");
+        set_focusable(true);
         set_max_rows(max_rows);
         init();
     }
@@ -46,6 +48,12 @@ class APRSTableWidget : public Widget {
     int on_packet(dsp::APRSPacket *packet);
     bool on_touch(const st_inputEvent) override;
     bool on_input(const st_inputEvent e) override;
+    void on_focus() override {
+        LOG("APRS table focused\n");
+    };
+    void on_blur() override {
+        LOG("APRS table blurred\n");
+    };
     void set_max_rows(int n) {
         assert(n <= MAX_ROWS);
         max_sources = n;

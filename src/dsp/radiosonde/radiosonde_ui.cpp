@@ -40,7 +40,7 @@ void RadiosondeView::init() {
     actions.actions[0].enabled = enable_crc;
     actions.actions[1].enabled = enable_log;
 
-    actions_signal.emit(&actions);
+    Menu::actions_signal.emit(&actions);
 
     // Get some current parameters so they can be restored on exit
     previous_mode = config.mode;
@@ -98,7 +98,7 @@ void RadiosondeView::exit() {
             });
 
             // Clear specific bottom quick buttons
-            actions_signal.emit(nullptr);
+            Menu::actions_signal.emit(nullptr);
 
             set_visible(false);
         }

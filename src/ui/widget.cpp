@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "Display_afb.h"
+#include "input/inputEvent.h"
 #include "ui/frequency_memory_ui.h"
 #include "view.h"
 #include "widget.h"
@@ -191,15 +192,12 @@ bool Widget::on_input(const st_inputEvent event) {
     }
     bool consumed = false;
 
-    for (const auto child : children()) {
-        if (child->is_focused() && !event.is_touch()) {
+    if (!event.is_touch()) {
 
-            // printf_("Child %s focused\n", child->get_name());
-
-            consumed = child->on_input(event);
-            if (consumed) { // Only one child should receive the input (break in case another is focused if consumed)
-                break;
-            }
+        auto w = focused_widget();
+        if (w) {
+            LOG("Child %s focused\n", w->get_name());
+            consumed = w->on_input(event);
         }
     }
 
@@ -207,7 +205,6 @@ bool Widget::on_input(const st_inputEvent event) {
         switch (event.type) {
 
             case INPUT_EVENT_TYPE_TOUCH_END:
-
                 consumed = this->on_touch(event);
                 break;
 
@@ -228,7 +225,7 @@ bool Widget::is_focused() const {
     return this->flags.focus;
 }
 
-void Widget::focus(Widget *widget) {
+void Widget::widget_focused(Widget *widget) {
 
     if (widget) {
         bool is_child = std::find(children().begin(), children().end(), widget) != children().end();
@@ -242,12 +239,31 @@ void Widget::focus(Widget *widget) {
             }
 
             // Sets self focus
-            set_focus(true);
+            // set_focus(true);
+
+            // Tells parent
+            if (parent_) {
+                parent_->widget_focused(this);
+            }
         }
     }
 }
 
 bool Widget::set_focus(bool v) {
+
+    if (!v) {
+        // Remove focus from its children
+        for (const auto child : children()) {
+            child->set_focus(false);
+        }
+        if (get_quick_actions()) {
+            Menu::actions_signal.emit({Menu::REMOVE, get_quick_actions()});
+        }
+    }
+
+    if (!flags.focusable) {
+        return false;
+    }
 
     if (v && !visible()) {
         return false;
@@ -255,33 +271,22 @@ bool Widget::set_focus(bool v) {
 
     if (v != this->flags.focus && this->flags.enabled) {
 
-        // printf_("%s focus = %b\n", name, v);
+        //        LOG("%s focus = %b\n", name, v);
 
         this->flags.focus = v;
+
+        this->set_dirty();
+
         if (parent_) {
             if (v) {
-                parent_->focus(this);
-                this->set_dirty();
-                this->on_focus();
-            } else {
-                // Remove focus from other children
-                for (const auto child : children()) {
-                    child->set_focus(false);
-                }
+                parent_->widget_focused(this);
             }
         }
 
         if (!v) {
-            this->set_dirty();
             this->on_blur();
-
-            if (get_quick_actions()) {
-                actions_signal.emit(nullptr);
-            }
         } else {
-            if (get_quick_actions()) {
-                actions_signal.emit(get_quick_actions());
-            }
+            this->on_focus();
         }
     }
 
@@ -290,7 +295,11 @@ bool Widget::set_focus(bool v) {
 
 Widget *Widget::focused_widget() const {
     for (const auto child : children()) {
-        if (child->is_focused()) {
+
+        Widget *w = child->focused_widget();
+        if (w) {
+            return w;
+        } else if (child->is_focused()) {
             return child;
         }
     }
@@ -398,7 +407,8 @@ void Widget::paint_overlapped() {
             }
 
             // if (strcmp("msg", get_name()) == 0 || strcmp("waterfall", get_name()) == 0 || strcmp("radio", get_name()) == 0) {
-            //     printf_("Painting area (%d,%d,%d,%d), offset (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, offset.x, offset.y,
+            //     printf_("Painting area (%d,%d,%d,%d), offset (%d,%d,%d,%d) of widget %s\n", a.box.x, a.box.y, a.box.width, a.box.height, offset.x,
+            //     offset.y,
             //             offset.width, offset.height, get_name());
             // }
             paint(&a);

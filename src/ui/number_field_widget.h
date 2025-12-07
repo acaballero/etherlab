@@ -37,6 +37,8 @@ class NumberField : public Widget {
     void before_paint() override;
     bool on_input(const st_inputEvent event) override;
 
+    void set_font(const FontDef *f) override;
+
   private:
     static constexpr int max_length = 14;
     range_t range;

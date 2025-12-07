@@ -136,11 +136,19 @@ class Widget : public Painter {
 
     void set_z_index(uint16_t z_index);
 
-    void set_font(const FontDef *);
+    virtual void set_font(const FontDef *);
 
     FontDef const *get_font() {
         return font;
     };
+
+    bool focusable() {
+        return flags.focusable;
+    }
+
+    void set_focusable(bool v) {
+        flags.focusable = v;
+    }
 
     uint32_t id{0};
 
@@ -185,15 +193,16 @@ class Widget : public Painter {
         bool hidden : 1;  // Object was hidden during last refresh.
         bool visible : 1; // Paint the widget or not?
         bool focus : 1;   // Widget has focus
+        bool focusable : 1;
         bool active : 1;
         bool enabled : 1;
     };
 
-    flags_t flags{.dirty = true, .hidden = false, .visible = true, .focus = false, .active = false, .enabled = true};
+    flags_t flags{.dirty = true, .hidden = false, .visible = true, .focus = false, .focusable = false, .active = false, .enabled = true};
 
     static const std::vector<Widget *> no_children;
 
-    void focus(Widget *widget);
+    virtual void widget_focused(Widget *widget);
 
     virtual void set_area();
 
@@ -204,6 +213,14 @@ class Widget : public Painter {
     void paint_overlapped();
 
     Box getOffset(Rect &r, Box &offset, bool apply_pad);
+
+    bool paint_callback() override {
+        // DEBUG FOCUS
+        if (focusable()) {
+            display->writeRect(0, 0, area.box.width - 1, area.box.height - 1, is_focused() ? C565_YELLOW : C565_CYAN);
+        }
+        return true;
+    }
 
     friend class View;
 };

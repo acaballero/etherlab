@@ -157,6 +157,8 @@ bool FrequencyWidgetInner::paint_callback() {
     display->writeRect(start_line + 1, 17, start_line + 3, 17);
     display->writeRect(start_line, 18, start_line + 4, 18);
 
+    Widget::paint_callback();
+
     return true;
 }
 

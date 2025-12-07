@@ -63,20 +63,35 @@ void StatusWidget::init() {
     push(&default_actions);
 
     // Subscribe to published actions
-    actions_signal.add(this, [this](void *, const void *params) {
-        if (params == nullptr) {
-            pop();
-        } else if (params != actions_stack.back()) {
-            push((Menu::menu_actions_st *)params);
-        } else {
-            set_actions(actions_stack.back()); // update current actions
+    Menu::actions_signal.signal.add(this, [this](void *, const void *params) {
+        auto actions_event = (Menu::menu_actions_event *)params;
+        switch (actions_event->type) {
+            case Menu::ADD:
+                if (actions_event->actions != actions_stack.back()) {
+                    push(actions_event->actions);
+                }
+                break;
+            case Menu::REMOVE:
+                if (actions_event->actions == actions_stack.back()) {
+                    pop();
+                }
+                break;
+            case Menu::UPDATE:
+                if (actions_event->actions == actions_stack.back()) {
+                    set_actions(actions_stack.back()); // update current actions
+                }
+                break;
+            default:
+                break;
         }
     });
 }
 
 void StatusWidget::pop() {
     if (actions_stack.size() > 1) {
+
         actions_stack.pop_stack();
+        LOG("Status widget: actions stack popped. Size: %d\n", actions_stack.size());
         set_actions(actions_stack.back());
     }
 }
@@ -84,13 +99,14 @@ void StatusWidget::pop() {
 bool StatusWidget::push(Menu::menu_actions_st *actions) {
     if (!actions_stack.isFull()) {
         actions_stack.push(actions);
+        LOG("Status widget: actions stack pushed. Size: %d\n", actions_stack.size());
         set_actions(actions);
         return true;
     }
     return false;
 }
 
-void StatusWidget::set_actions(Menu::menu_actions_st *actions) {
+void StatusWidget::set_actions(const Menu::menu_actions_st *actions) {
     for (size_t i = 0; i < n_buttons; i++) {
 
         if (i < actions->size) {
