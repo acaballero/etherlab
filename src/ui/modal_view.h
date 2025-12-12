@@ -12,6 +12,7 @@
 #include "text_widget.h"
 #include "view.h"
 #include "button_widget.h"
+#include <memory>
 
 enum modal_t { INFO = 0, YESNO, ABORT };
 

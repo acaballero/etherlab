@@ -20,42 +20,45 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     // Set names for debuggin purposes
     // TODO: Remove when not required if saving a few bytes is worth it (hope not)
     this->set_name("main");
-    this->tune_w.set_name("tune");
-    this->fft_w.set_name("fft");
-    this->waterfall_w.set_name("waterfall");
-    this->radio_w.set_name("radio");
-    this->info_w.set_name("info");
-    this->menu_w.set_name("menu");
-    this->smeter_w.set_name("smeter");
-    this->powmeter_w.set_name("powmeter");
-    this->optionButtonsView.set_name("options");
+    tune_w.set_name("tune");
+    fft_w.set_name("fft");
+    waterfall_w.set_name("waterfall");
+    radio_w.set_name("radio");
+    info_w.set_name("info");
+    menu_w.set_name("menu");
+    smeter_w.set_name("smeter");
+    powmeter_w.set_name("powmeter");
+    optionButtonsView.set_name("options");
 
-    this->iqbal_w.set_name("iqbal");
-    this->status_w.set_name("status");
-    this->header_w.set_name("header");
+    fft_w.set_z_index(150);
 
-    this->fft_w.set_show_fps(true);
-    this->fft_w.set_z_index(20);
-    this->dbscale_w.set_z_index(10);
-    // this->waterfall_w.set_show_fps(true);
-    this->tune_w.set_visible(config.debug);
-    this->radio_w.set_visible(!config.debug);
-    this->info_w.set_visible(config.debug);
-    this->info_w.set_z_index(10);
-    this->info_w.set_show_fps(config.debug);
-    this->menu_w.set_show_fps(config.debug);
-    this->menu_w.set_z_index(100);
-    this->smeter_w.set_visible(false);
-    this->powmeter_w.set_visible(false);
-    this->optionButtonsView.set_visible(false);
-    this->optionButtonsView.set_z_index(300);
+    iqbal_w.set_name("iqbal");
+    status_w.set_name("status");
+    header_w.set_name("header");
 
-    this->iqbal_w.set_visible(false);
+    fft_w.set_show_fps(true);
+    fft_w.set_z_index(20);
+    dbscale_w.set_z_index(10);
+    // waterfall_w.set_show_fps(true);
+    tune_w.set_visible(config.debug);
+    radio_w.set_visible(!config.debug);
+    info_w.set_visible(config.debug);
+    info_w.set_z_index(10);
+    info_w.set_show_fps(config.debug);
+    menu_w.set_show_fps(config.debug);
+    menu_w.set_z_index(100);
+    smeter_w.set_visible(false);
+    powmeter_w.set_visible(false);
+    optionButtonsView.set_visible(false);
+    optionButtonsView.set_z_index(300);
+    frequency_w.set_z_index(400); // Top-most widget will receive the default focus
 
-    this->children_.reserve(40);
+    iqbal_w.set_visible(false);
 
-    add_children({&this->menu_w, &this->header_w, &this->tune_w, &this->smeter_w, &this->snr_w, &this->radio_w, &this->powmeter_w, &this->info_w,
-                  &this->status_w, &this->dbscale_w, &this->frequency_w, &this->iqbal_w, &this->waterfall_w, &this->fft_w, &this->optionButtonsView});
+    children_.reserve(40);
+
+    add_children({&menu_w, &header_w, &tune_w, &smeter_w, &snr_w, &radio_w, &powmeter_w, &info_w, &status_w, &dbscale_w, &frequency_w, &iqbal_w, &waterfall_w,
+                  &fft_w, &optionButtonsView});
 }
 
 void MainView::before_paint() {
@@ -84,39 +87,44 @@ void MainView::before_paint() {
         snr_w.set_visible(false);
         info_w.set_visible(false);
         menu_w.set_visible(true);
+        menu_w.set_focus(true);
     }
 }
 
 WaterfallWidget *MainView::Waterfall() {
-    return &this->waterfall_w;
+    return &waterfall_w;
 }
 
 Widget *MainView::Spectrum() {
-    return &this->fft_w;
+    return &fft_w;
 }
 
 Widget *MainView::IQBalance() {
-    return &this->iqbal_w;
+    return &iqbal_w;
 }
 
 Widget *MainView::TuneInfo() {
-    return &this->tune_w;
+    return &tune_w;
 }
 
 Widget *MainView::FFTInfo() {
-    return &this->info_w;
+    return &info_w;
 }
 
 Widget *MainView::FFT() {
-    return &this->fft_w;
+    return &fft_w;
 }
 
 Widget *MainView::Menu() {
-    return &this->menu_w;
+    return &menu_w;
+}
+
+Widget *MainView::Status() {
+    return &status_w;
 }
 
 OptionButtonsView *MainView::OptionButtons() {
-    return &this->optionButtonsView;
+    return &optionButtonsView;
 }
 
 void MainView::on_child_update(Widget *w) {
@@ -126,24 +134,37 @@ void MainView::on_child_update(Widget *w) {
     if (!w->visible()) {
         // If a children disapears, repaint all to recover the background
         // TODO: Should this be like this for all views?
-        this->set_dirty();
+        set_dirty();
     }
 }
 
-void MainView::widget_focused(Widget *w) {
+void MainView::on_child_focus_changed(Widget *w, bool was_focused) {
 
-    View::widget_focused(w);
+    View::on_child_focus_changed(w, was_focused);
 
-    Menu::menu_actions_st *actions = w->get_quick_actions();
-    while (w && !actions) {
-        w = w->parent();
-        if (w) {
-            actions = w->get_quick_actions();
+    // Finds the focused widget
+    if (!w->is_focused()) {
+        w = focused_widget();
+    }
+
+    Menu::menu_actions_st *actions = nullptr;
+
+    if (w && w->is_focused()) {
+
+        // Find first widget having quick actions starting from the focused widget up
+        actions = w->get_quick_actions();
+        while (w && !actions) {
+            w = w->parent();
+            if (w) {
+                actions = w->get_quick_actions();
+            }
         }
     }
 
     if (actions) {
-        Menu::actions_signal.emit({Menu::ADD, w->get_quick_actions()});
+        Menu::navigation_signal.emit(w);
+    } else {
+        Menu::navigation_signal.emit(nullptr);
     }
 }
 
@@ -156,14 +177,14 @@ bool MainView::on_input(const st_inputEvent event) {
     }
 
     if (!consumed) {
-        if (!focused_widget()) {
 
-            consumed = menu_w.on_input(event); // First try to consume it by the menu
+        consumed = menu_w.on_input(event); // First try to consume it by the menu
 
-            if (consumed) {
-                menu_w.set_visible(true);
-            }
-        } else if (!event.is_touch()) {
+        if (consumed) {
+            menu_w.set_visible(true);
+        }
+
+        if (!consumed && !event.is_touch()) {
             consumed = View::on_input(event);
         }
 

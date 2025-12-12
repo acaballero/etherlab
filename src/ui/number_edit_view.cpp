@@ -48,6 +48,7 @@ bool NumberEditView::on_input(const st_inputEvent event) {
                     break;
                 case FPANEL_DISPLAY_BUTTON_5:
                 case BTN_ENCODER:
+                case FPANEL_PAD_BUTTON_6:
                     this->on_button(buttons[OK]);
                     break;
                 case KEY_BACK:
@@ -69,7 +70,10 @@ bool NumberEditView::on_input(const st_inputEvent event) {
 
 void NumberEditView::init() {
 
-    const auto button_fn = [this](Button &button, st_inputEvent) { this->on_button(button); };
+    set_focusable(true);
+    const auto button_fn = [this](Button &button, st_inputEvent) {
+        this->on_button(button);
+    };
 
     title.set_font((FontDef *)&Font_7x10);
     title.set_aling(ALIGN_CENTER);
@@ -100,7 +104,9 @@ void NumberEditView::init() {
     add_child(&display_panel_buttons);
 }
 
-void NumberEditView::on_focus() { buttons[CANCEL].set_focus(true); }
+void NumberEditView::on_focus() {
+    buttons[CANCEL].set_focus(true);
+}
 
 void NumberEditView::update_value(double v) {
 
@@ -189,4 +195,5 @@ void NumberEditView::on_button(Button &button) {
     }
 }
 
-void NumberEditView::before_paint() {}
+void NumberEditView::before_paint() {
+}

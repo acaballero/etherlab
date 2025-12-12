@@ -20,7 +20,7 @@
 #define DEBUG 0
 
 #ifndef DEBUG_MSGS
-#define DEBUG_MSGS 1
+#define DEBUG_MSGS 0
 #endif
 
 #define TXMODE(mode) (mode == ANALOG_TX || mode == DIGITAL_TX)

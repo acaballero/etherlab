@@ -19,6 +19,8 @@
 
 void FrequencyWidget::init() {
 
+    set_focusable(true);
+
     scanner::signal.add(nullptr, [this](void *, const void *) {
         set_dirty();
     });
@@ -49,6 +51,10 @@ void FrequencyWidget::init() {
     btnRpt.action = [](Button &, st_inputEvent) {
         Menu::open(Menu::repeaterMenu);
     };
+}
+
+void FrequencyWidget::on_focus() {
+    freqWidget.set_focus(true);
 }
 
 void FrequencyWidget::before_paint() {
@@ -129,10 +135,14 @@ bool FrequencyWidgetInner::paint_callback() {
 
     display->setBgColor(C565_TRANSPARENT);
 
-    if (scanner::scanner_config.status == scanner::SCANNER_STATUS_RUNNING) {
-        fg_color = C565_MAGENTA;
+    if (changing_step) {
+        fg_color = C565_FIELD_FG;
     } else {
-        fg_color = C565_YELLOW;
+        if (scanner::scanner_config.status == scanner::SCANNER_STATUS_RUNNING) {
+            fg_color = C565_MAGENTA;
+        } else {
+            fg_color = C565_YELLOW;
+        }
     }
 
     FontDef *font = (FontDef *)&Font_Digits13x16;
@@ -163,4 +173,33 @@ bool FrequencyWidgetInner::paint_callback() {
 }
 
 void FrequencyWidgetInner::before_paint() {
+}
+
+bool FrequencyWidgetInner::on_input(st_inputEvent e) {
+    bool consumed = false;
+    switch (e.type) {
+
+        case INPUT_EVENT_TYPE_BUTTON_PRESS:
+            if (e.value == BTN_ENCODER) {
+                changing_step = !changing_step;
+                set_dirty();
+                consumed = true;
+            }
+            break;
+        case INPUT_EVENT_TYPE_ENCODER:
+
+            if (changing_step) { // with push button low, change the step size instead of frequency
+                radio::change_step(-e.value);
+            } else {
+
+                radio::change_frequency(e.value);
+            }
+            consumed = true;
+
+            break;
+        default:
+            break;
+    }
+
+    return consumed;
 }

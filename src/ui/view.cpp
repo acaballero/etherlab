@@ -63,19 +63,19 @@ bool View::paint_callback() {
             }
 
             // DEBUG FOCUS
-            if (child->focusable()) {
-                display->setOffset(current_offset);
-                display->writeRect(rect.left(), rect.top(), rect.right(), rect.bottom(), is_focused() ? C565_YELLOW : C565_CYAN);
-            }
+            // if (child->focusable()) {
+            //     display->setOffset(current_offset);
+            //     display->writeRect(rect.left(), rect.top(), rect.right(), rect.bottom(), child->is_focused() ? C565_YELLOW : C565_CYAN);
+            // }
         }
     }
 
     display->setOffset(current_offset);
 
     // DEBUG FOCUS
-    if (focusable()) {
-        display->writeRect(0, 0, area.box.width - 1, area.box.height - 1, is_focused() ? C565_BLUE : C565_RED);
-    }
+    // if (focusable()) {
+    //     display->writeRect(0, 0, area.box.width - 1, area.box.height - 1, is_focused() ? C565_BLUE : C565_RED);
+    // }
 
     return true;
 }
@@ -154,7 +154,7 @@ void View::add_child(Widget *const widget) {
         widget->set_parent(this);
 
         if (widget->is_focused() || widget->focused_widget()) { // Tell parent there's a new focused widget so it blurs the current focused widget, if any
-            widget_focused(widget);
+            on_child_focus_changed(widget, false);
         }
     }
 }
@@ -165,9 +165,9 @@ void View::on_child_update(Widget *w) {
         return a->get_z_index() < b->get_z_index(); // Ascending order
     });
 
-    // if (STR_IN(w->get_name(), "msg")) {
-    //     LOG("on_child_update(%s)\n", w->get_name());
-    // }
+    if (STR_IN(w->get_name(), "aprs")) {
+        LOG("on_child_update(%s)\n", w->get_name());
+    }
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];
 
@@ -190,9 +190,9 @@ void View::on_child_update(Widget *w) {
             }
         }
 #if DEBUG_MSGS
-        // if (STR_IN(widget->get_name(), "info", "smet", "radi", "snr")) {
-        //     LOG("Cleared %s visible parts: %d\n", widget->get_name(), widget->visible_rects.size());
-        // }
+        if (STR_IN(widget->get_name(), "aprs")) {
+            LOG("Cleared %s visible parts: %d\n", widget->get_name(), widget->visible_rects.size());
+        }
 #endif
         for (uint16_t j = i + 1; j < children_.size(); j++) {
             Widget *sibling = children_[j];
@@ -200,16 +200,16 @@ void View::on_child_update(Widget *w) {
                 const Rect r = widget->clip(sibling->screen_rect());
                 if (!r.is_empty()) {
 #if DEBUG_MSGS
-                    // if (STR_IN(widget->get_name(), "info", "smet", "radi", "snr")) {
-                    //     if (r.contains(widget->screen_rect())) {
-                    //         LOG("Widget %s hidden by %s. %d visible parts\n", widget->get_name(), sibling->get_name(), widget->visible_rects.size());
-                    //     } else {
+                    if (STR_IN(widget->get_name(), "aprs")) {
+                        if (r.contains(widget->screen_rect())) {
+                            LOG("Widget %s hidden by %s. %d visible parts\n", widget->get_name(), sibling->get_name(), widget->visible_rects.size());
+                        } else {
 
-                    //         LOG("Widget %s (%d) overlapped by %s (%d).", widget->get_name(), widget->get_z_index(), sibling->get_name(),
-                    //             sibling->get_z_index());
-                    //         LOG_RAW(" %d visible parts\n", widget->visible_rects.size());
-                    //     }
-                    // }
+                            LOG("Widget %s (%d) overlapped by %s (%d).", widget->get_name(), widget->get_z_index(), sibling->get_name(),
+                                sibling->get_z_index());
+                            LOG_RAW(" %d visible parts\n", widget->visible_rects.size());
+                        }
+                    }
 #endif
                 }
             }
@@ -235,14 +235,20 @@ void View::add_children(const std::initializer_list<Widget *> children) {
 
 bool View::remove_child(Widget *const widget) {
     if (widget) {
-        auto it = std::remove(children_.begin(), children_.end(), widget);
-        if (it != children_.end()) {
-            children_.erase(it, children_.end());
-            widget->set_parent(nullptr);
 
-            return true;
+        auto it = std::remove(children_.begin(), children_.end(), widget);
+
+        if (it != children_.end()) {
+
+            children_.erase(it, children_.end());
+            refocus();
         }
+
+        widget->set_parent(nullptr);
+
+        return true;
     }
+
     return false;
 }
 
@@ -278,6 +284,7 @@ bool View::on_input(const st_inputEvent event) {
 }
 
 void View::on_hide() {
+
     if (on_hide_fn) {
         on_hide_fn();
     }

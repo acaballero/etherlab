@@ -46,6 +46,8 @@ class MainView : public View {
 
     Widget *Menu();
 
+    Widget *Status();
+
     OptionButtonsView *OptionButtons();
 
     bool on_input(const st_inputEvent event) override;
@@ -72,7 +74,7 @@ class MainView : public View {
     void before_paint() override;
 
     void on_child_update(Widget *) override;
-    void widget_focused(Widget *w) override;
+    void on_child_focus_changed(Widget *w, bool was_focused) override;
 };
 
 #endif // TRX_FRONTEND_MAIN_VIEW_H

@@ -11,6 +11,7 @@ NumberField::NumberField(Point parent_pos, int l, range_t range, int32_t step, c
     : Widget{{{parent_pos}, {}}, &lcd}, range{range}, step{step}, length{l}, can_loop{can_loop} {
     strncpy(units, u, sizeof(units));
     set_focusable(true);
+    set_active(false);
     calc_size();
 }
 
@@ -66,7 +67,7 @@ bool NumberField::paint_callback() {
     display->clear();
     int y = (parent_rect().height() - font->height) / 2;
     display->gotoXY(0, y);
-    display->setColor(is_focused() ? C565_TEXT_FG_FOCUS : get_fg());
+    display->setColor(active() ? get_fg() : is_focused() ? C565_TEXT_FG_FOCUS : C565_TEXT_FG);
     display->print(text);
     display->setColor(C565_UNITS_FG);
     display->print(units);
@@ -79,7 +80,6 @@ bool NumberField::paint_callback() {
 
 void NumberField::before_paint() {
     if (dirty()) {
-
         display->setBgColor(bg_color);
     }
 }
@@ -97,30 +97,43 @@ void NumberField::add(int32_t v) {
     }
 }
 
+void NumberField::on_blur() {
+    set_active(false);
+}
+
 bool NumberField::on_input(const st_inputEvent event) {
 
     bool consumed = false;
 
     switch (event.type) {
         case INPUT_EVENT_TYPE_ENCODER:
+            if (!active()) { // Prevent getting stuck in this widget when changing focus
+                break;
+            }
             add(event.value * step);
             consumed = true;
             break;
         case INPUT_EVENT_TYPE_TOUCH_START:
 
             set_focus(true);
+            set_active(true);
             consumed = true;
             break;
 
         case INPUT_EVENT_TYPE_BUTTON_PRESS:
             switch (event.value) {
                 case KEY_BACK:
-                    if (is_focused()) {
-                        set_focus(false);
-                        consumed = true;
-                    }
+                case BTN_ENCODER:
+                case FPANEL_PAD_BUTTON_6:
+
+                    set_active(!active());
+                    set_dirty();
+                    consumed = true;
+
                     break;
+
                 default:
+                    consumed = false;
                     break;
             }
 

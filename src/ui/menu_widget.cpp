@@ -63,11 +63,15 @@ bool MenuWidget::on_input(const st_inputEvent e) {
                 case FPANEL_PAD_BUTTON_4: // SQuelch
                     Menu::open(Menu::squelchEditMenu);
                     break;
-                // case KEY_BACK:
+                    // case KEY_BACK:
                 case FPANEL_PAD_BUTTON_5:
-                    nav.doNav(escCmd);
+                    if (Menu::menuStatus == ACTIVE) {
+                        nav.doNav(escCmd);
+                    } else {
+                        consumed = false;
+                    }
                     break;
-                case BTN_ENCODER:
+                case FPANEL_PAD_BUTTON_6:
 
                     long_press = e.ms > LONG_PRESS_MS;
                     very_long_press = e.ms > VERY_LONG_PRESS_MS;

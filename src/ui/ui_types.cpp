@@ -72,7 +72,7 @@ std::vector<Rect> Rect::operator-(const Rect &r) {
     }
 
     //  Full overlap
-    if (this->left() <= r.left() && this->top() <= r.top() && this->right() >= r.right() && this->bottom() >= r.bottom()) {
+    if (this->left() >= r.left() && this->top() >= r.top() && this->right() <= r.right() && this->bottom() <= r.bottom()) {
         return {};
     }
 

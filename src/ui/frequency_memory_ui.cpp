@@ -19,6 +19,7 @@
 #include "types.h"
 #include "ui/menu_actions.h"
 #include "ui/menu_options.h"
+#include "ui/menu_widget.h"
 #include "ui/ui_types.h"
 #include "result.h"
 #include <cstddef>
@@ -709,10 +710,11 @@ result freqMemorySelectedEvent(eventMask e, navNode &nav) {
 
     auto actions = get_actions();
     if (e == Menu::enterEvent) {
-        actions_signal.emit(&actions);
+        ((MenuWidget *)view_manager::mainView.Menu())->set_quick_actions(&actions);
+
     } else if (e == Menu::exitEvent) {
         // Remove context actions
-        actions_signal.emit({REMOVE, &actions});
+        ((MenuWidget *)view_manager::mainView.Menu())->set_default_quick_actions();
     }
 
     return proceed;

@@ -33,7 +33,6 @@
 #include "radio.h"
 #include "agc.h"
 #include "os/periodic_task.h"
-#include "ui/main_view.h"
 #include "ui/view_manager.h"
 #include "utils.hpp"
 #include "ui/frequency_memory_ui.h"

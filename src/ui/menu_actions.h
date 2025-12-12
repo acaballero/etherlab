@@ -8,12 +8,11 @@
 #define MENU_ACTIONS_H
 
 #include "menu_options.h"
-#include "menu.h"
 
 namespace Menu {
 
 enum NAVIGATION_ACTIONS { UP = 0, DOWN };
-const menu_actions_st &get_navigation_actions();
+menu_actions_st &get_navigation_actions();
 
 } // namespace Menu
 

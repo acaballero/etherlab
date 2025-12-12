@@ -146,7 +146,7 @@ bool Button::paint_callback() {
 
 void Button::on_blur() {
 
-    LOG("Button %s on_blur\n", this->text);
+    // LOG("Button %s on_blur\n", this->text);
     // Paint immediatelly
     paint();
     set_clean();
@@ -154,7 +154,7 @@ void Button::on_blur() {
 
 void Button::on_focus() {
 
-    LOG("Button %s on_focus\n", this->text);
+    //   LOG("Button %s on_focus\n", this->text);
 
     if (on_highlight) {
         on_highlight(*this);
@@ -169,7 +169,7 @@ bool Button::on_input(const st_inputEvent event) {
     // printf_("Button %s on_input %s\n", this->text, event.type == INPUT_EVENT_TYPE_BUTTON_PRESS ? "press" : "release");
 
     if (event.type == INPUT_EVENT_TYPE_BUTTON_PRESS || event.type == INPUT_EVENT_TYPE_BUTTON_DBL_PRESS) {
-        if (event.value && event.value == BTN_ENCODER) {
+        if (event.value && (event.value == BTN_ENCODER || event.value == FPANEL_PAD_BUTTON_6)) {
             if (action) {
                 action(*this, event);
                 return true;

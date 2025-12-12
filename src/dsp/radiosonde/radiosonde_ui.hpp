@@ -9,6 +9,7 @@
 #include "ui/map_view.h"
 #include "radiosonde_packet.hpp"
 #include "radiosonde_task.hpp"
+#include "ui/menu_options.h"
 #include <cstddef>
 #include <string>
 
@@ -64,14 +65,14 @@ class RadiosondeView : public View {
                                              [this]() {
                                                  enable_crc = !enable_crc;
                                                  menu_actions[0].enabled = enable_crc;
-                                                 Menu::actions_signal.emit(&actions);
+                                                 Menu::navigation_signal.emit(this);
                                              }},
                                             {"Log",
 
                                              [this]() {
                                                  enable_log = !enable_log;
                                                  menu_actions[1].enabled = enable_log;
-                                                 Menu::actions_signal.emit(&actions);
+                                                 Menu::navigation_signal.emit(this);
                                              }},
                                             {"Map",
                                              [this]() {
@@ -98,6 +99,9 @@ class RadiosondeView : public View {
 
     SignalToken radiosonde_signal_token;
 
+    Menu::menu_actions_st *get_quick_actions() override {
+        return &actions;
+    }
     // void on_gps(const GPSPosDataMessage *msg);
 };
 

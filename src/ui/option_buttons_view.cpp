@@ -112,7 +112,7 @@ void OptionButtonsView::add_item(const char *text, std::function<void(Button &, 
         Button *button = &buttons[index];
 
         char name[8];
-        sprintf(name, "opt-%d", index);
+        sprintf(name, "op%d", index);
         button->set_name(name);
         button->set_visible(false);
         add_child(button);
@@ -227,6 +227,7 @@ void OptionButtonsView::set_show_arrows(bool b) {
 
 void OptionButtonsView::init() {
 
+    set_focusable(true);
     label_widget.set_font((FontDef *)&Font_7x10);
     label_widget.set_aling(ALIGN_CENTER);
 

@@ -210,8 +210,9 @@ char *dtoa(char *s, double n);
 
 // DWT Control register bit definitions
 #define DWT_CTRL_CYCCNTENA_Pos 0U
+#if !defined(DWT_CTRL_CYCCNTENA_Msk)
 #define DWT_CTRL_CYCCNTENA_Msk (1UL << DWT_CTRL_CYCCNTENA_Pos)
-
+#endif
 // CoreDebug DEMCR register bit definitions
 #define CoreDebug_DEMCR_TRCENA_Pos 24U
 #define CoreDebug_DEMCR_TRCENA_Msk (1UL << CoreDebug_DEMCR_TRCENA_Pos)

@@ -571,8 +571,6 @@ void MapView::setup() {
         map.move(lon, lat);
         map.set_dirty();
     };
-
-    Menu::actions_signal.emit(&actions);
 }
 
 // Display mode
@@ -613,7 +611,7 @@ MapView::MapView(int32_t altitude, Locator::alt_unit altitude_unit, Locator::spd
 }
 
 void MapView::exit() {
-    Menu::actions_signal.emit(nullptr);
+
     set_visible(false);
 
     if (on_close) {

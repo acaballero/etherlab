@@ -31,16 +31,18 @@
 
 #include "dsp/protocols/aprs.hpp"
 #include "ui/map_view.h"
+#include "ui/menu_options.h"
 #include "ui/ui_types.h"
 #include "ui/view_manager.h"
 #include "ui/widget.h"
 
 namespace dsp_ui {
-using Menu::actions_signal;
+using Menu::navigation_signal;
 
 void APRSView::init() {
 
     logger = std::make_unique<LogFile>();
+    set_name("aprs");
     if (logger) {
         logger->append("aprs.log");
     }
@@ -69,6 +71,8 @@ void APRSView::init() {
         }
     };
 
+    table_view.set_z_index(100);
+
     add_children({&table_view, &console, &title_widget, &button_collapse});
 
     if (config.debug) {
@@ -90,8 +94,6 @@ void APRSView::init() {
         on_packet((APRSPacket *)data);
     });
 
-    Menu::actions_signal.emit(Menu::menu_actions_event{Menu::ADD, &actions});
-
     // Get some current parameters so they can be restored on exit
     previous_mode = config.mode;
     previous_waterfall_speed = config.fft.waterfall_pixels_per_second;
@@ -107,13 +109,15 @@ void APRSView::init() {
 void APRSView::stop() {
     menu_actions[0].name = "Resume";
     paused = true;
-    actions_signal.emit(&actions);
+    actions.dirty = true;
+    navigation_signal.emit(this);
 }
 
 void APRSView::resume() {
     menu_actions[0].name = "Pause";
     paused = false;
-    actions_signal.emit(&actions);
+    actions.dirty = true;
+    navigation_signal.emit(this);
 }
 
 void APRSView::toggle_beacon() {
@@ -132,6 +136,8 @@ void APRSView::toggle_beacon() {
                     menu_actions[2].bg_color = C565_BG_ENABLED;
                     menu_actions[2].fg_color = C565_GREEN;
                     beacon_task_id = os::task_manager.add(p);
+                    actions.dirty = true;
+                    navigation_signal.emit(this);
                 }
             });
 
@@ -139,6 +145,8 @@ void APRSView::toggle_beacon() {
     } else {
         menu_actions[2].fg_color = C565_BUTTON_TEXT_FG;
         menu_actions[2].bg_color = C565_BG_DISABLED;
+        actions.dirty = true;
+        navigation_signal.emit(this);
     }
 }
 
@@ -214,9 +222,6 @@ void APRSView::exit() {
                 // Re-enable analog mute
                 main_board::enable_analog_mute(true);
             });
-
-            // Clear specific bottom quick buttons
-            actions_signal.emit(nullptr);
 
             set_visible(false);
         }

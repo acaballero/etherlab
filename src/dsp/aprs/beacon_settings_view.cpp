@@ -50,12 +50,21 @@ void BeaconSettingsView::init() {
         set_visible(false);
     };
 
+    // DEBUG focus
+    periodField.set_name("perf");
+    periodLabel.set_name("perl");
+    gainField.set_name("ganf");
+    gainLabel.set_name("ganl");
+    button_cancel.set_name("btnc");
+    button_ok.set_name("btno");
+
     Widget *texts[] = {&periodLabel, &periodField, &gainLabel, &gainField};
     Label *labels[] = {&periodLabel, &gainLabel};
     NumberField *fields[] = {&periodField, &gainField};
 
     for (auto w : texts) {
         w->set_font((FontDef *)&Font_11x18);
+
         add_child(w);
     }
 
@@ -85,20 +94,15 @@ bool BeaconSettingsView::on_input(const st_inputEvent e) {
         return true;
     }
 
-    size_t i = 0;
+    // size_t i = 0;
     switch (e.type) {
-
-        case INPUT_EVENT_TYPE_ENCODER:
-
-            consumed = true;
-            break;
 
         case INPUT_EVENT_TYPE_BUTTON_PRESS:
             switch (e.value) {
-                case BTN_ENCODER:
 
+                case KEY_BACK:
+                    button_cancel.action(button_cancel, e);
                     consumed = true;
-
                     break;
                 default:
                     consumed = false;

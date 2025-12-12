@@ -336,14 +336,10 @@ NAVROOT(nav, mainMenu, MAX_DEPTH, in, outList)
 result idle(menuOut &o, idleEvent e) {
     // o.clear();
 
-    auto actions = get_navigation_actions();
     switch (e) {
         case idleStart:
             Menu::menuStatus = IDLE;
             view_manager::mainView.set_dirty();
-
-            // Remove custom actions
-            actions_signal.emit({REMOVE, &actions});
 
             break;
         case idling:
@@ -354,9 +350,6 @@ result idle(menuOut &o, idleEvent e) {
 
             Menu::menuStatus = ACTIVE;
 
-            // Add custom actions (they'll be captured by the bottom button bar)
-
-            actions_signal.emit(&actions);
             break;
     }
 

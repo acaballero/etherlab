@@ -96,7 +96,7 @@ Widget *processTouch(Widget *w, st_inputEvent *e) {
         }
 
         // Rect r = w->screen_rect();
-        // printf_("Touched: %d,%d %d x %d %d %s\n", r.left(), r.top(), r.right(), r.bottom(), e->type, w->get_name());
+        // LOG("Touched: %d,%d %d x %d %d %s\n", r.left(), r.top(), r.right(), r.bottom(), e->type, w->get_name());
         if (w->on_input(*e)) {
             // This widget responded. Return it up the call stack.
             return w;
@@ -160,6 +160,7 @@ void processEvent(st_inputEvent *e) {
 
                     case FPANEL_PAD_BUTTON_1: // PTT
                         main_board::toggle_mode();
+                        pending_release = true;
                         break;
 
                     case BTN_ENCODER:
@@ -176,8 +177,6 @@ void processEvent(st_inputEvent *e) {
                         break;
                 }
 
-                pending_release = true;
-
                 break;
 
             case INPUT_EVENT_TYPE_BUTTON_RELEASE:
@@ -187,24 +186,8 @@ void processEvent(st_inputEvent *e) {
                         if (lastEvent.type != INPUT_EVENT_TYPE_BUTTON_DBL_PRESS && pending_release) {
                             main_board::toggle_mode();
                         }
+                        pending_release = false;
                         break;
-                }
-
-                pending_release = false;
-
-                break;
-
-            case INPUT_EVENT_TYPE_ENCODER:
-
-                if (Menu::menuStatus != Menu::ACTIVE) {
-                    if (RotBtnInputPin.getState() == GPIO_PIN_RESET) { // with push button low, change the step size instead of frequency
-                        RotBtnInputPin.reset();
-
-                        radio::change_step(-e->value);
-                    } else {
-
-                        radio::change_frequency(e->value);
-                    }
                 }
 
                 break;

@@ -91,6 +91,8 @@ class Widget : public Painter {
 
     virtual bool on_input(const st_inputEvent event);
 
+    std::function<void()> on_focus_fn = nullptr;
+
     virtual const std::vector<Widget *> &children() const;
 
     // State management methods.
@@ -106,7 +108,7 @@ class Widget : public Painter {
 
     bool dirty() const;
 
-    bool set_focus(bool value);
+    virtual bool set_focus(bool value);
 
     bool is_focused() const;
 
@@ -142,7 +144,7 @@ class Widget : public Painter {
         return font;
     };
 
-    bool focusable() {
+    bool focusable() const {
         return flags.focusable;
     }
 
@@ -150,7 +152,7 @@ class Widget : public Painter {
         flags.focusable = v;
     }
 
-    uint32_t id{0};
+    int id{0};
 
     void set_aling(Align);
 
@@ -161,6 +163,8 @@ class Widget : public Painter {
     Rect clip(const Rect &rect);
     // Vector of visible rectangles. There are no overlaps if empty
     std::vector<Rect> visible_rects;
+
+    Widget *get_focusable_widget(Widget *root);
 
   protected:
     char name[5]{"-"};
@@ -198,15 +202,17 @@ class Widget : public Painter {
         bool enabled : 1;
     };
 
-    flags_t flags{.dirty = true, .hidden = false, .visible = true, .focus = false, .focusable = false, .active = false, .enabled = true};
+    flags_t flags{.dirty = true, .hidden = false, .visible = true, .focus = false, .focusable = false, .active = true, .enabled = true};
 
     static const std::vector<Widget *> no_children;
 
-    virtual void widget_focused(Widget *widget);
+    virtual void on_child_focus_changed(Widget *widget, bool was_focused);
+
+    virtual void on_child_update(Widget *){};
 
     virtual void set_area();
 
-    virtual void on_child_update(Widget *){};
+    void refocus();
 
     void refresh_fps();
 
@@ -215,10 +221,11 @@ class Widget : public Painter {
     Box getOffset(Rect &r, Box &offset, bool apply_pad);
 
     bool paint_callback() override {
-        // DEBUG FOCUS
-        if (focusable()) {
-            display->writeRect(0, 0, area.box.width - 1, area.box.height - 1, is_focused() ? C565_YELLOW : C565_CYAN);
-        }
+        // // DEBUG FOCUS
+        // if (focusable()) {
+        //     display->writeRect(0, 0, area.box.width - 1, area.box.height - 1, is_focused() ? C565_YELLOW : C565_CYAN);
+        // }
+
         return true;
     }
 

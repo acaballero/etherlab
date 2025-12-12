@@ -95,10 +95,14 @@ void front_panel_interrupt_callback() {
 
     if (pin < 16) {
         if (last_pressed_button_id >= 0 && pin == last_pressed_button_id) {
-            input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_RELEASE, pin});
+            if (pin != BTN_ENCODER) { // don't emit press events for the encoder button
+                input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_RELEASE, pin});
+            }
             last_pressed_button_id = -1;
         } else {
+
             input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, pin, 0, HAL_GetTick()});
+
             last_pressed_button_id = pin;
         }
 

@@ -40,6 +40,7 @@ class APRSTableWidget : public Widget {
     APRSTableWidget(Rect parent_rect, int max_rows) : Widget(parent_rect, &lcd) {
         set_name("atbl");
         set_focusable(true);
+        set_active(false);
         set_max_rows(max_rows);
         init();
     }
@@ -53,6 +54,7 @@ class APRSTableWidget : public Widget {
     };
     void on_blur() override {
         LOG("APRS table blurred\n");
+        set_active(false);
     };
     void set_max_rows(int n) {
         assert(n <= MAX_ROWS);

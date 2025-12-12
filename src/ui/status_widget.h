@@ -24,6 +24,8 @@ class StatusWidget : public View {
 
     bool on_input(const st_inputEvent e) override;
 
+    void set_actions(Menu::menu_actions_st *);
+
   protected:
     status::st_status _status;
 
@@ -42,8 +44,7 @@ class StatusWidget : public View {
     static Menu::menu_action_st default_actions_arr[n_buttons];
 
     static Menu::menu_actions_st default_actions;
-
-    RingBuffer<Menu::menu_actions_st *, 6> actions_stack;
+    const Menu::menu_actions_st *current_actions;
 
     char buf[20];
 
@@ -65,10 +66,7 @@ class StatusWidget : public View {
 
     void before_paint() override;
 
-    void set_actions(const Menu::menu_actions_st *);
     void set_action(uint8_t index, Menu::menu_action_st &action);
-    bool push(Menu::menu_actions_st *);
-    void pop();
 };
 
 #endif // TRX_FRONTEND_STATUS_WIDGET_H

@@ -16,12 +16,16 @@
 class FrequencyWidgetInner : public Widget {
   public:
     FrequencyWidgetInner(Rect parent_rect, Display *display) : Widget(parent_rect, display) {
+        set_name("f_in");
         set_focusable(true);
+        set_active(false);
     }
     bool paint_callback() override;
 
   protected:
+    bool changing_step = false;
     void before_paint() override;
+    bool on_input(st_inputEvent e) override;
 };
 
 class FrequencyWidget : public View {
@@ -29,6 +33,8 @@ class FrequencyWidget : public View {
     FrequencyWidget(Rect parent_rect) : View(parent_rect) {
         init();
     }
+
+    void on_focus() override;
 
   protected:
     static constexpr uint8_t MARGIN = 3;
@@ -45,7 +51,7 @@ class FrequencyWidget : public View {
     Button btnRpt{{0, MARGIN, LBLRPT_WIDTH, area.box.height - MARGIN * 2}, display, ""};
     Button btnScan{{LBLRPT_WIDTH + MARGIN, MARGIN, LBLSCAN_WIDTH, area.box.height - MARGIN * 2}, display, ""};
     Button btnVFO{{LBLRPT_WIDTH + LBLSCAN_WIDTH + 2 * MARGIN, MARGIN, LBLVFO_WIDTH, area.box.height - MARGIN * 2}, display, ""};
-    FrequencyWidgetInner freqWidget{{freq_xpos, MARGIN, area.box.width - freq_xpos, area.box.height - 1}, &lcd};
+    FrequencyWidgetInner freqWidget{{freq_xpos, MARGIN, area.box.width - freq_xpos, area.box.height - 3}, &lcd};
 };
 
 #endif // TRX_FRONTEND_FREQUENCY_WIDGET_H

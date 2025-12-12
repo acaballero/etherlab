@@ -98,6 +98,10 @@ class APRSView : public View {
 
     Menu::menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(Menu::menu_action_st)};
 
+    Menu::menu_actions_st *get_quick_actions() override {
+        return &actions;
+    }
+
     SignalToken aprs_signal_token;
     APRSTask aprs_task{dspSuccess, dspError};
     AFSKTXTask aprs_tx_task{dspSuccess, dspError};

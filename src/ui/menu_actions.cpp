@@ -31,7 +31,7 @@ menu_action_st navigation_actions_arr[] = {{"<-",
                                                 input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, KEY_BACK, 0});
                                             }}};
 
-const menu_actions_st &get_navigation_actions() {
+menu_actions_st &get_navigation_actions() { // wrap the static to be sure it has been initialized before using it
     static menu_actions_st actions = {navigation_actions_arr, 4};
     return actions;
 }

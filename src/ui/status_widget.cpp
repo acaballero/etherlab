@@ -9,10 +9,13 @@
 #include "input/inputEvent.h"
 #include "printf.h"
 #include "radio.h"
+#include "status.h"
 #include "ui/menu.h"
+#include "ui/menu_options.h"
 #include "ui/widget.h"
 #include <cstddef>
 #include <functional>
+#include <string>
 
 Menu::menu_action_st StatusWidget::default_actions_arr[n_buttons] = {{"",
                                                                       []() {
@@ -51,7 +54,9 @@ void StatusWidget::init() {
 
     StatusWidget::default_actions = {default_actions_arr, n_buttons};
 
+    int i = 0;
     for (Button &b : buttons) {
+        b.set_name(("ob" + std::to_string(i++)).c_str());
         b.set_fg(C565_BLACK);
         add_child(&b);
     }
@@ -60,65 +65,34 @@ void StatusWidget::init() {
         ((Button *)btn)->set_font((FontDef *)&Font_Tiny8x8);
     }
 
-    push(&default_actions);
-
-    // Subscribe to published actions
-    Menu::actions_signal.signal.add(this, [this](void *, const void *params) {
-        auto actions_event = (Menu::menu_actions_event *)params;
-        switch (actions_event->type) {
-            case Menu::ADD:
-                if (actions_event->actions != actions_stack.back()) {
-                    push(actions_event->actions);
-                }
-                break;
-            case Menu::REMOVE:
-                if (actions_event->actions == actions_stack.back()) {
-                    pop();
-                }
-                break;
-            case Menu::UPDATE:
-                if (actions_event->actions == actions_stack.back()) {
-                    set_actions(actions_stack.back()); // update current actions
-                }
-                break;
-            default:
-                break;
-        }
-    });
+    set_actions(&default_actions);
 }
 
-void StatusWidget::pop() {
-    if (actions_stack.size() > 1) {
+void StatusWidget::set_actions(Menu::menu_actions_st *actions) {
 
-        actions_stack.pop_stack();
-        LOG("Status widget: actions stack popped. Size: %d\n", actions_stack.size());
-        set_actions(actions_stack.back());
+    if (!actions) {
+        actions = &default_actions;
     }
-}
 
-bool StatusWidget::push(Menu::menu_actions_st *actions) {
-    if (!actions_stack.isFull()) {
-        actions_stack.push(actions);
-        LOG("Status widget: actions stack pushed. Size: %d\n", actions_stack.size());
-        set_actions(actions);
-        return true;
-    }
-    return false;
-}
+    if (current_actions != actions || actions->dirty) {
 
-void StatusWidget::set_actions(const Menu::menu_actions_st *actions) {
-    for (size_t i = 0; i < n_buttons; i++) {
+        LOG("Setting status actions: size=%d\n", actions->size);
+        for (size_t i = 0; i < n_buttons; i++) {
+            if (i < actions->size) {
+                set_action(i, actions->actions[i]);
+                buttons[i].set_visible(true);
 
-        if (i < actions->size) {
-            set_action(i, actions->actions[i]);
-            buttons[i].set_visible(true);
+            } else {
+                buttons[i].set_visible(false);
+            }
 
-        } else {
-            buttons[i].set_visible(false);
+            set_dirty();
         }
 
-        set_dirty();
+        actions->dirty = false;
     }
+
+    current_actions = actions;
 }
 
 void StatusWidget::set_action(uint8_t index, Menu::menu_action_st &menu_action) {
@@ -228,7 +202,7 @@ void StatusWidget::before_paint() {
 
     };
 
-    if ((this->dirty() || !(status == _status)) && actions_stack.size() == 1) { // Update only if status has changed and the buttons are the defaults
+    if ((this->dirty() || !(status == _status)) && current_actions == &default_actions) { // Update only if status has changed and the buttons are the defaults
 
         _status = status;
         this->set_dirty();
@@ -302,29 +276,29 @@ bool StatusWidget::on_input(const st_inputEvent e) {
                     break;
                 case FPANEL_DISPLAY_BUTTON_2: //  FRONTEND
                     if (buttons[1].visible()) {
-                        buttons[1].action(buttons[0], e);
+                        buttons[1].action(buttons[1], e);
                     }
 
                     break;
                 case FPANEL_DISPLAY_BUTTON_3: // AGC
                     if (buttons[2].visible()) {
-                        buttons[2].action(buttons[0], e);
+                        buttons[2].action(buttons[2], e);
                     }
 
                     break;
                 case FPANEL_DISPLAY_BUTTON_5: // FILTER 1
                     if (buttons[4].visible()) {
-                        buttons[4].action(buttons[0], e);
+                        buttons[4].action(buttons[4], e);
                     }
                     break;
                 case FPANEL_DISPLAY_BUTTON_6: // FILTER 2
                     if (buttons[5].visible()) {
-                        buttons[5].action(buttons[0], e);
+                        buttons[5].action(buttons[5], e);
                     }
                     break;
                 case FPANEL_DISPLAY_BUTTON_4: // BAND
                     if (buttons[3].visible()) {
-                        buttons[3].action(buttons[0], e);
+                        buttons[3].action(buttons[3], e);
                     }
                     break;
                 default:

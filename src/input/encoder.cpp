@@ -85,9 +85,6 @@ void doPushButton() {
 
         uint32_t period = RotBtnInputPin.getLastPeriodMs();
 
-        // If period==0 it's probably because the button was reset and we should skip this  (for example when pressing and rotating the encoder)
-        if (period > 0) {
-            input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, BTN_ENCODER, period});
-        }
+        input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, BTN_ENCODER, period});
     }
 }

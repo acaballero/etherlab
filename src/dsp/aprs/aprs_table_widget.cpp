@@ -64,6 +64,8 @@ void APRSTableWidget::before_paint(){};
 
 bool APRSTableWidget::on_touch(const st_inputEvent e) {
 
+    set_active(true);
+
     size_t ix = ((e.point - screen_pos()).y() - title_height) / line_height;
     if (ix >= 0 && ix < sources.size()) {
         if (e.ms > LONG_PRESS_MS) {
@@ -95,6 +97,10 @@ bool APRSTableWidget::on_input(const st_inputEvent e) {
 
         case INPUT_EVENT_TYPE_ENCODER:
 
+            if (!active()) { // Prevent getting stuck when moving focus with keypad or encoder
+                break;
+            }
+
             for (i = 0; i < sources.size(); i++) {
                 if (selected_id == sources[i].id) {
                     break;
@@ -117,6 +123,9 @@ bool APRSTableWidget::on_input(const st_inputEvent e) {
         case INPUT_EVENT_TYPE_BUTTON_PRESS:
             switch (e.value) {
                 case BTN_ENCODER:
+                case FPANEL_PAD_BUTTON_6:
+
+                    set_active(true);
 
                     for (i = 0; i < sources.size(); i++) {
                         if (selected_id == sources[i].id) {

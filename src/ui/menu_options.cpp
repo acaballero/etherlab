@@ -55,6 +55,6 @@ menu_option_st<uint16_t> color_options[] = {
     {"   ", C565_VIOLET, C565_VIOLET, C565_VIOLET},
 };
 
-MenuSignal actions_signal;
+Signal navigation_signal;
 
 } // namespace Menu

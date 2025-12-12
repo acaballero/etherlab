@@ -36,13 +36,7 @@ struct menu_action_st {
 struct menu_actions_st {
     menu_action_st *actions;
     size_t size;
-};
-
-enum menu_actions_event_type { ADD, REMOVE, UPDATE, NONE };
-
-struct menu_actions_event {
-    menu_actions_event_type type;
-    menu_actions_st *actions;
+    bool dirty{true};
 };
 
 template <typename T> using menu_options_t = menu_option_st<T> *;
@@ -52,23 +46,7 @@ extern menu_option_st<MODULATION_MODE> modulation_options[6];
 extern menu_option_st<radio::BAND> band_options[radio::BAND_NONE + 1];
 extern menu_option_st<radio::IF_FILTER> if_filter_options[9];
 
-class MenuSignal {
-  public:
-    Signal signal;
-
-    void emit(const menu_actions_event &evt) {
-        signal.emit(&evt);
-    }
-    void emit(menu_actions_st *actions) {
-        if (actions) {
-            emit({Menu::ADD, actions});
-        } else {
-            emit({Menu::REMOVE, actions});
-        }
-    }
-};
-
-extern MenuSignal actions_signal;
+extern Signal navigation_signal;
 
 } // namespace Menu
 

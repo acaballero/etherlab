@@ -21,11 +21,17 @@ class Button : public Widget {
     std::function<void(Button &, st_inputEvent)> action{};
     std::function<void(Button &)> on_highlight{};
 
-    Button() : Widget(){};
+    Button() : Widget() {
+        set_focusable(true);
+        set_active(false);
+    };
 
     Button(Rect parent_rect, Display *display, const char *t, uint16_t fg_color = C565_BLACK, uint16_t bg_color = C565_GREY_LIGHT,
-           ButtonStyle style = BUTTON_STYLE_FLAT, Align aling = ALIGN_LEFT, uint32_t id = 0)
+           ButtonStyle style = BUTTON_STYLE_FLAT, Align aling = ALIGN_LEFT, uint32_t id = 0, char *name = nullptr)
         : Widget(parent_rect, display), fg_color{fg_color}, bg_color{bg_color}, style(style) {
+        if (name) {
+            set_name(name);
+        }
         set_aling(aling);
 
         variable_width = parent_rect.width() == 0;
@@ -33,6 +39,7 @@ class Button : public Widget {
         this->id = id;
 
         set_focusable(true);
+        set_active(false);
     };
 
     void set_text(char const *value);

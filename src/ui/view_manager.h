@@ -29,7 +29,12 @@ void open_app(std::unique_ptr<View> view);
 void open(std::unique_ptr<View> v);
 
 bool on_input(st_inputEvent &e);
-bool change_focus(Widget *const top_widget, ui::DIRECTION direction);
+
+/**
+ * Changes the focus from the currently focused widget descendant from top_widget to the nearest widget in the specified direction.
+ * The eligible focusable widget can be restricted to be under a maximum of max_levels parent (if 0, all descendants of top_widget are considered)
+ */
+bool change_focus(Widget *const top_widget, ui::DIRECTION direction, uint32_t max_levels = 1);
 
 } // namespace view_manager
 

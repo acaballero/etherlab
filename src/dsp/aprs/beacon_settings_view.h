@@ -12,7 +12,6 @@
 #include "ips_font.h"
 #include "menuBase.h"
 #include "ui/button_widget.h"
-#include "ui/main_view.h"
 #include "ui/number_field_widget.h"
 #include "ui/ui_types.h"
 #include "ui/view.h"

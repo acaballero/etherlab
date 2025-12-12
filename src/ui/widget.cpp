@@ -1,6 +1,7 @@
 
 
 #include <algorithm>
+#include <cstddef>
 #include <cstring>
 
 #include "Display_afb.h"
@@ -195,9 +196,12 @@ bool Widget::on_input(const st_inputEvent event) {
     if (!event.is_touch()) {
 
         auto w = focused_widget();
-        if (w) {
-            LOG("Child %s focused\n", w->get_name());
+
+        // Bubble from the focused descendant until it is consumed
+        while (w && !consumed && w != this) {
+            // LOG("Child %s focused\n", w->get_name());
             consumed = w->on_input(event);
+            w = w->parent();
         }
     }
 
@@ -225,25 +229,73 @@ bool Widget::is_focused() const {
     return this->flags.focus;
 }
 
-void Widget::widget_focused(Widget *widget) {
+Widget *Widget::get_focusable_widget(Widget *root) {
+    if (root == nullptr) {
+        return nullptr;
+    }
+
+    if (!root->can_be_seen()) {
+        return nullptr;
+    }
+
+    if (root->focusable()) {
+        return root;
+    }
+
+    for (auto it = root->children().rbegin(); it != root->children().rend(); ++it) { // traverse in reverse z-index order (decreasing)
+        Widget *result = get_focusable_widget(*it);
+
+        if (result != nullptr) {
+            return result;
+        }
+    }
+
+    return nullptr;
+}
+
+void Widget::refocus() {
+    // for (auto *w : children()) {
+    //   LOG("%s,%s ID:%d\n", get_name(),w->get_name(), w->get_z_index());
+    // }
+
+    if (!focused_widget()) {
+        // Lost focused widget, focus the first focusable widget
+
+        //  LOG("refocus: %s lost focused widget\n", get_name());
+
+        Widget *focusable_w = get_focusable_widget(this);
+
+        if (focusable_w) {
+            //  LOG("Found focusable widget %s\n", focusable_w->get_name());
+            focusable_w->set_focus(true);
+        }
+    }
+}
+
+void Widget::on_child_focus_changed(Widget *widget, bool was_focused) {
 
     if (widget) {
         bool is_child = std::find(children().begin(), children().end(), widget) != children().end();
 
         if (is_child) {
             // Remove focus from other children
-            for (const auto child : children()) {
-                if (child != widget) {
-                    child->set_focus(false);
+            if (widget->is_focused() || widget->focused_widget()) {
+                // if (widget->is_focused()) {
+                //     LOG("child %s of %s has focused\n", widget->get_name(), get_name());
+                // }
+                // if (widget->focused_widget()) {
+                //     LOG("child %s of %s contains focused widget %s\n", widget->get_name(), get_name(), widget->focused_widget()->get_name());
+                // }
+                for (const auto child : children()) {
+                    if (child != widget) {
+                        child->set_focus(false);
+                    }
                 }
             }
 
-            // Sets self focus
-            // set_focus(true);
-
             // Tells parent
             if (parent_) {
-                parent_->widget_focused(this);
+                parent_->on_child_focus_changed(widget, was_focused);
             }
         }
     }
@@ -251,42 +303,59 @@ void Widget::widget_focused(Widget *widget) {
 
 bool Widget::set_focus(bool v) {
 
+    // LOG("'%s' focus: %d => %d\n", get_name(), flags.focus, v);
+
     if (!v) {
-        // Remove focus from its children
+        // int i = 0;
+        //  Remove focus from its children
         for (const auto child : children()) {
+            // LOG_RAW("[%d]", i++);
             child->set_focus(false);
-        }
-        if (get_quick_actions()) {
-            Menu::actions_signal.emit({Menu::REMOVE, get_quick_actions()});
         }
     }
 
     if (!flags.focusable) {
+
+        if (v && !focused_widget()) {
+            // The widget is not itself focusable but if it has no focused widget, will try to focus on the default
+            Widget *focusable_child = get_focusable_widget(this);
+            if (focusable_child) {
+                return focusable_child->set_focus(v);
+            }
+        }
+
         return false;
     }
 
     if (v && !visible()) {
+
         return false;
     }
 
     if (v != this->flags.focus && this->flags.enabled) {
 
-        //        LOG("%s focus = %b\n", name, v);
+        //  LOG("%s focus = %b\n", name, v);
+
+        bool was_focused = flags.focus;
 
         this->flags.focus = v;
 
         this->set_dirty();
 
         if (parent_) {
-            if (v) {
-                parent_->widget_focused(this);
-            }
+            // if (v) {
+            parent_->on_child_focus_changed(this, was_focused);
+            // }
         }
 
         if (!v) {
             this->on_blur();
         } else {
-            this->on_focus();
+            on_focus();
+        }
+
+        if (on_focus_fn) {
+            on_focus_fn();
         }
     }
 
@@ -296,12 +365,22 @@ bool Widget::set_focus(bool v) {
 Widget *Widget::focused_widget() const {
     for (const auto child : children()) {
 
-        Widget *w = child->focused_widget();
-        if (w) {
-            return w;
-        } else if (child->is_focused()) {
+        if (child->is_focused()) {
             return child;
+        } else {
+            Widget *w = child->focused_widget();
+            if (w) {
+                return w;
+            }
         }
+
+        // Deepest first
+        // Widget *w = child->focused_widget();
+        // if (w) {
+        //     return w;
+        // } else if (child->is_focused()) {
+        //     return child;
+        // }
     }
     return nullptr;
 }
@@ -336,7 +415,15 @@ void Widget::set_visible(bool v) {
         if (v) {
             on_show();
         } else {
+
+            bool was_focused = is_focused() || focused_widget();
             set_focus(false);
+
+            if (parent_ && was_focused) {
+                //  LOG("visibility lost\n");
+                parent_->refocus();
+            }
+
             on_hide();
         }
     }
@@ -504,6 +591,11 @@ Rect Widget::clip(const Rect &rect) {
 
     if (parts.size() == 0) {
         parts = {screen_rect()};
+#if DEBUG_MSGS
+        if (STR_IN(get_name(), "aprs")) {
+            LOG("Using screen rect as parts %d,%d %d x %d\n", parts[0].left(), parts[0].top(), parts[0].width(), parts[0].height());
+        }
+#endif
     }
 
     const Rect r = screen_rect().intersect(rect);
@@ -517,16 +609,26 @@ Rect Widget::clip(const Rect &rect) {
         }
         parts = new_visible_parts;
 
-        // if (STR_IN(get_name(), "mode")) {
-        //     LOG("Clipping widget %s with rect %d,%d", get_name(), rect.left(), rect.top());
-        //     LOG_RAW(",%d,%d\n", rect.width(), rect.height());
-        //     LOG("New parts (%d)\n", parts.size());
-        //     if (parts.size()) {
-        //         for (auto p : parts) {
-        //             LOG("%d,%d,%d,%d\n", p.left(), p.top(), p.width(), p.height());
-        //         }
-        //     }
-        // }
+#if DEBUG_MSGS
+        if (STR_IN(get_name(), "aprs")) {
+            LOG("Clipping widget %s with rect %d,%d", get_name(), rect.left(), rect.top());
+            LOG_RAW(" %d x %d\n", rect.width(), rect.height());
+            LOG("Current parts (%d)\n", visible_rects.size());
+            if (visible_rects.size()) {
+                for (auto p : visible_rects) {
+                    LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
+                }
+            } else {
+            }
+
+            LOG("New parts (%d)\n", parts.size());
+            if (parts.size()) {
+                for (auto p : parts) {
+                    LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
+                }
+            }
+        }
+#endif
     }
 
     if (parts.size() == 0) { // Widget is now hidden

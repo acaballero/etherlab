@@ -82,7 +82,11 @@ bool KeypadView::on_input(const st_inputEvent event) {
 
 void KeypadView::init() {
 
-    const auto button_fn = [this](Button &button, st_inputEvent) { this->on_button(button); };
+    set_focusable(true);
+
+    const auto button_fn = [this](Button &button, st_inputEvent) {
+        this->on_button(button);
+    };
 
     label_widget.set_font((FontDef *)&Font_7x10);
     label_widget.set_aling(ALIGN_CENTER);
@@ -105,7 +109,9 @@ void KeypadView::init() {
         add_child(button);
 
         button->id = n;
-        button->on_highlight = [this](Button &button) { focused_button = button.id; };
+        button->on_highlight = [this](Button &button) {
+            focused_button = button.id;
+        };
         button->action = button_fn;
         button->set_style(BUTTON_STYLE_3D);
         button->set_aling(ALIGN_CENTER);
@@ -119,12 +125,16 @@ void KeypadView::init() {
     button_K.action = button_fn;
     button_1.action = button_fn;
 
-    button_close.action = [this](Button &, st_inputEvent) { this->set_visible(false); };
+    button_close.action = [this](Button &, st_inputEvent) {
+        this->set_visible(false);
+    };
 
     display_panel_buttons.set_labels(show_multipliers ? display_buttons_labels : display_buttons_labels_no_mult);
 }
 
-void KeypadView::on_focus() { button_close.set_focus(true); }
+void KeypadView::on_focus() {
+    button_close.set_focus(true);
+}
 
 double KeypadView::value() const {
     char b[MAX_DIGITS + 1];
@@ -260,7 +270,8 @@ void KeypadView::update_text() {
     text_widget.set_label(buff);
 }
 
-void KeypadView::before_paint() {}
+void KeypadView::before_paint() {
+}
 
 void KeypadView::with_multipliers(bool v) {
     show_multipliers = v;

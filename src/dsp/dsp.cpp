@@ -151,7 +151,7 @@ void dsp_stop_task() {
         current_task->stop();
     }
 
-    LOG_IND(-2, "");
+    LOG_IND_RAW(-2, "");
     current_task = NULL;
     current_processor = NULL;
 }
@@ -249,7 +249,7 @@ void dsp_start_task() {
         LOG(" Already running task, skipping\n");
     }
 
-    LOG_IND(-2, "");
+    LOG_IND_RAW(-2, "");
 }
 
 bool dsp_restart() {

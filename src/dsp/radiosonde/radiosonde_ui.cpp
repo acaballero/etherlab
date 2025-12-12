@@ -40,8 +40,6 @@ void RadiosondeView::init() {
     actions.actions[0].enabled = enable_crc;
     actions.actions[1].enabled = enable_log;
 
-    Menu::actions_signal.emit(&actions);
-
     // Get some current parameters so they can be restored on exit
     previous_mode = config.mode;
     previous_waterfall_speed = config.fft.waterfall_pixels_per_second;
@@ -96,9 +94,6 @@ void RadiosondeView::exit() {
                 // Re-enable analog mute
                 main_board::enable_analog_mute(true);
             });
-
-            // Clear specific bottom quick buttons
-            Menu::actions_signal.emit(nullptr);
 
             set_visible(false);
         }

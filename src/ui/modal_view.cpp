@@ -100,8 +100,6 @@ ModalView::ModalView(
     title_w.set_aling(Align::ALIGN_CENTER);
     title_w.set_label(title.c_str());
     add_child(&title_w);
-
-    // actions_signal.emit(&quick_actions);
 }
 
 void ModalView::before_paint() {

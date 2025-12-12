@@ -101,7 +101,11 @@ void KeyboardView::on_shift() {
 
 void KeyboardView::init() {
 
-    const auto button_fn = [this](Button &button, st_inputEvent) { this->on_button(button); };
+    set_focusable(true);
+
+    const auto button_fn = [this](Button &button, st_inputEvent) {
+        this->on_button(button);
+    };
 
     label_widget.set_font((FontDef *)&Font_7x10);
     label_widget.set_color(C565_GREY_DARKER);
@@ -115,7 +119,9 @@ void KeyboardView::init() {
     add_child(&label_widget);
     add_child(&text_widget);
 
-    button_shift.action = [this](Button &, st_inputEvent) { on_shift(); };
+    button_shift.action = [this](Button &, st_inputEvent) {
+        on_shift();
+    };
 
     for (int n = 0; n < key_count; n++) {
 
@@ -123,7 +129,9 @@ void KeyboardView::init() {
         add_child(&button);
 
         button.id = n;
-        button.on_highlight = [this](Button &button) { focused_button = button.id; };
+        button.on_highlight = [this](Button &button) {
+            focused_button = button.id;
+        };
         button.action = button_fn;
         button.set_aling(Align::ALIGN_CENTER);
         button.set_style(ButtonStyle::BUTTON_STYLE_3D);
@@ -142,11 +150,17 @@ void KeyboardView::init() {
     button_del.set_style(BUTTON_STYLE_3D);
     button_close.set_style(BUTTON_STYLE_3D);
 
-    button_del.action = [this](Button &, st_inputEvent) { text_widget.del_char(); };
+    button_del.action = [this](Button &, st_inputEvent) {
+        text_widget.del_char();
+    };
 
-    button_close.action = [this](Button &, st_inputEvent) { this->set_visible(false); };
+    button_close.action = [this](Button &, st_inputEvent) {
+        this->set_visible(false);
+    };
 
-    button_ok.action = [this](Button &, st_inputEvent) { on_ok(); };
+    button_ok.action = [this](Button &, st_inputEvent) {
+        on_ok();
+    };
 
     display_panel_buttons.set_labels(display_buttons_labels);
     display_panel_buttons.get_buttons()[4].set_fg(C565_GREEN_DARK);
@@ -157,12 +171,16 @@ void KeyboardView::init() {
 
     set_mode(mode);
 
-    button_mode.action = [this](Button &, st_inputEvent) { set_mode(mode == ALPHA ? NUMERIC : ALPHA); };
+    button_mode.action = [this](Button &, st_inputEvent) {
+        set_mode(mode == ALPHA ? NUMERIC : ALPHA);
+    };
 
     text_widget.set_focus(true);
 }
 
-void KeyboardView::on_focus() { button_close.set_focus(true); }
+void KeyboardView::on_focus() {
+    button_close.set_focus(true);
+}
 
 void KeyboardView::set_mode(Mode m, ShiftMode sm) {
 
@@ -204,9 +222,13 @@ void KeyboardView::refresh_keys() {
     }
 }
 
-void KeyboardView::set_size(uint8_t s) { text_widget.set_size(s); }
+void KeyboardView::set_size(uint8_t s) {
+    text_widget.set_size(s);
+}
 
-char *KeyboardView::text() { return text_widget.get_text(); }
+char *KeyboardView::text() {
+    return text_widget.get_text();
+}
 
 void KeyboardView::set_text(const char *text) {
 
@@ -238,4 +260,5 @@ void KeyboardView::on_button(Button &button) {
     }
 }
 
-void KeyboardView::before_paint() {}
+void KeyboardView::before_paint() {
+}

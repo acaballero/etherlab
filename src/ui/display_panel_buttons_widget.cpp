@@ -23,7 +23,7 @@ void DisplayPanelButtonsWidget::init() {
         buttons[i].set_bg(C565_WHITE);
 
         char name[6];
-        sprintf(name, "dpbt%d", i);
+        sprintf(name, "b%d", i);
         buttons[i].set_name(name);
 
         add_child(&buttons[i]);
@@ -40,6 +40,9 @@ void DisplayPanelButtonsWidget::set_labels(const char **labels) {
     }
 }
 
-Button *DisplayPanelButtonsWidget::get_buttons() { return buttons; }
+Button *DisplayPanelButtonsWidget::get_buttons() {
+    return buttons;
+}
 
-void DisplayPanelButtonsWidget::before_paint() {}
+void DisplayPanelButtonsWidget::before_paint() {
+}

@@ -15,8 +15,11 @@
 #include "ui/splash_view.h"
 #include "os/task_manager.h"
 #include "dsp/aprs/aprs_ui.h"
+#include "ui/status_widget.h"
 #include "ui/ui_types.h"
 #include "ui/view.h"
+#include <cstddef>
+#include <sys/_stdint.h>
 
 namespace view_manager {
 
@@ -104,8 +107,7 @@ void init() {
     keyboardView.on_hide_fn = pop;
     msg_w.set_name("msg");
     mainView.set_visible(false);
-    // optionButtonsView.on_hide_fn = pop;
-    // numberEditView.on_hide_fn = pop;
+
     LOG("Initializing view manager\n");
     push(&splashView);
 
@@ -114,6 +116,17 @@ void init() {
     os::task_manager.set_timeout(1500, []() {
         pop();
         push(&mainView);
+    });
+
+    // This signal receives the currently focused widget
+    // TODO: Move to this namespace
+    Menu::navigation_signal.add(nullptr, [](void *, const void *params) {
+        Widget *w = (Widget *)params;
+        if (w && (w->focused_widget() || w->is_focused())) {
+            ((StatusWidget *)mainView.Status())->set_actions(w->get_quick_actions());
+        } else {
+            ((StatusWidget *)mainView.Status())->set_actions(nullptr);
+        }
     });
 }
 
@@ -127,6 +140,24 @@ void view_loop() {
     currentView->paint();
 }
 
+using test_result_t = std::pair<Widget *const, const uint32_t>;
+
+/* Walk all visible widgets in hierarchy, collecting those that pass test */
+template <typename TestFn> static void collect_widgets(Widget *const w, TestFn test, std::vector<test_result_t> &collection) {
+    for (auto child : w->children()) {
+        if (child->can_be_seen()) {
+            const auto result = test(child);
+            if (result.first) {
+                // auto w2 = ((Widget *)result.first);
+                //      LOG("candidate to focus: %s | %d x %d | distance: %d\n", w2->get_name(), w2->parent_rect().width(), w2->parent_rect().height(),
+                //      result.second);
+                collection.push_back(result);
+            }
+            collect_widgets(child, test, collection);
+        }
+    }
+}
+
 void open_app(std::unique_ptr<View> view) {
     app_view_p = std::move(view);
 
@@ -138,9 +169,11 @@ void open_app(std::unique_ptr<View> view) {
     };
 
     app_view_p->set_visible(true);
-    app_view_p->set_z_index(200);
+
     app_view_p->set_focus(true);
+
     view_manager::mainView.add_child(app_view_p.get());
+    view_manager::mainView.to_top(app_view_p.get());
 }
 
 void open(std::unique_ptr<View> v) {
@@ -157,45 +190,33 @@ void open(std::unique_ptr<View> v) {
     view_ptr->set_focus(true);
 }
 
-using test_result_t = std::pair<Widget *const, const uint32_t>;
-using test_fn = std::function<test_result_t(Widget *const)>;
-using test_collection_t = std::vector<test_result_t>;
-
-/* Walk all visible widgets in hierarchy, collecting those that pass test */
-template <typename TestFn> static void widget_collect_visible(Widget *const w, TestFn test, test_collection_t &collection) {
-    for (auto child : w->children()) {
-        if (!child->hidden()) {
-            const auto result = test(child);
-            if (result.first) {
-                collection.push_back(result);
-            }
-            widget_collect_visible(child, test, collection);
-        }
-    }
-}
-
 int32_t rect_distances(const ui::DIRECTION direction, const Rect &rect_from, const Rect &rect_to) {
     Coord direction_axis_end, direction_axis_start;
+    bool aligned;
 
     switch (direction) {
         case ui::RIGHT:
             direction_axis_end = rect_to.left();
             direction_axis_start = rect_from.right();
+            aligned = rect_from.top() < rect_to.bottom() && rect_from.bottom() > rect_to.top();
             break;
 
         case ui::LEFT:
             direction_axis_end = rect_from.left();
             direction_axis_start = rect_to.right();
+            aligned = rect_from.top() < rect_to.bottom() && rect_from.bottom() > rect_to.top();
             break;
 
         case ui::UP:
-            direction_axis_end = rect_to.top();
-            direction_axis_start = rect_from.bottom();
+            direction_axis_end = rect_from.top();
+            direction_axis_start = rect_to.bottom();
+            aligned = rect_from.right() > rect_to.left() && rect_from.left() < rect_to.right();
             break;
 
         case ui::DOWN:
-            direction_axis_end = rect_from.top();
-            direction_axis_start = rect_to.bottom();
+            direction_axis_end = rect_to.top();
+            direction_axis_start = rect_from.bottom();
+            aligned = rect_from.right() > rect_to.left() && rect_from.left() < rect_to.right();
             break;
 
         default:
@@ -203,7 +224,7 @@ int32_t rect_distances(const ui::DIRECTION direction, const Rect &rect_from, con
     }
 
     Coord on_axis_distance = direction_axis_end - direction_axis_start;
-    if (on_axis_distance < 0) {
+    if (!aligned || on_axis_distance < 0) {
         return -1;
     }
 
@@ -214,12 +235,14 @@ int32_t rect_distances(const ui::DIRECTION direction, const Rect &rect_from, con
         case ui::LEFT:
             perpendicular_axis_start = rect_from.center().y();
             perpendicular_axis_end = rect_to.center().y();
+
             break;
 
         case ui::UP:
         case ui::DOWN:
             perpendicular_axis_start = rect_from.center().x();
             perpendicular_axis_end = rect_to.center().x();
+
             break;
 
         default:
@@ -245,80 +268,185 @@ int32_t rect_distances(const ui::DIRECTION direction, const Rect &rect_from, con
     }
 }
 
+// int32_t rect_center_distances(const ui::DIRECTION direction, const Rect &rect_from, const Rect &rect_to) {
+//     Coord dx, dy;
+
+//     Point p1 = rect_from.center();
+//     Point p2 = rect_to.center();
+
+//     switch (direction) {
+//         case ui::RIGHT:
+//             dx = p2.x() - p1.x();
+//             dy = p2.y() - p1.y();
+//             break;
+//         case ui::DOWN:
+//             dx = p2.x() - p1.x();
+//             dy = p2.y() - p1.y();
+//             break;
+//         case ui::LEFT:
+//             dx = p1.x() - p2.x();
+//             dy = p1.y() - p2.y();
+//             break;
+//         case ui::UP:
+//             dx = p1.x() - p2.x();
+//             dy = p1.y() - p2.y();
+//             break;
+
+//         default:
+//             return -1;
+//     }
+
+//     if (dx < 0 || dy < 0) {
+//         return -1;
+//     }
+
+//     switch (direction) {
+//         case ui::RIGHT:
+//         case ui::LEFT:
+//             return dx + dy * dy * dy;
+//             break;
+
+//         case ui::UP:
+//         case ui::DOWN:
+//             return dx * dx * dx + dy;
+//             break;
+
+//         default:
+//             return 0;
+//     }
+// }
+
 bool on_input(st_inputEvent &e) {
     bool consumed = currentView->on_input(e);
     if (!consumed && e.type == INPUT_EVENT_TYPE_ENCODER) {
-        consumed = change_focus(currentView, e.value ? ui::RIGHT : ui::LEFT);
+        consumed = change_focus(currentView, e.value > 0 ? ui::RIGHT : ui::LEFT);
     }
 
     return consumed;
 }
 
-bool change_focus(Widget *const top_widget, ui::DIRECTION direction) {
+/*
+ * Distance of a widget to a predecessor
+ * Returns -1 if w is not under root
+ */
+int depth(Widget *w, Widget *root = nullptr) {
+    if (w == root) {
+        return 0;
+    }
+    int d = 1;
+    while (w->parent() && w->parent() != root) {
+        w = w->parent();
+        ++d;
+    }
+    return !w && root ? -1 : d;
+}
+
+Widget *common_ancestor(Widget *a, Widget *b, Widget *root = nullptr) {
+    if (!a || !b) {
+        return nullptr;
+    }
+
+    int da = depth(a, root);
+    int db = depth(b, root);
+
+    if (da < 0 || db < 0) {
+        return nullptr;
+    }
+
+    // Start from the deepest
+    while (da > db) {
+        a = a->parent();
+        --da;
+    }
+
+    while (db > da) {
+        b = b->parent();
+        --db;
+    }
+
+    // If still not at the same ancestor
+    while (a != b) {
+        a = a->parent();
+        b = b->parent();
+    }
+
+    return a; // First common ancestor
+}
+
+int distance_between(Widget *a, Widget *b) {
+    Widget *p = common_ancestor(a, b);
+    if (p) {
+        return depth(a, p);
+    }
+
+    return -1;
+}
+
+bool change_focus(Widget *const top_widget, ui::DIRECTION direction, uint32_t max_levels) {
 
     bool changed = false;
-    const Widget *w = currentView->focused_widget();
+    Widget *focused_widget = top_widget->focused_widget();
 
-    LOG_IND(2, "change_focus: direction %d\n", direction, top_widget->get_name());
+    //  LOG_IND(2, "change_focus: from widget %s | direction %d\n", focused_widget->get_name(), direction);
 
-    if (w) {
-        const auto focus_screen_rect = w->screen_rect();
+    if (focused_widget) {
+        const auto focus_screen_rect = focused_widget->screen_rect();
 
-        const auto test_fn = [&focus_screen_rect, direction](Widget *const w) -> test_result_t {
-            if (w->visible() && w->focusable()) {
+        const auto test_fn = [&focus_screen_rect, direction, max_levels, focused_widget](Widget *const w) -> test_result_t {
+            if (w->can_be_seen() && w->focusable() && w->enabled() && w != focused_widget) {
 
-                const auto distance = rect_distances(direction, focus_screen_rect, w->screen_rect());
+                int distance_to_ancestor = distance_between(focused_widget, w);
+
+                if (max_levels > 0) {
+                    if (distance_to_ancestor > max_levels) {
+                        return {nullptr, 0};
+                    }
+                }
+
+                auto distance = rect_distances(direction, focus_screen_rect, w->screen_rect());
+
+                // distance = distance * distance_to_ancestor;
+
+                //    LOG("Distance to %s: %d\n", w->get_name(), distance);
                 if (distance >= 0) {
                     return {w, distance};
                 }
+            } else {
+                //     LOG("%s not visible (%d) or not focusable (%d)\n", w->get_name(), w->focusable(), w->visible());
             }
 
             return {nullptr, 0};
         };
 
-        const auto find_back_fn = [](Widget *const w) -> test_result_t {
-            if (w->focusable() && (w->id == -1)) {
-                return {w, 0};
-            } else {
-                return {nullptr, 0};
-            }
-        };
+        std::vector<test_result_t> collection;
+        collect_widgets(top_widget, test_fn, collection);
 
-        test_collection_t collection;
-        widget_collect_visible(top_widget, test_fn, collection);
+        //     LOG("Found %d focusable widgets\n", collection.size());
 
-        LOG("Found %d focusable widgets\n", collection.size());
-
-        const auto compare_fn = [](const test_result_t &a, const test_result_t &b) {
+        const auto nearest = std::min_element(collection.cbegin(), collection.cend(), [](const test_result_t &a, const test_result_t &b) {
             return a.second < b.second;
-        };
-
-        const auto nearest = std::min_element(collection.cbegin(), collection.cend(), compare_fn);
+        });
 
         // Up and left to indicate back
 
         if (nearest != collection.cend()) {
-            LOG("Nearest widget is %s\n", nearest->first->get_name());
-
+            //   LOG("Nearest widget is %s\n", nearest->first->get_name());
             changed = (*nearest).first->set_focus(true);
-
         } else {
-            LOG("No nearest widget found\n");
+            //    LOG("No nearest widget found\n");
 
-            if ((w->id >= 0) && (direction == ui::LEFT)) {
-                // Stuck left, move to back button
-                collection.clear();
-                widget_collect_visible(top_widget, find_back_fn, collection);
-                if (!collection.empty()) {
-                    changed = collection[0].first->set_focus(true);
-                }
+            // Not using UP,DOWN keys, so when if no widget is focusable to the left or right, try going up or down
+            if (direction == ui::LEFT) {
+                changed = change_focus(top_widget, ui::UP);
+            } else if (direction == ui::RIGHT) {
+                changed = change_focus(top_widget, ui::DOWN);
             }
         }
     } else {
-        LOG("No focused widget found\n");
+        //   LOG("No focused widget found\n");
     }
 
-    LOG_IND(-2, "");
+    //  LOG_IND_RAW(-2, "");
     return changed;
 }
 

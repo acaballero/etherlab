@@ -19,14 +19,15 @@ extern int debug_indent;
                                                                                                                                                                \
         if (increase_indent < 0)                                                                                                                               \
             debug_indent += increase_indent;                                                                                                                   \
-                                                                                                                                                               \
-        if (debug_indent) {                                                                                                                                    \
-            printf_("%*s", debug_indent, " ");                                                                                                                 \
+        if (msg) {                                                                                                                                             \
+            if (debug_indent) {                                                                                                                                \
+                printf_("%*s", debug_indent, " ");                                                                                                             \
+            }                                                                                                                                                  \
+            if (with_timestamp) {                                                                                                                              \
+                printf_("%d: ", HAL_GetTick());                                                                                                                \
+            }                                                                                                                                                  \
+            printf_("%s", msg);                                                                                                                                \
         }                                                                                                                                                      \
-        if (with_timestamp) {                                                                                                                                  \
-            printf_("%d: ", HAL_GetTick());                                                                                                                    \
-        }                                                                                                                                                      \
-        printf_("%s", msg);                                                                                                                                    \
         if (increase_indent > 0)                                                                                                                               \
             debug_indent += increase_indent;                                                                                                                   \
     }
