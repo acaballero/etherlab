@@ -13,9 +13,9 @@ void PulseGenerator::init() {
 
 adc_type PulseGenerator::get_sample(uint32_t phase) {
 
-    int8_t sample;
+    adc_type sample;
 
-    sample = (((phase & 0xFF000000) >> 24) <= crossover_phase) ? 127 : -128;
+    sample = (((phase & 0xFF000000) >> 24) <= crossover_phase) ? 2047 : -2048;
 
     return sample;
 }

@@ -29,7 +29,11 @@ class TitleBarWidgetInner : public Widget {
 
     st_topBar status;
 
-    uint32_t last_epoch;
+    st_datetime datetime{};
+    // Refresh clock
+    os::periodic_task task{1000, [this](void) {
+                               set_dirty();
+                           }};
 };
 
 class TitleBarWidget : public View {

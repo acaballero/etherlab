@@ -5,13 +5,12 @@
 #ifndef TRX_FRONTEND_SIGNAL_GENERATOR_H
 #define TRX_FRONTEND_SIGNAL_GENERATOR_H
 
-#include "dsp/dsp_common.h"
 #include "stdio.h"
 #include "dsp/buffer.hpp"
 #include "output.h"
 #include "blocks_common.h"
 
-enum SIGNAL_SHAPE { SIGNAL_SHAPE_SIN, SIGNAL_SHAPE_SAW_UP, SIGNAL_SHAPE_SAW_DOWN, SIGNAL_SHAPE_TRI };
+enum SIGNAL_SHAPE { SIGNAL_SHAPE_SIN, SIGNAL_SHAPE_SAW_UP, SIGNAL_SHAPE_SAW_DOWN, SIGNAL_SHAPE_TRI, SIGNAL_SHAPE_PULSE };
 
 class SignalGenerator : public Output<complex_t> {
 

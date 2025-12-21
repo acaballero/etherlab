@@ -27,7 +27,7 @@ void RTC_Alarm_IRQHandler(void);
 int RTC_Set(uint8_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec, uint8_t dow);
 st_datetime rtc_get_date_time();
 uint32_t rtc_uptime();
-
+bool is_rtc_ok();
 #ifdef __cplusplus
 }
 #endif
@@ -35,5 +35,6 @@ uint32_t rtc_uptime();
 extern Signal rtc_signal;
 void rtc_to_string(st_datetime dt, bool, char *);
 uint32_t rtc_to_epoch(RTC_TimeTypeDef *time, RTC_DateTypeDef *date);
+void rtc_from_epoch(uint32_t epoch, RTC_TimeTypeDef *time, RTC_DateTypeDef *date);
 
 #endif // TRX_FRONTEND_RTC_H

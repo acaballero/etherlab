@@ -58,7 +58,7 @@ class Widget : public Painter {
 
     Widget *parent() const;
 
-    Widget *focused_widget() const;
+    Widget *focused_widget(bool recursive = true) const;
 
     virtual void set_parent(Widget *const widget);
 

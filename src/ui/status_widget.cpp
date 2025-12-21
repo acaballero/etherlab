@@ -17,28 +17,28 @@
 #include <functional>
 #include <string>
 
-Menu::menu_action_st StatusWidget::default_actions_arr[n_buttons] = {{"",
+Menu::menu_action_st StatusWidget::default_actions_arr[n_buttons] = {{".",
                                                                       []() {
                                                                           Menu::open(Menu::modulationMenu);
                                                                       }},
-                                                                     {"",
+                                                                     {".",
                                                                       []() {
                                                                           Menu::open(Menu::frontendPathMenu);
                                                                       }},
-                                                                     {"",
+                                                                     {".",
                                                                       []() {
                                                                           config.agc_enabled = !config.agc_enabled;
                                                                           main_board::update();
                                                                       }},
-                                                                     {"",
+                                                                     {".",
                                                                       []() {
                                                                           Menu::open(Menu::bandMenu);
                                                                       }},
-                                                                     {"",
+                                                                     {".",
                                                                       []() {
                                                                           Menu::open(Menu::filterMenu);
                                                                       }},
-                                                                     {"", []() {
+                                                                     {".", []() {
                                                                           Menu::open(Menu::IFFilterMenu);
                                                                       }}};
 
@@ -78,7 +78,7 @@ void StatusWidget::set_actions(Menu::menu_actions_st *actions) {
 
         LOG("Setting status actions: size=%d\n", actions->size);
         for (size_t i = 0; i < n_buttons; i++) {
-            if (i < actions->size) {
+            if (i < actions->size && !actions->actions[i].name.empty()) {
                 set_action(i, actions->actions[i]);
                 buttons[i].set_visible(true);
 
@@ -109,6 +109,7 @@ void StatusWidget::set_action(uint8_t index, Menu::menu_action_st &menu_action) 
         button->fn_writer = nullptr;
     }
     button->set_enabled(menu_action.enabled);
+    button->set_dimmed(false);
     button->set_aling(ALIGN_CENTER);
     button->set_visible(true);
 }

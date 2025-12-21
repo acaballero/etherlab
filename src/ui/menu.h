@@ -2,6 +2,7 @@
 #define __MENU_H
 
 #include "hw/stm32.h"
+#include "items.h"
 #include "menuBase.h"
 #include "ui/menuILI9431Out.h"
 #include "menu_options.h"

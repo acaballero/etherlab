@@ -25,12 +25,10 @@
 #define DSP_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 3
 #define DSP_OUTPUT_FIFO_SIZE DSP_FIFO_BLOCK_BYTES * 2
 // ACD DMA buffer
-extern adc_type adc_buff[DSP_BLOCK * 4];
+extern adc_type adc_buff[DSP_ADC_BUFF_SIZE];
 
 // DAC DMA buffer
-extern adc_type dac_buff[DSP_BLOCK * 4];
-
-extern buffer_t<adc_type> dsp_temp_buf;
+extern adc_type dac_buff[DSP_DAC_BUFF_SIZE];
 
 //__attribute__((section(".fccmram"))) // Can't be in CCM RAM if DMA is used
 extern uint8_t dsp_output_fifo_buff[DSP_OUTPUT_FIFO_SIZE];
@@ -41,8 +39,10 @@ extern buffer_t<adc_type> adc_buffer_1;
 extern buffer_t<adc_type> adc_buffer_2;
 extern buffer_t<adc_type> dac_buffer_1;
 extern buffer_t<adc_type> dac_buffer_2;
-
+// extern buffer_t<adc_type> tmp_buffer;
 extern FIFO output_stream;
 extern FIFO input_stream;
+
+void reset_dac_buffer();
 
 #endif // TRX_FRONTEND_DSP_BUFFERS_H

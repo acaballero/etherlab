@@ -27,10 +27,12 @@ typedef struct {
      * EDIT: Did I do this already?
      * FIXME: The problem (in addition) is that the adc_type is int16 and DAC cannot be fed with negative values so a shift is needed
      */
-    uint16_t dac_offset = 1000;
+    uint16_t dac_offset = 2035;
 
-    // Difference between I and Q DAC channels
-    int16_t dac_balance = 0;
+    // Difference in offset between I and Q DAC channels
+    int16_t dac_off_balance = 8;
+    // Ammplitude balance  between I and Q DAC channels
+    float32_t dac_amp_balance = 1.06;
 
 } st_hw_config;
 

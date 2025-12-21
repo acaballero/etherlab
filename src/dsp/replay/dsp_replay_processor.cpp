@@ -54,12 +54,11 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
                 // d--;
 
             } else {
-                out_p[i] = ((adc_type *)p)[j] * dsp::dsp_params->gain_factor + config.hw.dac_offset;
+                out_p[i] = ((adc_type *)p)[j];
                 //           LOG("%d,", out_p[i]);
 
                 if (this->status.n_channels == 2) {
-                    out_p[i + 1] = ((adc_type *)p)[j + 1] * dsp::dsp_params->gain_factor + config.hw.dac_offset + config.hw.dac_balance;
-
+                    out_p[i + 1] = ((adc_type *)p)[j + 1];
                     j++;
                 } else {
                     out_p[i + 1] = 0;

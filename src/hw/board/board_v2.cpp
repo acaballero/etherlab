@@ -422,7 +422,7 @@ bool radio_config(st_radio_config radioConfig) {
         DAC_DMA_Start(&hdac1);
 
         // Starting the DAC causes a DC transient. Wait for it to stop
-        // HAL_Delay(300);
+        // HAL_Delay(30);
         if_direction(RF_DIRECTION_TX);
 
     } else {
@@ -478,9 +478,6 @@ bool radio_config(st_radio_config radioConfig) {
         }
         ADC_DMA_Start(&hadc1);
     }
-
-    // We need to set the frequency for the IF value to be calculated
-    radio::update_freq();
 
     LOG_IND(-2, "radio_config: Finished\n");
     return true;

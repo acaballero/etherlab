@@ -26,6 +26,7 @@ class MenuWidget : public Widget {
 
     void set_quick_actions(Menu::menu_actions_st *actions) {
         current_actions = actions;
+        current_actions->dirty = true;
     }
 
     void set_default_quick_actions() {

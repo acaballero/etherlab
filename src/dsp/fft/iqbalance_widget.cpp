@@ -20,9 +20,9 @@ bool IQBalanceWidget::paint_callback() {
     uint8_t bar_w = DISPLAY_X_PIXELS / FFT_N;
 
     float32_t *phasePoints, *gainPoints, *precPoints;
-    phasePoints = fftIQBalancer.getPhasePoints();
-    gainPoints = fftIQBalancer.getGainPoints();
-    precPoints = fftIQBalancer.getPrecisionPoints();
+    phasePoints = fft_iq_balancer.getPhasePoints();
+    gainPoints = fft_iq_balancer.getGainPoints();
+    precPoints = fft_iq_balancer.getPrecisionPoints();
 
     float32_t maxGain = 0, maxPhase, minGain = 0.7, minPhase = -0.1;
 

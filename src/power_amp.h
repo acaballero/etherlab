@@ -3,6 +3,7 @@
 
 #include "Signal.h"
 #include "os/periodic_task.h"
+#include <sys/_stdint.h>
 
 namespace power_amp {
 
@@ -19,6 +20,8 @@ struct st_power_amp_params {
 extern status status;
 extern st_power_amp_params params;
 extern int temp;
+extern uint64_t last_hpa_shutdown_ms;
+extern uint32_t hpa_shutdown_timeout_ms;
 extern Signal temp_signal;
 extern Signal status_signal;
 extern os::periodic_task task;

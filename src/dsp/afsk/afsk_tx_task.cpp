@@ -97,7 +97,7 @@ void AFSKTXTask::work() {
                     }
                 }
 
-                if (false && cur_bit) {
+                if (cur_bit) {
                     tone_phase += afsk_phase_inc_mark;
                 } else {
                     tone_phase += afsk_phase_inc_space;
@@ -119,8 +119,8 @@ void AFSKTXTask::work() {
 
                 //   LOG_RAW("%d,", tone_sample);
 
-                ((complex_t *)out_p)[i] = {{(adc_type)tone_sample, (adc_type)tone_sample}};
-                // ((complex_t *)out_p)[i] = {{re, im}};
+                //((complex_t *)out_p)[i] = {{(adc_type)tone_sample, (adc_type)sine_table_i8[(t_ix + 64) % 256]}};
+                ((complex_t *)out_p)[i] = {{re, im}};
             }
 
             // LOG_RAW("\n");
@@ -181,6 +181,7 @@ void AFSKTXTask::set_data(uint16_t *data) {
 bool AFSKTXTask::start() {
 
     LOG("___ [START] AFSKTX task ___\n");
+
     status.reset();
     status.direction = DSP_DIRECTION_OUT;
     status.sample_rate = config.fft.sample_rate;
@@ -193,10 +194,9 @@ bool AFSKTXTask::start() {
     status.decimated_block_size = DSP_BLOCK * 2 / status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
     status.decimated_block_size_bytes = this->status.block_size_bytes / status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
-    bool ret = radio_config({.direction = RF_DIRECTION_TX,
-                             .sample_freq = status.sample_rate,
-                             .freq = 0,
-                             .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
+    reset_dac_buffer(); // Prevents garbage output
+
+    bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
 
     if (!ret) {
         halt(DSP_ERR);
@@ -230,7 +230,7 @@ void AFSKTXTask::stop() {
 
         // Wait until data processing stops
         while (output_stream.available()) {
-            HAL_Delay(4);
+            HAL_Delay(1);
         }
 
         Task::stop(); // Let the base class finish housekeeping stuff

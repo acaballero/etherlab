@@ -327,7 +327,7 @@ bool Widget::set_focus(bool v) {
         return false;
     }
 
-    if (v && !visible()) {
+    if (v && !can_be_seen()) {
 
         return false;
     }
@@ -362,12 +362,12 @@ bool Widget::set_focus(bool v) {
     return true;
 }
 
-Widget *Widget::focused_widget() const {
+Widget *Widget::focused_widget(bool recursive) const {
     for (const auto child : children()) {
 
-        if (child->is_focused()) {
+        if (child->is_focused() || (!recursive && child->focused_widget())) {
             return child;
-        } else {
+        } else if (recursive) {
             Widget *w = child->focused_widget();
             if (w) {
                 return w;
@@ -592,7 +592,7 @@ Rect Widget::clip(const Rect &rect) {
     if (parts.size() == 0) {
         parts = {screen_rect()};
 #if DEBUG_MSGS
-        if (STR_IN(get_name(), "aprs")) {
+        if (STR_IN(get_name(), "aprs", "msg")) {
             LOG("Using screen rect as parts %d,%d %d x %d\n", parts[0].left(), parts[0].top(), parts[0].width(), parts[0].height());
         }
 #endif
@@ -610,7 +610,7 @@ Rect Widget::clip(const Rect &rect) {
         parts = new_visible_parts;
 
 #if DEBUG_MSGS
-        if (STR_IN(get_name(), "aprs")) {
+        if (STR_IN(get_name(), "aprs", "msg")) {
             LOG("Clipping widget %s with rect %d,%d", get_name(), rect.left(), rect.top());
             LOG_RAW(" %d x %d\n", rect.width(), rect.height());
             LOG("Current parts (%d)\n", visible_rects.size());

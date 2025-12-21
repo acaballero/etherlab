@@ -56,6 +56,7 @@ extern adc_type adc_max_ampl;
 std::pair<int, int> get_bandwidth_pixel_range();
 void set_waterfall_speed(uint16_t);
 void apply_fft_params(st_fft_params);
+void enable_iq_balance(bool v);
 extern Signal signal;
 
 } // namespace fft
@@ -70,13 +71,13 @@ void adquire_fft_async();
 void reorder_bins(complex_t_f32 *v);
 void calc_fft_range();
 
-extern FFTIQBalancer fftIQBalancer;
+extern FFTIQBalancer fft_iq_balancer;
 extern fft_type fft_peak;
 extern uint64_t fft_peak_f;
 extern uint8_t fft_slice_n;
 extern uint16_t fft_peak_bin;
 
-extern bool fft_estimateIQBalance;
+extern bool fft_estimate_iq_balance;
 extern uint16_t fft_calc_noise_floor_period_ms;
 
 extern volatile FFT_STATUS fft_status;

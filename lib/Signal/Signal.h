@@ -4,7 +4,7 @@
 #include <functional>
 #include <stdio.h>
 #include "printf.h"
-#define MAX_LISTENERS 6
+#define MAX_LISTENERS 10
 
 typedef uint32_t SignalToken;
 typedef std::function<void(void *caller, const void *params)> Callback;

@@ -51,6 +51,16 @@ class MessageView : public View {
 
     void init();
     void before_paint() override;
+
+    Menu::menu_action_st menu_actions[1] = {{"Close", [this]() {
+                                                 set_visible(false);
+                                             }}};
+
+    Menu::menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(Menu::menu_action_st)};
+
+    Menu::menu_actions_st *get_quick_actions() override {
+        return &actions;
+    }
 };
 
 #endif // TRX_FRONTEND_MESSAGE_WIDGET_H

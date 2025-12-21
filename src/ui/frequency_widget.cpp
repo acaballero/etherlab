@@ -180,7 +180,8 @@ bool FrequencyWidgetInner::on_input(st_inputEvent e) {
     switch (e.type) {
 
         case INPUT_EVENT_TYPE_BUTTON_PRESS:
-            if (e.value == BTN_ENCODER) {
+
+            if (e.value == BTN_ENCODER and e.ms < LONG_PRESS_MS) {
                 changing_step = !changing_step;
                 set_dirty();
                 consumed = true;

@@ -90,11 +90,6 @@ void open_gain() {
     nav.doNav(navCmd(idxCmd, 4));
 }
 
-void open() {
-    nav.doNav(navCmd(enterCmd));
-    view_manager::mainView.to_top(view_manager::mainView.Menu());
-}
-
 menu_option_st<radio::FRONTEND_PATH> frontend_path_options[] = {{"Att. (-10 dB)", radio::FRONTEND_PATH_ATT},
                                                                 {"Pass-thru (0 dB)", radio::FRONTEND_PATH_THRU},
                                                                 {"LNA (20 dB)", radio::FRONTEND_PATH_LNA},
@@ -295,7 +290,7 @@ MENU(menuSettings, "Settings", doNothing, anyEvent, noStyle, SUBMENU(debugToggle
 #endif
 );
 
-MENU(mainMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
+MENU(rootMenu, "Main menu", doNothing(), noEvent, noStyle, SUBMENU(menuTune),
 #if DSP_ENABLED
      SUBMENU(dsp_ui::menuDSP),
 #endif
@@ -330,7 +325,7 @@ Menu::outputsList outList(const_cast<menuOut **>(outs), 1); // outputs list cont
 // NULL input stream. We will control the menu programmatically
 chainStream<0> in(NULL);
 
-NAVROOT(nav, mainMenu, MAX_DEPTH, in, outList)
+NAVROOT(nav, rootMenu, MAX_DEPTH, in, outList)
 
 // when menu is suspended
 result idle(menuOut &o, idleEvent e) {
@@ -430,3 +425,11 @@ void menu_size(int w, int h) {
     nav.out.outs[0]->panels.panels[0].w = dispX;
     ((MenuWidget *)view_manager::mainView.Menu())->set_parent_rect({0, DISPLAY_Y_PIXELS - STATUS_HEIGHT - h, w, h});
 }
+
+namespace Menu {
+void open() {
+    nav.doNav(navCmd(enterCmd));
+    view_manager::mainView.to_top(view_manager::mainView.Menu());
+    nav.useMenu(rootMenu);
+}
+} // namespace Menu

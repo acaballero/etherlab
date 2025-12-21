@@ -89,6 +89,7 @@
 #include <Signal.h>
 #include "FIFO.h"
 
+// #define ADC_TYPE_MIN INT16_MAX
 typedef int16_t adc_type;
 typedef uint32_t adc_type_complex_union;
 
@@ -223,9 +224,10 @@ namespace dsp {
 extern const char *commandNames[];
 
 struct st_test_signal_params {
-    int8_t pulse_duty = 50;
-    uint32_t baseband_frequency = 1000;
-    uint32_t modulation_frequency = 1000;
+    int8_t pulse_duty = 10;
+    uint32_t baseband_frequency = 4000;
+    uint32_t modulation_frequency = 10;
+    uint8_t shape = 0;
 };
 
 struct st_dsp_config {

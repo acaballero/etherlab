@@ -176,21 +176,20 @@ bool MainView::on_input(const st_inputEvent event) {
         consumed = View::on_input(event);
     }
 
-    if (!consumed) {
+    if (!consumed && !event.is_touch()) {
+        consumed = View::on_input(event);
+    }
 
-        consumed = menu_w.on_input(event); // First try to consume it by the menu
+    if (!consumed) {
+        consumed = menu_w.on_input(event); // Try to consume it by the menu
 
         if (consumed) {
             menu_w.set_visible(true);
         }
+    }
 
-        if (!consumed && !event.is_touch()) {
-            consumed = View::on_input(event);
-        }
-
-        if (!consumed) { // Let's see if the status bar can consume it
-            consumed = status_w.on_input(event);
-        }
+    if (!consumed) { // Let's see if the status bar can consume it
+        consumed = status_w.on_input(event);
     }
 
     return consumed;

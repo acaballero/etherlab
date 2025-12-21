@@ -297,7 +297,7 @@ void APRSView::send_packet(std::string info) {
     trim(config.callsign);
     aprs::build_frame(config.callsign, 0, "rig   ", 0, ":" + info, buffer);
 
-    LOG("Sending APRS packet: Address: %s, | payload: %s\n", config.callsign, info.c_str());
+    LOG_IND(2, "Sending APRS packet: Address: %s, | payload: %s\n", config.callsign, info.c_str());
 
     aprs_tx_task.configure(1200, 2200, 1, 8, 10000, 300, 300); // APRS uses fixed 10k bandwidth
     aprs_tx_task.set_data(buffer);
@@ -307,7 +307,7 @@ void APRSView::send_packet(std::string info) {
             if (status->fifo_underruns) {
                 status::pop_alert(status::ERROR, "FIFO underruns");
             }
-            LOG("Finished sending APRS packet\n");
+            LOG_IND(-2, "Finished sending APRS packet\n");
             start_rx();
         }
     });

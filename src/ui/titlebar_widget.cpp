@@ -25,9 +25,8 @@
 TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
     sdcard_signal.add(this, TitleBarWidgetInner::signal_static_callback);
     battery::battery_signal.add(this, TitleBarWidgetInner::signal_static_callback);
-    power_amp::temp_signal.add(this, [this](void *, const void *) {
-        set_dirty();
-    });
+    power_amp::temp_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    power_amp::status_signal.add(this, TitleBarWidgetInner::signal_static_callback);
     rf_coupler::rf_coupler_signal.add(this, TitleBarWidgetInner::signal_static_callback);
     rtc_signal.add(this, [this](void *, const void *) {
         // Repaing every 5 seconds
@@ -53,18 +52,10 @@ bool TitleBarWidgetInner::paint_callback() {
     display->setFont(font);
 
 #if ENABLE_RTC
-    st_datetime datetime = rtc_get_date_time();
-    uint32_t current_epoch = rtc_to_epoch(&datetime.time, &datetime.date);
-    if (current_epoch != last_epoch) {
-        last_epoch = current_epoch;
-    } else {
-        // The clock is not ticking
-        color = C565_GREY_DARK;
-        datetime = {};
-    }
+
+    color = is_rtc_ok() ? C565_WHITE : C565_GREY_DARK;
 
     sprintf(buff, "%02d:%02d ", datetime.time.Hours, datetime.time.Minutes);
-    // sprintf(buff, "%02d/%02d %02d:%02d  ",date.Month,date.Date,time.Hours,time.Minutes);
 
     display->setColor(color);
     display->print(buff);
@@ -183,21 +174,29 @@ bool TitleBarWidgetInner::paint_callback() {
 
     display->setFont((FontDef *)&Font_Tiny8x8);
 
-    if (power_amp::temp >= power_amp::params.MIN_TEMP) {
-
-        if (power_amp::temp < power_amp::params.TEMP_LOW_THRESHOLD) {
-            color = C565_GREEN;
-        } else if (power_amp::temp > power_amp::params.TEMP_HIGH_THRESHOLD) {
-            color = C565_RED;
-        } else {
-            color = C565_YELLOW;
-        }
-
-        display->setColor(color);
-        display->print(" ");
-        display->print(power_amp::temp);
-        display->print("`"); // º is mapped to '
+    if (power_amp::status == power_amp::SHUTDOWN) {
+        uint32_t remaining_sec = max2(power_amp::hpa_shutdown_timeout_ms - (HAL_GetTick() - power_amp::last_hpa_shutdown_ms), 0) / 1000;
+        display->print(" -");
+        display->print(remaining_sec);
+        display->print(" s");
         display->setColor(C565_WHITE);
+    } else {
+        if (power_amp::temp >= power_amp::params.MIN_TEMP) {
+
+            if (power_amp::temp < power_amp::params.TEMP_LOW_THRESHOLD) {
+                color = C565_GREEN;
+            } else if (power_amp::temp > power_amp::params.TEMP_HIGH_THRESHOLD) {
+                color = C565_RED;
+            } else {
+                color = C565_YELLOW;
+            }
+
+            display->setColor(color);
+            display->print(" ");
+            display->print(power_amp::temp);
+            display->print("`"); // º is mapped to '
+            display->setColor(C565_WHITE);
+        }
     }
 
     // TODO: GPSDO lock. Meanwhile, warmup time has passed
@@ -227,14 +226,15 @@ void TitleBarWidgetInner::before_paint() {
 
     st_topBar topBar = {main_board::get_mute() ? true : false};
 
-    if (this->dirty() || !(topBar == this->status)) {
-        this->status = topBar;
-        this->set_dirty();
+    if (dirty() || !(topBar == status)) {
+        datetime = rtc_get_date_time();
+        status = topBar;
+        set_dirty();
     }
 }
 
 void TitleBarWidgetInner::on_info_changed_signal(const void *) {
-    this->set_dirty();
+    set_dirty();
 }
 
 void TitleBarWidget::init() {

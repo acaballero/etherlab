@@ -165,9 +165,9 @@ void View::on_child_update(Widget *w) {
         return a->get_z_index() < b->get_z_index(); // Ascending order
     });
 
-    if (STR_IN(w->get_name(), "aprs")) {
-        LOG("on_child_update(%s)\n", w->get_name());
-    }
+    //  if (STR_IN(w->get_name(), "aprs")) {
+    //     LOG("on_child_update(%s)\n", w->get_name());
+    // }
     for (uint16_t i = 0; i < children_.size(); i++) {
         Widget *widget = children_[i];
 
@@ -190,9 +190,9 @@ void View::on_child_update(Widget *w) {
             }
         }
 #if DEBUG_MSGS
-        if (STR_IN(widget->get_name(), "aprs")) {
-            LOG("Cleared %s visible parts: %d\n", widget->get_name(), widget->visible_rects.size());
-        }
+        //  if (STR_IN(widget->get_name(), "aprs", "msg")) {
+        //       LOG("Cleared %s visible parts: %d\n", widget->get_name(), widget->visible_rects.size());
+        //   }
 #endif
         for (uint16_t j = i + 1; j < children_.size(); j++) {
             Widget *sibling = children_[j];
@@ -200,16 +200,16 @@ void View::on_child_update(Widget *w) {
                 const Rect r = widget->clip(sibling->screen_rect());
                 if (!r.is_empty()) {
 #if DEBUG_MSGS
-                    if (STR_IN(widget->get_name(), "aprs")) {
-                        if (r.contains(widget->screen_rect())) {
-                            LOG("Widget %s hidden by %s. %d visible parts\n", widget->get_name(), sibling->get_name(), widget->visible_rects.size());
-                        } else {
+                    //    if (STR_IN(widget->get_name(), "aprs", "msg")) {
+                    //        if (r.contains(widget->screen_rect())) {
+                    //            LOG("Widget %s hidden by %s. %d visible parts\n", widget->get_name(), sibling->get_name(), widget->visible_rects.size());
+                    //       } else {
 
-                            LOG("Widget %s (%d) overlapped by %s (%d).", widget->get_name(), widget->get_z_index(), sibling->get_name(),
-                                sibling->get_z_index());
-                            LOG_RAW(" %d visible parts\n", widget->visible_rects.size());
-                        }
-                    }
+                    //           LOG("Widget %s (%d) overlapped by %s (%d).", widget->get_name(), widget->get_z_index(), sibling->get_name(),
+                    //               sibling->get_z_index());
+                    //          LOG_RAW(" %d visible parts\n", widget->visible_rects.size());
+                    //      }
+                    //   }
 #endif
                 }
             }
@@ -245,6 +245,7 @@ bool View::remove_child(Widget *const widget) {
         }
 
         widget->set_parent(nullptr);
+        set_dirty();
 
         return true;
     }

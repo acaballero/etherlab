@@ -9,6 +9,7 @@
 #include "stm32f4xx_hal_dac_ex_custom.h"
 #include "status.h"
 #include "stm32f4xx_hal_def.h"
+#include "stm32f4xx_hal_gpio.h"
 
 DAC_HandleTypeDef hdac1;
 
@@ -60,6 +61,12 @@ void MX_DAC_Init(void) {
     if (HAL_DAC_ConfigChannel(&hdac1, &sConfig, DAC_CHANNEL_2) != HAL_OK) {
         Error_Handler();
     }
+
+    // Add this after initialization to verify
+    LOG("DAC_CR = 0x%08X\n", DAC->CR);
+    LOG("CH1 enabled: %d, buffer: %d\n", (DAC->CR & DAC_CR_EN1) ? 1 : 0,
+        (DAC->CR & DAC_CR_BOFF1) ? 0 : 1); // BOFF=0 means buffer enabled
+    LOG("CH2 enabled: %d, buffer: %d\n", (DAC->CR & DAC_CR_EN2) ? 1 : 0, (DAC->CR & DAC_CR_BOFF2) ? 0 : 1);
     /* USER CODE BEGIN DAC_Init 2 */
 
     /* USER CODE END DAC_Init 2 */
@@ -88,6 +95,7 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac) {
         GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5;
         GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
         GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
         HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
         /* DAC DMA Init */

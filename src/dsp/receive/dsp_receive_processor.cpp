@@ -42,8 +42,7 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
             int16_t *out_p = (int16_t *)buffer->p;
 
             for (size_t i = 0; i < buffer->count / 2; i++) {
-                out_p[i * 2] = ((uint16_t *)p)[i] * dsp::dsp_params->gain_factor + config.hw.dac_offset;
-                // out_p[i + 1] = ((uint16_t *)p)[i + 1] + config.hw.dac_offset;
+                out_p[i * 2] = ((uint16_t *)p)[i];
             }
 
             output_stream.consume(block_size_bytes, (char **)&p);

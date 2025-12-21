@@ -25,26 +25,22 @@ void SignalGeneratorTask::work() {
 
 bool SignalGeneratorTask::start() {
 
-    this->status.direction = DSP_DIRECTION_OUT;
-    this->status.bandwidth = fft::fft_params.span;
-    this->status.sample_rate = fft::fft_params.sample_freq;
-    this->status.decimation_factor = fft::fft_params.decimation_factor;
-    this->status.bits_per_sample = 16;
-    this->status.n_channels = 2;
-    this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
-    this->status.decimated_block_size = DSP_BLOCK * 2 / fft::fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
-    this->status.decimated_block_size_bytes = this->status.block_size_bytes / fft::fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    status.direction = DSP_DIRECTION_OUT;
+    status.bandwidth = fft::fft_params.span;
+    status.sample_rate = fft::fft_params.sample_freq;
+    status.decimation_factor = fft::fft_params.decimation_factor;
+    status.bits_per_sample = 16;
+    status.n_channels = 2;
+    status.block_size_bytes = DSP_BLOCK * 2 * 2;
+    status.decimated_block_size = DSP_BLOCK * 2 / fft::fft_params.decimation_factor / (status.n_channels == 1 ? 2 : 1);
+    status.decimated_block_size_bytes = status.block_size_bytes / fft::fft_params.decimation_factor / (status.n_channels == 1 ? 2 : 1);
 
-    bool ret =
-        radio_config({.direction = mode,
-                      .sample_freq = this->status.sample_rate * this->status.decimation_factor,
-                      .freq = 0,
-                      .mode = (mode == RF_DIRECTION_RX) ? DSP : ANALOG}); // Radio mode is DSP if the ouput mode is RX so the signal reaches the audio amp
+    bool ret = radio_config({.direction = mode, .sample_freq = status.sample_rate / 4, .freq = 0, .mode = DSP});
 
-    this->status.status = DSP_STATUS_RUNNING;
+    status.status = DSP_STATUS_RUNNING;
 
     if (!ret) {
-        this->halt(DSP_ERR);
+        halt(DSP_ERR);
         return false;
     }
 
@@ -52,14 +48,13 @@ bool SignalGeneratorTask::start() {
 }
 
 void SignalGeneratorTask::stop() {
+    if (status.status != DSP_STATUS_STOPPED) {
 
-    if (this->status.status != DSP_STATUS_STOPPED) {
-
-        this->status.status = DSP_STATUS_STOPPED;
+        status.status = DSP_STATUS_STOPPED;
 
         Task::stop(); // Let the base class finish
 
-        // TODO: Centralize returning to digital RX
-        radio_config({RF_DIRECTION_RX, 0});
+        // TODO: Centralize returning to previous mode
+        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
     }
 }

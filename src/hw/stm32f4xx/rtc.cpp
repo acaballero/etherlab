@@ -5,6 +5,7 @@
 #include "rtc.h"
 #include "string.h"
 #include "Signal.h"
+#include <sys/_stdint.h>
 
 #define JULIAN_DATE_BASE 2440588 // Unix epoch time in Julian calendar (UnixTime = 00:00:00 01.01.1970 => JDN = 2440588)
 
@@ -14,6 +15,8 @@ RTC_HandleTypeDef hrtc;
 st_datetime date_time;
 st_datetime last_boot;
 Signal rtc_signal;
+uint32_t last_epoch;
+bool rtc_ok = false;
 
 /**
  * @brief RTC MSP Initialization
@@ -166,6 +169,10 @@ void RTC_Alarm_IRQHandler(void) {
     /* USER CODE END RTC_Alarm_IRQn 1 */
 }
 
+bool is_rtc_ok() {
+    return rtc_ok;
+}
+
 // Convert Date/Time structures to epoch time
 uint32_t rtc_to_epoch(RTC_TimeTypeDef *time, RTC_DateTypeDef *date) {
     uint8_t a;
@@ -260,6 +267,18 @@ void rtc_update() {
 
 st_datetime rtc_get_date_time() {
     rtc_update();
+
+    uint32_t current_epoch = rtc_to_epoch(&date_time.time, &date_time.date);
+
+    if (current_epoch != last_epoch) {
+        last_epoch = current_epoch;
+        rtc_ok = true;
+    } else {
+        // The clock is not ticking. Return elapsed time from boot
+        rtc_ok = false;
+        rtc_from_epoch(HAL_GetTick() / 1000, &date_time.time, &date_time.date);
+    }
+
     return date_time;
 }
 

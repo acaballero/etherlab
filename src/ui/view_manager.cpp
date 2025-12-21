@@ -73,7 +73,7 @@ void main_view_warning_callback(void *, const void *args) {
 
     status::Status *st = (status::Status *)args;
 
-    static int task_id; // Ugly. Functions should be stateless, but 'static' exist so what shoud I say... ;)
+    static int task_id; // Ugly. Functions should be stateless, but 'static' exist so what should I say... ;)
 
     View *current = breadcrumb[view_index];
 
@@ -85,11 +85,29 @@ void main_view_warning_callback(void *, const void *args) {
         4000,
         [current]() {
             current->remove_child(&msg_w);
-            // msg_w.set_visible(false);
         },
         "msgv");
 
     bool was_visible = msg_w.parent() && msg_w.visible();
+
+    // Try to insert the message in the current focused view (commented-out because having so many widgets overlaps caused flickering)
+    // Widget *focused_w = current->focused_widget(false);
+
+    // if ( focused_w && focused_w->parent_rect().width() > msg_w.parent_rect().width() &&
+    //     focused_w->children().size()) { // Fits and its a view (has childrens)
+    //     current = (View *)focused_w;
+
+    //     auto pw = focused_w->parent_rect().width();
+    //     auto ph = focused_w->parent_rect().height();
+    //     auto mw = msg_w.parent_rect().width();
+    //     auto mh = msg_w.parent_rect().height();
+    //     msg_w.set_left((pw - mw) / 2);
+    //     msg_w.set_top((ph - mh) / 2);
+    // } else {
+    //     msg_w.set_left(6);
+    //     msg_w.set_top(DISPLAY_Y_PIXELS * 2 / 3);
+    // }
+
     current->add_child(&msg_w); // does nothing if the child already has a parent
     current->to_top(&msg_w);
 
@@ -267,54 +285,6 @@ int32_t rect_distances(const ui::DIRECTION direction, const Rect &rect_from, con
             return 0;
     }
 }
-
-// int32_t rect_center_distances(const ui::DIRECTION direction, const Rect &rect_from, const Rect &rect_to) {
-//     Coord dx, dy;
-
-//     Point p1 = rect_from.center();
-//     Point p2 = rect_to.center();
-
-//     switch (direction) {
-//         case ui::RIGHT:
-//             dx = p2.x() - p1.x();
-//             dy = p2.y() - p1.y();
-//             break;
-//         case ui::DOWN:
-//             dx = p2.x() - p1.x();
-//             dy = p2.y() - p1.y();
-//             break;
-//         case ui::LEFT:
-//             dx = p1.x() - p2.x();
-//             dy = p1.y() - p2.y();
-//             break;
-//         case ui::UP:
-//             dx = p1.x() - p2.x();
-//             dy = p1.y() - p2.y();
-//             break;
-
-//         default:
-//             return -1;
-//     }
-
-//     if (dx < 0 || dy < 0) {
-//         return -1;
-//     }
-
-//     switch (direction) {
-//         case ui::RIGHT:
-//         case ui::LEFT:
-//             return dx + dy * dy * dy;
-//             break;
-
-//         case ui::UP:
-//         case ui::DOWN:
-//             return dx * dx * dx + dy;
-//             break;
-
-//         default:
-//             return 0;
-//     }
-// }
 
 bool on_input(st_inputEvent &e) {
     bool consumed = currentView->on_input(e);

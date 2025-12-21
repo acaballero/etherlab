@@ -92,7 +92,7 @@ void (*arm_cmplx_mag)(float32_t *pSrc, float32_t *pDst, uint32_t numSamples) = a
 
 // When we use multiple slices, each of them will be obtained using a different LO frequency.
 // This happens to slightly change the offset at the input of the ADCs, so we use a pair of blockers (I,Q) for each slice
-DCBlock dcBlockers[FFT_MAX_SLICES][2];
+DCBlock dc_blockers[FFT_MAX_SLICES][2];
 
 // Smoothing factor lookup table
 // Stores 2^SMOOTH_GAIN_LUT_PRECISION values of (1 - exp(-0.005 * ((DB - NOISE_FLOOR_DB + 1))))
@@ -107,7 +107,7 @@ uint32_t overlap_factor = 2;
 bool first_frame = true;
 // TODO: Move to storable properties
 
-bool fft_estimateIQBalance = false;
+bool fft_estimate_iq_balance = false;
 /* Noise floor calculation */
 uint16_t fft_calc_noise_floor_period_ms = 200; // 0 = noise floor disabled
 unsigned long fft_last_noise_floor_calculation_ms;
@@ -123,6 +123,8 @@ float dbm_peak = FFT_MIN_DB;
 // FFT magnitude ADC overload threshold
 adc_type adc_max_ampl;
 
+bool iq_balance_enabled = true;
+
 uint8_t current_max_slices = config.fft.max_slices;
 
 void set_max_slices(uint8_t n) {
@@ -132,6 +134,10 @@ void set_max_slices(uint8_t n) {
     if (ISANALOG) {
         current_max_slices = n;
     }
+}
+
+void enable_iq_balance(bool v) {
+    iq_balance_enabled = v;
 }
 
 std::pair<int, int> get_bandwidth_pixel_range() {
@@ -277,7 +283,7 @@ float fft_mag_conv_factor = V_REF / (float)FFT_N / (float)0xFFF;
 float fft_radio_gain_factor;
 
 volatile FFT_STATUS fft_status = FFT_STATUS_IDLE;
-FFTIQBalancer fftIQBalancer;
+FFTIQBalancer fft_iq_balancer;
 CCM_SECTION float window[FFT_N];
 bool initialized = false;
 
@@ -386,14 +392,14 @@ uint64_t last_iqbalance_estimate_ms = 0;
 
 void fft_dcremoval(buffer_t<adc_type> &vData) {
 
-    dcBlockers[fft_slice_n][0].filter(vData, 2, 0);
-    dcBlockers[fft_slice_n][1].filter(vData, 2, 1);
+    dc_blockers[fft_slice_n][0].filter(vData, 2, 0);
+    dc_blockers[fft_slice_n][1].filter(vData, 2, 1);
 }
 
 void fft_dcremoval(buffer_t<float32_t> &vData) {
 
-    dcBlockers[fft_slice_n][0].filter(vData, 2, 0);
-    dcBlockers[fft_slice_n][1].filter(vData, 2, 1);
+    dc_blockers[fft_slice_n][0].filter(vData, 2, 0);
+    dc_blockers[fft_slice_n][1].filter(vData, 2, 1);
 }
 
 void unzipIQSamples(complex_t_f32 *complexData, fft_type *destReal, fft_type *destImag, uint16_t size) {
@@ -469,12 +475,14 @@ void fft_init() {
 
     min_max_f32((float32_t *)config.fft.iq_balance_precZ, FFT_IQ_BALANCER_FILTER_SIZE, &minPrecZ, &maxPrecZ);
 
+    enable_iq_balance(config.fft.enable_iq_balance);
+
     if (maxPrecZ > FFT_IQ_BALANCER_MIN_PRECISSION) {
 
         // Initialize only if we have usable data
 
-        fftIQBalancer.setMeanZ(config.fft.iq_balance_meanZ);
-        fftIQBalancer.setPrecZ(config.fft.iq_balance_precZ);
+        fft_iq_balancer.setMeanZ(config.fft.iq_balance_meanZ);
+        fft_iq_balancer.setPrecZ(config.fft.iq_balance_precZ);
     }
 
     for (int i = 0; i < DISPLAY_X_PIXELS; i++) {
@@ -497,10 +505,15 @@ void fft_init() {
     agc::signal_gain.add(nullptr, [](void *, const void *) {
         fft_fifo.reset();
     });
+
+    main_board::mode_signal.add(nullptr, [](void *, const void *) {
+        // The IQ balancer is disabled when the signal comes from the DSP DACs
+        enable_iq_balance(config.mode != DIGITAL_TX);
+    });
 }
 
 void reset_iq_balancer() {
-    fftIQBalancer.reset();
+    fft_iq_balancer.reset();
 }
 
 /* Finds the optimal FFT parameters based on the current selected span
@@ -530,8 +543,7 @@ bool fft_config(uint32_t span) {
 /*
  * Performance with -Og optimizations for FFT_N=128: 5ms
  */
-//__attribute__((section(".ccmram")))
-void doFFT() {
+void compute_fft() {
 
     //  calibrateFFT(); // To measure max bin value
 
@@ -552,20 +564,20 @@ void doFFT() {
 
         reorder_bins(fft_slice_buff);
 
-        fftIQBalancer.setFftRbw(fft::fft_params.rbw);
+        fft_iq_balancer.setFftRbw(fft::fft_params.rbw);
 
-        if (fft_estimateIQBalance && fft_slice_n == 0) {
+        if (fft_estimate_iq_balance && fft_slice_n == 0) {
 
-            fftIQBalancer.estimate(fft_slice_buff);
+            fft_iq_balancer.estimate(fft_slice_buff);
 
-            complex_t_f32 *meanZ = fftIQBalancer.getMeanPoints();
-            float32_t *precZ = fftIQBalancer.getPrecisionPoints();
+            complex_t_f32 *meanZ = fft_iq_balancer.getMeanPoints();
+            float32_t *precZ = fft_iq_balancer.getPrecisionPoints();
             memcpy(config.fft.iq_balance_precZ, precZ, FFT_IQ_BALANCER_FILTER_SIZE * sizeof(config.fft.iq_balance_precZ[0]));
             memcpy(config.fft.iq_balance_meanZ, meanZ, FFT_IQ_BALANCER_FILTER_SIZE * sizeof(config.fft.iq_balance_meanZ[0]));
         }
 
-        if (config.fft.enable_iq_balance) {
-            fftIQBalancer.correct(fft_slice_buff);
+        if (iq_balance_enabled) {
+            fft_iq_balancer.correct(fft_slice_buff);
         }
     }
 }
@@ -1002,7 +1014,7 @@ void fft_work() {
 
     adquire_fft_async();
 
-    doFFT();
+    compute_fft();
 
     if (config.fft.view_mode == FFT_VIEW_TIME_DOMAIN) {
 
@@ -1071,12 +1083,12 @@ void update_fft() {
 
     m = HAL_GetTick();
 
-    if (config.fft.iq_balance_estimate_period_ms) {
+    if (config.fft.iq_balance_estimate_period_ms && iq_balance_enabled) {
         if (m - last_iqbalance_estimate_ms > config.fft.iq_balance_estimate_period_ms) {
             last_iqbalance_estimate_ms = m;
-            fft_estimateIQBalance = true;
+            fft_estimate_iq_balance = true;
         } else {
-            fft_estimateIQBalance = false;
+            fft_estimate_iq_balance = false;
         }
     }
 
@@ -1110,6 +1122,7 @@ void update_fft() {
 
         fft_work();
     }
+
     view_manager::mainView.Spectrum()->set_dirty();
 }
 

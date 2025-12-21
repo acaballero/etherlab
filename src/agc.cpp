@@ -95,6 +95,10 @@ void set_attack_ms(uint32_t v) {
 
 void check_agc() {
 
+    // if (ISTX) {
+    //     return;
+    // }
+
     get_agc(false);
     signal_agc_voltage.emit(&agc_voltage);
 

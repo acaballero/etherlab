@@ -403,6 +403,8 @@ bool ReceiveTaskBase::start() {
 void ReceiveTaskBase::stop() {
 
     if (status.status != DSP_STATUS_STOPPED) {
+        // Stop task processing timer
+        HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
 
         // Free decimators memory (wish this wouldn't be necessary but there must be room for other allocations while stopped)
         decimators[0].reset();
@@ -412,9 +414,6 @@ void ReceiveTaskBase::stop() {
         status.status = DSP_STATUS_STOPPED;
 
         dsp_set_real_time(false);
-
-        // Stop task processing timer
-        HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
 
         Task::stop(); // Let the base class finish
 

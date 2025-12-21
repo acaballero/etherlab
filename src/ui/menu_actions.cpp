@@ -24,9 +24,8 @@ menu_action_st navigation_actions_arr[] = {{"<-",
                                             }},
                                            {"x",
                                             []() {
-                                                input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, BTN_ENCODER, 0});
-                                            },
-                                            C565_GREEN_DARK},
+                                                input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, FPANEL_PAD_BUTTON_6, 0});
+                                            }},
                                            {"Back", []() {
                                                 input_controller::queue_input_event({INPUT_EVENT_TYPE_BUTTON_PRESS, KEY_BACK, 0});
                                             }}};

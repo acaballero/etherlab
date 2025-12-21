@@ -3,6 +3,8 @@
 //
 
 #include <io/file_factory.h>
+#include <sys/_stdint.h>
+#include "dsp/blocks/signal_generator.h"
 #include "dsp/fft/fft_types.h"
 #include "dsp_signal_generator_ui.h"
 #include "../dsp_common.h"
@@ -25,9 +27,12 @@
 
 namespace dspSignalGeneratorUI {
 
-RF_DIRECTION mode;
+RF_DIRECTION mode = RF_DIRECTION_TX;
 int command = DSP_COMMAND_START;
 SignalToken signal_token;
+
+// Pre-declare
+void set_signal_params();
 
 void on_freq_signal(void *thisptr, const void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
@@ -50,11 +55,24 @@ void on_event(st_dsp_params *status) {
     }
 }
 
+Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::dsp_config.test_signal.pulse_duty, 0, ' ', '.', "%",
+                                         [](int8_t) {
+                                             set_signal_params();
+                                         },
+                                         0, 100, 1, 10);
+
 void set_signal_params() {
     DspSignalGeneratorProcessor *processor = ((DspSignalGeneratorProcessor *)processors[dsp::DSP_TASK_SIGNAL_GENERATOR]);
-    processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
-                          dsp::dsp_config.test_signal.pulse_duty, config.fft.sample_rate, config.hw.dac_offset);
 
+    if (dsp::dsp_config.test_signal.shape == SIGNAL_SHAPE_PULSE) {
+        processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
+                              dsp::dsp_config.test_signal.pulse_duty, config.fft.sample_rate);
+        pulseDutyMenu.enable();
+    } else {
+        processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
+                              (SIGNAL_SHAPE)dsp::dsp_config.test_signal.shape, config.fft.sample_rate);
+        pulseDutyMenu.disable();
+    }
     // Tasks parameters. Essentially, the IF direction
     SignalGeneratorTask *task = ((SignalGeneratorTask *)dsp::tasks[dsp::DSP_TASK_SIGNAL_GENERATOR]);
     task->mode = mode;
@@ -89,6 +107,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
         case Menu::enterEvent:
             signal_token = radio::freq_signal.add(NULL, on_freq_signal);
             dsp_set_real_time(true);
+            set_signal_params();
             break;
 
         case Menu::exitEvent:
@@ -129,6 +148,12 @@ Menu::result on_freq_updated() {
     return Menu::proceed;
 }
 
+Menu::menu_option_st<uint8_t> shape_options[] = {{"Sine", SIGNAL_SHAPE_SIN},
+                                                 {"Saw down", SIGNAL_SHAPE_SAW_DOWN},
+                                                 {"Saw up", SIGNAL_SHAPE_SAW_UP},
+                                                 {"Triangle", SIGNAL_SHAPE_TRI},
+                                                 {"Pulse", SIGNAL_SHAPE_PULSE}};
+
 Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &dsp::dsp_config.gain, 0, ' ', '.', "dB",
                                     [](int8_t v) {
                                         dsp::set_gain_db(v);
@@ -145,16 +170,21 @@ Menu::numberPrompt<uint32_t> modulationFrequencyMenu((const char *)"Modulation f
                                                      [](uint32_t) {
                                                          set_signal_params();
                                                      },
-                                                     10, DSP_BANDWIDTH, 10, 100);
+                                                     1, DSP_BANDWIDTH, 1, 10);
 
-Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::dsp_config.test_signal.pulse_duty, 0, ' ', '.', "%",
-                                         [](int8_t) {
-                                             set_signal_params();
-                                         },
-                                         0, 100, 1, 10);
+Menu::optionsPrompt<uint8_t> shapeMenu((const char *)"Shape", shape_options, dsp::dsp_config.test_signal.shape,
+                                       sizeof(shape_options) / sizeof(shape_options[0]), [](uint8_t) {
+                                           set_signal_params();
+                                       });
+
+Menu::numberPrompt<float> dacAmpBalanceMenu((const char *)"DAC amplitude balance", &config.hw.dac_amp_balance, 2, ' ', '.', nullptr,
+                                            [](float) {
+
+                                            },
+                                            0.5, 1.5, 0.01, 0.1);
 
 MENU(signalGeneratorMenu, "Signal generator", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle, SUBMENU(signalGeneratorToggle),
-     SUBMENU(modeToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle), OBJ(basebandFrequencyMenu),
-     OBJ(modulationFrequencyMenu), OBJ(pulseDutyMenu), OBJ(gainMenu),
-     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), OBJ(freqEdit))
+     SUBMENU(modeToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 3000, 1, 0, doNothing, noEvent, noStyle),
+     FIELD(config.hw.dac_off_balance, "DAC offset  balance:", "", -1000, 1000, 1, 0, doNothing, noEvent, noStyle), OBJ(dacAmpBalanceMenu),
+     OBJ(basebandFrequencyMenu), OBJ(modulationFrequencyMenu), OBJ(shapeMenu), OBJ(pulseDutyMenu), OBJ(gainMenu), OBJ(freqEdit))
 } // namespace dspSignalGeneratorUI

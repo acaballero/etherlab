@@ -30,6 +30,10 @@ class FIFO {
     uint32_t free();
     uint32_t available();
 
+    char *write_p() {
+        return this->data + this->write_ix;
+    }
+
     uint32_t get_size() const;
 
     void set_size(uint32_t size);

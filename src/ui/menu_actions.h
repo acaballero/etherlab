@@ -11,7 +11,7 @@
 
 namespace Menu {
 
-enum NAVIGATION_ACTIONS { UP = 0, DOWN };
+enum NAVIGATION_ACTIONS { UP = 0, DOWN, ENTER, BACK };
 menu_actions_st &get_navigation_actions();
 
 } // namespace Menu

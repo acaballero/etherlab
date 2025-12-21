@@ -9,21 +9,27 @@
 
 void DspSignalGeneratorProcessor::work(const buffer_t<adc_type> *buffer) {
     this->status.processed_blocks++;
-    buffer_t<complex_t> wrapped_buffer{(complex_t *)buffer->p, buffer->count};
+    buffer_t<complex_t> wrapped_buffer{(complex_t *)buffer->p, buffer->count / 2};
     modulator.get_block(wrapped_buffer);
 
-    int16_t *out_p = (int16_t *)buffer->p;
+    // for (int i = 0; i < buffer->count; i += 10) {
 
-    for (size_t i = 0; i < buffer->count * 2; i += 2) {
-        // TODO: Gain should be a generic and stackable block
-        out_p[i] *= dsp::dsp_params->gain_factor;
-        out_p[i + 1] *= dsp::dsp_params->gain_factor;
-    }
+    //     LOG_RAW("%d ; %d\n", buffer->p[i], buffer->p[i + 1]);
+    // }
 }
 
-void DspSignalGeneratorProcessor::set_config(uint32_t baseband_f, uint32_t mod_f, uint8_t mod_duty, uint32_t sample_rate, adc_type offset) {
-    sine.set_config(baseband_f, sample_rate);
+void DspSignalGeneratorProcessor::set_config(uint32_t baseband_f, uint32_t mod_f, uint8_t mod_duty, uint32_t sample_rate) {
+    baseband.set_config(baseband_f, sample_rate);
     pulse.set_config(mod_f, sample_rate);
     pulse.set_duty(mod_duty);
-    modulator.set_dc_offset(offset);
+    modulator.set_modulation(&pulse);
+    modulator.set_modulation_offset(0x7FF);
+}
+
+void DspSignalGeneratorProcessor::set_config(uint32_t baseband_f, uint32_t mod_f, SIGNAL_SHAPE shape, uint32_t sample_rate) {
+    baseband.set_config(baseband_f, sample_rate);
+    signal.set_config(mod_f, sample_rate);
+    signal.set_shape(shape);
+    modulator.set_modulation(&signal);
+    modulator.set_modulation_offset(shape == SIGNAL_SHAPE_SIN ? 0 : 0x7FF);
 }

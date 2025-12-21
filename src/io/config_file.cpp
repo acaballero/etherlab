@@ -111,12 +111,14 @@ template <> bool ConfigFile<st_config>::save(const st_config *cfg) {
     WRITE_FIELD("dsp.test_signal.pulse_duty=%d", cfg->dsp.test_signal.pulse_duty);
     WRITE_FIELD("dsp.test_signal.baseband_frequency=%u", cfg->dsp.test_signal.baseband_frequency);
     WRITE_FIELD("dsp.test_signal.modulation_frequency=%u", cfg->dsp.test_signal.modulation_frequency);
+    WRITE_FIELD("dsp.test_signal.shape=%d", cfg->dsp.test_signal.shape);
 
     WRITE_FIELD("hw.cmx973_vga=%d", cfg->hw.cmx973_vga);
     WRITE_FIELD("hw.cmx973_vgb=%d", cfg->hw.cmx973_vgb);
     WRITE_FIELD("hw.sd_write_max_kbps=%u", cfg->hw.sd_write_max_kbps);
     WRITE_FIELD("hw.offset=%d", cfg->hw.dac_offset);
-    WRITE_FIELD("hw.balance=%d", cfg->hw.dac_balance);
+    WRITE_FIELD("hw.dac_off_balance=%d", cfg->hw.dac_off_balance);
+    WRITE_FIELD("hw.dac_amp_balance=%f", cfg->hw.dac_amp_balance);
 
     WRITE_FIELD("coupler_0db_mv=%d", cfg->coupler_0db_mv);
     WRITE_FIELD("f_correction=%d", cfg->f_correction);
@@ -381,12 +383,14 @@ template <> bool ConfigFile<st_config>::load(st_config *cfg) {
     read_int8("dsp.test_signal.pulse_duty=", &cfg->dsp.test_signal.pulse_duty);
     read_uint("dsp.test_signal.baseband_frequency=", &cfg->dsp.test_signal.baseband_frequency);
     read_uint("dsp.test_signal.modulation_frequency=", &cfg->dsp.test_signal.modulation_frequency);
+    read_uint8("dsp.test_signal.shape=", &cfg->dsp.test_signal.shape);
 
     read_int("hw.cmx973_vga=", (int32_t *)&cfg->hw.cmx973_vga);
     read_int("hw.cmx973_vgb=", (int32_t *)&cfg->hw.cmx973_vgb);
     read_uint("hw.sd_write_max_kbps=", &cfg->hw.sd_write_max_kbps);
     read_uint16("hw.offset=", &cfg->hw.dac_offset);
-    read_int16("hw.balance=", &cfg->hw.dac_balance);
+    read_int16("hw.dac_off_balance=", &cfg->hw.dac_off_balance);
+    read_float("hw.dac_amp_balance=", &cfg->hw.dac_amp_balance);
 
     read_uint16("coupler_0db_mv=", &cfg->coupler_0db_mv);
     read_int("f_correction=", &cfg->f_correction);

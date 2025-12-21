@@ -136,9 +136,8 @@ void dsp_init(dsp::st_dsp_config &config) {
 // }
 
 void dsp_stop_task() {
-    for (int i = 0; i < DSP_DAC_BUFF_SIZE; i++) {
-        dac_buff[i] = (adc_type)config.hw.dac_offset;
-    }
+
+    reset_dac_buffer();
 
     LOG_IND(2, "dsp_stop_task\n");
     if (current_processor) {
@@ -331,10 +330,26 @@ inline void dac_work() {
         current_processor->work(current_buffer);
     }
 
+    // Apply gain
+    adc_type *p = (adc_type *)current_buffer->p;
+    for (size_t i = 0; i < current_buffer->count; i += 2) {
+        p[i] = (adc_type)(p[i] * dsp::dsp_params->gain_factor);
+        p[i + 1] = (adc_type)(p[i + 1] * dsp::dsp_params->gain_factor);
+    }
+
     if (dsp::dsp_params && dsp::dsp_params->direction == DSP_DIRECTION_OUT) {
-        // DSP TX direction: The FFT is fed from the produced data upstream
+
         FIFO_ERROR err = fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
+
         UNUSED(err);
+    }
+
+    // Apply DAC pre-distortion
+    auto offset_balance = config.hw.dac_offset + config.hw.dac_off_balance;
+
+    for (size_t i = 0; i < current_buffer->count; i += 2) {
+        p[i] = p[i] + config.hw.dac_offset;
+        p[i + 1] = (adc_type)(p[i + 1] * config.hw.dac_amp_balance) + offset_balance;
     }
 
     // GPIOD->BSRR |= GPIO_PIN_5 << 16;

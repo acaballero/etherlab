@@ -21,7 +21,7 @@ void OOKModulator::get_sample(adc_type &sample) {
     modulation->get_sample(sample_mod);
     baseband->get_sample(sample_base);
 
-    sample = (sample_mod>0 ? sample_base : 0) + dc_offset;
+    sample = (sample_mod > 0 ? sample_base : 0);
 }
 
 void OOKModulator::get_complex_sample(complex_t &sample) {
@@ -31,8 +31,6 @@ void OOKModulator::get_complex_sample(complex_t &sample) {
     modulation->get_sample(sample_mod);
     baseband->get_complex_sample(sample_base);
 
-    sample.r = (sample_mod>0 ? sample_base.r : 0) + dc_offset;
-    sample.i = (sample_mod>0 ? sample_base.i : 0) + dc_offset;
+    sample.r = (sample_mod > 0 ? sample_base.r : 0);
+    sample.i = (sample_mod > 0 ? sample_base.i : 0);
 }
-
-

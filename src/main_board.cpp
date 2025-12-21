@@ -150,6 +150,12 @@ void init() {
     sstrength::squelch_signal.add(NULL, s_strength_callback);
     battery::battery_signal.add(NULL, battery_callback);
     main_board::if_filter_signal.add(nullptr, if_filter_signal_callback);
+
+    // Prevent starting in TX
+    if (ISTX) {
+        config.mode = ISANALOG ? ANALOG_RX : DIGITAL_RX;
+    }
+
     set_modulation_mode(config.modulation, true);
 
     // Standby led

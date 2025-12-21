@@ -673,13 +673,18 @@ result freqMemorySelectedEvent(eventMask e, navNode &nav);
 
 FreqMemoryMenu freqMemMenu("Frequency memory", 512, nullptr, freqMemEditMenu, freqMemorySelectedEvent, (eventMask)(enterEvent | exitEvent));
 
-const menu_actions_st &get_actions() {
-    static menu_action_st menu_actions[] = {
-        get_navigation_actions().actions[Menu::UP], get_navigation_actions().actions[Menu::DOWN], {"Delete", []() {
-                                                                                                       if (freqMemMenu.curr_ix >= 0) {
-                                                                                                           del_freq(freqMemMenu.curr_ix);
-                                                                                                       }
-                                                                                                   }}};
+menu_actions_st &get_actions() {
+    static menu_action_st menu_actions[] = {get_navigation_actions().actions[Menu::UP],
+                                            get_navigation_actions().actions[Menu::DOWN],
+                                            {"Delete",
+                                             []() {
+                                                 if (freqMemMenu.curr_ix >= 0) {
+                                                     del_freq(freqMemMenu.curr_ix);
+                                                 }
+                                             }},
+                                            {},
+                                            get_navigation_actions().actions[Menu::ENTER],
+                                            get_navigation_actions().actions[Menu::BACK]};
 
     static menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(menu_action_st)};
 
@@ -708,9 +713,8 @@ result freqMemorySelectedEvent(eventMask e, navNode &nav) {
         sprintf(tempFreqBuf, "%s", buf);
     }
 
-    auto actions = get_actions();
     if (e == Menu::enterEvent) {
-        ((MenuWidget *)view_manager::mainView.Menu())->set_quick_actions(&actions);
+        ((MenuWidget *)view_manager::mainView.Menu())->set_quick_actions(&get_actions());
 
     } else if (e == Menu::exitEvent) {
         // Remove context actions
