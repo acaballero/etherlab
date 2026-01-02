@@ -9,6 +9,7 @@
 #include "dsp/fft/fft.h"
 #include "dsp/receive/receive_task_base.h"
 #include "hw/stm32f4xx/adc.h"
+#include "hw/stm32f4xx/clocks.h"
 #include "main_board.h"
 #include "printf.h"
 #include "stdio.h"
@@ -118,8 +119,8 @@ void AFSKTXTask::work() {
                 im = (sine_table_i8[i_ix]);
 
                 //   LOG_RAW("%d,", tone_sample);
+                // ((complex_t *)out_p)[i] = {{(adc_type)tone_sample, (adc_type)sine_table_i8[(t_ix + 64) % 256]}};
 
-                //((complex_t *)out_p)[i] = {{(adc_type)tone_sample, (adc_type)sine_table_i8[(t_ix + 64) % 256]}};
                 ((complex_t *)out_p)[i] = {{re, im}};
             }
 
@@ -137,7 +138,7 @@ void AFSKTXTask::work() {
 void AFSKTXTask::configure(uint32_t phase_inc_mark, uint32_t phase_inc_space, uint8_t repeat, uint8_t symbols_per_byte, uint32_t bandwidth, uint16_t delay_ms,
                            uint16_t tail_ms) {
 
-    afsk_delta_coeff = ((1ULL << 32) / config.fft.sample_rate);
+    afsk_delta_coeff = ((1ULL << 32) / config.fft.sample_rate); // Assumes LUT of 256 values
 
     uint32_t samples_per_bit = config.fft.sample_rate / phase_inc_mark; // Assumes mark=1200 hz and divisor of sample_rate
     afsk_samples_per_bit = samples_per_bit;
@@ -194,8 +195,6 @@ bool AFSKTXTask::start() {
     status.decimated_block_size = DSP_BLOCK * 2 / status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
     status.decimated_block_size_bytes = this->status.block_size_bytes / status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
 
-    reset_dac_buffer(); // Prevents garbage output
-
     bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
 
     if (!ret) {
@@ -230,13 +229,17 @@ void AFSKTXTask::stop() {
 
         // Wait until data processing stops
         while (output_stream.available()) {
-            HAL_Delay(1);
+            delay_us(100);
         }
+
+        //   GPIOD->BSRR |= GPIO_PIN_9;
 
         Task::stop(); // Let the base class finish housekeeping stuff
 
+        // GPIOD->BSRR |= GPIO_PIN_9 << 16;
+
         // Put the radio back in RX
-        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
+        // radio_config({.direction = RF_DIRECTION_RX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
     }
     // LOG("------ [END] AFSKTX task STOP------\n");
 }

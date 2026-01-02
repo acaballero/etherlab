@@ -7,6 +7,7 @@
 
 #include "dsp_common.h"
 #include "buffer.hpp"
+#include <sys/_stdint.h>
 
 // DSP processing block size. Defines the number of samples adquired in each DMA cycle
 #define DSP_BLOCK 128
@@ -43,6 +44,6 @@ extern buffer_t<adc_type> dac_buffer_2;
 extern FIFO output_stream;
 extern FIFO input_stream;
 
-void reset_dac_buffer();
+void reset_dac_buffer(adc_type value = 0, uint16_t offset = 0, uint16_t count = DSP_DAC_BUFF_SIZE);
 
 #endif // TRX_FRONTEND_DSP_BUFFERS_H

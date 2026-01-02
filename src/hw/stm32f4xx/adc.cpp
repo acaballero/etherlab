@@ -428,7 +428,7 @@ void MX_ADC3_Init(void) {
     hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
     hadc3.Init.Resolution = ADC_RESOLUTION_12B;
     hadc3.Init.ScanConvMode = DISABLE;
-    hadc3.Init.ContinuousConvMode = ENABLE; // DISABLE;
+    hadc3.Init.ContinuousConvMode = DISABLE;
     hadc3.Init.DiscontinuousConvMode = DISABLE;
     hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
     hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -565,7 +565,7 @@ int GetADCValue(ADC_HandleTypeDef *hadc, uint32_t Channel, int count) {
 
     int val = 0, v = 0;
     HAL_StatusTypeDef err = HAL_OK;
-    ADC_ChannelConfTypeDef sConfig;
+    ADC_ChannelConfTypeDef sConfig{};
     sConfig.Channel = Channel;
     sConfig.Rank = 1;
     sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
@@ -574,13 +574,12 @@ int GetADCValue(ADC_HandleTypeDef *hadc, uint32_t Channel, int count) {
         ADC_Error_Handler();
     }
 
-    if (hadc == &hadc3) {
-        CUSTOM_HAL_ADC_Start(hadc);
-    }
     int cnt = 0;
     for (int i = 0; i < count + 1 && err == HAL_OK; i++) {
 
-        if (hadc != &hadc3) {
+        if (hadc == &hadc3) {
+            CUSTOM_HAL_ADC_Start(hadc);
+        } else {
             HAL_ADC_Start(hadc);
         }
 

@@ -591,11 +591,11 @@ Rect Widget::clip(const Rect &rect) {
 
     if (parts.size() == 0) {
         parts = {screen_rect()};
-#if DEBUG_MSGS
-        if (STR_IN(get_name(), "aprs", "msg")) {
-            LOG("Using screen rect as parts %d,%d %d x %d\n", parts[0].left(), parts[0].top(), parts[0].width(), parts[0].height());
-        }
-#endif
+        // #if DEBUG_MSGS
+        //         if (STR_IN(get_name(), "aprs", "msg")) {
+        //             LOG("Using screen rect as parts %d,%d %d x %d\n", parts[0].left(), parts[0].top(), parts[0].width(), parts[0].height());
+        //         }
+        // #endif
     }
 
     const Rect r = screen_rect().intersect(rect);

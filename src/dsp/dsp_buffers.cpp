@@ -28,8 +28,8 @@ buffer_t<adc_type> dac_buffer_1 = {(adc_type *const)(dac_buff), DSP_BLOCK * 2, 0
 buffer_t<adc_type> dac_buffer_2 = {(adc_type *const)(dac_buff + DSP_BLOCK * 2), DSP_BLOCK * 2, 0, COMPLEX_INTERLEAVED};
 // buffer_t<adc_type> tmp_buffer = {(adc_type *const)(tmp_buff), DSP_BLOCK * 2, 0, COMPLEX_INTERLEAVED};
 
-void reset_dac_buffer() {
-    for (int i = 0; i < DSP_DAC_BUFF_SIZE; i++) {
-        dac_buff[i] = (adc_type)config.hw.dac_offset;
+void reset_dac_buffer(adc_type value, uint16_t offset, uint16_t count) {
+    for (int i = offset; i < offset + count; i++) {
+        dac_buff[i] = value;
     }
 }

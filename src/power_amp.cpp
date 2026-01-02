@@ -39,7 +39,7 @@ bool hpa_shutdown{true};
 
 uint32_t hpa_shutdown_timeout_ms{10000}; // Once shut down, the HPA remains at least 10 seconds off
 
-os::periodic_task task(2000, loop);
+os::periodic_task task(500, loop);
 Signal temp_signal, status_signal;
 enum status status = OFF;
 float voltage;

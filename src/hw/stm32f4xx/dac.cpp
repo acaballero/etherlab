@@ -166,7 +166,7 @@ void DAC_DMA_Start(DAC_HandleTypeDef *hdac) {
             ret = HAL_DAC_Start_DualDMA(hdac, DAC_CHANNEL_12D, (uint32_t *)dac_buff, DSP_BLOCK * 2, DAC_ALIGN_12B_R);
 
             if (ret != HAL_OK) {
-                // LOG("HAL_DAC_Start_DualDMA ERROR!!\n");
+                LOG("HAL_DAC_Start_DualDMA: ERROR starting DAC DMA dual mode: %d\n", ret);
             } else {
                 dac_dma_started = true;
             }

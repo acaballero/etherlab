@@ -236,6 +236,8 @@ void setGPIO() {
     // Experimental: In DIGITAL modes, the RSSI is the output from the logamp that's fed with the 1st IF.
     changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_IF_RSSI_5V, !ISANALOG && !ISTX, false);
 
+    changed = changed | setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_5V_ANALOG_TX, ISANALOG && ISTX, false);
+
     changed = changed | setGPIOExpPin(&hmcp03, MCP23017_PORTA, GPIOEXP_FPANEL_TX_LED, ISTX, false);
 
     if (changed) {
@@ -422,8 +424,10 @@ bool _set_mode(MODE mode, bool force) {
 
             set_power_ctrl(power_ctrl, force);
 
-            HAL_Delay(10);
+            GPIOD->BSRR |= GPIO_PIN_9;
+            HAL_Delay(5);
 
+            GPIOD->BSRR |= GPIO_PIN_9 << 16;
             setGPIO();
 
             fft_config(config.fft.span);
@@ -440,6 +444,7 @@ bool _set_mode(MODE mode, bool force) {
         } else if (config.mode == DIGITAL_RX) {
 
             // Turn off 3rd mixer LO
+            //     lo_enable(1, 1);
             lo_enable(2, 0);
             set_if_filter(config.if_filter);
 

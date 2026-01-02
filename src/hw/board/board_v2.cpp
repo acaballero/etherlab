@@ -14,6 +14,7 @@
 #include "../../../lib/CMX973/cmx973.h"
 #include "../../../lib/ADF4351/adf4351.h"
 #include "../../../lib/Si5351/si5351_I2C.h"
+#include "stm32f4xx_hal_dac.h"
 #include "stm32f4xx_hal_def.h"
 #include "types.h"
 
@@ -284,26 +285,32 @@ void calibrate_freq() {
  */
 void if_direction(RF_DIRECTION direction) {
 
-    LOG("Setting DSP IF path: %s\n", direction == RF_DIRECTION_RX ? "RX" : "TX");
+    LOG("Setting DSP IF path: %s\n", radio::rf_path_names[direction]);
 
-    if (direction == RF_DIRECTION_TX) {
+    switch (direction) {
 
-        cmx973State.gcr = CMX973_GRR_ENBIAS | CMX973_GRR_TXEN | (cmx973State.lo_rx_div ? CMX973_GRR_TXDIV : 0);
+        case RF_DIRECTION_TX:
 
-        // RF Switch configuration
-        // Keep V1 HIGH, V2 LOW for full duplex configuration or separated RX/TX paths
-        /*
-        HAL_GPIO_WritePin(RX_SW_V1_GPIO_PORT, RX_SW_V1_PIN, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(RX_SW_V2_GPIO_PORT, RX_SW_V2_PIN, GPIO_PIN_SET);
-         */
+            cmx973State.gcr = CMX973_GRR_ENBIAS | CMX973_GRR_TXEN | (cmx973State.lo_rx_div ? CMX973_GRR_TXDIV : 0);
 
-    } else {
+            // RF Switch configuration
+            // Keep V1 HIGH, V2 LOW for full duplex configuration or separated RX/TX paths
+            /*
+            HAL_GPIO_WritePin(RX_SW_V1_GPIO_PORT, RX_SW_V1_PIN, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(RX_SW_V2_GPIO_PORT, RX_SW_V2_PIN, GPIO_PIN_SET);
+             */
+            break;
+        case RF_DIRECTION_RX:
 
-        cmx973State.gcr = CMX973_GRR_ENBIAS | CMX973_GRR_RXEN | (cmx973State.lo_rx_div ? CMX973_GRR_RXDIV : 0);
+            cmx973State.gcr = CMX973_GRR_ENBIAS | CMX973_GRR_RXEN | (cmx973State.lo_rx_div ? CMX973_GRR_RXDIV : 0);
 
-        // RF Switch
-        HAL_GPIO_WritePin(RX_SW_V1_GPIO_PORT, RX_SW_V1_PIN, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(RX_SW_V2_GPIO_PORT, RX_SW_V2_PIN, GPIO_PIN_RESET);
+            // RF Switch
+            HAL_GPIO_WritePin(RX_SW_V1_GPIO_PORT, RX_SW_V1_PIN, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(RX_SW_V2_GPIO_PORT, RX_SW_V2_PIN, GPIO_PIN_RESET);
+            break;
+        case RF_DIRECTION_OFF:
+            cmx973State.gcr = CMX973_GRR_ENBIAS | (cmx973State.lo_rx_div ? CMX973_GRR_RXDIV : 0);
+            break;
     }
 
     uint8_t ret = cmx973_update();
@@ -393,8 +400,15 @@ void if_setup() {
 
 bool radio_config(st_radio_config radioConfig) {
 
-    LOG_IND(2, "radio_config | direction: %s | mode: %s | sample rate: %d\n", radioConfig.direction == RF_DIRECTION_TX ? "TX" : "RX",
+    LOG_IND(2, "radio_config | direction: %s | mode: %s | sample rate: %d\n", radio::rf_path_names[radioConfig.direction],
             radioConfig.mode == ANALOG ? "Analog" : "DSP", radioConfig.sample_freq);
+
+    // Disable DAC audio output
+    if_freq(RF_DIRECTION_TX, 0);
+    if_freq(RF_DIRECTION_RX, 0);
+    if_direction(RF_DIRECTION_OFF);
+    DAC_DMA_Stop(&hdac1);
+    ADC_DMA_Stop(&hadc1);
 
     if (radioConfig.direction == RF_DIRECTION_TX) {
 
@@ -425,34 +439,35 @@ bool radio_config(st_radio_config radioConfig) {
         // HAL_Delay(30);
         if_direction(RF_DIRECTION_TX);
 
-    } else {
+    } else if (radioConfig.direction == RF_DIRECTION_RX) {
+
+        // Disable DAC audio output
+        if_freq(RF_DIRECTION_TX, 0);
+        DAC_DMA_Stop(&hdac1);
 
         if (radioConfig.mode == ANALOG) {
 
             main_board::set_mode(ISTX ? ANALOG_TX : ANALOG_RX);
 
-            if_direction(RF_DIRECTION_RX);
-
-            if_freq(RF_DIRECTION_TX, 0);
-
             // Stop TX quadrature clocks
+            if_freq(RF_DIRECTION_TX, 0);
             if_freq(RF_DIRECTION_RX, radio::f_dsp_if);
 
-            // Disable DAC audio output
-            DAC_DMA_Stop(&hdac1);
-            HAL_DAC_DeInit(&hdac1);
+            if_direction(RF_DIRECTION_RX);
 
         } else { // DSP
 
             main_board::set_mode(DIGITAL_RX);
 
-            if_direction(RF_DIRECTION_RX);
-
-            if_freq(RF_DIRECTION_TX, 0); // Stop TX quadrature clocks
+            if_freq(RF_DIRECTION_TX, 0);
             if_freq(RF_DIRECTION_RX, radio::f_dsp_if);
+
+            if_direction(RF_DIRECTION_RX);
 
             // Enable DAC for audio output
             MX_DAC_Init();
+            //  HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
+            //  HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 
             // Instead of calculating the DAC timer period from the audio output sample rate, which would generate
             // a phase mismatch between them when not integer prescaler and period can be found for the target frequencies,

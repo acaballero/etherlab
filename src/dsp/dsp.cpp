@@ -13,6 +13,7 @@
 #include "dsp/fft/fft_params.h"
 #include "dsp/fft/fft_types.h"
 #include "handlers.h"
+#include "hw/board/board_v2.h"
 #include "radio.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
@@ -137,8 +138,6 @@ void dsp_init(dsp::st_dsp_config &config) {
 
 void dsp_stop_task() {
 
-    reset_dac_buffer();
-
     LOG_IND(2, "dsp_stop_task\n");
     if (current_processor) {
         LOG("stopping processor\n");
@@ -195,6 +194,11 @@ void dsp_start_task() {
         input_stream.reset();
         output_stream.reset();
 
+        // The first time the DAC DMA is started, it has to be reseted to the quadrature modulator common mode to prevent carrier transients
+        // TODO: Not sure if its better to do decouple the DACs from the modulator and set the common mode in hardware. The drawback would be
+        // not being able to fine tune the offsets in software
+        reset_dac_buffer(config.hw.dac_offset);
+
         current_buffer->sample_rate = current_task->status.sample_rate;
 
         current_processor = processors[pending_command.id];
@@ -211,6 +215,10 @@ void dsp_start_task() {
 
         //  LOG("dsp_start_task: starting task\n");
         current_task->status.reset();
+
+        // TODO: Do this elsewhere
+        dsp::set_gain_db(dsp::dsp_config.gain);
+
         if (current_task->start()) {
 
             // TODO: Ugly!
@@ -234,9 +242,6 @@ void dsp_start_task() {
             }
 
             dsp::dsp_params = current_task->status.direction != DSP_DIRECTION_IN ? &current_processor->status : &current_task->status;
-
-            // TODO: Do this elsewhere
-            dsp::set_gain_db(dsp::dsp_config.gain);
 
             if (on_event) {
                 on_event(dsp::dsp_params);
@@ -324,10 +329,12 @@ void dsp_loop() {
 
 //__attribute__((section(".ccmram")))
 inline void dac_work() {
-    // GPIOD->BSRR |= GPIO_PIN_5;
+    //   GPIOD->BSRR |= GPIO_PIN_9;
 
     if (current_processor && (current_processor->status.direction == DSP_DIRECTION_OUT || current_processor->status.direction == DSP_DIRECTION_INOUT)) {
         current_processor->work(current_buffer);
+    } else {
+        memset((char *)current_buffer->p, 0, current_buffer->count << 1); // Empty output
     }
 
     // Apply gain
@@ -352,7 +359,7 @@ inline void dac_work() {
         p[i + 1] = (adc_type)(p[i + 1] * config.hw.dac_amp_balance) + offset_balance;
     }
 
-    // GPIOD->BSRR |= GPIO_PIN_5 << 16;
+    // GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }
 
 inline void adc_work() {
@@ -477,6 +484,8 @@ void dsp_stop() {
 
         dsp_stop_task();
 
+        //   radio_config({.direction = RF_DIRECTION_OFF});
+
 #if !EXECUTE_TASKS_ON_INTERRUPT
         execute_task = false;
 #endif
@@ -489,7 +498,7 @@ void dsp_stop() {
         dsp::dsp_params = NULL;
 
         dspstatus = DSP_STATUS_STOPPED;
-
+        GPIOD->BSRR |= GPIO_PIN_9 << 16;
         if (!ISANALOG && current_t != dsp::tasks[DSP_PROCESSOR_RECEIVE]) {
             // TODO: This forces the receive task to start again. But its ugly
             fft_config(fft::fft_params.span);

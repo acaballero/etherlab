@@ -111,15 +111,14 @@
 
 #define GPIOEXP_ENABLE_POW_CTRL_SHIFT_REG 5
 #define GPIOEXP_POW_AMP_BIAS 6
-#define GPIOEXP_RSSI_LEVEL_ADAPTER                                                                                                                             \
-    7 // Log amplifiers (FM & AM analog demodulators) signal strength voltage
-      // shifter
+#define GPIOEXP_RSSI_LEVEL_ADAPTER 7 // Log amplifiers (FM & AM analog demodulators) signal strength voltage shifter
 
 // PORT_B (normal logic)
 
 //#define GPIOEXP_2ND_15KHZ_FILTER 2 // Second 15 Khz. IF filter switch
-#define GPIOEXP_5VIF_TX 3    // +5v TX (1) / RX (0)
-#define GPIOEXP_IF_RSSI_5V 4 // Bias for IF RSSI detector
+#define GPIOEXP_5VIF_TX 3      // +5v TX (1) / RX (0)
+#define GPIOEXP_IF_RSSI_5V 4   // Bias for IF RSSI detector
+#define GPIOEXP_5V_ANALOG_TX 5 // 5V bias for analog-mode TX boards
 #define GPIOEXP_10MHHZ_MIXER 7
 
 /* Power control bit weights */

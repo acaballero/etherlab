@@ -17,6 +17,7 @@ SignalGenerator sig_gen(1000, 346666);
 void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
     if (this->status.status != DSP_STATUS_RUNNING) {
+        memset((char *)buffer->p, 0, buffer->count << 1);
         return;
     }
 
@@ -84,5 +85,7 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
         if (!output_stream.is_closed()) {
             this->status.fifo_underruns++;
         }
+
+        memset((char *)buffer->p, 0, buffer->count << 1);
     }
 }

@@ -11,14 +11,15 @@
 
 void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
 
-    if (status.status != DSP_STATUS_RUNNING) {
-        return;
-    }
-
     uint16_t *p;
 
     // TODO: Find some other way of making this processor know whether is reading or writing
     if (buffer->p == adc_buffer_1.p || buffer->p == adc_buffer_2.p) {
+
+        if (status.status != DSP_STATUS_RUNNING) {
+            return;
+        }
+
         uint16_t block_size_bytes = buffer->size_bytes;
 
         // GPIOD->BSRR |= GPIO_PIN_9;
@@ -32,6 +33,11 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
         }
         // GPIOD->BSRR |= GPIO_PIN_9 << 16;
     } else {
+        if (status.status != DSP_STATUS_RUNNING) {
+            memset((char *)buffer->p, 0, buffer->count << 1);
+            return;
+        }
+
         uint16_t block_size_bytes = buffer->size_bytes / 2;
 
         //  GPIOD->BSRR |= GPIO_PIN_9;

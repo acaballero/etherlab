@@ -21,6 +21,7 @@
 #include "types.h"
 #include "utils.hpp"
 #include "status.h"
+#include "os/task_manager.h"
 
 TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *display) : Widget(parentRect, display) {
     sdcard_signal.add(this, TitleBarWidgetInner::signal_static_callback);
@@ -36,6 +37,7 @@ TitleBarWidgetInner::TitleBarWidgetInner(const Rect &parentRect, Display *displa
         }
     });
     main_board::mode_signal.add(this, TitleBarWidgetInner::signal_static_callback);
+    os::task_manager.add(&task);
 }
 
 bool TitleBarWidgetInner::paint_callback() {
@@ -175,7 +177,7 @@ bool TitleBarWidgetInner::paint_callback() {
     display->setFont((FontDef *)&Font_Tiny8x8);
 
     if (power_amp::status == power_amp::SHUTDOWN) {
-        uint32_t remaining_sec = max2(power_amp::hpa_shutdown_timeout_ms - (HAL_GetTick() - power_amp::last_hpa_shutdown_ms), 0) / 1000;
+        uint32_t remaining_sec = max2((int32_t)power_amp::hpa_shutdown_timeout_ms - (int32_t)(HAL_GetTick() - power_amp::last_hpa_shutdown_ms), 0) / 1000;
         display->print(" -");
         display->print(remaining_sec);
         display->print(" s");

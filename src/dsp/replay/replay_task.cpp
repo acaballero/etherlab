@@ -196,6 +196,9 @@ bool ReplayTask::start() {
         // by the interpolation (->DAC) or decimation (ADC->) factor
         bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = this->status.sample_rate * this->status.decimation_factor});
 
+        // TODO: Manage gain globally. Not that easy considering in receive we'd need to normalize it and that's not easy for all modulations
+        dsp::set_gain_db(0);
+
         this->status.status = DSP_STATUS_RUNNING;
 
         if (!ret) {

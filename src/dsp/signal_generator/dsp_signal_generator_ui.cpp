@@ -47,10 +47,10 @@ void on_event(st_dsp_params *status) {
 
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
-            command = DSP_COMMAND_STOP;
+
             break;
         case DSP_STATUS_STOPPED:
-            command = DSP_COMMAND_START;
+
             break;
     }
 }
@@ -81,8 +81,8 @@ void set_signal_params() {
 Menu::result change_dsp_status(Menu::eventMask e) {
 
     if (e == Menu::activateEvent) {
-        DSP_COMMAND nextCommand = command == DSP_COMMAND_START ? DSP_COMMAND_STOP : DSP_COMMAND_START;
-        dsp_command({(DSP_COMMAND)nextCommand, dsp::DSP_TASK_SIGNAL_GENERATOR}, on_event);
+
+        dsp_command({(DSP_COMMAND)command == DSP_COMMAND_STOP ? DSP_COMMAND_START : DSP_COMMAND_STOP, dsp::DSP_TASK_SIGNAL_GENERATOR}, on_event);
         dsp::set_gain_db(dsp::dsp_config.gain);
 
         set_signal_params();
@@ -92,7 +92,6 @@ Menu::result change_dsp_status(Menu::eventMask e) {
 }
 
 Menu::result on_menu_event(Menu::eventMask e) {
-
     SignalGeneratorTask *task = ((SignalGeneratorTask *)dsp::tasks[dsp::DSP_TASK_SIGNAL_GENERATOR]);
 
     switch (e) {

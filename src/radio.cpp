@@ -120,6 +120,7 @@ const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 150000, 6000, 0}
 const char *IFFilterNames[] = {"300 Hz", "3 k", "6 k", "7.5 k", "9 k", "15 k", "150 k", "180 k", "Auto"};
 const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
+const char *rf_path_names[] = {"RX", "TX", "OFF"};
 const char *modeNames[] = {"ANA RX", "ANA TX", "DIG RX", "DIG TX", "NONE"};
 BAND filter = BAND_NONE;
 IF_FILTER if_filter = IF_FILTER_NONE;

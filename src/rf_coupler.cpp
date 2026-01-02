@@ -9,6 +9,7 @@
 #include "status.h"
 #include <printf.h>
 #include <cfloat>
+#include <stm32f4xx.h>
 
 namespace rf_coupler {
 
@@ -56,13 +57,21 @@ void calculate_power() {
     float vref = 0;
     float vfor = 0;
 
-    uint16_t v = GetADCValue(&hadc3, FOWARD_POWER_ADC_CHANNEL, 3);
+    int v = GetADCValue(&hadc3, FOWARD_POWER_ADC_CHANNEL, 4);
+
+    if (v < 0) {
+        status::pop_alert(status::ERROR, "Error reading forward power");
+        return;
+    }
+
     vfor = adc_to_mv(v, V_REF, MAX_ADC_VALUE);
 
     v = GetADCValue(&hadc3, REFLECTED_POWER_ADC_CHANNEL, 3);
     vref = adc_to_mv(v, V_REF, MAX_ADC_VALUE);
 
     vref *= SWR_LOGAMP_FWD_REV_BALANCE;
+
+    // LOG("power amp | fwd %.2f | rev %.2f\n", vfor, vref);
 
     // IIR exponential filter
     // Transients and different time constants in the output of the forward and reverse power detectors

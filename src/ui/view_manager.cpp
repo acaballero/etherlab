@@ -51,6 +51,7 @@ void push(View *view) {
         currentView = view;
         breadcrumb[++view_index] = view;
         currentView->set_visible(true);
+        currentView->set_focus(true);
         currentView->set_dirty();
         currentView->paint();
     }

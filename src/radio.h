@@ -105,6 +105,7 @@ extern const char *IFFilterNames[];
 extern const char *modulation_names[];
 extern const uint32_t modulation_min_bandwidths[];
 extern const char *repeaterNames[];
+extern const char *rf_path_names[];
 extern BAND filter;
 extern IF_FILTER if_filter;
 extern const st_filter if_filters[8];
