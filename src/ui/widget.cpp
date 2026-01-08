@@ -610,24 +610,24 @@ Rect Widget::clip(const Rect &rect) {
         parts = new_visible_parts;
 
 #if DEBUG_MSGS
-        if (STR_IN(get_name(), "aprs", "msg")) {
-            LOG("Clipping widget %s with rect %d,%d", get_name(), rect.left(), rect.top());
-            LOG_RAW(" %d x %d\n", rect.width(), rect.height());
-            LOG("Current parts (%d)\n", visible_rects.size());
-            if (visible_rects.size()) {
-                for (auto p : visible_rects) {
-                    LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
-                }
-            } else {
-            }
+        // if (STR_IN(get_name(), "powm", "brpt", "bscn", "fbut")) {
+        //     LOG("Clipping widget %s with rect %d,%d", get_name(), rect.left(), rect.top());
+        //     LOG_RAW(" %d x %d\n", rect.width(), rect.height());
+        //     LOG("Current parts (%d)\n", visible_rects.size());
+        //     if (visible_rects.size()) {
+        //         for (auto p : visible_rects) {
+        //             LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
+        //         }
+        //     } else {
+        //     }
 
-            LOG("New parts (%d)\n", parts.size());
-            if (parts.size()) {
-                for (auto p : parts) {
-                    LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
-                }
-            }
-        }
+        //     LOG("New parts (%d)\n", parts.size());
+        //     if (parts.size()) {
+        //         for (auto p : parts) {
+        //             LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
+        //         }
+        //     }
+        // }
 #endif
     }
 

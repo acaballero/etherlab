@@ -134,9 +134,8 @@ class APRSPacket {
         stream += destination;
         stream += " ; ";
         stream += digis;
-        stream += " ; ";
+        stream += " : ";
         stream += get_information_text_formatted();
-        ;
     }
 
     char get_data_type_identifier() {
@@ -149,7 +148,7 @@ class APRSPacket {
     }
 
     bool has_position() {
-        char ident = get_data_type_identifier();
+        volatile char ident = get_data_type_identifier();
 
         return ident == '!' || ident == '=' || ident == '/' || ident == '@' || ident == ';' || ident == '`' || ident == '\'' || ident == 0x1d || ident == 0x1c;
     }
@@ -259,13 +258,13 @@ class APRSPacket {
         set(index++, 0xF0);
 
         // Create test position data (Madrid, Spain coordinates)
-        // Format: !DDMM.mmN/DDDMM.mmW#
+        // Format: !DDMM.mmN/DDDMM.mmW-
         // Madrid: 40.4168° N, 3.7038° W
-        std::string position_info = "!4025.01N/00342.23W#Test APRS position packet";
+        std::string position_info = "!4025.01N/00342.23W-Test APRS position packet";
 
         // If custom info_text is provided and not empty, append it
         if (!info_text.empty()) {
-            position_info = "!4025.01N/00342.23W#" + info_text;
+            position_info = "!4025.01N/00342.23W-" + info_text;
         }
 
         // Add position info to packet
@@ -293,7 +292,7 @@ class APRSPacket {
     bool valid_checksum = false;
     uint8_t payload[256];
     char address_buffer[15];
-    uint8_t payload_size = 0;
+    uint16_t payload_size = 0;
     st_datetime timestamp_{};
 
     float parse_lat_str_cmp(const std::string &lat_str) {

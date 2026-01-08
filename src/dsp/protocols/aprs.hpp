@@ -7,8 +7,12 @@
 
 namespace aprs {
 
-void build_frame(const char *src_address, const uint32_t src_ssid, const char *dest_address, const uint32_t dest_ssid, const std::string &payload,
-                 uint16_t *buffer);
+/*
+ * Builds APRS frame
+ * path: WIDE1-1,WIDE2-2 or null if no path should be added
+ */
+size_t build_frame(const char *src_address, const uint32_t src_ssid, const char *dest_address, const uint32_t dest_ssid, const std::string &payload,
+                   const char *path, uint16_t *buffer);
 
 } /* namespace aprs */
 

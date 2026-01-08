@@ -7,34 +7,10 @@
 
 #include "button_widget.h"
 #include "hw/stm32f4xx/rtc.h"
-#include "ui/frequency_widget.h"
+#include "ui/power_metrics_widget.h"
+#include "ui/titlebar_icons_widget.h"
 #include "view.h"
 #include "types.h"
-#include "../../lib/Signal/Signal.h"
-
-class TitleBarWidgetInner : public Widget {
-
-  public:
-    static constexpr uint8_t MARGIN = 3;
-    TitleBarWidgetInner(const Rect &parentRect, Display *display);
-
-    void on_info_changed_signal(const void *params);
-    bool paint_callback() override;
-    static void signal_static_callback(void *thisptr, const void *args) {
-        ((TitleBarWidgetInner *)thisptr)->on_info_changed_signal(args);
-    }
-
-  protected:
-    void before_paint() override;
-
-    st_topBar status;
-
-    st_datetime datetime{};
-    // Refresh clock
-    os::periodic_task task{1000, [this](void) {
-                               set_dirty();
-                           }};
-};
 
 class TitleBarWidget : public View {
 
@@ -51,7 +27,7 @@ class TitleBarWidget : public View {
 
     Button btnDSP{{120 + MARGIN, MARGIN, 0, area.box.height - MARGIN * 2}, display, ""};
 
-    TitleBarWidgetInner titleBarWidgetInner{{0, MARGIN, 110, area.box.height}, &lcd};
+    TitleBarIconsWidget titleBarWidgetInner{{0, MARGIN, 110, area.box.height}, &lcd};
 };
 
 #endif // TRX_FRONTEND_TITLEBAR_WIDGET_H

@@ -121,7 +121,7 @@ void calculate_power() {
         info.swr = 0;
     }
 
-    // LOG("%.4f; %.4f; %.4f\n", info.v_for, info.v_ref, info.p_for_dbm);
+    LOG("%.4f; %.4f; %.4f, %.4f\n", info.v_for, info.v_ref, info.p_for_dbm, info.swr);
 
     if (last_info != info) {
         rf_coupler_signal.emit(&info);

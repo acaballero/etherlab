@@ -3,6 +3,7 @@
 //
 #include "beacon_settings_view.h"
 #include "Display_afb.h"
+#include "dsp/aprs/aprs_settings.h"
 #include "dsp/dsp_common.h"
 #include "hw/stm32f4xx/rtc.h"
 #include "input/inputEvent.h"
@@ -16,7 +17,7 @@ namespace dsp_ui {
 
 void BeaconSettingsView::init() {
 
-    periodField.set_value(5);
+    periodField.set_value(10);
 
     gainField.set_value(dsp::dsp_config.gain);
 
@@ -37,15 +38,20 @@ void BeaconSettingsView::init() {
     button_ok.action = [this](Button &, st_inputEvent) {
         dsp::dsp_config.gain = gainField.get_value();
 
+        aprs::settings settings{};
+        settings.beacon_period_ms = periodField.get_value() * 1000;
+        settings.deviation = deviationField.get_value();
+
         if (on_select) {
-            on_select(true);
+            on_select(true, settings);
         }
 
         set_visible(false);
     };
     button_cancel.action = [this](Button &, st_inputEvent) {
         if (on_select) {
-            on_select(false);
+            aprs::settings settings{};
+            on_select(false, settings);
         }
         set_visible(false);
     };
@@ -58,9 +64,9 @@ void BeaconSettingsView::init() {
     button_cancel.set_name("btnc");
     button_ok.set_name("btno");
 
-    Widget *texts[] = {&periodLabel, &periodField, &gainLabel, &gainField};
-    Label *labels[] = {&periodLabel, &gainLabel};
-    NumberField *fields[] = {&periodField, &gainField};
+    Widget *texts[] = {&periodLabel, &periodField, &gainLabel, &gainField, &deviationLabel, &deviationField};
+    Label *labels[] = {&periodLabel, &gainLabel, &deviationLabel};
+    NumberField *fields[] = {&periodField, &gainField, &deviationField};
 
     for (auto w : texts) {
         w->set_font((FontDef *)&Font_11x18);

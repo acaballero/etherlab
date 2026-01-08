@@ -10,6 +10,7 @@
 #include "hw/hw_config.h"
 #include "number_edit_view.h"
 #include "option_buttons_view.h"
+#include "ui/frequency_buttons_widget.h"
 #include "ui/ui_types.h"
 #include "view.h"
 #include "menu_widget.h"
@@ -54,6 +55,7 @@ class MainView : public View {
 
   protected:
     TitleBarWidget header_w = {{0, 0, DISPLAY_X_PIXELS / 2 - 50, HEADER_HEIGHT}};
+    PowerMetricsWidget pow_metrics_w{{DISPLAY_X_PIXELS / 2 - 50, 0, 90, HEADER_HEIGHT}, &lcd};
     StatusWidget status_w{{0, DISPLAY_Y_PIXELS - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
     DbScaleWidget dbscale_w{{DISPLAY_X_PIXELS - DBSCALE_WIDTH, HEADER_HEIGHT, DBSCALE_WIDTH, FFT_HEIGHT}, &lcd};
     TuneWidget tune_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, TUNE_INFO_HEIGHT}, &lcd};
@@ -63,7 +65,8 @@ class MainView : public View {
     SNRWidget snr_w{{15, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + METERS_HEIGHT - 5, METER_WIDTH - 15, SNRWidget::height}};
     PowerMeterWidget powmeter_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT + 10}, &lcd};
     InfoWidget info_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_WATERFALL_HEIGHT + TUNE_INFO_HEIGHT, METER_WIDTH, FFT_INFO_HEIGHT}, &lcd};
-    FrequencyWidget frequency_w{{DISPLAY_X_PIXELS / 2 - 40, 0, DISPLAY_X_PIXELS / 2 + 40, HEADER_HEIGHT}};
+    FrequencyWidget frequency_w{{DISPLAY_X_PIXELS - 150, 0, 150, HEADER_HEIGHT}, &lcd};
+    FrequencyButtonsWidget frequency_buttons_w{{DISPLAY_X_PIXELS / 2 - 40, 0, 120, HEADER_HEIGHT}};
     FFTWidget fft_w{{0, HEADER_HEIGHT, FFT_ZONE_WIDTH, FFT_WIDGET_HEIGHT}, &lcd, config.fft.spectrum_style};
 
     WaterfallWidget waterfall_w{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};

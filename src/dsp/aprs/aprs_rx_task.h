@@ -65,6 +65,9 @@ class APRSTask : public ReceiveTaskBase {
         return beeper_enabled;
     }
 
+    void parse_packet();
+    bool parse_bit(const uint8_t bit);
+
   private:
     static constexpr uint32_t bandwidth = 24000;
     static constexpr size_t baudrate = 1200;
@@ -114,8 +117,6 @@ class APRSTask : public ReceiveTaskBase {
 
     APRSPacket aprs_packet{};
 
-    void parse_packet();
-    bool parse_bit(const uint8_t bit);
     void parse_ax25();
 
     FMSquelch squelch;

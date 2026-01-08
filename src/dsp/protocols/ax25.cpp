@@ -76,8 +76,13 @@ void AX25Frame::add_checksum() {
     add_byte(checksum >> 8, false, false);
 }
 
-void AX25Frame::build(char *const address, const uint8_t control, const uint8_t protocol, const std::string &info, uint16_t *buffer) {
+size_t AX25Frame::build(char *const address, size_t address_len, const uint8_t control, protocol_id_t protocol, const std::string &info, uint16_t *buffer) {
     size_t i;
+
+    // Basic safety: must contain DEST+SRC and be aligned to address-size (7 bytes)
+    if (!address || address_len < 14 || (address_len % 7) != 0 || !buffer) {
+        return 0;
+    }
 
     bit_counter = 0;
     current_bit = 0;
@@ -91,7 +96,9 @@ void AX25Frame::build(char *const address, const uint8_t control, const uint8_t 
     add_flag();
     add_flag();
 
-    make_extended_field(address, 14);
+    // Address field with variable length
+    make_extended_field(address, address_len);
+
     add_data(control);
     add_data(protocol);
 
@@ -105,6 +112,13 @@ void AX25Frame::build(char *const address, const uint8_t control, const uint8_t 
     add_flag();
 
     flush();
+
+    // Byte count. data_ptr points at the terminator (0), so exclude it
+    return static_cast<size_t>(data_ptr - buffer);
+}
+
+size_t AX25Frame::build(char *const address, const uint8_t control, protocol_id_t protocol, const std::string &info, uint16_t *buffer) {
+    return build(address, 14, control, protocol, info, buffer);
 }
 
 } /* namespace ax25 */

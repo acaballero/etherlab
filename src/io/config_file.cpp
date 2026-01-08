@@ -2,6 +2,7 @@
 // Created by Angel Dust on 05/09/2025.
 //
 #include "config_file.h"
+#include "dsp/aprs/aprs_settings.h"
 #include "fatfs/fatfs.h"
 #include "config.h"
 #include "ff.h"

@@ -25,7 +25,8 @@ bool APRSTableWidget::paint_callback() {
     display->set_trim_enabled(false);
     display->setColor(C565_GREY_DARKER);
     display->setVerticalLineSpacing(line_spacing);
-    display->drawRoundedRectangle(0, 0, area.box.width, title_height, 2, true);
+    display->fill(0, 0, area.box.width, title_height, C565_GREY_DARKER);
+    display->fill(0, title_height + 3, area.box.width, area.box.height, C565_GREY_DARKER);
     display->gotoXY(4, 3);
     sprintf(buf, "%-8s %5s %-8s\n", "Source", "Hits", "Time");
     display->setBgColor(C565_GREY_DARKER);
@@ -36,7 +37,7 @@ bool APRSTableWidget::paint_callback() {
 
     for (size_t i = 0; i < sources.size(); i++) {
         APRSSource *source = &sources[i];
-        int y = title_height + 3 + (i * line_height);
+        int y = title_height + 5 + (i * line_height);
 
         display->gotoXY(4, y);
 

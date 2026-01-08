@@ -112,9 +112,13 @@ xpt2046_touch_pressed_t xpt2046_touch_pressed(xpt2046_t *lcd) {
     }
 }
 
-void xpt2046_set_touch_pressed_begin_callback(xpt2046_touch_callback_t callback) { xpt2046_touch.touch_pressed_begin = callback; }
+void xpt2046_set_touch_pressed_begin_callback(xpt2046_touch_callback_t callback) {
+    xpt2046_touch.touch_pressed_begin = callback;
+}
 
-void xpt2046_set_touch_pressed_end_callback(xpt2046_touch_callback_t callback) { xpt2046_touch.touch_pressed_end = callback; }
+void xpt2046_set_touch_pressed_end_callback(xpt2046_touch_callback_t callback) {
+    xpt2046_touch.touch_pressed_end = callback;
+}
 
 xpt2046_touch_pressed_t xpt2046_touch_coordinate(xpt2046_t *lcd, uint16_t *x_pos, uint16_t *y_pos) {
     static uint8_t x_cmd;
@@ -150,7 +154,7 @@ xpt2046_touch_pressed_t xpt2046_touch_coordinate(xpt2046_t *lcd, uint16_t *x_pos
     if (lcd->spi_hal) {
         MODIFY_REG(lcd->spi_hal->Instance->CR1, SPI_CR1_BR, SPI_BAUDRATEPRESCALER_128);
     }
-    
+
     xpt2046_spi_touch_select(lcd);
 
     while ((itpPressed == xpt2046_touch_pressed(lcd)) && (sample--)) {
@@ -257,9 +261,13 @@ void xpt2046_calibrate_3point(xpt2046_t *lcd, uint16_t scale_width, uint16_t sca
                                 0.5;
 }
 
-void xpt2046_spi_touch_select(xpt2046_t *lcd) { HAL_GPIO_WritePin(XPT2046_TOUCH_CS_PORT, XPT2046_TOUCH_CS_PIN, GPIO_PIN_RESET); }
+void xpt2046_spi_touch_select(xpt2046_t *lcd) {
+    HAL_GPIO_WritePin(XPT2046_TOUCH_CS_PORT, XPT2046_TOUCH_CS_PIN, GPIO_PIN_RESET);
+}
 
-void xpt2046_spi_touch_release(xpt2046_t *lcd) { HAL_GPIO_WritePin(XPT2046_TOUCH_CS_PORT, XPT2046_TOUCH_CS_PIN, GPIO_PIN_SET); }
+void xpt2046_spi_touch_release(xpt2046_t *lcd) {
+    HAL_GPIO_WritePin(XPT2046_TOUCH_CS_PORT, XPT2046_TOUCH_CS_PIN, GPIO_PIN_SET);
+}
 
 static int32_t interp(int32_t x, int32_t x0, int32_t x1, int32_t y0, int32_t y1) {
     if (x1 == x0) {

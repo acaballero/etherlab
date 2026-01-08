@@ -17,6 +17,7 @@
 #include "arm_math.h"
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/afsk/afsk_tx_task.h"
+#include "dsp/aprs/aprs_settings.h"
 #include "dsp/dsp.h"
 #include "types.h"
 #include "ui/gain_info.h"
@@ -108,6 +109,8 @@ class APRSView : public View {
     APRSSource current_source;
 
     std::unique_ptr<ui::MapView> map;
+
+    aprs::settings aprs_settings{};
 
     int beacon_task_id{0};
 

@@ -8,6 +8,8 @@
 #include "Display_afb.h"
 #include <functional>
 #include <stdio.h>
+#include <sys/_stdint.h>
+#include "dsp/aprs/aprs_settings.h"
 #include "dsp/dsp_common.h"
 #include "ips_font.h"
 #include "menuBase.h"
@@ -22,7 +24,7 @@ namespace dsp_ui {
 
 class BeaconSettingsView : public View {
   public:
-    BeaconSettingsView(std::function<void(bool)> on_select)
+    BeaconSettingsView(std::function<void(bool, aprs::settings &)> on_select)
         : View({(DISPLAY_X_PIXELS - width) / 2, (DISPLAY_Y_PIXELS - height) / 2, width, height}, "Beacon settings"), on_select{on_select} {
         init();
     }
@@ -37,7 +39,8 @@ class BeaconSettingsView : public View {
   private:
     static constexpr uint8_t c_width = 11; // Make it match font width
     static constexpr uint8_t c_height = 20;
-    static constexpr uint16_t height = 140;
+    static constexpr uint8_t rows = 3;
+    static constexpr uint16_t height = 100 + c_height * rows;
     static constexpr uint16_t width = DISPLAY_X_PIXELS - 40;
     static constexpr uint8_t margin = 20;
 
@@ -48,12 +51,14 @@ class BeaconSettingsView : public View {
     NumberField gainField{{9 * c_width, 1 * c_height + margin}, 5, {DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB}, 1, " db"};
     Label periodLabel{{1 * c_width, 2 * c_height + margin}, "Period:", C565_TEXT_FG};
     NumberField periodField{{9 * c_width, 2 * c_height + margin}, 5, {5, 20}, 1, " s."};
+    Label deviationLabel{{1 * c_width, 3 * c_height + margin}, "Deviation:", C565_TEXT_FG};
+    NumberField deviationField{{12 * c_width, 3 * c_height + margin}, 5, {3000, 9000}, 500, " Hz"};
 
     Button button_ok{{}, &lcd, "OK", C565_BUTTON_TEXT_FG, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
 
     Button button_cancel{{}, &lcd, "Cancel", C565_BUTTON_TEXT_FG, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
 
-    const std::function<void(bool)> on_select{nullptr};
+    const std::function<void(bool, aprs::settings &)> on_select{nullptr};
 
     Menu::menu_actions_st quick_actions = {Menu::get_navigation_actions().actions, 4};
 };

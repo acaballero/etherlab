@@ -7,12 +7,14 @@
 #include "beacon_settings_view.h"
 #include "dsp/aprs/aprs_packet.h"
 #include "dsp/aprs/aprs_rx_task.h"
+#include "dsp/aprs/aprs_settings.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
 #include "dsp/fft/fft.h"
 #include "hw/board/board_v2.h"
 #include "hw/stm32f4xx/rtc.h"
 #include "input/inputEvent.h"
+#include "io/config_file.h"
 #include "io/log_file.h"
 #include "ips_font.h"
 #include "main_board.h"
@@ -47,8 +49,16 @@ void APRSView::init() {
         logger->append("aprs.log");
     }
 
+    ConfigFile<aprs::settings> config_file;
+    bool ok = config_file.load("aprs.cfg", &aprs_settings);
+
+    if (!ok) {
+        status::pop_alert(status::ERROR, "Error reading aprs.cfg");
+    }
+
     set_font((FontDef *)&Font_7x10);
     title_widget.set_label("APRS");
+    title_widget.set_border_radius(0, 0, 0, 0);
 
     button_collapse.set_aling(ALIGN_CENTER);
 
@@ -126,11 +136,18 @@ void APRSView::toggle_beacon() {
         // Was disabled
         auto settings_view = std::make_unique<BeaconSettingsView>(
 
-            [this](bool ok) {
+            [this](bool ok, aprs::settings settings) {
                 if (ok) {
 
-                    auto *p = new os::periodic_task{5000, [this]() {
-                                                        send_packet("Angel Dust Beacon Online");
+                    ConfigFile<aprs::settings> config_file;
+                    bool ok = config_file.save("aprs.cfg", &aprs_settings);
+
+                    if (!ok) {
+                        status::pop_alert(status::ERROR, "Error saving aprs.cfg");
+                    }
+
+                    auto *p = new os::periodic_task{static_cast<uint64_t>(settings.beacon_period_ms), [this]() {
+                                                        send_packet("!4045.22N/00347.24W-Angel Dust QTH");
                                                     }};
 
                     menu_actions[2].bg_color = C565_BG_ENABLED;
@@ -295,11 +312,26 @@ void APRSView::send_packet(std::string info) {
 
     uint16_t buffer[256];
     trim(config.callsign);
-    aprs::build_frame(config.callsign, 0, "rig   ", 0, ":" + info, buffer);
 
-    LOG_IND(2, "Sending APRS packet: Address: %s, | payload: %s\n", config.callsign, info.c_str());
+    // APZxxx identifies an experimental rig/software
+    size_t bytes = aprs::build_frame(config.callsign, 0, "APZ001", 0, info, aprs_settings.path, buffer);
 
-    aprs_tx_task.configure(1200, 2200, 1, 8, 10000, 300, 300); // APRS uses fixed 10k bandwidth
+    // DEBUG built frame by passing it through the RX chain
+    // for (size_t i = 0; i < bytes; i++) {
+    //     uint8_t nrzi_byte = static_cast<uint8_t>(buffer[i] & 0xFF);
+
+    //     for (int b = 7; b >= 0; b--) {
+    //         uint8_t nrzi_bit = (nrzi_byte >> b) & 1;
+
+    //         if (aprs_task.parse_bit(nrzi_bit)) {
+    //             aprs_task.parse_packet(); // validates CRC and calls parse_ax25() if OK
+    //         }
+    //     }
+    // }
+
+    LOG_IND(2, "Sending APRS packet: Address: %s | path: %s | payload: %s\n", config.callsign, aprs_settings.path, info.c_str());
+
+    aprs_tx_task.configure(1200, 2200, 1, 8, aprs_settings.deviation, 300, 300); // Set a deviation for around 10k bandwidth
     aprs_tx_task.set_data(buffer);
 
     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &aprs_tx_task}, [this](st_dsp_params *status) {

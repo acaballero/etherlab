@@ -105,17 +105,21 @@ void check_status() {
 
     if (!biased && power_amp::status == power_amp::OK) {
 
+        char buf[10];
         power_amp::shutdown();
         if (battery::battery_info.voltage > 6 && power_amp::status == power_amp::HIGH_TEMP) {
             status::pop_alert(status::ERROR, "Power amp high temperature");
         }
 
         if (rf_coupler::info.swr >= rf_coupler::HIGH_SWR) {
-            status::pop_alert(status::ERROR, "High SWR");
+
+            sprintf(buf, "High SWR (%.1f)", rf_coupler::info.swr);
+            status::pop_alert(status::ERROR, buf);
         }
 
         if (rf_coupler::info.p_for_dbm >= config.max_power_dbm) {
-            status::pop_alert(status::ERROR, "HPA max power exceeded");
+            sprintf(buf, "HPA max power exceeded (%.1f)", config.max_power_dbm);
+            status::pop_alert(status::ERROR, buf);
         }
     }
 

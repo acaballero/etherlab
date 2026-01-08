@@ -109,9 +109,11 @@ struct st_freqInfo {
     RPT_MODE repeater_mode;
     uint8_t vfo_ix;
     bool memory_mode;
+    MODE mode;
 
     bool operator==(const st_freqInfo &st) const {
-        return memory_mode == st.memory_mode && f_carrier == st.f_carrier && f_step == st.f_step && repeater_mode == st.repeater_mode && vfo_ix == st.vfo_ix;
+        return memory_mode == st.memory_mode && f_carrier == st.f_carrier && f_step == st.f_step && repeater_mode == st.repeater_mode && vfo_ix == st.vfo_ix &&
+               mode == st.mode;
     }
 };
 
