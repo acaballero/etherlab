@@ -108,6 +108,8 @@ void setup() {
         Error_Handler();
     }
 
+    LOG("Reading settigns\n");
+
     if (settings_read(&config) != EE_OK) {
 
         // Wrong config version, write the new one

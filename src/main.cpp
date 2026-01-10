@@ -239,9 +239,9 @@ int main() {
 #if DEBUG_SD_CARD
             test_sd_card();
 #endif
-            test();
+            // test();
 
-            HAL_Delay(1000);
+            // HAL_Delay(1000);
 
             dsptested = true;
         }

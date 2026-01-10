@@ -78,7 +78,7 @@ class APRSView : public View {
                                              }},
                                             {"Send",
                                              [this]() {
-                                                 send_packet("Beacon");
+                                                 send_packet(aprs_settings.message);
                                              }},
                                             {"Beacon",
                                              [this]() {

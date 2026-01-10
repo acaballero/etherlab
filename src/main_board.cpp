@@ -146,6 +146,7 @@ void if_filter_signal_callback(void *, const void *) {
 
 void init() {
 
+    LOG("Main board init\n");
     setup_board_peripherals();
 
     power_amp::status_signal.add(NULL, power_amp_status_callback);
@@ -448,7 +449,7 @@ bool _set_mode(MODE mode, bool force) {
         } else if (config.mode == DIGITAL_RX) {
 
             // Turn off 3rd mixer LO
-            //     lo_enable(1, 1);
+            lo_enable(1, 1);
             lo_enable(2, 0);
             set_if_filter(config.if_filter);
 
@@ -457,6 +458,8 @@ bool _set_mode(MODE mode, bool force) {
             lo_enable(1, 1);
             if ((config.modulation == SSB_LSB || config.modulation == SSB_USB)) {
                 lo_enable(2, 1);
+            } else {
+                lo_enable(2, 0);
             }
             set_if_filter(config.if_filter);
         }
@@ -563,7 +566,8 @@ void set_modulation_mode(MODULATION_MODE mod_val, bool force) {
 
     } else if (force || mod_val != (int)config.modulation) {
 
-        bool changed = mod_val != (int)config.modulation;
+        bool changed_modulation_mode = mod_val != (int)config.modulation;
+        bool changed = changed_modulation_mode;
 
         config.modulation = (MODULATION_MODE)mod_val;
 

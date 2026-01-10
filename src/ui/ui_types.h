@@ -36,7 +36,7 @@ struct Box {
 struct Area {
 
     Box box;
-    uint16_t size{0};
+    uint32_t size{0};
     bool show_fps{false};
     float fps{0};
 };

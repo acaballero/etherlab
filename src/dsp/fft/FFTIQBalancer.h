@@ -90,6 +90,9 @@ class FFTIQBalancer {
     complex_t_f32 meanZ[FFT_IQ_BALANCER_FILTER_SIZE];
     float32_t precZ[FFT_IQ_BALANCER_FILTER_SIZE];
 
+    float32_t snrSqr[FFT_N];
+    float32_t copy[FFT_N];
+
     void collectBalanceInfo(complex_t_f32 *data);
 
     bool rebuildFilter();

@@ -13,6 +13,8 @@ ST7789 lcd(&LCD_SPI_HANDLE);
 
 void lcd_init() {
 
+    LOG("LCD init\n");
+
 #if LCD_ENABLED
 
     // Note this doesn't turn on the backlight yet (the view manager does when ready) to prevent a white screen for appearing before

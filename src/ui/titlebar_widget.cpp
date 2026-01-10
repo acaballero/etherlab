@@ -13,6 +13,7 @@
 #include "main_board.h"
 #include "types.h"
 #include "utils.hpp"
+#include "os/task_manager.h"
 
 void TitleBarWidget::init() {
 
@@ -43,6 +44,8 @@ void TitleBarWidget::init() {
     rtc_signal.add(this, [this](void *, const void *) {
         set_dirty();
     });
+
+    os::task_manager.add(&task);
 }
 
 void TitleBarWidget::before_paint() {
@@ -59,16 +62,16 @@ void TitleBarWidget::before_paint() {
         if (ISANALOG) {
             btnDSP.set_text("ANA");
         } else {
-            float drop_freq = dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING ? dsp::dsp_params->drop_rate() : 0;
-            float starve_freq = dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING ? dsp::dsp_params->starve_rate() : 0;
+            float drop_rate = dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING ? dsp::dsp_params->drop_rate() : 0;
+            float starve_rate = dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING ? dsp::dsp_params->starve_rate() : 0;
             bool error = true;
 
             if (!dsp::dsp_params) {
                 color = C565_GREY_DARKER;
                 error = false;
-            } else if (dsp::dsp_params->error != DSP_ERR_NONE || drop_freq * 100 > 1 || starve_freq * 100 > 1) {
+            } else if (dsp::dsp_params->error != DSP_ERR_NONE || drop_rate * 100 > 5 || starve_rate * 100 > 5) {
                 color = C565_ORANGE;
-            } else if (drop_freq * 100 > 0.1 || starve_freq * 100 > 0.1) {
+            } else if (drop_rate * 100 > 0.5 || starve_rate * 100 > 0.5) {
                 color = C565_YELLOW;
             } else {
                 error = false;

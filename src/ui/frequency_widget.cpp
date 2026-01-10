@@ -23,6 +23,7 @@ bool FrequencyWidget::paint_callback() {
 
     uint16_t fg_color;
 
+    display->set_trim_enabled(true);
     display->clear();
 
     format_long(radio::get_frequency(), buf);

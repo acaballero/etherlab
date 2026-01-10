@@ -150,7 +150,7 @@ bool Display::draw_area(Area *area, Painter *painter, bool pad_display) {
         }
 
         // Number of pixels in the area
-        uint16_t buffer_size_pixels_remaining = area->size;
+        uint32_t buffer_size_pixels_remaining = area->size;
 
         // Number of bytes of the block sent to the driver each transfer. This is limited by the memory available
 
@@ -158,10 +158,10 @@ bool Display::draw_area(Area *area, Painter *painter, bool pad_display) {
         // or not, depending on the relative position of the buffer in the area
 
         // chunk_height = integer floor of buffer_size/2/width (half buffer lines)
-        uint16_t w = area->box.width;
+        uint32_t w = area->box.width;
 
-        uint16_t a = b565_buffer_size / 2;
-        uint16_t d = a / w;
+        uint32_t a = b565_buffer_size / 2;
+        uint32_t d = a / w;
         this->chunk_height = d * w == a ? d : d - ((a < 0) ^ (w < 0));
 
         // chunk_height should not be greater than the area height.
@@ -170,11 +170,11 @@ bool Display::draw_area(Area *area, Painter *painter, bool pad_display) {
             this->chunk_height = area->box.height;
         }
 
-        uint16_t max_buffer_size = this->chunk_height * w;
+        uint32_t max_buffer_size = this->chunk_height * w;
 
-        uint16_t dma_buffer_size = buffer_size_pixels_remaining < max_buffer_size ? buffer_size_pixels_remaining : max_buffer_size;
+        uint32_t dma_buffer_size = buffer_size_pixels_remaining < max_buffer_size ? buffer_size_pixels_remaining : max_buffer_size;
 
-        uint16_t half_dma_buffer_size = max_buffer_size;
+        uint32_t half_dma_buffer_size = max_buffer_size;
 
         dma_buffer_size *= 2; // we will draw two chunks per DMA transfer
 
@@ -1158,7 +1158,8 @@ void Display::set_wrap_text(bool wrap_text) {
 std::string Display::fit_text(const std::string &text, int max_width, int max_height) {
     int max_chars_per_line = (max_width < 0 ? curr_area->box.width : max_width) / font->width;
     int max_lines = (max_height < 0 ? curr_area->box.height : max_height) / font->height;
-    int ellipsis_length = 7;
+    const char *ellipsis{" <...> "};
+    int ellipsis_length = strlen(ellipsis);
 
     if (max_chars_per_line <= ellipsis_length || max_lines <= 0) {
         return "!!!";
@@ -1180,7 +1181,7 @@ std::string Display::fit_text(const std::string &text, int max_width, int max_he
         if (line.length() > max_chars_per_line) {
             int truncate_at = (max_chars_per_line - ellipsis_length) / 2;
             if (truncate_at > 0) {
-                line = line.substr(0, truncate_at) + " <...> " + line.substr(line.length() - truncate_at);
+                line = line.substr(0, truncate_at) + ellipsis + line.substr(line.length() - truncate_at);
             } else {
                 line = line.substr(0, max_chars_per_line);
             }

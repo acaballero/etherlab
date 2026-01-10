@@ -568,7 +568,7 @@ void Widget::set_area() {
 
     Rect r = screen_rect();
 
-    area = {{(int16_t)r.left(), (int16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), this->show_fps, this->fps};
+    area = {{(int16_t)r.left(), (int16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint32_t)(r.width() * r.height()), this->show_fps, this->fps};
 }
 
 uint16_t Widget::get_z_index() const {

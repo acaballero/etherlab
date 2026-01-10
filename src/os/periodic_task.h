@@ -40,6 +40,8 @@ class periodic_task {
     }
     void set_enabled(bool b);
 
+    bool get_enabled();
+
     void set_name(const char *str) {
         strncpy(name, str, 4);
     }

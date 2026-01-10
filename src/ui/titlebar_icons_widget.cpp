@@ -37,7 +37,6 @@ TitleBarIconsWidget::TitleBarIconsWidget(const Rect &parentRect, Display *displa
         }
     });
     main_board::mode_signal.add(this, TitleBarIconsWidget::signal_static_callback);
-    os::task_manager.add(&task);
 }
 
 bool TitleBarIconsWidget::paint_callback() {
@@ -47,6 +46,7 @@ bool TitleBarIconsWidget::paint_callback() {
     Color color = C565_GREY_LIGHT;
     char buff[20];
 
+    display->set_trim_enabled(true);
     display->clear();
     display->gotoXY(0, MARGIN);
     display->setColor(C565_WHITE);

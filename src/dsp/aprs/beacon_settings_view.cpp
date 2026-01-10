@@ -9,6 +9,7 @@
 #include "input/inputEvent.h"
 #include "ips_font.h"
 #include "status.h"
+#include "io/config_file.h"
 #include <cstddef>
 #include <cstring>
 #include <iterator>
@@ -17,9 +18,20 @@ namespace dsp_ui {
 
 void BeaconSettingsView::init() {
 
-    periodField.set_value(10);
+    ConfigFile<aprs::settings> config_file;
+    bool ok = config_file.load("aprs.cfg", &aprs_settings, true);
 
     gainField.set_value(dsp::dsp_config.gain);
+
+    if (!ok) {
+        status::pop_alert(status::ERROR, "Error reading/creating aprs.cfg");
+        periodField.set_value(10);
+
+    } else {
+        periodField.set_value(aprs_settings.beacon_period_ms / 1000);
+        deviationField.set_value(aprs_settings.deviation);
+        messageField.set_text(aprs_settings.message);
+    }
 
     int bw = get_border_width();
     int sw = get_shadow_width();
@@ -38,12 +50,20 @@ void BeaconSettingsView::init() {
     button_ok.action = [this](Button &, st_inputEvent) {
         dsp::dsp_config.gain = gainField.get_value();
 
-        aprs::settings settings{};
-        settings.beacon_period_ms = periodField.get_value() * 1000;
-        settings.deviation = deviationField.get_value();
+        aprs_settings.beacon_period_ms = periodField.get_value() * 1000;
+        aprs_settings.deviation = deviationField.get_value();
+        strncpy(aprs_settings.message, messageField.get_text().c_str(), aprs::max_message_length);
+        aprs_settings.message[aprs::max_message_length - 1] = '\0';
+
+        ConfigFile<aprs::settings> config_file;
+        bool ok = config_file.save("aprs.cfg", &aprs_settings);
+
+        if (!ok) {
+            status::pop_alert(status::ERROR, "Error saving aprs.cfg");
+        }
 
         if (on_select) {
-            on_select(true, settings);
+            on_select(true, aprs_settings);
         }
 
         set_visible(false);
@@ -64,13 +84,12 @@ void BeaconSettingsView::init() {
     button_cancel.set_name("btnc");
     button_ok.set_name("btno");
 
-    Widget *texts[] = {&periodLabel, &periodField, &gainLabel, &gainField, &deviationLabel, &deviationField};
-    Label *labels[] = {&periodLabel, &gainLabel, &deviationLabel};
+    Widget *widgets[] = {&periodLabel, &periodField, &gainLabel, &gainField, &deviationLabel, &deviationField, &messageLabel, &messageField};
+    Label *labels[] = {&periodLabel, &gainLabel, &deviationLabel, &messageLabel};
     NumberField *fields[] = {&periodField, &gainField, &deviationField};
 
-    for (auto w : texts) {
-        w->set_font((FontDef *)&Font_11x18);
-
+    for (auto w : widgets) {
+        w->set_font((FontDef *)&Font_7x10);
         add_child(w);
     }
 
@@ -81,6 +100,9 @@ void BeaconSettingsView::init() {
     for (auto w : fields) {
         w->set_fg(C565_FIELD_FG);
     }
+
+    messageField.set_fg(C565_FIELD_FG);
+    messageField.set_editable(true);
 
     add_children({&button_ok, &button_cancel});
 

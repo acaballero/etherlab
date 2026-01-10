@@ -20,7 +20,6 @@ uint16_t cpl_offset = CPL_LOGAMP_OFFSET_MV;
 
 void calculate_power();
 
-bool enabled = false;
 os::periodic_task task(50, calculate_power);
 Signal rf_coupler_signal;
 struct rf_coupler_info info;
@@ -30,7 +29,7 @@ void enable() {
 }
 
 void disable() {
-    if (enabled) {
+    if (task.get_enabled()) {
         task.set_enabled(false);
         info = {0, 0, 0, 0, 0};
         rf_coupler_signal.emit(&info);
@@ -121,7 +120,7 @@ void calculate_power() {
         info.swr = 0;
     }
 
-    LOG("%.4f; %.4f; %.4f, %.4f\n", info.v_for, info.v_ref, info.p_for_dbm, info.swr);
+    //   LOG("%.4f; %.4f; %.4f, %.4f\n", info.v_for, info.v_ref, info.p_for_dbm, info.swr);
 
     if (last_info != info) {
         rf_coupler_signal.emit(&info);

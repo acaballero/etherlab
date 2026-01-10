@@ -13,13 +13,14 @@ bool KeyboardView::on_input(const st_inputEvent event) {
     bool consumed = Widget::on_input(event);
 
     if (!consumed) {
+        int nbuttons = sizeof(buttons) / sizeof(buttons[0]);
 
         switch (event.type) {
             case INPUT_EVENT_TYPE_ENCODER:
                 focused_button += event.value;
                 if (focused_button < 0) {
-                    focused_button = sizeof(buttons) - 1;
-                } else if (focused_button >= sizeof(buttons)) {
+                    focused_button = nbuttons - 1;
+                } else if (focused_button >= nbuttons) {
                     focused_button = 0;
                 }
                 buttons[focused_button].set_focus(true);

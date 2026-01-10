@@ -24,7 +24,7 @@ int32_t NumberField::get_value() const {
 }
 
 void NumberField::calc_size() {
-    set_width(font->width * (length + strlen(units)));
+    set_width(font->width * (length + strlen(units) + 1));
     set_height(font->height + 2);
 }
 
@@ -86,7 +86,7 @@ void NumberField::before_paint() {
 
 void NumberField::add(int32_t v) {
     int32_t old_value = get_value();
-    set_value(get_value() + (v * step));
+    set_value(old_value + v);
 
     if (on_wrap) {
         if ((v > 0) && (get_value() < old_value)) {

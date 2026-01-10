@@ -338,13 +338,10 @@ void FFTIQBalancer::collectBalanceInfo(complex_t_f32 *data) {
 
     // Calculate SNR squared
 
-    float32_t snrSqr[FFT_N];
     for (int i = 0; i < FFT_N; i++) {
-
         snrSqr[i] = SQR(data[i].r) + SQR(data[i].i);
     }
 
-    float32_t copy[FFT_N];
     memcpy(copy, snrSqr, FFT_N * sizeof(*snrSqr));
 
     std::sort(copy, copy + FFT_N - 1);

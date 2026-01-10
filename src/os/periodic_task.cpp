@@ -13,6 +13,10 @@ void periodic_task::set_enabled(bool b) {
     enabled = b;
 }
 
+bool periodic_task::get_enabled() {
+    return enabled;
+}
+
 void periodic_task::set_next(uint64_t ms) {
     _next_ms = ms;
 }

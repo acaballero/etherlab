@@ -49,13 +49,6 @@ void APRSView::init() {
         logger->append("aprs.log");
     }
 
-    ConfigFile<aprs::settings> config_file;
-    bool ok = config_file.load("aprs.cfg", &aprs_settings);
-
-    if (!ok) {
-        status::pop_alert(status::ERROR, "Error reading aprs.cfg");
-    }
-
     set_font((FontDef *)&Font_7x10);
     title_widget.set_label("APRS");
     title_widget.set_border_radius(0, 0, 0, 0);
@@ -139,19 +132,13 @@ void APRSView::toggle_beacon() {
             [this](bool ok, aprs::settings settings) {
                 if (ok) {
 
-                    ConfigFile<aprs::settings> config_file;
-                    bool ok = config_file.save("aprs.cfg", &aprs_settings);
-
-                    if (!ok) {
-                        status::pop_alert(status::ERROR, "Error saving aprs.cfg");
-                    }
-
+                    aprs_settings = settings;
                     auto *p = new os::periodic_task{static_cast<uint64_t>(settings.beacon_period_ms), [this]() {
-                                                        send_packet("!4045.22N/00347.24W-Angel Dust QTH");
+                                                        send_packet(aprs_settings.message);
                                                     }};
 
-                    menu_actions[2].bg_color = C565_BG_ENABLED;
-                    menu_actions[2].fg_color = C565_GREEN;
+                    menu_actions[2].bg_color = C565_GREEN;
+                    menu_actions[2].fg_color = C565_WHITE;
                     beacon_task_id = os::task_manager.add(p);
                     actions.dirty = true;
                     navigation_signal.emit(this);

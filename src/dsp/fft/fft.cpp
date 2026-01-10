@@ -464,6 +464,8 @@ void generate_smoothing_gain_lut() {
 
 void fft_init() {
 
+    LOG("FFT init\n");
+
     float32_t minPrecZ, maxPrecZ;
 
     // Make sure the sample rate is between hardware bounds (may have been saved before)

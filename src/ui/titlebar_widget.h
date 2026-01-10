@@ -28,6 +28,12 @@ class TitleBarWidget : public View {
     Button btnDSP{{120 + MARGIN, MARGIN, 0, area.box.height - MARGIN * 2}, display, ""};
 
     TitleBarIconsWidget titleBarWidgetInner{{0, MARGIN, 110, area.box.height}, &lcd};
+
+    // Refresh clock
+    os::periodic_task task{1000, [this](void) {
+                               set_dirty();
+                               titleBarWidgetInner.set_dirty();
+                           }};
 };
 
 #endif // TRX_FRONTEND_TITLEBAR_WIDGET_H
