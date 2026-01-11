@@ -7,10 +7,6 @@
 #include "fatfs/fatfs.h"
 #include "hw/stm32f4xx/connectivity.h"
 #include "status.h"
-#include "usb/usbd_conf.h"
-#include "usbd_def.h"
-#include "usb/usb_device.h"
-#include "usbd_msc.h"
 #include <type_traits>
 
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
@@ -32,77 +28,39 @@ void OTG_HS_IRQHandler(void) {
 }
 
 uint8_t getUSBConnectionStatus() {
-    return ((((USBD_HandleTypeDef *)hpcd_USB_OTG_HS.pData)->dev_state) == USBD_STATE_CONFIGURED) ? USB_CONN_STATUS_CONNECTED : USB_CONN_STATUS_DISCONNECTED;
+    return tud_mounted() ? USB_CONN_STATUS_CONNECTED : USB_CONN_STATUS_DISCONNECTED;
 }
 
-// Add this function to usb_device.c or connectivity.cpp
-bool SD_Reinit_For_MSC(void) {
-    // Stop any ongoing SD operations
-    HAL_SD_Abort(&hsd);
+// bool init_USB_MSC() {
 
-    // Small delay to ensure clean state
-    HAL_Delay(10);
+//     if (usb_msc_active) {
+//         return true;
+//     }
 
-    // Deinitialize SD card completely
-    HAL_SD_DeInit(&hsd);
+//     if (lock_sd_card(5000)) { // Wait for SD card to be free
 
-    // Reinitialize SD card hardware
-    if (HAL_SD_Init(&hsd) != HAL_OK) {
-        return false;
-    }
+//         restart_sdio(
+//             true); // FIXME: Using SDIO at high speed here does not increase the SD speed. The MSC usb interface does not use DMA which is a bottleneck.
+//                    // However, I've tried enabling DMA for MSC operation and it seems to mess with the USB DMA or something (dindn't try much)
 
-    // Configure 4-bit bus width for better performance
-    if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK) {
-        return false;
-    }
+//         USB_SetupMSC();
 
-    // Ensure DMA is properly configured by reinitializing the MSP
-    HAL_SD_MspDeInit(&hsd);
-    HAL_SD_MspInit(&hsd);
+//         usb_msc_active = 1;
 
-    // Wait for card to be ready
-    uint32_t timeout = HAL_GetTick() + 1000;
-    while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER && HAL_GetTick() < timeout) {
-        HAL_Delay(10);
-    }
+//         return true;
+//     } else {
+//         status::pop_alert(status::ERROR, "Timeout waiting for SD card");
+//         return false;
+//     }
+// }
 
-    if (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {
-        return false;
-    }
+// bool init_USB_CDC() {
 
-    return true;
-}
+//     restart_sdio(true);
 
-bool init_USB_MSC() {
+//     USB_SetupCDC();
 
-    if (usb_msc_active) {
-        return true;
-    }
+//     usb_msc_active = 0;
 
-    if (lock_sd_card(5000)) { // Wait for SD card to be free
-
-        restart_sdio(
-            true); // FIXME: Using SDIO at high speed here does not increase the SD speed. The MSC usb interface does not use DMA which is a bottleneck.
-                   // However, I've tried enabling DMA for MSC operation and it seems to mess with the USB DMA or something (dindn't try much)
-
-        USB_SetupMSC();
-
-        usb_msc_active = 1;
-
-        return true;
-    } else {
-        status::pop_alert(status::ERROR, "Timeout waiting for SD card");
-        return false;
-    }
-}
-
-bool init_USB_CDC() {
-
-    restart_sdio(true);
-
-    USB_SetupCDC();
-
-    usb_msc_active = 0;
-
-    return true;
-}
+//     return true;
+// }

@@ -26,12 +26,12 @@
 #include "hw/stm32_hal.h"
 #include "../../lib/FatFs/ff.h"
 #include "../../lib/FatFs/diskio.h"
+#include "tusb.h"
 #include "stm32f4xx_hal.h"
 #include "utils.hpp"
 #include <stdio.h>
 
 extern Diskio_drvTypeDef SD_CARD_DRIVER; // Defined in the parent project
-extern USBD_HandleTypeDef hUsbDeviceHS;  // Defined in usbd_msc.h
 
 char USERPath[4];    /* USER logical drive path */
 FATFS FatFS;         /* File system object for USER logical drive */
@@ -63,14 +63,12 @@ void sdcard_loop() {
     uint64_t t = HAL_GetTick();
 
     if (usb_msc_active &&
-        (hUsbDeviceHS.dev_state ==
-         USBD_STATE_CONFIGURED)) { // Some hosts (almost all) don't cause a MSC_DeInit when the USB is detacched or unplugged so we also check the dev_state
+        tud_mounted()) { // Some hosts (almost all) don't cause a MSC_DeInit when the USB is detacched or unplugged so we also check the dev_state
 
         // Don't touch the SD card when the host is controlling it as a MSC (mass storage device)
         sdcard_info.status = MassStorageDeviceActive;
         sdcard_signal.emit(&sdcard_info);
-    } else if ((!usb_msc_active && sdcard_info.status == MassStorageDeviceActive) ||
-               (hUsbDeviceHS.dev_old_state == USBD_STATE_CONFIGURED && hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED)) {
+    } else if (!usb_msc_active && sdcard_info.status == MassStorageDeviceActive) {
         sdcard_info.status = Present;
         unlock_sd_card(); // TODO: This has to be unlocked by the one who locked it (usb MSC initialization in usb.cpp)
                           // TINYUSB REMOVED

@@ -6,6 +6,10 @@
  */
 
 #include "../../lib/tinyusb/src/tusb.h"
+#include "device/usbd.h"
+#include "class/audio/audio.h"
+#include "stm32f4xx.h"
+#include <string.h>
 
 //--------------------------------------------------------------------+
 // Device Descriptors
@@ -39,7 +43,7 @@ uint8_t const *tud_descriptor_device_cb(void) {
 
 enum { ITF_NUM_CDC_0 = 0, ITF_NUM_CDC_0_DATA, ITF_NUM_MSC, ITF_NUM_AUDIO_CONTROL, ITF_NUM_AUDIO_STREAMING_MIC, ITF_NUM_AUDIO_STREAMING_SPK, ITF_NUM_TOTAL };
 
-#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_AUDIO_MIC_ONE_CH_DESC_LEN)
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_AUDIO_HEADSET_STEREO_DESC_LEN)
 
 #define EPNUM_CDC_NOTIF 0x81
 #define EPNUM_CDC_OUT 0x02
@@ -61,16 +65,12 @@ uint8_t const desc_fs_configuration[] = {
     // Interface number, string index, EP Out & EP In address, EP size
     TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
 
-    // Audio descriptor - MONO microphone (RX: Radio->PC) and MONO speaker (TX: PC->Radio)
-    TUD_AUDIO_MIC_ONE_CH_DESCRIPTOR(
-        /*_itfnum*/ ITF_NUM_AUDIO_CONTROL,
-        /*_stridx*/ 6,
-        /*_nBytesPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX,
-        /*_nBitsUsedPerSample*/ CFG_TUD_AUDIO_FUNC_1_RESOLUTION_RX,
-        /*_epout*/ EPNUM_AUDIO_OUT,
-        /*_epoutsize*/ CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX,
-        /*_epin*/ EPNUM_AUDIO_IN,
-        /*_epinsize*/ CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX)};
+    // Audio - using headset stereo descriptor
+    // Note: For WSJT-X you only need mono, but TinyUSB doesn't have a mono-only macro
+    // The PC will see stereo, just send same data to both channels
+    TUD_AUDIO_HEADSET_STEREO_DESCRIPTOR(ITF_NUM_AUDIO_CONTROL,
+                                        6, // String index
+                                        EPNUM_AUDIO_OUT, EPNUM_AUDIO_IN, CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX, CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX)};
 
 uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
     (void)index;
