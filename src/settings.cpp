@@ -14,7 +14,6 @@
 #include "io/config_file.h"
 #include "types.h"
 #include "ui/frequency_memory_ui.h"
-#include "usbd_cdc_if.h"
 #include <cstring>
 
 uint8_t settings_read(Config *settings) {

@@ -15,7 +15,7 @@
 #include "dsp/dsp.h"
 #include "input/input_controller.h"
 #include "main_board.h"
-#include "usb/usb_device.h"
+#include "usb/tinyusb/usb_composite_device.h"
 
 // - FATFS -
 #if ENABLE_SD_CARD
@@ -67,7 +67,7 @@ void setup() {
 #if USB_ENABLED
     // Set the USB enabled pin to drive the pullup in DP (D+) line
     // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
-    USB_SetupCDC();
+    usb_composite_init();
 #endif
 
     // Notice: Initialize any MCP23017 feature after BitbangI2C (initPowerControl)

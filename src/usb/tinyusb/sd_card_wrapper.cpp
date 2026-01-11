@@ -1,11 +1,11 @@
 /**
  * sd_card_wrapper.c
- * 
+ *
  * Wrapper functions to connect your existing SD card code to TinyUSB MSC
  */
 
 #include "usb_composite_device.h"
-#include "fatfs.h"
+#include "fatfs/fatfs.h"
 #include "stm32f4xx_hal.h"
 
 // External SD card handle from your code
@@ -20,18 +20,18 @@ extern SD_HandleTypeDef hsd;
  */
 int sd_card_read_blocks(uint32_t lba, uint8_t *buffer, uint32_t block_count) {
     HAL_StatusTypeDef status;
-    
+
     // Use HAL to read blocks
     status = HAL_SD_ReadBlocks(&hsd, buffer, lba, block_count, 1000);
-    
+
     if (status != HAL_OK) {
         return -1;
     }
-    
+
     // Wait for transfer to complete if using DMA
     // If you're using DMA, uncomment this:
     // while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {}
-    
+
     return 0;
 }
 
@@ -44,18 +44,18 @@ int sd_card_read_blocks(uint32_t lba, uint8_t *buffer, uint32_t block_count) {
  */
 int sd_card_write_blocks(uint32_t lba, const uint8_t *buffer, uint32_t block_count) {
     HAL_StatusTypeDef status;
-    
+
     // Use HAL to write blocks
-    status = HAL_SD_WriteBlocks(&hsd, (uint8_t*)buffer, lba, block_count, 1000);
-    
+    status = HAL_SD_WriteBlocks(&hsd, (uint8_t *)buffer, lba, block_count, 1000);
+
     if (status != HAL_OK) {
         return -1;
     }
-    
+
     // Wait for transfer to complete if using DMA
     // If you're using DMA, uncomment this:
     // while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {}
-    
+
     return 0;
 }
 
@@ -65,11 +65,11 @@ int sd_card_write_blocks(uint32_t lba, const uint8_t *buffer, uint32_t block_cou
  */
 uint32_t sd_card_get_block_count(void) {
     HAL_SD_CardInfoTypeDef card_info;
-    
+
     if (HAL_SD_GetCardInfo(&hsd, &card_info) == HAL_OK) {
         return card_info.LogBlockNbr;
     }
-    
+
     return 0;
 }
 

@@ -1,6 +1,6 @@
 /**
  * usb_composite_device.h
- * 
+ *
  * TinyUSB composite device interface
  * Replaces HAL USB functions
  */
@@ -24,7 +24,7 @@ void usb_composite_init(void);
 void usb_composite_task(void);
 
 // CDC functions - for your CAT protocol
-bool usb_cdc_transmit(const uint8_t* data, uint16_t len);  // Replaces CDC_Transmit_HS()
+bool usb_cdc_transmit(const uint8_t *data, uint16_t len); // Replaces CDC_Transmit_HS()
 bool usb_composite_cdc_connected(void);
 
 // MSC status

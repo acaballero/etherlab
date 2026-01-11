@@ -3,7 +3,7 @@
 //
 
 #include "usb.h"
-#include "device/usbd.h"
+#include "../../lib/tinyusb/src/tusb.h"
 #include "fatfs/fatfs.h"
 #include "hw/stm32f4xx/connectivity.h"
 #include "status.h"
@@ -16,12 +16,12 @@ volatile uint8_t usb_msc_active = 0;
 /**
  * @brief This function handles USB On The Go HS global interrupt.
  */
-void OTG_HS_IRQHandler(void) {
+extern "C" void OTG_HS_IRQHandler(void) {
     /* USER CODE BEGIN OTG_HS_IRQn 0 */
 
     /* USER CODE END OTG_HS_IRQn 0 */
     // HAL_PCD_IRQHandler(&hpcd_USB_OTG_HS);
-    tud_int_handler(0);
+    dcd_int_handler(0);
     /* USER CODE BEGIN OTG_HS_IRQn 1 */
 
     /* USER CODE END OTG_HS_IRQn 1 */

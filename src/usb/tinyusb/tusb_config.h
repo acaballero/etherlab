@@ -37,10 +37,11 @@ extern "C" {
 
 // Enable device stack
 #define CFG_TUD_ENABLED 1
+#define CFG_TUSB_RHPORT0_MODE (OPT_MODE_DEVICE | OPT_MODE_FULL_SPEED)
 
 //--------------------------------------------------------------------
 // Device Configuration
-//--------------------------------------------------------------------
+//------------------------------------------------- -------------------
 
 #ifndef CFG_TUD_ENDPOINT0_SIZE
 #define CFG_TUD_ENDPOINT0_SIZE 64
@@ -49,7 +50,7 @@ extern "C" {
 //------------- Class enabled -------------//
 #define CFG_TUD_CDC 1   // CAT protocol
 #define CFG_TUD_MSC 1   // SD card
-#define CFG_TUD_AUDIO 1 // WSJT-X audio
+#define CFG_TUD_AUDIO 1 // USB audio input/output
 
 //------------- Audio Configuration -------------//
 // Using stereo (TinyUSB limitation), but we'll send mono data to both channels
@@ -62,14 +63,12 @@ extern "C" {
 #define CFG_TUD_AUDIO_ENABLE_EP_IN 1
 #define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX 2 // Stereo (TinyUSB requirement)
 #define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX 2
-#define CFG_TUD_AUDIO_FUNC_1_RESOLUTION_RX 16
 #define CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE 48000
 
 // Speaker (TX - PC to Radio) - using stereo descriptor
 #define CFG_TUD_AUDIO_ENABLE_EP_OUT 1
-#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 2 // Stereo (TinyUSB requirement)
+#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 1 // Mono sound
 #define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX 2
-#define CFG_TUD_AUDIO_FUNC_1_RESOLUTION_TX 16
 
 // Buffer sizes
 #define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ                                                                                                                   \

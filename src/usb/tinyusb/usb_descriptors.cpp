@@ -38,39 +38,34 @@ uint8_t const *tud_descriptor_device_cb(void) {
 }
 
 //--------------------------------------------------------------------+
-// Configuration Descriptor
+// Configuration Descriptor - CDC + MSC + UAC2.0 Microphone (MONO)
 //--------------------------------------------------------------------+
-
-enum { ITF_NUM_CDC_0 = 0, ITF_NUM_CDC_0_DATA, ITF_NUM_MSC, ITF_NUM_AUDIO_CONTROL, ITF_NUM_AUDIO_STREAMING_MIC, ITF_NUM_AUDIO_STREAMING_SPK, ITF_NUM_TOTAL };
-
-#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_AUDIO_HEADSET_STEREO_DESC_LEN)
+enum { ITF_NUM_CDC = 0, ITF_NUM_CDC_DATA, ITF_NUM_MSC, ITF_NUM_AUDIO_CONTROL, ITF_NUM_AUDIO_STREAMING, ITF_NUM_TOTAL };
 
 #define EPNUM_CDC_NOTIF 0x81
 #define EPNUM_CDC_OUT 0x02
 #define EPNUM_CDC_IN 0x82
-
 #define EPNUM_MSC_OUT 0x03
 #define EPNUM_MSC_IN 0x83
-
-#define EPNUM_AUDIO_OUT 0x04
 #define EPNUM_AUDIO_IN 0x84
 
-uint8_t const desc_fs_configuration[] = {
-    // Config number, interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 500),
+// TUD_AUDIO20_MIC_ONE_CH_DESC_LEN exists in TinyUSB 0.20.0!
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_AUDIO20_MIC_ONE_CH_DESC_LEN)
 
-    // Interface number, string index, EP notification address and size, EP data address (out, in) and size
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_0, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64),
+uint8_t const desc_fs_configuration[] = {TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 500),
 
-    // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
+                                         TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64),
 
-    // Audio - using headset stereo descriptor
-    // Note: For WSJT-X you only need mono, but TinyUSB doesn't have a mono-only macro
-    // The PC will see stereo, just send same data to both channels
-    TUD_AUDIO_HEADSET_STEREO_DESCRIPTOR(ITF_NUM_AUDIO_CONTROL,
-                                        6, // String index
-                                        EPNUM_AUDIO_OUT, EPNUM_AUDIO_IN, CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX, CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX)};
+                                         TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
+
+                                         // UAC2.0 Mono Microphone - THIS MACRO EXISTS IN 0.20.0!
+                                         TUD_AUDIO20_MIC_ONE_CH_DESCRIPTOR(
+                                             /*_itfnum*/ ITF_NUM_AUDIO_CONTROL,
+                                             /*_stridx*/ 6,
+                                             /*_nBytesPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX,
+                                             /*_nBitsUsedPerSample*/ CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * 8,
+                                             /*_epin*/ EPNUM_AUDIO_IN,
+                                             /*_epsize*/ CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX)};
 
 uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
     (void)index;
@@ -80,29 +75,20 @@ uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
 //--------------------------------------------------------------------+
 // String Descriptors
 //--------------------------------------------------------------------+
-
 char const *string_desc_arr[] = {
-    (const char[]){0x09, 0x04}, // 0: English (0x0409)
-    "STMicroelectronics",       // 1: Manufacturer
-    "SDR Transceiver",          // 2: Product
-    "123456",                   // 3: Serial (will be overwritten)
-    "CAT Control",              // 4: CDC Interface
-    "SD Card",                  // 5: MSC Interface
-    "Audio",                    // 6: Audio Interface
+    (const char[]){0x09, 0x04}, "STMicroelectronics", "SDR Transceiver", "123456", "CAT Control", "SD Card", "Audio",
 };
 
 static uint16_t _desc_str[32];
 
 uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
     (void)langid;
-
     uint8_t chr_count;
 
     if (index == 0) {
         memcpy(&_desc_str[1], string_desc_arr[0], 2);
         chr_count = 1;
     } else if (index == 3) {
-        // Get unique serial number from chip UID
         uint32_t uid[3];
         uid[0] = HAL_GetUIDw0();
         uid[1] = HAL_GetUIDw1();
@@ -116,19 +102,15 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
     } else {
         if (!(index < sizeof(string_desc_arr) / sizeof(string_desc_arr[0])))
             return NULL;
-
         const char *str = string_desc_arr[index];
         chr_count = strlen(str);
         if (chr_count > 31)
             chr_count = 31;
-
         for (uint8_t i = 0; i < chr_count; i++) {
             _desc_str[1 + i] = str[i];
         }
     }
 
-    // Header
     _desc_str[0] = (TUSB_DESC_STRING << 8) | (2 * chr_count + 2);
-
     return _desc_str;
 }

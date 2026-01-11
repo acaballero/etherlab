@@ -249,7 +249,8 @@ result settings_reset(eventMask) {
 bool locked = false;
 result set_usb_msc_mode(eventMask) {
     main_board::set_mute(GPIO_PIN_SET); // TODO: SD card generates big EMI. Pending new board with integrated SD card
-    init_USB_MSC();
+    // TODO: Use a composite usb device (with tinyusb) for this
+    //  init_USB_MSC();
     return proceed;
 }
 

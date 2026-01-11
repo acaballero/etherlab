@@ -8,11 +8,8 @@
 #include "../../../lib/tinyusb/src/tusb.h"
 #include "usb_composite_device.h"
 #include "usb_audio_dsp_bridge.h"
+#include "io/cat_if.h"
 #include <string.h>
-
-// External references to your existing code
-extern void cat_enqueue_command(char *buf, uint16_t len); // Your CAT protocol handler
-extern uint8_t cat_process_command(void);                 // Your CAT command processor
 
 // SD card functions (you'll need to provide these)
 extern int sd_card_read_blocks(uint32_t lba, uint8_t *buffer, uint32_t block_count);
@@ -46,11 +43,6 @@ void usb_composite_task(void) {
 
     // Audio processing
     usb_audio_process();
-
-    // Process any pending CAT commands
-    if (cdc_connected) {
-        cat_process_command();
-    }
 }
 
 bool usb_composite_cdc_connected(void) {
@@ -238,6 +230,7 @@ void tud_mount_cb(void) {
 void tud_umount_cb(void) {
     cdc_connected = false;
     msc_connected = false;
+    usb_audio_dsp_bridge_stop();
 }
 
 // Invoked when usb bus is suspended
