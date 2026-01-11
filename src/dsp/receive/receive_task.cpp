@@ -25,6 +25,7 @@
 #include "FIFO.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_gpio.h"
+#include "tinyusb/usb_audio_dsp_bridge.h"
 #include "types.h"
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
@@ -86,6 +87,10 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
         if (compressor_enabled) {
             compressor.work(buff_out_f32);
         }
+    }
+
+    if (usb_audio_is_streaming()) {
+        usb_audio_send_rx_audio(buff_out_f32.p, buff_out_f32.count);
     }
 }
 

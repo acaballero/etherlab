@@ -10,9 +10,9 @@
 #include "standby.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
+#include "tinyusb/usb_composite_device.h"
 #include "types.h"
 #include "ui/frequency_memory_ui.h"
-#include "usb/usbd_cdc_if.h"
 #include "printf.h"
 #include "utils.hpp"
 #include <string.h>
@@ -222,7 +222,9 @@ void process_command(st_usb_cdc_command *command) {
 
             response[size++] = STOP_BYTE;
 
-            CDC_Transmit_HS(response, size);
+            // CDC_Transmit_HS(response, size);
+            usb_cdc_transmit(response, size);
+
             LOG("Sent | size: %d ", size);
 
             print_hex((char *)response, size, true);

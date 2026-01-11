@@ -24,7 +24,7 @@ void OTG_HS_IRQHandler(void);
 
 uint8_t getUSBConnectionStatus();
 
-bool init_USB_MSC();
-bool init_USB_CDC();
+// bool init_USB_MSC();
+// bool init_USB_CDC();
 
 #endif // TRX_FRONTEND_USB_H

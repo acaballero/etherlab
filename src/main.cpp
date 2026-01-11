@@ -21,13 +21,13 @@
 #include "stm32f4xx_hal.h"
 #include "os/task_manager.h"
 #include "stm32f4xx_hal_gpio.h"
+#include "tinyusb/usb_composite_device.h"
 #include "types.h"
 #include "ui/frequency_memory_ui.h"
 #include "ui/lock_view.h"
 #include "ui/map_view.h"
 #include "ui/menu.h"
 #include "ui/view_manager.h"
-#include "usb_device.h"
 
 #include <memory>
 #include <sys/unistd.h>
@@ -232,6 +232,9 @@ int main() {
     while (1) {
 
         os::task_manager.run();
+
+        // TODO: Make this a task
+        usb_composite_task();
 
         // watchdog();
 

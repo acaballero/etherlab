@@ -30,7 +30,8 @@ void LockView::before_paint() {
 
 bool LockView::on_input(const st_inputEvent e) {
     if (!e.is_touch()) {
-        init_USB_CDC();
+        // TINYUSB REMOVED
+        //   init_USB_CDC();
         return true;
     } else {
         return false;

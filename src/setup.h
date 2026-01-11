@@ -7,4 +7,4 @@
 
 void setup();
 
-#endif //TRX_FRONTEND_SETUP_H
+#endif // TRX_FRONTEND_SETUP_H

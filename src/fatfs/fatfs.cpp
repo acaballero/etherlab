@@ -27,10 +27,8 @@
 #include "../../lib/FatFs/ff.h"
 #include "../../lib/FatFs/diskio.h"
 #include "stm32f4xx_hal.h"
-#include "usb/usbd_msc.h"
 #include "utils.hpp"
 #include <stdio.h>
-#include <sys/_stdint.h>
 
 extern Diskio_drvTypeDef SD_CARD_DRIVER; // Defined in the parent project
 extern USBD_HandleTypeDef hUsbDeviceHS;  // Defined in usbd_msc.h
@@ -75,7 +73,8 @@ void sdcard_loop() {
                (hUsbDeviceHS.dev_old_state == USBD_STATE_CONFIGURED && hUsbDeviceHS.dev_state != USBD_STATE_CONFIGURED)) {
         sdcard_info.status = Present;
         unlock_sd_card(); // TODO: This has to be unlocked by the one who locked it (usb MSC initialization in usb.cpp)
-        init_USB_CDC();
+                          // TINYUSB REMOVED
+                          //  init_USB_CDC();
         sdcard_signal.emit(&sdcard_info);
     }
 
