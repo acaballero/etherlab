@@ -6,9 +6,13 @@
  */
 
 #include "../../../lib/tinyusb/src/tusb.h"
+#include "device/usbd.h"
+#include "hw/stm32f4xx/usb.h"
+#include "tinyusb/tusb_config.h"
 #include "usb_composite_device.h"
 #include "usb_audio_dsp_bridge.h"
 #include "io/cat_if.h"
+#include "hw/stm32_hal.h"
 #include <string.h>
 
 // SD card functions (you'll need to provide these)
@@ -26,8 +30,11 @@ static bool msc_connected = false;
 //--------------------------------------------------------------------+
 
 void usb_composite_init(void) {
+
+    // Initialize USB hardware
+    MX_USB_OTG_HS_Init();
     // Initialize TinyUSB
-    tusb_init();
+    tusb_rhport_init(BOARD_TUD_RHPORT, NULL);
 
     // Initialize audio bridge
     usb_audio_dsp_bridge_init();
@@ -39,7 +46,7 @@ void usb_composite_init(void) {
 
 void usb_composite_task(void) {
     // TinyUSB device task - must be called frequently
-    tud_task();
+    tud_task_ext(1, false);
 
     // Audio processing
     usb_audio_process();
@@ -121,10 +128,15 @@ bool usb_cdc_transmit(const uint8_t *data, uint16_t len) {
 
 // Invoked when received SCSI_CMD_INQUIRY
 void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4]) {
+
+    if (!usb_get_msc_enabled()) { // Does nothing if MSC is explicitly disabled
+        return;
+    }
+
     (void)lun;
 
-    const char vid[] = "STM32";
-    const char pid[] = "SDR Transceiver";
+    const char vid[] = "Angel Dust";
+    const char pid[] = "Etherlab EL24 SDR Transceiver";
     const char rev[] = "1.0";
 
     memcpy(vendor_id, vid, strlen(vid));
@@ -240,4 +252,9 @@ void tud_suspend_cb(bool remote_wakeup_en) {
 
 // Invoked when usb bus is resumed
 void tud_resume_cb(void) {
+}
+
+// Must be user-implemented
+uint32_t tusb_time_millis_api(void) {
+    return HAL_GetTick();
 }

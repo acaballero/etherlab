@@ -30,6 +30,43 @@ bool usb_composite_cdc_connected(void);
 // MSC status
 bool usb_composite_msc_connected(void);
 
+//--------------------------------------------------------------------+
+// MSC Enable/Disable API
+//--------------------------------------------------------------------+
+
+/**
+ * @brief Enable or disable MSC (Mass Storage Class)
+ *
+ * This allows user to choose whether SD card is exposed via USB.
+ *
+ * IMPORTANT: Can only be called when USB is disconnected.
+ * If USB is already connected, this will return false.
+ *
+ * To change while connected:
+ * 1. Call usb_set_msc_enabled(true/false)
+ * 2. Call usb_trigger_reenumeration()
+ *
+ * @param enable  true to enable MSC, false to disable
+ * @return true if successful, false if USB is currently connected
+ */
+bool usb_set_msc_enabled(bool enable);
+
+/**
+ * @brief Get current MSC enable state
+ * @return true if MSC is enabled, false if disabled
+ */
+bool usb_get_msc_enabled(void);
+
+/**
+ * @brief Trigger USB re-enumeration
+ *
+ * Disconnects and reconnects USB, forcing PC to re-enumerate
+ * with the new configuration descriptor (MSC enabled or disabled).
+ *
+ * Use after calling usb_set_msc_enabled() while connected.
+ */
+void usb_trigger_reenumeration(void);
+
 // SD Card interface functions you need to implement
 // These wrap your existing SD card code
 int sd_card_read_blocks(uint32_t lba, uint8_t *buffer, uint32_t block_count);

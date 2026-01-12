@@ -1,5 +1,6 @@
 
 #include "menu.h"
+#include "device/usbd.h"
 #include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
 #include "frequency_memory_ui.h"
@@ -14,6 +15,7 @@
 #include "menuBase.h"
 #include "mixer.h"
 #include "stm32f4xx_hal_gpio.h"
+#include "tinyusb/usb_composite_device.h"
 #include "types.h"
 #include "ui/menuILI9431Out.h"
 #include "dsp/dsp_ui.h"
@@ -249,8 +251,9 @@ result settings_reset(eventMask) {
 bool locked = false;
 result set_usb_msc_mode(eventMask) {
     main_board::set_mute(GPIO_PIN_SET); // TODO: SD card generates big EMI. Pending new board with integrated SD card
-    // TODO: Use a composite usb device (with tinyusb) for this
-    //  init_USB_MSC();
+
+    usb_set_msc_enabled(true);
+
     return proceed;
 }
 

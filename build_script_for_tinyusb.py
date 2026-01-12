@@ -1,32 +1,58 @@
 # extra_tinyusb.py
-# Place this file in your project root directory
-# Add to platformio.ini: extra_scripts = pre:extra_tinyusb.py
+# Place in project root directory
+# Forces TinyUSB source files to be compiled with correct CPU flags
 
 Import("env")
+import os
 
+print("=" * 60)
+print("TinyUSB Build Script - Adding source files...")
+print("=" * 60)
 
-# Force TinyUSB library files to compile as C, not C++
-def force_c_compilation(node):
-    """Force .c files in TinyUSB to compile as C"""
-    path = str(node)
+# TinyUSB source files
+tinyusb_sources = [
+    "lib/tinyusb/src/tusb.c",
+    "lib/tinyusb/src/common/tusb_fifo.c",
+    "lib/tinyusb/src/device/usbd.c",
+    "lib/tinyusb/src/device/usbd_control.c",
+    "lib/tinyusb/src/class/audio/audio_device.c",
+    "lib/tinyusb/src/class/cdc/cdc_device.c",
+    "lib/tinyusb/src/class/msc/msc_device.c",
+    "lib/tinyusb/src/portable/synopsys/dwc2/dcd_dwc2.c",
+    "lib/tinyusb/src/portable/synopsys/dwc2/dwc2_common.c",
+]
 
-    # Check if this is a TinyUSB source file
-    if "tinyusb" in path.lower() and path.endswith(".c"):
-        # Get the current flags
-        flags = env.get("CCFLAGS", [])
-        cflags = env.get("CFLAGS", [])
+# Add include path
+env.Append(CPPPATH=["lib/tinyusb/src"])
 
-        # Remove C++ flags
-        clean_flags = [f for f in flags if not any(x in str(f) for x in ["-std=gnu++", "-std=c++"])]
+# Get flags but remove C++ standard
+base_ccflags = [f for f in env.get("CCFLAGS", []) if "-std=gnu++" not in str(f) and "-std=c++" not in str(f)]
 
-        # Compile as C (C11)
-        env.Object(node, CCFLAGS=clean_flags, CFLAGS=["-std=c11"] + cflags)
-        return None  # Prevent default compilation
+# CRITICAL: Add Cortex-M4 Thumb flags for TinyUSB
+tinyusb_cflags = [
+    "-std=c11",
+    "-mthumb",  # Use Thumb mode (required for Cortex-M)
+    "-mcpu=cortex-m4",  # Target Cortex-M4
+    "-mfpu=fpv4-sp-d16",  # FPU support
+    "-mfloat-abi=hard",  # Hard float ABI
+    "-Og",
+    "-ggdb3",
+]
 
-    return node
+# Compile each file
+for src in tinyusb_sources:
+    if os.path.exists(src):
+        obj = env.Object(
+            target=os.path.join("$BUILD_DIR", "tinyusb", os.path.basename(src).replace(".c", ".o")),
+            source=src,
+            CCFLAGS=base_ccflags,
+            CFLAGS=tinyusb_cflags,
+        )
+        env.Append(PIOBUILDFILES=[obj])
+        print(f"  ✓ {src}")
+    else:
+        print(f"  ✗ NOT FOUND: {src}")
 
-
-# Add the callback
-env.AddBuildMiddleware(force_c_compilation)
-
-print("TinyUSB build script loaded: Forcing .c files to compile as C")
+print("=" * 60)
+print("TinyUSB: Configured with Cortex-M4 Thumb mode")
+print("=" * 60)

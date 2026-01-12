@@ -78,5 +78,9 @@ uint32_t sd_card_get_block_count(void) {
  * @return true if ready, false otherwise
  */
 bool sd_card_is_ready(void) {
+#if ENABLE_SD_CARD
     return (HAL_SD_GetCardState(&hsd) == HAL_SD_CARD_TRANSFER);
+#else
+    return false;
+#endif
 }

@@ -16,20 +16,20 @@ extern "C" {
 // Board Specific Configuration
 //--------------------------------------------------------------------+
 
-#define BOARD_TUD_RHPORT 0
+// Tell TinyUSB which USB peripheral to use
+// STM32F427 has USB_OTG_HS which we use in Full Speed mode
+#define CFG_TUSB_RHPORT1_BASE USB_OTG_HS_PERIPH_BASE
+
+#define BOARD_TUD_RHPORT 1
 #define BOARD_TUD_MAX_SPEED OPT_MODE_FULL_SPEED
 
 //--------------------------------------------------------------------
 // Common Configuration
 //--------------------------------------------------------------------
 
-#ifndef CFG_TUSB_MCU
 #define CFG_TUSB_MCU OPT_MCU_STM32F4
-#endif
 
-#ifndef CFG_TUSB_OS
 #define CFG_TUSB_OS OPT_OS_NONE
-#endif
 
 #ifndef CFG_TUSB_DEBUG
 #define CFG_TUSB_DEBUG 0
@@ -37,7 +37,7 @@ extern "C" {
 
 // Enable device stack
 #define CFG_TUD_ENABLED 1
-#define CFG_TUSB_RHPORT0_MODE (OPT_MODE_DEVICE | OPT_MODE_FULL_SPEED)
+#define CFG_TUSB_RHPORT1_MODE (OPT_MODE_DEVICE | OPT_MODE_FULL_SPEED)
 
 //--------------------------------------------------------------------
 // Device Configuration
@@ -53,19 +53,18 @@ extern "C" {
 #define CFG_TUD_AUDIO 1 // USB audio input/output
 
 //------------- Audio Configuration -------------//
-// Using stereo (TinyUSB limitation), but we'll send mono data to both channels
+// Mono sound configuration
 
-#define CFG_TUD_AUDIO_FUNC_1_DESC_LEN TUD_AUDIO_HEADSET_STEREO_DESC_LEN
-#define CFG_TUD_AUDIO_FUNC_1_N_AS_INT 2
+#define CFG_TUD_AUDIO_FUNC_1_N_AS_INT 1
 #define CFG_TUD_AUDIO_FUNC_1_CTRL_BUF_SZ 64
 
 // Microphone (RX - Radio to PC) - using stereo descriptor
 #define CFG_TUD_AUDIO_ENABLE_EP_IN 1
-#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX 2 // Stereo (TinyUSB requirement)
+#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX 1
 #define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX 2
 #define CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE 48000
 
-// Speaker (TX - PC to Radio) - using stereo descriptor
+// Speaker (TX - PC to Radio) -
 #define CFG_TUD_AUDIO_ENABLE_EP_OUT 1
 #define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 1 // Mono sound
 #define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX 2

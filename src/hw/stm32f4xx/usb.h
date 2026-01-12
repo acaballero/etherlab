@@ -17,6 +17,7 @@ extern "C" {
 #include "stdio.h"
 
 void OTG_HS_IRQHandler(void);
+void MX_USB_OTG_HS_Init(void);
 
 #ifdef __cplusplus
 }

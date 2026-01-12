@@ -65,8 +65,6 @@ void setup() {
     //  DWT_Init(); // Enable hardware profiling
 
 #if USB_ENABLED
-    // Set the USB enabled pin to drive the pullup in DP (D+) line
-    // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
     usb_composite_init();
 #endif
 
