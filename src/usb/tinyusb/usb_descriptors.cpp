@@ -22,6 +22,15 @@ static bool msc_enabled = false;
 // Device Descriptors
 //--------------------------------------------------------------------+
 
+/* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
+ * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
+ *
+ * Auto ProductID layout's Bitmap:
+ *   [MSB]     AUDIO | MIDI | HID | MSC | CDC          [LSB]
+ */
+#define PID_MAP(itf, n) ((CFG_TUD_##itf) ? (1 << (n)) : 0)
+#define USB_PID (0x4000 | PID_MAP(CDC, 0) | PID_MAP(MSC, 1) | PID_MAP(HID, 2) | PID_MAP(MIDI, 3) | PID_MAP(AUDIO, 4) | PID_MAP(VENDOR, 5))
+
 tusb_desc_device_t const desc_device = {.bLength = sizeof(tusb_desc_device_t),
                                         .bDescriptorType = TUSB_DESC_DEVICE,
                                         .bcdUSB = 0x0200,
@@ -30,8 +39,8 @@ tusb_desc_device_t const desc_device = {.bLength = sizeof(tusb_desc_device_t),
                                         .bDeviceProtocol = MISC_PROTOCOL_IAD,
                                         .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
-                                        .idVendor = 0x0483,  // STMicroelectronics
-                                        .idProduct = 0x5742, // Unique PID for this device
+                                        .idVendor = 0x0483,   // STMicroelectronics
+                                        .idProduct = USB_PID, // Unique PID for this device
                                         .bcdDevice = 0x0100,
 
                                         .iManufacturer = 0x01,
@@ -45,27 +54,16 @@ uint8_t const *tud_descriptor_device_cb(void) {
 }
 
 // Interface numbers when MSC is ENABLED
-enum {
-    ITF_NUM_CDC = 0,
-    ITF_NUM_CDC_DATA,
-    ITF_NUM_MSC, // MSC interface
-    ITF_NUM_AUDIO_CONTROL,
-    ITF_NUM_TOTAL_WITH_MSC = ITF_NUM_AUDIO_CONTROL + 1 + CFG_TUD_AUDIO_FUNC_1_N_AS_INT
-};
+enum { ITF_NUM_CDC = 0, ITF_NUM_CDC_DATA, ITF_NUM_MSC, ITF_NUM_AUDIO_CONTROL, ITF_NUM_AUDIO_STREAMING, ITF_NUM_TOTAL_WITH_MSC };
 
 // Interface numbers when MSC is DISABLED
-enum {
-    ITF_NUM_CDC_NO_MSC = 0,
-    ITF_NUM_CDC_DATA_NO_MSC,
-    ITF_NUM_AUDIO_CONTROL_NO_MSC,
-    ITF_NUM_TOTAL_NO_MSC = ITF_NUM_AUDIO_CONTROL_NO_MSC + 1 + CFG_TUD_AUDIO_FUNC_1_N_AS_INT
-};
+enum { ITF_NUM_CDC_NO_MSC = 0, ITF_NUM_CDC_DATA_NO_MSC, ITF_NUM_AUDIO_CONTROL_NO_MSC, ITF_NUM_AUDIO_STREAMING_NO_MSC, ITF_NUM_TOTAL_NO_MSC };
 
 // Note input endpoints (Board to PC) are assigned codes from 0x80 (msb bit set)
-#define EPNUM_CDC_NOTIF 0x81
+#define EPNUM_CDC_NOTIF 0x83
 #define EPNUM_CDC_OUT 0x02
 #define EPNUM_CDC_IN 0x82
-#define EPNUM_AUDIO_IN 0x83
+#define EPNUM_AUDIO_IN 0x81
 #define EPNUM_AUDIO_OUT 0x03
 #define EPNUM_MSC_OUT 0x04
 #define EPNUM_MSC_IN 0x84
@@ -73,7 +71,7 @@ enum {
 // Configuration Descriptor - CDC + MSC + UAC2.0 Microphone (MONO)
 //--------------------------------------------------------------------+
 
-#define CONFIG_WITH_MSC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_AUDIO20_MIC_ONE_CH_DESC_LEN)
+#define CONFIG_WITH_MSC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO20_MIC_ONE_CH_DESC_LEN)
 
 uint8_t const desc_config_with_msc[] = {
     // Config descriptor
@@ -94,7 +92,7 @@ uint8_t const desc_config_with_msc[] = {
 // Configuration WITHOUT MSC (CDC + Audio only)
 //--------------------------------------------------------------------+
 
-#define CONFIG_NO_MSC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_AUDIO20_MIC_ONE_CH_DESC_LEN)
+#define CONFIG_NO_MSC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO20_MIC_ONE_CH_DESC_LEN)
 
 uint8_t const desc_config_no_msc[] = {
     // Config descriptor
@@ -104,7 +102,7 @@ uint8_t const desc_config_no_msc[] = {
     TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_NO_MSC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64),
 
     // Audio microphone
-    TUD_AUDIO20_MIC_ONE_CH_DESCRIPTOR(ITF_NUM_AUDIO_CONTROL_NO_MSC, 6, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX,
+    TUD_AUDIO20_MIC_ONE_CH_DESCRIPTOR(ITF_NUM_AUDIO_CONTROL_NO_MSC, 0, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX,
                                       CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * 8, EPNUM_AUDIO_IN, CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX),
 };
 
@@ -140,7 +138,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
         uint32_t uid[3];
         uid[0] = HAL_GetUIDw0();
         uid[1] = HAL_GetUIDw1();
-        uid[2] = HAL_GetUIDw2() + 1;
+        uid[2] = HAL_GetUIDw2() + 2;
 
         chr_count = 0;
         for (int i = 0; i < 12 && chr_count < 31; i++) {
@@ -153,8 +151,9 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
         }
         const char *str = string_desc_arr[index];
         chr_count = strlen(str);
-        if (chr_count > 31) {
-            chr_count = 31;
+        size_t const max_count = sizeof(_desc_str) / sizeof(_desc_str[0]) - 1;
+        if (chr_count > max_count) {
+            chr_count = max_count;
         }
         for (uint8_t i = 0; i < chr_count; i++) {
             _desc_str[1 + i] = str[i];
