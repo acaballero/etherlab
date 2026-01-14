@@ -129,6 +129,7 @@ void usb_audio_process(void) {
         tud_audio_write((uint8_t *)usb_buffer, USB_AUDIO_BUFFER_SIZE);
     }
 
+#if CFG_TUD_AUDIO_ENABLE_EP_OUT
     // Receive TX audio from USB (PC -> Radio)
     if (tud_audio_available()) {
         int16_t usb_buffer[USB_AUDIO_BUFFER_SAMPLES];
@@ -146,6 +147,7 @@ void usb_audio_process(void) {
             }
         }
     }
+#endif
 }
 
 // TinyUSB callbacks

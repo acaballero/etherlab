@@ -36,6 +36,7 @@ tinyusb_cflags = [
     "-mfpu=fpv4-sp-d16",  # FPU support
     "-mfloat-abi=hard",  # Hard float ABI
     "-Og",
+    "-DCFG_TUSB_DEBUG=3",
     "-ggdb3",
 ]
 

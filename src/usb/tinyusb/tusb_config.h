@@ -31,9 +31,9 @@ extern "C" {
 
 #define CFG_TUSB_OS OPT_OS_NONE
 
-#ifndef CFG_TUSB_DEBUG
-#define CFG_TUSB_DEBUG 0
-#endif
+#define CFG_TUSB_DEBUG 3
+
+#define CFG_TUSB_DEBUG_PRINTF printf_
 
 // Enable device stack
 #define CFG_TUD_ENABLED 1
@@ -43,48 +43,49 @@ extern "C" {
 // Device Configuration
 //------------------------------------------------- -------------------
 
-#ifndef CFG_TUD_ENDPOINT0_SIZE
 #define CFG_TUD_ENDPOINT0_SIZE 64
-#endif
 
 //------------- Class enabled -------------//
 #define CFG_TUD_CDC 1   // CAT protocol
 #define CFG_TUD_MSC 1   // SD card
-#define CFG_TUD_AUDIO 1 // USB audio input/output
+#define CFG_TUD_AUDIO 1 // USB audio input/output (1 function, 2 endponints (mic and speaker))
 
 //------------- Audio Configuration -------------//
 // Mono sound configuration
 
+// Microphone (RX - Radio to PC)
+
 #define CFG_TUD_AUDIO_FUNC_1_N_AS_INT 1
 #define CFG_TUD_AUDIO_FUNC_1_CTRL_BUF_SZ 64
 
-// Microphone (RX - Radio to PC) - using stereo descriptor
 #define CFG_TUD_AUDIO_ENABLE_EP_IN 1
 #define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX 1
 #define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX 2
 #define CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE 48000
 
 // Speaker (TX - PC to Radio) -
-#define CFG_TUD_AUDIO_ENABLE_EP_OUT 1
-#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 1 // Mono sound
+
+#define CFG_TUD_AUDIO_ENABLE_EP_OUT 0
+#define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 1 // Mono
 #define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX 2
 
 // Buffer sizes
 #define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ                                                                                                                   \
-    (CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX) * 4
+    ((CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE / 1000 + 1) * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX) * 4
 
 #define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX                                                                                                                      \
-    (CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX) + 1
+    ((CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE / 1000 + 1) * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX) + 1
 
-#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ                                                                                                                  \
-    (CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX) * 4
+// #define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ                                                                                                                  \
+//     ((CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE / 1000 + 1) * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX) * 4
 
-#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX                                                                                                                     \
-    (CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE / 1000 * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX) + 1
+// #define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX                                                                                                                     \
+//     ((CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE / 1000 + 1) * CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX) + 1
 
 #define CFG_TUD_AUDIO_FUNC_1_N_FORMATS 1
-#define CFG_TUD_AUDIO_FUNC_1_CHANNEL_MAP_RX AUDIO_CHANNEL_CONFIG_NON_PREDEFINED
-#define CFG_TUD_AUDIO_FUNC_1_CHANNEL_MAP_TX AUDIO_CHANNEL_CONFIG_NON_PREDEFINED
+#define CFG_TUD_AUDIO_FUNC_1_FORMAT_1_N_BYTES_PER_SAMPLE_TX 2
+//#define CFG_TUD_AUDIO_FUNC_1_CHANNEL_MAP_RX AUDIO_CHANNEL_CONFIG_NON_PREDEFINED
+//#define CFG_TUD_AUDIO_FUNC_1_CHANNEL_MAP_TX AUDIO_CHANNEL_CONFIG_NON_PREDEFINED
 
 //------------- CDC Configuration -------------//
 #define CFG_TUD_CDC_RX_BUFSIZE 512
