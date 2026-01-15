@@ -91,7 +91,7 @@ os::periodic_task *tasks[] = {
     &scanner::task,         &sstrength::task, &battery::task, &power_amp::task, &dsp::task, &rf_coupler::task,
 //  &touch::task) // Not required. Done by interrupts
 #if USB_ENABLED
-    &cat_protocol::task,
+    &cat_protocol::task,    &usb::task,
 #endif
     &input_controller::task
     //  &configuration::task
@@ -221,6 +221,7 @@ int main() {
         os::task_manager.add(task);
     }
 
+    usb::task.set_high_priority(true);
     fft::fft_task.set_high_priority(true);
     input_controller::task.set_high_priority(true);
 
@@ -232,9 +233,6 @@ int main() {
     while (1) {
 
         os::task_manager.run();
-
-        // TODO: Make this a task
-        usb_composite_task();
 
         // watchdog();
 

@@ -88,10 +88,6 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
             compressor.work(buff_out_f32);
         }
     }
-
-    if (usb_audio_is_streaming()) {
-        usb_audio_send_rx_audio(buff_out_f32.p, buff_out_f32.count);
-    }
 }
 
 MODULATION_MODE ReceiveTask::get_modulation_mode() const {

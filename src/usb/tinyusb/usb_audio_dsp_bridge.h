@@ -23,11 +23,11 @@ typedef float float32_t;
 
 // Audio format for WSJT-X
 #define USB_AUDIO_SAMPLE_RATE 48000
-#define USB_AUDIO_CHANNELS 1 // Mono audio for WSJT-X
+#define USB_AUDIO_CHANNELS 1 // Mono audio
 #define USB_AUDIO_BIT_DEPTH 16
 
 // Buffer for USB audio samples
-#define USB_AUDIO_BUFFER_SAMPLES 192 // 4ms at 48kHz
+#define USB_AUDIO_BUFFER_SAMPLES 128 // 4ms at 48kHz
 #define USB_AUDIO_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * sizeof(int16_t))
 
 // Initialize USB audio bridge
@@ -39,7 +39,7 @@ void usb_audio_dsp_bridge_stop(void);
 
 // Called from your process_audio() to send demodulated audio to USB
 // This should be called AFTER your process_audio() has done filtering/compression
-void usb_audio_send_rx_audio(const float32_t *audio_samples, uint16_t count);
+void usb_audio_send_rx_audio(const int16_t *audio_samples, uint16_t count);
 
 // Called from your TX modulator to get audio from USB
 // Returns number of samples written to audio_samples

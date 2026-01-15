@@ -31,7 +31,7 @@ extern "C" {
 
 #define CFG_TUSB_OS OPT_OS_NONE
 
-#define CFG_TUSB_DEBUG 3
+#define CFG_TUSB_DEBUG 0
 
 #define CFG_TUSB_DEBUG_PRINTF printf_
 
@@ -55,7 +55,7 @@ extern "C" {
 
 // Microphone (RX - Radio to PC)
 
-#define CFG_TUD_AUDIO_FUNC_1_N_AS_INT 2
+#define CFG_TUD_AUDIO_FUNC_1_N_AS_INT 1
 #define CFG_TUD_AUDIO_FUNC_1_CTRL_BUF_SZ 64
 
 #define CFG_TUD_AUDIO_ENABLE_EP_IN 1

@@ -23,6 +23,7 @@
 #include "FIFO.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_gpio.h"
+#include "tinyusb/usb_audio_dsp_bridge.h"
 #include "types.h"
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
@@ -156,6 +157,10 @@ void ReceiveTaskBase::work() {
                         }
 
                         dsp::f32_to_s16((const float32_t *)out_accum_p, (adc_type *)out_p, samples_per_batch);
+
+                        if (usb_audio_is_streaming()) {
+                            usb_audio_send_rx_audio((int16_t *)out_p, samples_per_batch);
+                        }
 
                         out_p += bytes_per_batch_real;
                         output_samples = 0;

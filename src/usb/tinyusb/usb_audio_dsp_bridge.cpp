@@ -1,10 +1,12 @@
 #include "usb_audio_dsp_bridge.h"
+#include "dsp/dsp_common.h"
+#include "status.h"
 #include "tusb.h"
 #include <string.h>
 
 // Ring buffers for audio
-#define RX_RING_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * 4) // 16ms buffer
-#define TX_RING_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * 4)
+#define RX_RING_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * 2) // 16ms buffer
+#define TX_RING_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * 2)
 
 static int16_t rx_ring_buffer[RX_RING_BUFFER_SIZE];
 static volatile uint16_t rx_write_pos = 0;
@@ -45,23 +47,15 @@ bool usb_audio_is_streaming(void) {
 }
 
 // Convert float32 audio to int16 and write to RX ring buffer
-void usb_audio_send_rx_audio(const float32_t *audio_samples, uint16_t count) {
+void usb_audio_send_rx_audio(const int16_t *audio_samples, uint16_t count) {
     if (!is_streaming || !audio_samples) {
         return;
     }
 
     for (uint16_t i = 0; i < count; i++) {
-        // Clip and convert to int16
-        float32_t sample = audio_samples[i];
-        if (sample > 1.0f)
-            sample = 1.0f;
-        if (sample < -1.0f)
-            sample = -1.0f;
-
-        int16_t sample_i16 = (int16_t)(sample * 32767.0f);
 
         // Write to ring buffer
-        rx_ring_buffer[rx_write_pos] = sample_i16;
+        rx_ring_buffer[rx_write_pos] = audio_samples[i];
         rx_write_pos = (rx_write_pos + 1) % RX_RING_BUFFER_SIZE;
 
         // Check for overflow
@@ -105,6 +99,7 @@ uint16_t usb_audio_get_tx_audio(float32_t *audio_samples, uint16_t max_count) {
 }
 
 void usb_audio_process(void) {
+
     if (!tud_mounted() || !is_streaming) {
         return;
     }

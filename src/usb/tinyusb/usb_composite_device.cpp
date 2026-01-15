@@ -8,6 +8,7 @@
 #include "../../../lib/tinyusb/src/tusb.h"
 #include "device/usbd.h"
 #include "hw/stm32f4xx/usb.h"
+#include "os/task_manager.h"
 #include "tinyusb/tusb_config.h"
 #include "usb_composite_device.h"
 #include "usb_audio_dsp_bridge.h"
@@ -25,9 +26,22 @@ extern bool sd_card_is_ready(void);
 static bool cdc_connected = false;
 static bool msc_connected = false;
 
+namespace usb {
+os::periodic_task task(10, usb_composite_task);
+}
 //--------------------------------------------------------------------+
 // INITIALIZATION
 //--------------------------------------------------------------------+
+
+bool mute[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1];       // +1 for master channel 0
+uint16_t volume[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; // +1 for master channel 0
+uint32_t sampFreq;
+uint8_t clkValid;
+
+// Range states
+audio20_control_range_4_n_t(1) sampleFreqRng;
+
+uint16_t startVal = 0;
 
 void usb_composite_init(void) {
 
@@ -35,6 +49,21 @@ void usb_composite_init(void) {
     MX_USB_OTG_HS_Init();
     // Initialize TinyUSB
     tusb_rhport_init(BOARD_TUD_RHPORT, NULL);
+
+    // Initialize audio parameters
+    sampFreq = CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE;
+    clkValid = 1;
+
+    sampleFreqRng.wNumSubRanges = 1;
+    sampleFreqRng.subrange[0].bMin = 48000;
+    sampleFreqRng.subrange[0].bMax = 48000;
+    sampleFreqRng.subrange[0].bRes = 0;
+
+    // Initialize volume/mute
+    for (int i = 0; i < CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1; i++) {
+        volume[i] = 0; // 0 dB
+        mute[i] = 0;   // Not muted
+    }
 
     // Initialize audio bridge
     usb_audio_dsp_bridge_init();
@@ -219,8 +248,9 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, u
             break;
     }
 
-    if (resplen > bufsize)
+    if (resplen > bufsize) {
         resplen = bufsize;
+    }
 
     if (response && (resplen > 0)) {
         memcpy(buffer, response, resplen);
@@ -262,16 +292,6 @@ uint32_t tusb_time_millis_api(void) {
 //--------------------------------------------------------------------+
 // Application Callback API Implementations
 //--------------------------------------------------------------------+
-
-bool mute[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1];       // +1 for master channel 0
-uint16_t volume[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; // +1 for master channel 0
-uint32_t sampFreq;
-uint8_t clkValid;
-
-// Range states
-audio20_control_range_4_n_t(1) sampleFreqRng;
-
-uint16_t startVal = 0;
 
 // Invoked when audio class specific set request received for an EP
 bool tud_audio_set_req_ep_cb(uint8_t rhport, tusb_control_request_t const *p_request, uint8_t *pBuff) {

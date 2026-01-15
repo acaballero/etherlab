@@ -8,6 +8,8 @@
 #ifndef USB_COMPOSITE_DEVICE_H
 #define USB_COMPOSITE_DEVICE_H
 
+#include "os/periodic_task.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -78,4 +80,7 @@ bool sd_card_is_ready(void);
 }
 #endif
 
+namespace usb {
+extern os::periodic_task task;
+}
 #endif // USB_COMPOSITE_DEVICE_H
