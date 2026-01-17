@@ -6,12 +6,14 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/blocks/signal_generator.h"
+#include "tinyusb/tusb_config.h"
+#include "tinyusb/usb_audio_dsp_bridge.h"
 #include "types.h"
 #include "printf.h"
 
 void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
 
-    uint16_t *p;
+    int16_t *p;
 
     // TODO: Find some other way of making this processor know whether is reading or writing
     if (buffer->p == adc_buffer_1.p || buffer->p == adc_buffer_2.p) {
@@ -47,8 +49,20 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
 
             int16_t *out_p = (int16_t *)buffer->p;
 
+            // DAC output
             for (size_t i = 0; i < buffer->count / 2; i++) {
-                out_p[i * 2] = ((uint16_t *)p)[i];
+                out_p[i * 2] = ((int16_t *)p)[i];
+            }
+
+            if (usb_audio_is_streaming()) {
+                // Apply gain
+
+                for (int i = 0; i < buffer->count / 2; i++) {
+                    p[i] = (adc_type)(p[i] * dsp::dsp_params->gain_factor) << 3; // 12 to 16 bit resolution
+                }
+
+                // Note the buffer sample rate must be a divisor of the sample rate of the required for the USB so we can do fast interpolation
+                usb_audio_process(p, buffer->count / 2, status.sample_rate);
             }
 
             output_stream.consume(block_size_bytes, (char **)&p);

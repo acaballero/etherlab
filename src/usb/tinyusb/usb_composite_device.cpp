@@ -27,7 +27,7 @@ static bool cdc_connected = false;
 static bool msc_connected = false;
 
 namespace usb {
-os::periodic_task task(10, usb_composite_task);
+os::periodic_task task(20, usb_composite_task);
 }
 //--------------------------------------------------------------------+
 // INITIALIZATION
@@ -51,12 +51,12 @@ void usb_composite_init(void) {
     tusb_rhport_init(BOARD_TUD_RHPORT, NULL);
 
     // Initialize audio parameters
-    sampFreq = CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE;
+    sampFreq = USB_AUDIO_SAMPLE_RATE;
     clkValid = 1;
 
     sampleFreqRng.wNumSubRanges = 1;
-    sampleFreqRng.subrange[0].bMin = 48000;
-    sampleFreqRng.subrange[0].bMax = 48000;
+    sampleFreqRng.subrange[0].bMin = USB_AUDIO_SAMPLE_RATE;
+    sampleFreqRng.subrange[0].bMax = USB_AUDIO_SAMPLE_RATE;
     sampleFreqRng.subrange[0].bRes = 0;
 
     // Initialize volume/mute
@@ -67,6 +67,8 @@ void usb_composite_init(void) {
 
     // Initialize audio bridge
     usb_audio_dsp_bridge_init();
+
+    // Flags the audio has to be bridged to USB
     usb_audio_dsp_bridge_start();
 
     cdc_connected = false;
@@ -77,8 +79,8 @@ void usb_composite_task(void) {
     // TinyUSB device task - must be called frequently
     tud_task_ext(1, false);
 
-    // Audio processing
-    usb_audio_process();
+    // Audio processing. Commented-out if done in the audio DMA ISR.
+    // usb_audio_process();
 }
 
 bool usb_composite_cdc_connected(void) {
@@ -313,7 +315,7 @@ bool tud_audio_set_req_ep_cb(uint8_t rhport, tusb_control_request_t const *p_req
     return false; // Yet not implemented
 }
 
-// Invoked when audio class specific set request received for an interface
+// Invoked when audio class specific set request received for an interface (not implemented)
 bool tud_audio_set_req_itf_cb(uint8_t rhport, tusb_control_request_t const *p_request, uint8_t *pBuff) {
     (void)rhport;
     (void)pBuff;
@@ -525,10 +527,34 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
     return false; // Yet not implemented
 }
 
+bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_request) {
+    (void)rhport;
+
+    uint8_t itf = tu_u16_low(tu_le16toh(p_request->wIndex));
+    uint8_t alt = tu_u16_low(tu_le16toh(p_request->wValue));
+
+    TU_LOG2("Set Interface %d -> alt %d\n", itf, alt);
+
+    if (alt == 1) {
+        // Audio streaming START
+        TU_LOG2("Audio STREAMING\n");
+        usb_audio_dsp_bridge_start();
+    } else {
+        // Audio streaming STOP
+        TU_LOG2("Audio IDLE\n");
+        //  usb_audio_dsp_bridge_stop();
+    }
+
+    return true;
+}
+
+// Called when the iterface is closed
 bool tud_audio_set_itf_close_ep_cb(uint8_t rhport, tusb_control_request_t const *p_request) {
     (void)rhport;
     (void)p_request;
-    startVal = 0;
+
+    TU_LOG2("Audio interface closed\r\n");
+    usb_audio_dsp_bridge_stop();
 
     return true;
 }

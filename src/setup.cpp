@@ -125,7 +125,6 @@ void setup() {
 
 #if DSP_ENABLED
     dsp_init(config.dsp);
-
 #endif
 
     radio::set_band();

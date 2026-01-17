@@ -113,12 +113,12 @@ uint8_t const desc_config_no_msc[] = {
 uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
     (void)index;
 
-    LOG("EPNUM_AUDIO_IN : %d\n", EPNUM_AUDIO_IN);
-    LOG("CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX: %d\n", CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX);
-    LOG("ITF_NUM_TOTAL_WITH_MSC: %d\n", ITF_NUM_TOTAL_WITH_MSC);
-    LOG("ITF_NUM_TOTAL_NO_MSC: %d\n", ITF_NUM_TOTAL_NO_MSC);
-    LOG("CONFIG_WITH_MSC_LEN: %d\n", CONFIG_WITH_MSC_LEN);
-    LOG("CONFIG_NO_MSC_LEN: %d\n", CONFIG_NO_MSC_LEN);
+    // LOG("EPNUM_AUDIO_IN : %d\n", EPNUM_AUDIO_IN);
+    // LOG("CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX: %d\n", CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX);
+    // LOG("ITF_NUM_TOTAL_WITH_MSC: %d\n", ITF_NUM_TOTAL_WITH_MSC);
+    // LOG("ITF_NUM_TOTAL_NO_MSC: %d\n", ITF_NUM_TOTAL_NO_MSC);
+    // LOG("CONFIG_WITH_MSC_LEN: %d\n", CONFIG_WITH_MSC_LEN);
+    // LOG("CONFIG_NO_MSC_LEN: %d\n", CONFIG_NO_MSC_LEN);
 
     if (msc_enabled) {
         return desc_config_with_msc;

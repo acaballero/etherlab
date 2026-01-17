@@ -15,7 +15,7 @@ extern "C" {
 //--------------------------------------------------------------------+
 // Board Specific Configuration
 //--------------------------------------------------------------------+
-
+#define USB_AUDIO_SAMPLE_RATE 48000
 // Tell TinyUSB which USB peripheral to use
 // STM32F427 has USB_OTG_HS which we use in Full Speed mode
 #define CFG_TUSB_RHPORT1_BASE USB_OTG_HS_PERIPH_BASE
@@ -31,7 +31,7 @@ extern "C" {
 
 #define CFG_TUSB_OS OPT_OS_NONE
 
-#define CFG_TUSB_DEBUG 0
+#define CFG_TUSB_DEBUG 1
 
 #define CFG_TUSB_DEBUG_PRINTF printf_
 
@@ -62,7 +62,7 @@ extern "C" {
 #define CFG_TUD_AUDIO_FUNC_1_ENABLE_EP_IN 1
 #define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX 1
 #define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX 2
-#define CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE 48000
+#define CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE USB_AUDIO_SAMPLE_RATE
 
 // Speaker (TX - PC to Radio) -
 
@@ -74,14 +74,12 @@ extern "C" {
 #define CFG_TUD_AUDIO_EP_SZ_IN                                                                                                                                 \
     TUD_AUDIO_EP_SIZE(TUD_OPT_HIGH_SPEED, CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX, CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX)
 #define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX CFG_TUD_AUDIO_EP_SZ_IN
-#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ                                                                                                                   \
-    (TUD_OPT_HIGH_SPEED ? 32 : 4) * CFG_TUD_AUDIO_EP_SZ_IN // Example write FIFO every 1ms, so it should be 8 times larger for HS device
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_IN
 
 #define CFG_TUD_AUDIO_EP_SZ_OUT                                                                                                                                \
     TUD_AUDIO_EP_SIZE(TUD_OPT_HIGH_SPEED, CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX, CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX)
 #define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX CFG_TUD_AUDIO_EP_SZ_OUT
-#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ                                                                                                                  \
-    (TUD_OPT_HIGH_SPEED ? 32 : 4) * CFG_TUD_AUDIO_EP_SZ_OUT // Example write FIFO every 1ms, so it should be 8 times larger for HS device
+#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_OUT
 
 //------------- CDC Configuration -------------//
 #define CFG_TUD_CDC_RX_BUFSIZE 512

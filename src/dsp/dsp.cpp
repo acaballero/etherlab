@@ -17,6 +17,7 @@
 #include "radio.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
+#include "tinyusb/usb_audio_dsp_bridge.h"
 #include "types.h"
 #include "ui/lcd.h"
 #include "hw/stm32f4xx/timers.h"
@@ -329,7 +330,7 @@ void dsp_loop() {
 
 //__attribute__((section(".ccmram")))
 inline void dac_work() {
-    //   GPIOD->BSRR |= GPIO_PIN_9;
+    GPIOD->BSRR |= GPIO_PIN_9;
 
     if (current_processor && (current_processor->status.direction == DSP_DIRECTION_OUT || current_processor->status.direction == DSP_DIRECTION_INOUT)) {
         current_processor->work(current_buffer);
@@ -347,7 +348,6 @@ inline void dac_work() {
     if (dsp::dsp_params && dsp::dsp_params->direction == DSP_DIRECTION_OUT) {
 
         FIFO_ERROR err = fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
-
         UNUSED(err);
     }
 
@@ -359,7 +359,7 @@ inline void dac_work() {
         p[i + 1] = (adc_type)(p[i + 1] * config.hw.dac_amp_balance) + offset_balance;
     }
 
-    // GPIOD->BSRR |= GPIO_PIN_9 << 16;
+    GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }
 
 inline void adc_work() {

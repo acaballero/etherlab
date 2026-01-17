@@ -158,10 +158,6 @@ void ReceiveTaskBase::work() {
 
                         dsp::f32_to_s16((const float32_t *)out_accum_p, (adc_type *)out_p, samples_per_batch);
 
-                        if (usb_audio_is_streaming()) {
-                            usb_audio_send_rx_audio((int16_t *)out_p, samples_per_batch);
-                        }
-
                         out_p += bytes_per_batch_real;
                         output_samples = 0;
                         output_stream.feed(bytes_per_batch_real);
@@ -350,6 +346,9 @@ bool ReceiveTaskBase::start() {
     }
 
     if (modulation_bandwidth_hz > status.sample_rate) {
+        // This may happen for example with broadband FW where the modulation bandwidth is higher that the demodulated audio bandwidth
+        // In that case, we limit the bandwidth to a third of the sample rate.
+        // However, this should't be allowed
         status.bandwidth = status.sample_rate / 3;
     } else {
         status.bandwidth = modulation_bandwidth_hz;

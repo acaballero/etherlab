@@ -11,18 +11,15 @@ typedef float float32_t;
 /**
  * USB Audio DSP Bridge
  *
- * This integrates USB Audio with your existing DSP pipeline:
- *
  * RX Mode (Radio -> PC):
  *   ADC (I/Q IF) -> Decimators -> Demodulator -> process_audio() -> DAC (speaker)
- *                                                                  -> USB Audio (WSJT-X)
+ *                                                                  -> USB Audio (PC)
  *
  * TX Mode (PC -> Radio):
- *   USB Audio (WSJT-X) -> SSB Modulator -> Interpolators -> DAC (I/Q IF)
+ *   USB Audio (PC) -> Modulator -> Interpolators -> DAC (I/Q IF)
  */
 
-// Audio format for WSJT-X
-#define USB_AUDIO_SAMPLE_RATE 48000
+// Audio format for most host apps
 #define USB_AUDIO_CHANNELS 1 // Mono audio
 #define USB_AUDIO_BIT_DEPTH 16
 
@@ -41,15 +38,16 @@ void usb_audio_dsp_bridge_stop(void);
 // This should be called AFTER your process_audio() has done filtering/compression
 void usb_audio_send_rx_audio(const int16_t *audio_samples, uint16_t count);
 
-// Called from your TX modulator to get audio from USB
+// Called from  TX modulator to get audio from USB
 // Returns number of samples written to audio_samples
 uint16_t usb_audio_get_tx_audio(float32_t *audio_samples, uint16_t max_count);
 
-// Check if USB audio is active
+// Retruns true if USB audio is active
 bool usb_audio_is_streaming(void);
 
-// Process USB tasks (call from main loop)
-void usb_audio_process(void);
+// Process USB tasks
+// void usb_audio_process(void);
+void usb_audio_process(int16_t *buffer, uint32_t count, uint16_t sample_rate);
 
 #ifdef __cplusplus
 }
