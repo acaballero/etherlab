@@ -8,6 +8,7 @@
 #include "hw/stm32f4xx/connectivity.h"
 #include "status.h"
 #include "tinyusb/tusb_config.h"
+#include "tinyusb/usb_composite_device.h"
 #include <type_traits>
 
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
@@ -67,7 +68,7 @@ void MX_USB_OTG_HS_Init(void) {
 }
 
 uint8_t getUSBConnectionStatus() {
-    return tud_mounted() ? USB_CONN_STATUS_CONNECTED : USB_CONN_STATUS_DISCONNECTED;
+    return usb_connected() ? USB_CONN_STATUS_CONNECTED : USB_CONN_STATUS_DISCONNECTED;
 }
 
 // bool init_USB_MSC() {

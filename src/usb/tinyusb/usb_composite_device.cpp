@@ -6,15 +6,22 @@
  */
 
 #include "../../../lib/tinyusb/src/tusb.h"
+#include "common/tusb_compiler.h"
+#include "common/tusb_verify.h"
 #include "device/usbd.h"
 #include "hw/stm32f4xx/usb.h"
 #include "os/task_manager.h"
+#include "status.h"
+#include "stm32f4xx_hal_tim.h"
 #include "tinyusb/tusb_config.h"
 #include "usb_composite_device.h"
 #include "usb_audio_dsp_bridge.h"
 #include "io/cat_if.h"
 #include "hw/stm32_hal.h"
+#include "version.h"
+#include <stm32f427xx.h>
 #include <string.h>
+#include <sys/_stdint.h>
 
 // SD card functions (you'll need to provide these)
 extern int sd_card_read_blocks(uint32_t lba, uint8_t *buffer, uint32_t block_count);
@@ -27,16 +34,22 @@ static bool cdc_connected = false;
 static bool msc_connected = false;
 
 namespace usb {
-os::periodic_task task(20, usb_composite_task);
-}
+
+bool mute[CFG_TUD_AUDIO][CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1];           // +1 for master channel 0
+int16_t volume_db[CFG_TUD_AUDIO][CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1];   // +1 for master channel 0
+float volume_factor[CFG_TUD_AUDIO][CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; // +1 for master channel 0
+
+} // namespace usb
 //--------------------------------------------------------------------+
 // INITIALIZATION
 //--------------------------------------------------------------------+
 
-bool mute[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1];       // +1 for master channel 0
-uint16_t volume[CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1]; // +1 for master channel 0
 uint32_t sampFreq;
 uint8_t clkValid;
+int16_t vol_max_db = 12;
+int16_t vol_min_db = -50;
+int16_t host_max_db = 90;
+int16_t host_min_db = -90;
 
 // Range states
 audio20_control_range_4_n_t(1) sampleFreqRng;
@@ -60,19 +73,46 @@ void usb_composite_init(void) {
     sampleFreqRng.subrange[0].bRes = 0;
 
     // Initialize volume/mute
-    for (int i = 0; i < CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1; i++) {
-        volume[i] = 0; // 0 dB
-        mute[i] = 0;   // Not muted
+    for (int i = 0; i < CFG_TUD_AUDIO; i++) {
+        for (int j = 0; j < CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX + 1; j++) {
+            usb::volume_db[i][j] = 0; // 0 dB
+            usb::mute[i][j] = 0;      // Not muted
+        }
     }
 
     // Initialize audio bridge
     usb_audio_dsp_bridge_init();
 
-    // Flags the audio has to be bridged to USB
-    usb_audio_dsp_bridge_start();
+    // Flags the audio has to be bridged to USB for both interfaces
+    // TODO: This should start false but somehow I wasn't able to detect the interface change
+    usb_audio_dsp_bridge_start(ITF_IX_MICROPHONE);
+    usb_audio_dsp_bridge_start(ITF_IX_SPEAKER);
 
     cdc_connected = false;
     msc_connected = false;
+
+    // Start USB timer
+    HAL_TIM_Base_Start_IT(&htim6);
+}
+
+extern "C" void TIM6_DAC_IRQHandler(void) {
+    usb_composite_task();
+    HAL_TIM_IRQHandler(&htim6);
+}
+
+// Check if USB cable is physically connected
+bool usb_cable_connected() {
+    // Check VBUS detection
+    // For STM32F4 USB OTG HS, read VBUS sensing
+    // return (USB_OTG_HS->GCCFG & USB_OTG_GCCFG_VBUSASEN) && (USB_OTG_HS->GOTGCTL & USB_OTG_GOTGCTL_BSVLD);
+    // Check if VBUS is present (above ~4.4V threshold) Needs VBUS sensing enabled
+    //     return (USB_OTG_HS->GOTGCTL & USB_OTG_GOTGCTL_BSVLD) != 0;
+    // Read PB13 which is connected to USB_OTG_HS_VBUS
+    return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_SET;
+}
+
+bool usb_connected() {
+    return tud_mounted() && usb_cable_connected();
 }
 
 void usb_composite_task(void) {
@@ -83,11 +123,12 @@ void usb_composite_task(void) {
     // usb_audio_process();
 }
 
-bool usb_composite_cdc_connected(void) {
-    return cdc_connected;
+bool usb_cdc_connected(void) {
+    // This is weak, but cdc_connected is true only when the host sends a DTR signal, and this is not guaranteed
+    return cdc_connected || tud_cdc_connected();
 }
 
-bool usb_composite_msc_connected(void) {
+bool usb_msc_connected(void) {
     return msc_connected;
 }
 
@@ -120,6 +161,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts) {
     (void)rts;
 
     // DTR = Data Terminal Ready (PC has opened the port)
+    // Warning! host does not always send the DTR signal
     cdc_connected = dtr;
 }
 
@@ -130,11 +172,8 @@ void tud_cdc_line_coding_cb(uint8_t itf, cdc_line_coding_t const *p_line_coding)
     // CAT protocol typically doesn't care about baud rate
 }
 
-// Function to send data via CDC (replaces CDC_Transmit_HS)
+// Function to send data via CDC (replaces HAL's CDC_Transmit_HS)
 bool usb_cdc_transmit(const uint8_t *data, uint16_t len) {
-    if (!cdc_connected || !tud_cdc_connected()) {
-        return false;
-    }
 
     uint32_t sent = 0;
     while (sent < len) {
@@ -168,7 +207,7 @@ void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16
 
     const char vid[] = "Angel Dust";
     const char pid[] = "Etherlab EL24 SDR Transceiver";
-    const char rev[] = "1.0";
+    const char rev[] = "EL24";
 
     memcpy(vendor_id, vid, strlen(vid));
     memcpy(product_id, pid, strlen(pid));
@@ -274,7 +313,8 @@ void tud_mount_cb(void) {
 void tud_umount_cb(void) {
     cdc_connected = false;
     msc_connected = false;
-    usb_audio_dsp_bridge_stop();
+    usb_audio_dsp_bridge_stop(ITF_IX_MICROPHONE);
+    usb_audio_dsp_bridge_stop(ITF_IX_SPEAKER);
 }
 
 // Invoked when usb bus is suspended
@@ -292,7 +332,50 @@ uint32_t tusb_time_millis_api(void) {
 }
 
 //--------------------------------------------------------------------+
-// Application Callback API Implementations
+// Audio helpers
+//--------------------------------------------------------------------+
+
+uint8_t to_audio_interface_index(uint8_t tud_itf_number) {
+
+    // Includes cases for SREAMING iterfaces but the host should ask for volume and mute only in control interfaces
+    // Just in case
+    if (usb_get_msc_enabled()) {
+        switch (tud_itf_number) {
+            case ITF_NUM_AUDIO_CONTROL:
+            case ITF_NUM_AUDIO_STREAMING:
+                return ITF_IX_MICROPHONE;
+                break;
+            case ITF_NUM_SPK_CONTROL:
+            case ITF_NUM_SPK_STREAMING:
+                return ITF_IX_SPEAKER;
+                break;
+            default:
+                TU_BREAKPOINT();
+                return 0;
+                break;
+        }
+    } else {
+        switch (tud_itf_number) {
+            case ITF_NUM_AUDIO_CONTROL_NO_MSC:
+            case ITF_NUM_AUDIO_STREAMING_NO_MSC:
+                return ITF_IX_MICROPHONE;
+                break;
+
+            case ITF_NUM_SPK_CONTROL_NO_MSC:
+            case ITF_NUM_SPK_STREAMING_NO_MSC:
+
+                return ITF_IX_SPEAKER;
+                break;
+            default:
+                TU_BREAKPOINT();
+                return 0;
+                break;
+        }
+    }
+}
+
+//--------------------------------------------------------------------+
+// Audio callback API implementations
 //--------------------------------------------------------------------+
 
 // Invoked when audio class specific set request received for an EP
@@ -335,6 +418,31 @@ bool tud_audio_set_req_itf_cb(uint8_t rhport, tusb_control_request_t const *p_re
     return false; // Yet not implemented
 }
 
+static float db_to_linear(int16_t db) {
+
+    float gain = powf(10.0f, db / 20.0f);
+    return gain;
+}
+
+static int16_t map_range(int16_t x, int16_t in_min, int16_t in_max, int16_t out_min, int16_t out_max) {
+    int32_t num = (int32_t)(x - in_min) * (out_max - out_min);
+    int32_t den = (in_max - in_min);
+
+    if (den == 0) {
+        return out_min;
+    }
+
+    return (int16_t)(out_min + num / den);
+}
+
+static int16_t host_to_device_vol_map(int16_t x) {
+    return map_range(x, host_min_db, host_max_db, vol_min_db, vol_max_db);
+}
+
+static int16_t device_to_host_vol_map(int16_t x) {
+    return map_range(x, vol_min_db, vol_max_db, host_min_db, host_max_db);
+}
+
 // Invoked when audio class specific set request received for an entity
 bool tud_audio_set_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p_request, uint8_t *pBuff) {
     (void)rhport;
@@ -343,13 +451,13 @@ bool tud_audio_set_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
     uint8_t channelNum = TU_U16_LOW(p_request->wValue);
     uint8_t ctrlSel = TU_U16_HIGH(p_request->wValue);
     uint8_t itf = TU_U16_LOW(p_request->wIndex);
+    uint8_t itf_ix = to_audio_interface_index(itf);
     uint8_t entityID = TU_U16_HIGH(p_request->wIndex);
-
-    (void)itf;
 
     // We do not support any set range requests here, only current value requests
     TU_VERIFY(p_request->bRequest == AUDIO20_CS_REQ_CUR);
 
+    int16_t vol_raw;
     // If request is for our feature unit
     if (entityID == 2) {
         switch (ctrlSel) {
@@ -357,18 +465,21 @@ bool tud_audio_set_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
                 // Request uses format layout 1
                 TU_VERIFY(p_request->wLength == sizeof(audio20_control_cur_1_t));
 
-                mute[channelNum] = ((audio20_control_cur_1_t *)pBuff)->bCur;
+                usb::mute[itf_ix][channelNum] = ((audio20_control_cur_1_t *)pBuff)->bCur;
 
-                TU_LOG2("    Set Mute: %d of channel: %u\r\n", mute[channelNum], channelNum);
+                LOG("usb: set mute: %d of channel %u itf %u\n", usb::mute[itf_ix][channelNum], channelNum, itf);
                 return true;
 
             case AUDIO20_FU_CTRL_VOLUME:
                 // Request uses format layout 2
                 TU_VERIFY(p_request->wLength == sizeof(audio20_control_cur_2_t));
 
-                volume[channelNum] = (uint16_t)((audio20_control_cur_2_t *)pBuff)->bCur;
+                vol_raw = ((audio20_control_cur_2_t *)pBuff)->bCur;
 
-                TU_LOG2("    Set Volume: %d dB of channel: %u\r\n", volume[channelNum], channelNum);
+                usb::volume_db[itf_ix][channelNum] = host_to_device_vol_map(vol_raw);
+                usb::volume_factor[itf_ix][channelNum] = db_to_linear(usb::volume_db[itf_ix][channelNum]);
+
+                LOG("usb: set volume: %d (raw: %d) dB of channel %u itf %u\n", usb::volume_db[itf_ix][channelNum], vol_raw, channelNum, itf);
                 return true;
 
                 // Unknown/Unsupported control
@@ -421,7 +532,8 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
     // Page 91 in UAC2 specification
     uint8_t channelNum = TU_U16_LOW(p_request->wValue);
     uint8_t ctrlSel = TU_U16_HIGH(p_request->wValue);
-    // uint8_t itf = TU_U16_LOW(p_request->wIndex); 			// Since we have only one audio function implemented, we do not need the itf value
+    uint8_t itf = TU_U16_LOW(p_request->wIndex);
+
     uint8_t entityID = TU_U16_HIGH(p_request->wIndex);
 
     // Input terminal (Microphone input)
@@ -436,7 +548,7 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
                 ret.bmChannelConfig = (audio20_channel_config_t)0;
                 ret.iChannelNames = 0;
 
-                TU_LOG2("    Get terminal connector\r\n");
+                LOG("usb: get terminal connector itf %d\n", itf);
 
                 return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, (void *)&ret, sizeof(ret));
             } break;
@@ -448,32 +560,40 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
         }
     }
 
+    uint16_t vol_value;
     // Feature unit
     if (entityID == 2) {
+        uint8_t itf_ix = to_audio_interface_index(itf);
         switch (ctrlSel) {
             case AUDIO20_FU_CTRL_MUTE:
                 // Audio control mute cur parameter block consists of only one byte - we thus can send it right away
                 // There does not exist a range parameter block for mute
-                TU_LOG2("    Get Mute of channel: %u\r\n", channelNum);
-                return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &mute[channelNum], 1);
+                LOG("usb: get mute of channel %u itf %u = %u\n", channelNum, itf, usb::mute[itf_ix][channelNum]);
+                return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &usb::mute[itf_ix][channelNum], 1);
 
             case AUDIO20_FU_CTRL_VOLUME:
                 switch (p_request->bRequest) {
                     case AUDIO20_CS_REQ_CUR:
-                        TU_LOG2("    Get Volume of channel: %u\r\n", channelNum);
-                        return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &volume[channelNum], sizeof(volume[channelNum]));
+
+                        vol_value = device_to_host_vol_map(usb::volume_db[itf_ix][channelNum]);
+                        LOG("usb: get volume of channel %u itf %u = %d\n", channelNum, itf, usb::volume_db[itf_ix][channelNum]);
+                        return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &vol_value, sizeof(usb::volume_db[itf_ix][channelNum]));
 
                     case AUDIO20_CS_REQ_RANGE:
-                        TU_LOG2("    Get Volume range of channel: %u\r\n", channelNum);
 
-                        // Copy values - only for testing - better is version below
                         audio20_control_range_2_n_t(1) ret;
 
+                        // NOTE: STM32 is already little-endian so no byte swaps is needed
+                        // NOTE: Windows seem to ignore UAC 2.0 specs that say the values are 1/256 fixed point or I am missing something in the
+                        // descriptor. Anyway, this what's working now.
+                        // Also, the slider in windows seems to always represent -90 to 90. If I set the range to be -50 to 0, the half right of the slider
+                        // does not cause the volume to increase from 0 (slider center)
                         ret.wNumSubRanges = 1;
-                        ret.subrange[0].bMin = -90; // -90 dB
-                        ret.subrange[0].bMax = 90;  // +90 dB
-                        ret.subrange[0].bRes = 1;   // 1 dB steps
-
+                        ret.subrange[0].bMin = host_min_db;
+                        ret.subrange[0].bMax = host_max_db;
+                        ret.subrange[0].bRes = 1;
+                        LOG("usb: get volume range of channel %d itf %u", channelNum, itf);
+                        LOG_RAW(" = min:%d, max:%d, res:%d\n", ret.subrange[0].bMin, ret.subrange[0].bMax, ret.subrange[0].bRes);
                         return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, (void *)&ret, sizeof(ret));
 
                         // Unknown/Unsupported control
@@ -497,11 +617,11 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
                 // channelNum is always zero in this case
                 switch (p_request->bRequest) {
                     case AUDIO20_CS_REQ_CUR:
-                        TU_LOG2("    Get Sample Freq.\r\n");
+                        LOG("usb: get sample freq itf %d: %d.\n", itf, sampFreq);
                         return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &sampFreq, sizeof(sampFreq));
 
                     case AUDIO20_CS_REQ_RANGE:
-                        TU_LOG2("    Get Sample Freq. range\r\n");
+                        LOG("usb: get sample freq. range itf %d\n", itf);
                         return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &sampleFreqRng, sizeof(sampleFreqRng));
 
                         // Unknown/Unsupported control
@@ -513,7 +633,7 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
 
             case AUDIO20_CS_CTRL_CLK_VALID:
                 // Only cur attribute exists for this request
-                TU_LOG2("    Get Sample Freq. valid\r\n");
+                LOG("usb: get sample freq. valid itf %d\n", itf);
                 return tud_audio_buffer_and_schedule_control_xfer(rhport, p_request, &clkValid, sizeof(clkValid));
 
             // Unknown/Unsupported control
@@ -523,7 +643,7 @@ bool tud_audio_get_req_entity_cb(uint8_t rhport, tusb_control_request_t const *p
         }
     }
 
-    TU_LOG2("  Unsupported entity: %d\r\n", entityID);
+    LOG("usb: unsupported entit %d on itf %d\n", entityID, itf);
     return false; // Yet not implemented
 }
 
@@ -533,16 +653,30 @@ bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_reques
     uint8_t itf = tu_u16_low(tu_le16toh(p_request->wIndex));
     uint8_t alt = tu_u16_low(tu_le16toh(p_request->wValue));
 
-    TU_LOG2("Set Interface %d -> alt %d\n", itf, alt);
+    LOG("usb: set interface %d -> alt %d\n", itf, alt);
 
-    if (alt == 1) {
-        // Audio streaming START
-        TU_LOG2("Audio STREAMING\n");
-        usb_audio_dsp_bridge_start();
+    uint8_t itf_ix = to_audio_interface_index(itf);
+
+    if (itf_ix == ITF_IX_MICROPHONE) {
+        if (alt == 1) {
+            // Audio streaming START
+            LOG("usb: audio mic STREAMING\n");
+            usb_audio_dsp_bridge_start(itf_ix);
+        } else {
+            // Audio streaming STOP
+            LOG("usb: audio mic IDLE\n");
+            //  usb_audio_dsp_bridge_stop();
+        }
     } else {
-        // Audio streaming STOP
-        TU_LOG2("Audio IDLE\n");
-        //  usb_audio_dsp_bridge_stop();
+        if (alt == 1) {
+            // Audio streaming START
+            LOG("usb: audio speaker STREAMING\n");
+            usb_audio_dsp_bridge_start(itf_ix);
+        } else {
+            // Audio streaming STOP
+            LOG("usb: audio speaker IDLE\n");
+            //  usb_audio_dsp_bridge_stop();
+        }
     }
 
     return true;
@@ -551,10 +685,11 @@ bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_reques
 // Called when the iterface is closed
 bool tud_audio_set_itf_close_ep_cb(uint8_t rhport, tusb_control_request_t const *p_request) {
     (void)rhport;
-    (void)p_request;
 
-    TU_LOG2("Audio interface closed\r\n");
-    usb_audio_dsp_bridge_stop();
+    uint8_t itf = tu_u16_low(tu_le16toh(p_request->wIndex));
+    uint8_t itf_ix = to_audio_interface_index(itf);
+    LOG("usb: audio interface %d closed\n", itf);
+    usb_audio_dsp_bridge_stop(itf_ix);
 
     return true;
 }

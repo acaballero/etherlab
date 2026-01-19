@@ -1,7 +1,9 @@
 #include "usb_audio_dsp_bridge.h"
 #include "dsp/dsp_common.h"
+#include "memory_allocator.h"
 #include "status.h"
 #include "tinyusb/tusb_config.h"
+#include "tinyusb/usb_composite_device.h"
 #include "tusb.h"
 #include <string.h>
 #include <sys/_stdint.h>
@@ -10,7 +12,7 @@
 #define RING_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * 3)
 //#define TX_RING_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * 2)
 
-static int16_t ring_buffer[RING_BUFFER_SIZE];
+static int16_t *ring_buffer;
 static volatile uint16_t write_pos = 0;
 static volatile uint16_t read_pos = 0;
 
@@ -18,87 +20,91 @@ static volatile uint16_t read_pos = 0;
 // static volatile uint16_t tx_write_pos = 0;
 // static volatile uint16_t tx_read_pos = 0;
 
-static bool is_streaming = false;
+static bool is_streaming[2] = {false, false};
+// static bool is_streaming = false;
 
 // Sample rate converter state (if needed)
 static uint32_t src_accumulator = 0;
 static int16_t last_sample = 0;
 
 void usb_audio_dsp_bridge_init(void) {
-    memset(ring_buffer, 0, sizeof(ring_buffer));
+
+    ring_buffer = (int16_t *)CCMMemoryAllocator::alloc(RING_BUFFER_SIZE * sizeof(int16_t));
+    memset(ring_buffer, 0, RING_BUFFER_SIZE * sizeof(int16_t));
     // memset(tx_ring_buffer, 0, sizeof(tx_ring_bufyfer));
     write_pos = 0;
     read_pos = 0;
     // tx_write_pos = 0;
     // tx_read_pos = 0;
-    is_streaming = false;
+    is_streaming[ITF_IX_MICROPHONE] = false;
+    is_streaming[ITF_IX_SPEAKER] = false;
     src_accumulator = 0;
     last_sample = 0;
 }
 
-void usb_audio_dsp_bridge_start(void) {
-    is_streaming = true;
+void usb_audio_dsp_bridge_start(uint8_t itf_index) {
+    is_streaming[itf_index] = true;
 }
 
-void usb_audio_dsp_bridge_stop(void) {
-    is_streaming = false;
+void usb_audio_dsp_bridge_stop(uint8_t itf_index) {
+    is_streaming[itf_index] = false;
 }
 
-bool usb_audio_is_streaming(void) {
-    return is_streaming && tud_mounted();
+bool usb_audio_is_streaming(uint8_t itf_index) {
+    return is_streaming[itf_index] && usb_connected();
 }
 
-// Convert float32 audio to int16 and write to RX ring buffer
-void usb_audio_send_rx_audio(const int16_t *audio_samples, uint16_t count) {
-    if (!is_streaming || !audio_samples) {
-        return;
-    }
+// // Convert float32 audio to int16 and write to RX ring buffer
+// void usb_audio_send_rx_audio(const int16_t *audio_samples, uint16_t count) {
+//     if (!is_streaming[ITF_IX_MICROPHONE] || !audio_samples) {
+//         return;
+//     }
 
-    for (uint16_t i = 0; i < count; i++) {
+//     for (uint16_t i = 0; i < count; i++) {
 
-        // Write to ring buffer
-        ring_buffer[write_pos] = audio_samples[i];
-        write_pos = (write_pos + 1) % RING_BUFFER_SIZE;
+//         // Write to ring buffer
+//         ring_buffer[write_pos] = audio_samples[i];
+//         write_pos = (write_pos + 1) % RING_BUFFER_SIZE;
 
-        // Check for overflow
-        if (write_pos == read_pos) {
-            // Buffer overflow - advance read position
-            read_pos = (read_pos + 1) % RING_BUFFER_SIZE;
-        }
-    }
-}
+//         // Check for overflow
+//         if (write_pos == read_pos) {
+//             // Buffer overflow - advance read position
+//             read_pos = (read_pos + 1) % RING_BUFFER_SIZE;
+//         }
+//     }
+// }
 
-// Read int16 audio from TX ring buffer and convert to float32
-uint16_t usb_audio_get_tx_audio(float32_t *audio_samples, uint16_t max_count) {
-    if (!is_streaming || !audio_samples) {
-        memset(audio_samples, 0, max_count * sizeof(float32_t));
-        return 0;
-    }
+// // Read int16 audio from TX ring buffer and convert to float32
+// uint16_t usb_audio_get_tx_audio(float32_t *audio_samples, uint16_t max_count) {
+//     if (!is_streaming[ITF_IX_SPEAKER] || !audio_samples) {
+//         memset(audio_samples, 0, max_count * sizeof(float32_t));
+//         return 0;
+//     }
 
-    uint16_t available = 0;
-    if (write_pos >= read_pos) {
-        available = write_pos - read_pos;
-    } else {
-        available = RING_BUFFER_SIZE - read_pos + write_pos;
-    }
+//     uint16_t available = 0;
+//     if (write_pos >= read_pos) {
+//         available = write_pos - read_pos;
+//     } else {
+//         available = RING_BUFFER_SIZE - read_pos + write_pos;
+//     }
 
-    uint16_t to_read = available < max_count ? available : max_count;
+//     uint16_t to_read = available < max_count ? available : max_count;
 
-    for (uint16_t i = 0; i < to_read; i++) {
-        int16_t sample_i16 = ring_buffer[read_pos];
-        read_pos = (read_pos + 1) % RING_BUFFER_SIZE;
+//     for (uint16_t i = 0; i < to_read; i++) {
+//         int16_t sample_i16 = ring_buffer[read_pos];
+//         read_pos = (read_pos + 1) % RING_BUFFER_SIZE;
 
-        // Convert to float32
-        audio_samples[i] = (float32_t)sample_i16 / 32768.0f;
-    }
+//         // Convert to float32
+//         audio_samples[i] = (float32_t)sample_i16 / 32768.0f;
+//     }
 
-    // Fill remaining with zeros if not enough samples
-    if (to_read < max_count) {
-        memset(&audio_samples[to_read], 0, (max_count - to_read) * sizeof(float32_t));
-    }
+//     // Fill remaining with zeros if not enough samples
+//     if (to_read < max_count) {
+//         memset(&audio_samples[to_read], 0, (max_count - to_read) * sizeof(float32_t));
+//     }
 
-    return to_read;
-}
+//     return to_read;
+// }
 
 void resample_linear(int16_t *input, int16_t *output, uint32_t input_count, uint32_t output_count) {
 
@@ -125,9 +131,63 @@ void resample_linear(int16_t *input, int16_t *output, uint32_t input_count, uint
     }
 }
 
-void usb_audio_process(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
+// Very simple, only for testing, LPF for the decimator
+int16_t lowpass_filter(int16_t input) {
 
-    if (!tud_mounted() || !is_streaming) {
+    static int32_t prev_sample = 0;
+    // Simple IIR: y[n] = 0.5 * x[n] + 0.5 * y[n-1]
+    // Cutoff ~5.3kHz at 48kHz
+    prev_sample = (input + prev_sample) >> 1;
+    return (int16_t)prev_sample;
+}
+
+uint32_t decimate_samples(int16_t *input, uint32_t num_input, uint32_t rate_in, int16_t *output, uint32_t rate_out) {
+    uint32_t num_output = (num_input * rate_out) / rate_in;
+    uint32_t ratio = (rate_in << 16) / rate_out; // Fixed point 16.16
+
+    for (uint32_t i = 0; i < num_input; i++) {
+        input[i] = lowpass_filter(input[i]); // Simple nearest-neighbor
+    }
+
+    for (uint32_t i = 0; i < num_output; i++) {
+        uint32_t src_pos = (i * ratio) >> 16;
+        output[i] = input[src_pos]; // Simple nearest-neighbor
+    }
+
+    return num_output;
+}
+
+// Receive TX audio from USB (host -> device)
+// Call this from the DAC ISR handler
+uint16_t usb_audio_receive(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
+
+    (void)sample_rate;
+
+    // Note the usage of  tud_audio_n_available/tud_audio_n_read to specify the speaker interface
+    // The functions without _n_ default to interface 0
+    if (!usb_connected() || !is_streaming[ITF_IX_SPEAKER] || !tud_audio_n_available(ITF_IX_SPEAKER)) {
+        return 0;
+    }
+
+    uint16_t input_count = (((float)USB_AUDIO_SAMPLE_RATE / sample_rate) * count) + 1;
+
+    uint16_t bytes_read = tud_audio_n_read(ITF_IX_SPEAKER, (uint8_t *)ring_buffer, input_count * sizeof(uint16_t));
+    uint16_t samples_read = bytes_read / sizeof(int16_t);
+
+    uint16_t output_count = decimate_samples(ring_buffer, samples_read, USB_AUDIO_SAMPLE_RATE, buffer, sample_rate);
+
+    for (size_t i = 0; i < output_count; i++) {
+        buffer[i] = (adc_type)(buffer[i]) >> 3; // 16 to 12 bit resolution
+    }
+
+    // TODO: decimate/interpolate
+
+    return output_count;
+}
+
+void usb_audio_send(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
+
+    if (!usb_connected() || !is_streaming[ITF_IX_MICROPHONE]) {
         return;
     }
 
@@ -137,8 +197,13 @@ void usb_audio_process(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
         status::pop_alert(status::ERROR, "usb_audio_process: Error: interpolation_factor too high for the ring size");
     }
 
+    // Apply volume
+    for (size_t i = 0; i < count; i++) {
+        buffer[i] = (adc_type)(buffer[i] * usb::volume_factor[ITF_IX_MICROPHONE][1]) << 3; // 12 to 16 bit resolution
+    }
+
     // Linear interpolation.
-    // No we use the ring_buffer as a simple one-shot buffer
+    // Note we use the ring_buffer as a simple one-shot buffer. NOT as a ring buffer
 
     resample_linear(buffer, ring_buffer, count, output_count);
 
@@ -147,7 +212,7 @@ void usb_audio_process(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
 
 // void usb_audio_process(void) {
 
-//     if (!tud_mounted() || !is_streaming) {
+//     if (!usb_connected() || !is_streaming) {
 //         return;
 //     }
 
@@ -191,30 +256,3 @@ void usb_audio_process(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
 //     }
 // #endif
 // }
-
-// TinyUSB callbacks
-void tud_audio_rx_done_cb(uint8_t rhport, uint16_t n_bytes_received, uint8_t func_id, uint8_t ep_out, uint8_t cur_alt_setting) {
-    (void)rhport;
-    (void)n_bytes_received;
-    (void)func_id;
-    (void)ep_out;
-
-    if (cur_alt_setting != 0) {
-        is_streaming = true;
-    } else {
-        is_streaming = false;
-    }
-}
-
-void tud_audio_tx_done_cb(uint8_t rhport, uint16_t n_bytes_sent, uint8_t func_id, uint8_t ep_in, uint8_t cur_alt_setting) {
-    (void)rhport;
-    (void)n_bytes_sent;
-    (void)func_id;
-    (void)ep_in;
-
-    if (cur_alt_setting != 0) {
-        is_streaming = true;
-    } else {
-        is_streaming = false;
-    }
-}

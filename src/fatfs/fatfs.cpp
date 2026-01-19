@@ -26,6 +26,7 @@
 #include "hw/stm32_hal.h"
 #include "../../lib/FatFs/ff.h"
 #include "../../lib/FatFs/diskio.h"
+#include "tinyusb/usb_composite_device.h"
 #include "tusb.h"
 #include "stm32f4xx_hal.h"
 #include "utils.hpp"
@@ -63,7 +64,7 @@ void sdcard_loop() {
     uint64_t t = HAL_GetTick();
 
     if (usb_msc_active &&
-        tud_mounted()) { // Some hosts (almost all) don't cause a MSC_DeInit when the USB is detacched or unplugged so we also check the dev_state
+        usb_connected()) { // Some hosts (almost all) don't cause a MSC_DeInit when the USB is detacched or unplugged so we also check the dev_state
 
         // Don't touch the SD card when the host is controlling it as a MSC (mass storage device)
         sdcard_info.status = MassStorageDeviceActive;

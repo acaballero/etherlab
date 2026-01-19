@@ -64,10 +64,6 @@ void setup() {
 
     //  DWT_Init(); // Enable hardware profiling
 
-#if USB_ENABLED
-    usb_composite_init();
-#endif
-
     // Notice: Initialize any MCP23017 feature after BitbangI2C (initPowerControl)
     initPowerControl();
 
@@ -76,6 +72,10 @@ void setup() {
     setup_adcs();
 
     setup_timers();
+
+#if USB_ENABLED
+    usb_composite_init();
+#endif
 
     // Notice: Input controller depends on ADC, so make sure it is initialized after the ADC
     inputControllerInit();

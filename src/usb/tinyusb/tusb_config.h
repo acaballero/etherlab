@@ -48,10 +48,9 @@ extern "C" {
 //------------- Class enabled -------------//
 #define CFG_TUD_CDC 1   // CAT protocol
 #define CFG_TUD_MSC 1   // SD card
-#define CFG_TUD_AUDIO 1 // USB audio input/output (1 function, 2 endponints (mic and speaker))
+#define CFG_TUD_AUDIO 2 // USB audio input/output (2 interfaces (mic and speaker))
 
 //------------- Audio Configuration -------------//
-// Mono sound configuration
 
 // Microphone (RX - Radio to PC)
 
@@ -66,7 +65,7 @@ extern "C" {
 
 // Speaker (TX - PC to Radio) -
 
-#define CFG_TUD_AUDIO_ENABLE_EP_OUT 0
+#define CFG_TUD_AUDIO_ENABLE_EP_OUT 1
 #define CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX 1 // Mono
 #define CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX 2
 
@@ -76,10 +75,16 @@ extern "C" {
 #define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX CFG_TUD_AUDIO_EP_SZ_IN
 #define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_IN
 
+#define CFG_TUD_AUDIO_FUNC_2_EP_IN_SZ_MAX CFG_TUD_AUDIO_EP_SZ_IN
+#define CFG_TUD_AUDIO_FUNC_2_EP_IN_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_IN
+
 #define CFG_TUD_AUDIO_EP_SZ_OUT                                                                                                                                \
     TUD_AUDIO_EP_SIZE(TUD_OPT_HIGH_SPEED, CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX, CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX)
 #define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX CFG_TUD_AUDIO_EP_SZ_OUT
 #define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_OUT
+
+#define CFG_TUD_AUDIO_FUNC_2_EP_OUT_SZ_MAX CFG_TUD_AUDIO_EP_SZ_OUT
+#define CFG_TUD_AUDIO_FUNC_2_EP_OUT_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_OUT
 
 //------------- CDC Configuration -------------//
 #define CFG_TUD_CDC_RX_BUFSIZE 512

@@ -5,6 +5,7 @@
 #include "MemoryFree.h"
 #include "config.h"
 #include "dsp/buffer.hpp"
+#include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/fft/fft_types.h"
 #include "dsp/fir_filter.h"
@@ -86,6 +87,18 @@ template <int TAPS> bool DspFIRDecimatorFloatComplex<TAPS>::init() {
     bool b = false;
 
     float32_t coeffs[TAPS * 2];
+
+    if (coeffs_i == nullptr) {
+
+        coeffs_i = (float32_t *)CCMMemoryAllocator::alloc(TAPS * sizeof(float32_t));
+        coeffs_q = (float32_t *)CCMMemoryAllocator::alloc(TAPS * sizeof(float32_t));
+        state_xi_hi = (float32_t *)CCMMemoryAllocator::alloc(state_size);
+        state_xq_hq = (float32_t *)CCMMemoryAllocator::alloc(state_size);
+        state_xi_hq = (float32_t *)CCMMemoryAllocator::alloc(state_size);
+        state_xq_hi = (float32_t *)CCMMemoryAllocator::alloc(state_size);
+        tmp_buff_i = (float32_t *)CCMMemoryAllocator::alloc(DSP_BLOCK * sizeof(float32_t));
+        tmp_buff_q = (float32_t *)CCMMemoryAllocator::alloc(DSP_BLOCK * sizeof(float32_t));
+    }
 
     // This generates a complex vector with TAPS*2 length
     b = generate_fir_filter_taps(BPF, coeffs, TAPS, this->input_rate, start_frequency + (this->bandwidth / 2), this->bandwidth / 2);

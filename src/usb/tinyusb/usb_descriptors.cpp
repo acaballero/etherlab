@@ -53,12 +53,6 @@ uint8_t const *tud_descriptor_device_cb(void) {
     return (uint8_t const *)&desc_device;
 }
 
-// Interface numbers when MSC is ENABLED
-enum { ITF_NUM_CDC = 0, ITF_NUM_CDC_DATA, ITF_NUM_MSC, ITF_NUM_AUDIO_CONTROL, ITF_NUM_AUDIO_STREAMING, ITF_NUM_TOTAL_WITH_MSC };
-
-// Interface numbers when MSC is DISABLED
-enum { ITF_NUM_CDC_NO_MSC = 0, ITF_NUM_CDC_DATA_NO_MSC, ITF_NUM_AUDIO_CONTROL_NO_MSC, ITF_NUM_AUDIO_STREAMING_NO_MSC, ITF_NUM_TOTAL_NO_MSC };
-
 // Note input endpoints (Board to PC) are assigned codes from 0x80 (msb bit set)
 #define EPNUM_CDC_NOTIF 0x83
 #define EPNUM_CDC_OUT 0x02
@@ -67,11 +61,12 @@ enum { ITF_NUM_CDC_NO_MSC = 0, ITF_NUM_CDC_DATA_NO_MSC, ITF_NUM_AUDIO_CONTROL_NO
 #define EPNUM_AUDIO_OUT 0x01
 #define EPNUM_MSC_OUT 0x03
 #define EPNUM_MSC_IN 0x84
+#define EPNUM_AUDIO_FB 0x85 // Feedback IN (for speaker sync)
 //--------------------------------------------------------------------+
 // Configuration Descriptor - CDC + MSC + UAC2.0 Microphone (MONO)
 //--------------------------------------------------------------------+
 
-#define CONFIG_WITH_MSC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO20_MIC_ONE_CH_DESC_LEN)
+#define CONFIG_WITH_MSC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_MSC_DESC_LEN + TUD_AUDIO20_MIC_ONE_CH_DESC_LEN + TUD_AUDIO20_SPEAKER_MONO_FB_DESC_LEN)
 
 uint8_t const desc_config_with_msc[] = {
     // Config descriptor
@@ -84,15 +79,20 @@ uint8_t const desc_config_with_msc[] = {
     TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64),
 
     // Audio microphone
-    TUD_AUDIO20_MIC_ONE_CH_DESCRIPTOR(ITF_NUM_AUDIO_CONTROL, 6, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * 8,
+    TUD_AUDIO20_MIC_ONE_CH_DESCRIPTOR(ITF_NUM_AUDIO_CONTROL, 0, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * 8,
                                       EPNUM_AUDIO_IN, CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX),
-};
+
+    // Audio Speaker with Feedback
+    TUD_AUDIO20_SPEAKER_MONO_FB_DESCRIPTOR(
+
+        ITF_NUM_SPK_CONTROL, 0, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX * 8, EPNUM_AUDIO_OUT,
+        CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX, EPNUM_AUDIO_FB, 4)};
 
 //--------------------------------------------------------------------+
 // Configuration WITHOUT MSC (CDC + Audio only)
 //--------------------------------------------------------------------+
 
-#define CONFIG_NO_MSC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + CFG_TUD_AUDIO * TUD_AUDIO20_MIC_ONE_CH_DESC_LEN)
+#define CONFIG_NO_MSC_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_AUDIO20_MIC_ONE_CH_DESC_LEN + TUD_AUDIO20_SPEAKER_MONO_FB_DESC_LEN)
 
 uint8_t const desc_config_no_msc[] = {
     // Config descriptor
@@ -104,7 +104,12 @@ uint8_t const desc_config_no_msc[] = {
     // Audio microphone
     TUD_AUDIO20_MIC_ONE_CH_DESCRIPTOR(ITF_NUM_AUDIO_CONTROL_NO_MSC, 0, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX,
                                       CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX * 8, EPNUM_AUDIO_IN, CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX),
-};
+
+    // Audio Speaker with Feedback
+    TUD_AUDIO20_SPEAKER_MONO_FB_DESCRIPTOR(
+
+        ITF_NUM_SPK_CONTROL_NO_MSC, 0, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX * 8, EPNUM_AUDIO_OUT,
+        CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX, EPNUM_AUDIO_FB, 4)};
 
 //--------------------------------------------------------------------+
 // Return correct descriptor based on MSC state
@@ -130,7 +135,7 @@ uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
 //--------------------------------------------------------------------+
 // String Descriptors
 //--------------------------------------------------------------------+
-char const *string_desc_arr[] = {(const char[]){0x09, 0x04}, "Etherlab", "EL24 SDR Transceiver", "123456", "CAT Control", "MSC storage", "Audio"};
+char const *string_desc_arr[] = {(const char[]){0x09, 0x04}, "Etherlab", "EL24 SDR Transceiver", "123456", "CAT Control", "MSC storage", "Audio", "Speaker"};
 
 static uint16_t _desc_str[32];
 
@@ -201,7 +206,7 @@ bool usb_set_msc_enabled(bool enable) {
 
         msc_enabled = enable;
 
-        if (tud_mounted()) {
+        if (usb_connected()) {
             // USB already connected: re-enumerate
             usb_trigger_reenumeration();
         }
