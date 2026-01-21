@@ -23,7 +23,7 @@ extern "C" {
 //#define USB_AUDIO_BIT_DEPTH 16
 
 // Buffer for USB audio samples
-#define USB_AUDIO_BUFFER_SAMPLES 128 // 4ms at 48kHz
+#define USB_AUDIO_BUFFER_SAMPLES 196 // 4ms at 48kHz
 //#define USB_AUDIO_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * sizeof(int16_t))
 
 // Initialize USB audio bridge

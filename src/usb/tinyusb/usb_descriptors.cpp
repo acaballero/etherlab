@@ -86,7 +86,7 @@ uint8_t const desc_config_with_msc[] = {
     TUD_AUDIO20_SPEAKER_MONO_FB_DESCRIPTOR(
 
         ITF_NUM_SPK_CONTROL, 0, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX * 8, EPNUM_AUDIO_OUT,
-        CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX, EPNUM_AUDIO_FB, 4)};
+        CFG_TUD_AUDIO_FUNC_2_EP_OUT_SZ_MAX, EPNUM_AUDIO_FB, 4)};
 
 //--------------------------------------------------------------------+
 // Configuration WITHOUT MSC (CDC + Audio only)
@@ -109,7 +109,7 @@ uint8_t const desc_config_no_msc[] = {
     TUD_AUDIO20_SPEAKER_MONO_FB_DESCRIPTOR(
 
         ITF_NUM_SPK_CONTROL_NO_MSC, 0, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX * 8, EPNUM_AUDIO_OUT,
-        CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX, EPNUM_AUDIO_FB, 4)};
+        CFG_TUD_AUDIO_FUNC_2_EP_OUT_SZ_MAX, EPNUM_AUDIO_FB, 4)};
 
 //--------------------------------------------------------------------+
 // Return correct descriptor based on MSC state

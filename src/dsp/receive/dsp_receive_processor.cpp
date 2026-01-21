@@ -62,11 +62,21 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
                 usb_audio_send(p, buffer->count / 2, status.sample_rate);
 
                 // DEBUG receive
-                uint16_t received = usb_audio_receive(p, buffer->count / 2, status.sample_rate);
-                if (received) {
+                uint16_t bs = buffer->count / (2 * 4);
+                for (int b = 0; b < 4; b++) {
 
-                    for (size_t i = 0; i < received; i++) {
-                        out_p[i * 2] = ((int16_t *)p)[i];
+                    uint16_t received = usb_audio_receive(p, bs, status.sample_rate);
+                    if (received) {
+
+                        for (size_t i = 0; i < received; i++) {
+                            *out_p = ((int16_t *)p)[i];
+                            out_p += 2;
+                        }
+                        for (size_t i = 0; i < bs - received; i++) {
+                            *out_p = 0;
+                            out_p += 2;
+                        }
+                        p += bs;
                     }
                 }
             }

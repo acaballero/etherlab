@@ -73,18 +73,20 @@ extern "C" {
 #define CFG_TUD_AUDIO_EP_SZ_IN                                                                                                                                 \
     TUD_AUDIO_EP_SIZE(TUD_OPT_HIGH_SPEED, CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_TX, CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX)
 #define CFG_TUD_AUDIO_FUNC_1_EP_IN_SZ_MAX CFG_TUD_AUDIO_EP_SZ_IN
-#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_IN
+#define CFG_TUD_AUDIO_FUNC_1_EP_IN_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 8) * CFG_TUD_AUDIO_EP_SZ_IN
 
-#define CFG_TUD_AUDIO_FUNC_2_EP_IN_SZ_MAX CFG_TUD_AUDIO_EP_SZ_IN
-#define CFG_TUD_AUDIO_FUNC_2_EP_IN_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_IN
+#define CFG_TUD_AUDIO_FUNC_2_EP_IN_SZ_MAX 0
+// Function 2 (speaker) has no input endpoint so this buffer size can be 0
+#define CFG_TUD_AUDIO_FUNC_2_EP_IN_SW_BUF_SZ 0
 
 #define CFG_TUD_AUDIO_EP_SZ_OUT                                                                                                                                \
     TUD_AUDIO_EP_SIZE(TUD_OPT_HIGH_SPEED, CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE, CFG_TUD_AUDIO_FUNC_1_N_BYTES_PER_SAMPLE_RX, CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX)
-#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX CFG_TUD_AUDIO_EP_SZ_OUT
-#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_OUT
+#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SZ_MAX 0
+// Function 1 (mic) has not output endpoint so this buffer can be empty
+#define CFG_TUD_AUDIO_FUNC_1_EP_OUT_SW_BUF_SZ 0
 
 #define CFG_TUD_AUDIO_FUNC_2_EP_OUT_SZ_MAX CFG_TUD_AUDIO_EP_SZ_OUT
-#define CFG_TUD_AUDIO_FUNC_2_EP_OUT_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 16) * CFG_TUD_AUDIO_EP_SZ_OUT
+#define CFG_TUD_AUDIO_FUNC_2_EP_OUT_SW_BUF_SZ (TUD_OPT_HIGH_SPEED ? 128 : 8) * CFG_TUD_AUDIO_EP_SZ_OUT
 
 //------------- CDC Configuration -------------//
 #define CFG_TUD_CDC_RX_BUFSIZE 512

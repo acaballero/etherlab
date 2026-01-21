@@ -1,12 +1,17 @@
 #include "usb_audio_dsp_bridge.h"
+#include "common/tusb_verify.h"
+#include "dsp/decimation/dsp_fir_decimator_float.h"
+#include "dsp/decimation/dsp_fir_decimator_q15.h"
+#include "dsp/decimation/dsp_iir_decimator.h"
+#include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
+#include "dsp/fir_filter.h"
 #include "memory_allocator.h"
 #include "status.h"
 #include "tinyusb/tusb_config.h"
 #include "tinyusb/usb_composite_device.h"
 #include "tusb.h"
 #include <string.h>
-#include <sys/_stdint.h>
 
 // Ring buffer for audio
 #define RING_BUFFER_SIZE (USB_AUDIO_BUFFER_SAMPLES * 3)
@@ -23,9 +28,27 @@ static volatile uint16_t read_pos = 0;
 static bool is_streaming[2] = {false, false};
 // static bool is_streaming = false;
 
-// Sample rate converter state (if needed)
-static uint32_t src_accumulator = 0;
-static int16_t last_sample = 0;
+// FIR instance and state buffer
+
+DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS> decimator;
+uint16_t filter_rate = USB_AUDIO_SAMPLE_RATE;
+uint16_t filter_bandwidth = 3000;
+
+// Initialize FIR filter
+void init_filter(uint16_t output_rate) {
+    uint16_t bw = USB_AUDIO_SAMPLE_RATE / 2;
+    while (bw > output_rate / 2) {
+        bw /= 2;
+    }
+
+    bool b = decimator.config(USB_AUDIO_SAMPLE_RATE, bw, 1);
+    if (b) {
+        filter_rate = output_rate;
+        return;
+    }
+    LOG("usb audio bridge: Error initializing audio filter\n");
+    TU_BREAKPOINT();
+}
 
 void usb_audio_dsp_bridge_init(void) {
 
@@ -38,8 +61,6 @@ void usb_audio_dsp_bridge_init(void) {
     // tx_read_pos = 0;
     is_streaming[ITF_IX_MICROPHONE] = false;
     is_streaming[ITF_IX_SPEAKER] = false;
-    src_accumulator = 0;
-    last_sample = 0;
 }
 
 void usb_audio_dsp_bridge_start(uint8_t itf_index) {
@@ -131,27 +152,24 @@ void resample_linear(int16_t *input, int16_t *output, uint32_t input_count, uint
     }
 }
 
-// Very simple, only for testing, LPF for the decimator
-int16_t lowpass_filter(int16_t input) {
-
-    static int32_t prev_sample = 0;
-    // Simple IIR: y[n] = 0.5 * x[n] + 0.5 * y[n-1]
-    // Cutoff ~5.3kHz at 48kHz
-    prev_sample = (input + prev_sample) >> 1;
-    return (int16_t)prev_sample;
-}
+float32_t tmp_buff[DSP_BLOCK];
 
 uint32_t decimate_samples(int16_t *input, uint32_t num_input, uint32_t rate_in, int16_t *output, uint32_t rate_out) {
     uint32_t num_output = (num_input * rate_out) / rate_in;
     uint32_t ratio = (rate_in << 16) / rate_out; // Fixed point 16.16
 
-    for (uint32_t i = 0; i < num_input; i++) {
-        input[i] = lowpass_filter(input[i]); // Simple nearest-neighbor
-    }
+    dsp::s16_to_f32(input, tmp_buff, num_input);
 
+    buffer_t<float32_t> buffer = {tmp_buff, (size_t)num_input, rate_in, REAL};
+
+    if (filter_rate != rate_out) {
+        init_filter(rate_out);
+    }
+    //    decimator.decimate(buffer, buffer); // This decimator has factor 1: Does not decimate (cmsis filters only work for factors of 2 sample rate
+    // ratios
     for (uint32_t i = 0; i < num_output; i++) {
         uint32_t src_pos = (i * ratio) >> 16;
-        output[i] = input[src_pos]; // Simple nearest-neighbor
+        output[i] = tmp_buff[src_pos]; // Simple nearest-neighbor
     }
 
     return num_output;
@@ -174,12 +192,15 @@ uint16_t usb_audio_receive(int16_t *buffer, uint32_t count, uint16_t sample_rate
     uint16_t bytes_read = tud_audio_n_read(ITF_IX_SPEAKER, (uint8_t *)ring_buffer, input_count * sizeof(uint16_t));
     uint16_t samples_read = bytes_read / sizeof(int16_t);
 
-    uint16_t output_count = decimate_samples(ring_buffer, samples_read, USB_AUDIO_SAMPLE_RATE, buffer, sample_rate);
+    uint16_t output_count = 0;
+    if (samples_read) {
 
-    for (size_t i = 0; i < output_count; i++) {
-        buffer[i] = (adc_type)(buffer[i]) >> 3; // 16 to 12 bit resolution
+        output_count = decimate_samples(ring_buffer, samples_read, USB_AUDIO_SAMPLE_RATE, buffer, sample_rate);
+
+        for (size_t i = 0; i < output_count; i++) {
+            buffer[i] = (adc_type)(buffer[i] * usb::volume_factor[ITF_IX_SPEAKER][1]) >> 3; // 16 to 12 bit resolution
+        }
     }
-
     // TODO: decimate/interpolate
 
     return output_count;
@@ -197,7 +218,7 @@ void usb_audio_send(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
         status::pop_alert(status::ERROR, "usb_audio_process: Error: interpolation_factor too high for the ring size");
     }
 
-    // Apply volume
+    // Apply volume and change resolution
     for (size_t i = 0; i < count; i++) {
         buffer[i] = (adc_type)(buffer[i] * usb::volume_factor[ITF_IX_MICROPHONE][1]) << 3; // 12 to 16 bit resolution
     }
