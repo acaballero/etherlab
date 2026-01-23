@@ -55,6 +55,8 @@ bool usb_cable_connected();
 // Replaces any HAL USB polling
 void usb_composite_task(void);
 
+void set_audio_in_callback(void (*f)(void));
+
 // CDC functions - for your CAT protocol
 bool usb_cdc_transmit(const uint8_t *data, uint16_t len); // Replaces CDC_Transmit_HS()
 bool usb_cdc_connected(void);

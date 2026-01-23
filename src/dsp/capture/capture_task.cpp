@@ -184,7 +184,7 @@ void CaptureTask::stop() {
 
         Task::stop(); // Let the base class do its common finish
 
-        dsp::set_max_sample_freq(false);
+        dsp::set_sample_freq_limits(false);
 
 #if LCD_DISABLE_ON_DSP
         lcd.setEnabled(true);

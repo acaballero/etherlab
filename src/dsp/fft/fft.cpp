@@ -321,7 +321,10 @@ void apply_fft_params(st_fft_params params) {
     uint32_t current_sample_rate = config.fft.sample_rate;
     uint32_t current_bw = fft::fft_params.bw;
 
+    LOG("apply_fft_params: Before calc | rate: %d | span: %d | factor: %d\n", current_sample_rate, fft_params.span, fft_params.decimation_factor);
     params.calc(params.span); // Recalculate all params, maintaining the desired visible span
+
+    LOG("apply_fft_params: After calc | rate: %d | span: %d | factor: %d\n", params.sample_freq, params.span, params.decimation_factor);
 
     fft::fft_params = params;
 
@@ -360,7 +363,7 @@ void apply_fft_params(st_fft_params params) {
 
         if (!b) {
             // Failed decimator initialization. Should't happen, but we could've mess with the fft params calculation
-            status::pop_alert(status::ERROR, "Error initializing FFT decimator");
+            status::pop_alert(status::ERROR, "apply_fft_params: Error initializing FFT decimator");
         }
 
         set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate, MAX_DSP_DECIMATION_FACTOR);
@@ -369,11 +372,11 @@ void apply_fft_params(st_fft_params params) {
         fft_params.sample_freq = config.fft.sample_rate = get_adc_timer_frequency();
 
         if (current_sample_rate != config.fft.sample_rate) {
-            LOG("fft_config: Changed sample rate: %lu\n", config.fft.sample_rate);
+            LOG("apply_fft_params: Changed sample rate: %lu\n", config.fft.sample_rate);
         }
 
         if (current_bw != config.fft.bw) {
-            LOG("fft_config: Changed bandwidth: %d\n", config.fft.bw);
+            LOG("apply_fft_params: Changed bandwidth: %d\n", config.fft.bw);
         }
 
         // Clear FFT
@@ -526,7 +529,6 @@ void reset_iq_balancer() {
  * - Sample rate
  * - FFT number of usable bins
  * - Number of slides needed
-
  * - FFT size
  * - RBW
  * - screen pixel/bin ratio
@@ -671,55 +673,6 @@ float32_t get_smooth_gain(float db) {
 
     return smoothingGainLUT[(int)(db - FFT_MIN_DB) >> SMOOTH_GAIN_LUT_PRECISSION];
 }
-
-// void testFastLog() {
-
-//     float b = 515234.0f;
-
-//     for (int i = 0; i < 2000; i++) {
-
-//         float x = i / b;
-//         float l1 = 20 * log10(x);
-//         float l2 = 20 * fasterlog(x);
-//         //  float e = abs(l1 - l2);
-
-//         printf("%d: L1:  %.2f L2: %.2f", i, l1, l2);
-//         // printf("%d: L1: %.5f L2: %.5f E: %.5f\n", i, l1, l2, e);
-//         HAL_Delay(10);
-//     }
-// }
-
-/* dB-based calculation
-inline fft_type fft_output_db(fft_type v) {
-
-    float db;
-
-    if (config.fft.window != FFT_WINDOW_NONE) {
-        // Apply window amplitude correction
-        v *= get_window_ampl_corr_factor();
-    }
-
-    // db referenced to the fft_range
-    db = v == 0 ? config.fft.min_db : 20.0f * fasterlog((float) v / fft_range);
-
-    // Subtract the gain
-    // TODO: Take into account the AGC value (requires taking into account that the analog gain depends on frequency, filters, etc)
-    db -= radio::get_gain();
-
-    // db =  20.0 * fasterlog((float) (fft_output[ii]) / fft_amp);
-    //logEvent(110,4,0);
-    if (db < config.fft.min_db)
-        db = FFT_MIN_DB;
-    //else if (db > config.fft.max_db)
-    //    db = config.fft.max_db;
-
-    //  start = height - (uint8_t) (
-    //  ((float) (fft_display[px] - config.fft.min_db) / (float) db_amp) *
-    //  (float) height);
-
-    return db;
-}
-*/
 
 /*** voltage-based calculation ***/
 inline fft_type fft_output_db(fft_type v) {
@@ -955,7 +908,7 @@ void adquire_fft_async() {
     } data;
 
     uint16_t chunk_size = fft_buff_size * sizeof(complex_t);
-    uint64_t timeout = HAL_GetTick() + 1000;
+    uint64_t timeout = HAL_GetTick() + 100;
 
     // Wait for ADC data
     while (fft_fifo.available(&data.c) < chunk_size && HAL_GetTick() < timeout) {

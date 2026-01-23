@@ -9,6 +9,7 @@
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/aprs/aprs_settings.h"
 #include "dsp/dsp_common.h"
+#include "dsp/dsp_processors.h"
 #include "dsp/dsp_tasks.h"
 #include "dsp/fft/fft.h"
 #include "hw/board/board_v2.h"
@@ -156,7 +157,7 @@ void APRSView::toggle_beacon() {
 
 void APRSView::start_rx() {
     //  LOG("START RX\n");
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_params *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE, &aprs_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();
@@ -202,7 +203,7 @@ void APRSView::threshold() {
 
 void APRSView::exit() {
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, DSP_TASK_RECEIVE, &aprs_task}, [this](st_dsp_params *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_PROCESSOR_RECEIVE, &aprs_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
 
             os::task_manager.remove(beacon_task_id);
@@ -216,7 +217,7 @@ void APRSView::exit() {
 
             os::task_manager.set_timeout(1, [m, ws]() {
                 if (m == DIGITAL_RX) {
-                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_RECEIVE}, nullptr);
+                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
                 }
                 //  LOG("Fired delayed close of APRS view\n");
                 main_board::set_mode(m);

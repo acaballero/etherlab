@@ -95,7 +95,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
     switch (e) {
         case Menu::enterEvent:
 
-            capture_w.setProcessorStatus(&((DspCaptureProcessor *)processors[DSP_PROCESSOR_CAPTURE])->status);
+            capture_w.setProcessorStatus(&((DspCaptureProcessor *)dsp::processors[dsp::DSP_PROCESSOR_CAPTURE])->status);
             capture_w.setTaskStatus(&((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->status);
 
             captureMenu[captureMenu.sz() - 1].disable();
@@ -161,7 +161,7 @@ void on_event(st_dsp_params *status) {
             // Set the previous mode
             os::task_manager.set_timeout(1, []() {
                 if (previous_mode == DIGITAL_RX) {
-                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, nullptr);
+                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
                 }
                 main_board::set_mode(previous_mode);
             });

@@ -60,25 +60,6 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
 
                 // Note the buffer sample rate must be a divisor of the sample rate of the required for the USB so we can do fast interpolation
                 usb_audio_send(p, buffer->count / 2, status.sample_rate);
-
-                // DEBUG receive
-                uint16_t bs = buffer->count / (2 * 4);
-                for (int b = 0; b < 4; b++) {
-
-                    uint16_t received = usb_audio_receive(p, bs, status.sample_rate);
-                    if (received) {
-
-                        for (size_t i = 0; i < received; i++) {
-                            *out_p = ((int16_t *)p)[i];
-                            out_p += 2;
-                        }
-                        for (size_t i = 0; i < bs - received; i++) {
-                            *out_p = 0;
-                            out_p += 2;
-                        }
-                        p += bs;
-                    }
-                }
             }
 
             output_stream.consume(block_size_bytes, (char **)&p);

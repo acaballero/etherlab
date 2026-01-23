@@ -127,6 +127,7 @@ enum DSP_ERROR {
     DSP_ERR_FIFO_UNDERRUN
 };
 
+#define DSP_AUDIO_SAMPLE_RATE 48000
 // Max bandwidth of the DSP. This is the cutoff frequency of the low pass filters before the ADCs.
 // Note the complex bandwidth is twice since we're sampling quadrature signals
 #define DSP_BANDWIDTH 250000
@@ -260,10 +261,12 @@ extern st_dsp_params *dsp_params;
 
 // Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
 extern uint32_t dsp_max_sample_rate;
+
+extern uint32_t dsp_min_sample_rate;
 extern const char *dsp_error_names[];
 
-/* Sets the max sample frequency depending on whether we're doing real-time DSP or not */
-void set_max_sample_freq(bool dsp);
+/* Sets the min and max sample frequency depending on whether we're doing real-time DSP or not and the source of the samples */
+void set_sample_freq_limits(bool dsp);
 
 /* Set a specific maximum for the sample rate */
 void set_max_sample_freq(uint32_t rate);

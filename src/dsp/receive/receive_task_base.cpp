@@ -331,6 +331,8 @@ bool ReceiveTaskBase::start() {
 
     MODULATION_MODE mod = get_modulation_mode();
 
+    set_baseband_echo(dsp::dsp_config.baseband_echo);
+
     main_board::set_modulation_mode(mod, false);
 
     if (mod != SSB_USB && mod != SSB_LSB && mod != CW) {

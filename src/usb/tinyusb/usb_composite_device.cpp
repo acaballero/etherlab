@@ -9,6 +9,7 @@
 #include "common/tusb_compiler.h"
 #include "common/tusb_verify.h"
 #include "device/usbd.h"
+#include "dsp/dsp_buffers.h"
 #include "hw/stm32f4xx/usb.h"
 #include "os/task_manager.h"
 #include "status.h"
@@ -54,7 +55,17 @@ int16_t host_min_db = -90;
 // Range states
 audio20_control_range_4_n_t(1) sampleFreqRng;
 
+void (*usb_audio_in_callback)(void) = nullptr;
+
 uint16_t startVal = 0;
+
+uint16_t usb_audio_available() {
+    return tud_audio_n_available(ITF_IX_SPEAKER);
+}
+
+void set_audio_in_callback(void (*f)()) {
+    usb_audio_in_callback = f;
+}
 
 void usb_composite_init(void) {
 
@@ -115,12 +126,25 @@ bool usb_connected() {
     return tud_mounted() && usb_cable_connected();
 }
 
+static uint32_t usb_task_cnt = 0; // A counter to be able to "prescale" the audio streaming check
 void usb_composite_task(void) {
     // TinyUSB device task - must be called frequently
     tud_task_ext(1, false);
 
-    // Audio processing. Commented-out if done in the audio DMA ISR.
+    // Audio-out processing. Commented-out if done in the audio DMA ISR.
     // usb_audio_process();
+
+    // Audio-in processing
+    bool check_usb_connection = (usb_task_cnt & 0x05) == 0;
+    if (usb_audio_is_streaming(ITF_IX_SPEAKER, check_usb_connection) && usb_audio_in_callback) {
+
+        uint16_t av_samples_in = usb_audio_available() / sizeof(uint16_t);
+        if (av_samples_in >= DSP_BLOCK) {
+            usb_audio_in_callback();
+        }
+
+        usb_task_cnt++;
+    }
 }
 
 bool usb_cdc_connected(void) {

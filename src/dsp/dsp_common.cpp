@@ -21,6 +21,9 @@ bool freq_shift_enabled = true;
 // Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
 uint32_t dsp_max_sample_rate = config.fft.max_sample_rate;
 
+// Current minimum sample frequency. Depends on whether the samples come from the ADC or from the MCU
+uint32_t dsp_min_sample_rate = config.fft.min_sample_rate;
+
 Signal dsp_common_params_signal;
 
 const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
@@ -33,22 +36,33 @@ st_dsp_config dsp_config;
 void set_config(dsp::st_dsp_config &c) {
     dsp_config = c;
 }
+void set_min_sample_freq(uint32_t rate) {
+    dsp_min_sample_rate = rate;
+    fft_config(fft::fft_params.span);
+}
 
-void set_max_sample_freq(bool dsp) {
+void set_max_sample_freq(uint32_t rate) {
+    dsp_max_sample_rate = min2(config.fft.dsp_max_sample_rate, rate);
+    fft_config(fft::fft_params.span);
+}
+
+void set_sample_freq_limits(bool dsp) {
 
     // Sanity check
     config.fft.dsp_max_sample_rate = min2(config.fft.dsp_max_sample_rate, 750000);
     // Set the max sample frequency according to the amount of processing we will be doing
     if (!dsp) {
         set_max_sample_freq(config.fft.max_sample_rate);
+        set_min_sample_freq(config.fft.min_sample_rate);
+
     } else {
         set_max_sample_freq(config.fft.dsp_max_sample_rate);
+        if (ISTX) {
+            set_min_sample_freq(DSP_AUDIO_SAMPLE_RATE);
+        } else {
+            set_min_sample_freq(config.fft.min_sample_rate);
+        }
     }
-}
-
-void set_max_sample_freq(uint32_t rate) {
-    dsp_max_sample_rate = min2(config.fft.dsp_max_sample_rate, rate);
-    fft_config(fft::fft_params.span);
 }
 
 void set_gain_db(int8_t gain_db) {

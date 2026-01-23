@@ -431,12 +431,12 @@ bool radio_config(st_radio_config radioConfig) {
 
         // Enable DAC for IF modulation
         MX_DAC_Init();
-        // LOG("Setting DAC_TIMER for DIGITAL_TX %d\n", radioConfig.sample_freq);
+
         set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq, MAX_DSP_DECIMATION_FACTOR);
         DAC_DMA_Start(&hdac1);
 
         // Starting the DAC causes a DC transient. Wait for it to stop
-        // HAL_Delay(30);
+
         if_direction(RF_DIRECTION_TX);
 
     } else if (radioConfig.direction == RF_DIRECTION_RX) {

@@ -114,7 +114,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
                 view_manager::mainView.add_child(&replay_w);
                 replay_w.set_visible(true);
                 replay_w.set_z_index(100);
-                replay_w.setProcessorStatus(&((DspReplayProcessor *)processors[DSP_PROCESSOR_REPLAY])->status);
+                replay_w.setProcessorStatus(&((DspReplayProcessor *)dsp::processors[dsp::DSP_PROCESSOR_REPLAY])->status);
                 replay_w.setTaskStatus(&((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->status);
             }
 

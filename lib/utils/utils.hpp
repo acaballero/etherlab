@@ -165,17 +165,17 @@ void printLog();
 
 uint16_t mod(int a, int b);
 
-int mostSignificantDecimal(long i);
+int most_significant_decimal(long i);
 
-int analogMedian(int pin, int n);
+int analog_median(int pin, int n);
 
-float roundDownToNearest(float d, float t);
+float round_down_to_nearest(float d, float t);
 
-int ceil_multiple(int n, int mult);
+int ceil_multiple(int value, int mult);
 
-int floor_multiple(int n, int m);
+int floor_multiple(int value, int mult);
 
-int splitString(char *str, char **parts, int length, char separator);
+int split_string(char *str, char **parts, int length, char separator);
 
 void printMemory();
 

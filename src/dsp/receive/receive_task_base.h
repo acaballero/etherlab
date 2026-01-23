@@ -115,7 +115,7 @@ class ReceiveTaskBase : public Task {
         return get_modulation_mode() == WFM ? 15000 : 4000;
     };
 
-    /* Sample rate of the output audio stream. Must be a divisor of 48000  */
+    /* Sample rate of the output audio stream. Must be a divisor of DSP_AUDIO_SAMPLE_RATE  */
     virtual uint32_t get_audio_sample_rate() const {
         return get_modulation_mode() == WFM ? 24000 : 12000;
     };

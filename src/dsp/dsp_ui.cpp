@@ -64,8 +64,6 @@ result apply_dsp_changes(eventMask) {
         compressorThresholdMenu.disable();
     }
 
-    ((ReceiveTask *)dsp::tasks[dsp::DSP_TASK_RECEIVE])->set_baseband_echo(dsp::dsp_config.baseband_echo);
-
     if (!ISANALOG) {
         dsp_restart();
     }

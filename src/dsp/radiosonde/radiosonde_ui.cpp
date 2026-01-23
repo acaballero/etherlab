@@ -1,5 +1,6 @@
 #include "radiosonde_ui.hpp"
 
+#include "dsp/dsp_processors.h"
 #include "dsp/radiosonde/radiosonde_task.hpp"
 
 #include <cstring>
@@ -72,7 +73,7 @@ void RadiosondeView::open_map() {
 
 void RadiosondeView::exit() {
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_TASK_RECEIVE, &radiosonde_task}, [this](st_dsp_params *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_PROCESSOR_RECEIVE, &radiosonde_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
 
             radiosonde_signal.remove(radiosonde_signal_token);
@@ -84,7 +85,7 @@ void RadiosondeView::exit() {
 
             os::task_manager.set_timeout(1, [m, ws]() {
                 if (m == DIGITAL_RX) {
-                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, nullptr);
+                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
                 }
                 //  LOG("Fired delayed close of APRS view\n");
                 main_board::set_mode(m);
@@ -106,7 +107,7 @@ void RadiosondeView::before_paint() {
 
 void RadiosondeView::start_rx() {
     //  LOG("START RX\n");
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE, &radiosonde_task}, [this](st_dsp_params *status) {
+    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE, &radiosonde_task}, [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();

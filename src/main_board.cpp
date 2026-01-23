@@ -6,6 +6,7 @@
 #include "Signal.h"
 #include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
+#include "dsp/fft/fft_params.h"
 #include "hw/board/board_v2.h"
 #include "hw/hw_config.h"
 #include "os/task_manager.h"
@@ -25,6 +26,7 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "types.h"
 #include "dsp/dsp_tasks.h"
+#include "utils.hpp"
 #include <sys/_stdint.h>
 
 namespace main_board {
@@ -429,10 +431,6 @@ bool _set_mode(MODE mode, bool force) {
 
             set_power_ctrl(power_ctrl, force);
 
-            GPIOD->BSRR |= GPIO_PIN_9;
-            HAL_Delay(5);
-
-            GPIOD->BSRR |= GPIO_PIN_9 << 16;
             setGPIO();
 
             fft_config(config.fft.span);
@@ -465,8 +463,13 @@ bool _set_mode(MODE mode, bool force) {
         }
 
         if (ISTX) {
-            // We just want to see the signal being sent
-            fft_config(max2(radio::get_bandwidth_hz() * 4, 40000));
+            // Focus the FFT on the signal being sent.
+            // In digital mode, audio is received from the host (PC) and, to be able to use integer-factor decimators/interpolators, the sample rate must be
+            // multiple of the audio rate
+
+            uint32_t tx_mode_fft_span = max2(radio::get_bandwidth_hz() * 4, DSP_AUDIO_SAMPLE_RATE);
+
+            fft_config(tx_mode_fft_span * USABLE_BW_FACTOR);
         }
 
         if (changed) {
@@ -519,8 +522,8 @@ bool toggle_mode() {
     if (ISTX) {
         mode = ANALOGMODE(last_mode) ? ANALOG_RX : DIGITAL_RX;
     } else {
-        // TODO: Still only analog modulation for TX
-        mode = ANALOG_TX;
+        // TODO: Digital TX mode needs USB audio in. Check its presence here?
+        mode = ANALOGMODE(last_mode) ? ANALOG_TX : DIGITAL_TX;
     }
 
     return main_board::set_mode(mode);

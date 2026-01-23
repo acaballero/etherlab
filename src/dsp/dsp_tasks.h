@@ -13,10 +13,10 @@ enum DSP_TASK_ID {
     DSP_TASK_CAPTURE,
     DSP_TASK_REPLAY,
     DSP_TASK_SIGNAL_GENERATOR,
-    DSP_TASK_RECEIVE
+    DSP_TASKS_N
 
 };
-extern const char *taskNames[];
+
 extern Task *tasks[];
 } // namespace dsp
 #endif // TRX_FRONTEND_DSP_TASKS_H

@@ -62,7 +62,7 @@ Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::dsp_
                                          0, 100, 1, 10);
 
 void set_signal_params() {
-    DspSignalGeneratorProcessor *processor = ((DspSignalGeneratorProcessor *)processors[dsp::DSP_TASK_SIGNAL_GENERATOR]);
+    DspSignalGeneratorProcessor *processor = ((DspSignalGeneratorProcessor *)dsp::processors[dsp::DSP_TASK_SIGNAL_GENERATOR]);
 
     if (dsp::dsp_config.test_signal.shape == SIGNAL_SHAPE_PULSE) {
         processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,

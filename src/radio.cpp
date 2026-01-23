@@ -250,7 +250,7 @@ bool is_freq_inverted() {
 
 void change_step(int amount) {
 
-    if ((mostSignificantDecimal(config.vfo[config.vfo_ix].step)) != 1) {
+    if ((most_significant_decimal(config.vfo[config.vfo_ix].step)) != 1) {
 
         // changing step in tune mode should be in powers of 10
         config.vfo[config.vfo_ix].step = 1000;

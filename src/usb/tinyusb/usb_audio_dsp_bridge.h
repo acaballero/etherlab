@@ -42,10 +42,7 @@ void usb_audio_dsp_bridge_stop(uint8_t itf_ix);
 // uint16_t usb_audio_get_tx_audio(float32_t *audio_samples, uint16_t max_count);
 
 // Retruns true if USB audio is active for an interface
-bool usb_audio_is_streaming(uint8_t itf_ix);
-
-// Process USB tasks
-// void usb_audio_process(void);
+bool usb_audio_is_streaming(uint8_t itf_ix, bool check_connection = true);
 
 /*
  * Expects 12-bit resolution, single channel samples
@@ -53,11 +50,13 @@ bool usb_audio_is_streaming(uint8_t itf_ix);
  */
 void usb_audio_send(int16_t *buffer, uint32_t count, uint16_t sample_rate);
 
+uint16_t usb_audio_available();
+
 /*
- * Returns 12-bit resolution, single channel samples at the specified sample_rate (decimates/interpolates if necessary)
- * @return the number of samples actually received
+ * Feeds a buffer with 12-bit resolution, single channel samples at USB_AUDIO_SAMPLE_RATE
+ * @returns the actual number of samples retrieved
  */
-uint16_t usb_audio_receive(int16_t *buffer, uint32_t count, uint16_t sample_rate);
+uint16_t usb_audio_receive(int16_t *buffer, uint32_t count);
 
 #ifdef __cplusplus
 }

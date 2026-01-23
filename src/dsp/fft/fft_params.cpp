@@ -43,8 +43,6 @@ static st_fft_params cached_result;
 // It is required that either sample_freq or span are set
 void st_fft_params::calc(uint32_t visible_span) {
 
-    // Number of usable bins in each slice
-
     if (sample_freq == 0) {
         // Calculate sample frequency, taking into account the usable bandwidth of each slice
         sample_freq = span * ((float)decimation_factor / n_slices / USABLE_BW_FACTOR);
@@ -55,7 +53,7 @@ void st_fft_params::calc(uint32_t visible_span) {
     }
 
     if (freq_mult) {
-        // Ceil to multiple of DSP_SAMPLE_FREQ_MULT. See comment in constant definition
+        // Ceil to multiple of freq_mult
         sample_freq = ((sample_freq + freq_mult - 1) / freq_mult) * freq_mult;
     } else {
         // Set the real exact achievable frequency in the timer
@@ -93,7 +91,7 @@ void st_fft_params::calc(uint32_t visible_span) {
 }
 
 bool st_fft_params::valid_sf() {
-    return sample_freq >= config.fft.min_sample_rate && sample_freq <= dsp::dsp_max_sample_rate + freq_mult; // allow DSP_SAMPLE_FREQ_MULT headroom
+    return sample_freq >= dsp::dsp_min_sample_rate && sample_freq <= dsp::dsp_max_sample_rate + freq_mult; // allow DSP_SAMPLE_FREQ_MULT headroom
 }
 
 bool st_fft_params::valid() {
@@ -118,12 +116,21 @@ bool st_fft_params::valid() {
 
 st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
 
+    // In DIGITAL_TX mode, the fft sample rate must be a multiple of DSP_AUDIO_SAMPLE_RATE so we can interpolate/decimate by integer factors
+    if (!freq_mult) {
+        if (config.mode == DIGITAL_TX) {
+            freq_mult = DSP_AUDIO_SAMPLE_RATE;
+        } else {
+            freq_mult = fft_params.freq_mult;
+        }
+    }
+
     // Create cache key with current parameters
     st_fft_params_dependencies current_dependencies = {.span = span,
-                                                       .freq_mult = freq_mult ? freq_mult : fft_params.freq_mult,
+                                                       .freq_mult = freq_mult,
                                                        .decimation_factor_max = config.fft.max_decimation_factor,
                                                        .current_max_slices = current_max_slices,
-                                                       .min_sample_rate = config.fft.min_sample_rate,
+                                                       .min_sample_rate = dsp::dsp_min_sample_rate,
                                                        .dsp_max_sample_rate = dsp::dsp_max_sample_rate};
 
     // Check if we can use cached result
@@ -165,7 +172,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
             params.decimation_factor = d;
             params.n_slices = s;
             params.size = FFT_N;
-            params.freq_mult = freq_mult ? freq_mult : fft_params.freq_mult;
+            params.freq_mult = freq_mult;
             params.sample_freq = 0; // calculate
             params.span = span;
             params.calc();
@@ -174,7 +181,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
                 //  if (log)
                 //      LOG("Invalid try: sr: %u\n", params.sample_freq);
 
-                params.sample_freq = constrain(params.sample_freq, config.fft.min_sample_rate, dsp::dsp_max_sample_rate);
+                params.sample_freq = constrain(params.sample_freq, dsp::dsp_min_sample_rate, dsp::dsp_max_sample_rate);
 
                 params.calc();
 
@@ -219,7 +226,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
         params.decimation_factor = 1;
         params.n_slices = 1;
         params.size = FFT_N;
-        params.sample_freq = config.fft.min_sample_rate;
+        params.sample_freq = dsp::dsp_min_sample_rate;
 
         params.calc();
         best = params;

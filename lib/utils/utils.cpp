@@ -624,7 +624,7 @@ float roundDownToNearest(float d, float t) {
 }
 */
 
-int mostSignificantDecimal(long i) {
+int most_significant_decimal(long i) {
 
     long d = i;
     while (d >= 10) {
