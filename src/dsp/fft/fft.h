@@ -42,7 +42,9 @@ enum FFT_STATUS { FFT_STATUS_READY, FFT_STATUS_ADQUIRING, FFT_STATUS_IDLE, FFT_S
 namespace fft {
 
 void set_max_slices(uint8_t);
-extern uint8_t current_max_slices;
+void set_max_decimation(uint8_t);
+uint8_t get_max_slices();
+uint8_t get_max_decimation();
 extern os::periodic_task fft_task;
 extern os::periodic_task iqbalance_task;
 extern os::periodic_task waterfall_task;

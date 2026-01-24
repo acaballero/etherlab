@@ -3,6 +3,7 @@
 // Created by Angel Dust on 06/09/2025.
 //
 
+#include "dsp/fft/fft.h"
 #include "hw/stm32.h"
 #include "hw/stm32f4xx/timers.h"
 #include "stdint.h"
@@ -18,15 +19,15 @@ namespace fft {
 // Structure to hold fft_params dependencies
 struct st_fft_params_dependencies {
     uint32_t span;
-    uint32_t freq_mult;
-    uint8_t decimation_factor_max;
-    uint8_t current_max_slices;
-    uint32_t min_sample_rate;
-    uint32_t dsp_max_sample_rate;
+    uint32_t freq_mult{0};
+    uint8_t decimation_factor_max{1};
+    uint8_t max_slices{1};
+    uint32_t min_sample_rate{0};
+    uint32_t dsp_max_sample_rate{0};
 
     bool operator==(const st_fft_params_dependencies &other) const {
-        return span == other.span && freq_mult == other.freq_mult && decimation_factor_max == other.decimation_factor_max &&
-               current_max_slices == other.current_max_slices && min_sample_rate == other.min_sample_rate && dsp_max_sample_rate == other.dsp_max_sample_rate;
+        return span == other.span && freq_mult == other.freq_mult && decimation_factor_max == other.decimation_factor_max && max_slices == other.max_slices &&
+               min_sample_rate == other.min_sample_rate && dsp_max_sample_rate == other.dsp_max_sample_rate;
     }
 
     bool operator!=(const st_fft_params_dependencies &other) const {
@@ -35,13 +36,16 @@ struct st_fft_params_dependencies {
 };
 
 // Cache storage
-static st_fft_params_dependencies fft_params_dependencies = {0};
+static st_fft_params_dependencies fft_params_dependencies = {0, 0, 1};
 static st_fft_params cached_result;
 
 // Calculates FFT parameters from desired span, decimation factor and n_slices
 // If visible_span is given and the object parameters allow resolving for it, calculates the start and end bin accordingly
 // It is required that either sample_freq or span are set
 void st_fft_params::calc(uint32_t visible_span) {
+
+    // LOG("fft params CALC => visible_span: %d | span: %d | sample_freq: %lu | freq_mult: %lu", visible_span, span, sample_freq, freq_mult);
+    //  LOG_RAW(" | factor: %d | min_freq: %d | max_freq: %lu\n", decimation_factor, dsp::dsp_min_sample_rate, dsp::dsp_max_sample_rate);
 
     if (sample_freq == 0) {
         // Calculate sample frequency, taking into account the usable bandwidth of each slice
@@ -53,8 +57,26 @@ void st_fft_params::calc(uint32_t visible_span) {
     }
 
     if (freq_mult) {
+
+        uint32_t target_freq = sample_freq;
         // Ceil to multiple of freq_mult
         sample_freq = ((sample_freq + freq_mult - 1) / freq_mult) * freq_mult;
+
+        // Find nearest achievable frequency with the timer
+        sample_freq = get_timer_exact_freq(MAX_DSP_DECIMATION_FACTOR, false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
+
+        timer_freq_error = sample_freq % freq_mult;
+        if (timer_freq_error != 0) {
+            uint32_t lower_mult = (sample_freq / freq_mult) * freq_mult;
+            uint32_t upper_mult = lower_mult + freq_mult;
+
+            if (lower_mult >= target_freq) {
+                sample_freq = lower_mult;
+            } else if (upper_mult >= target_freq) {
+                sample_freq = upper_mult;
+            }
+        }
+
     } else {
         // Set the real exact achievable frequency in the timer
         sample_freq = get_timer_exact_freq(MAX_DSP_DECIMATION_FACTOR, false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
@@ -121,7 +143,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
         if (config.mode == DIGITAL_TX) {
             freq_mult = DSP_AUDIO_SAMPLE_RATE;
         } else {
-            freq_mult = fft_params.freq_mult;
+            freq_mult = 0;
         }
     }
 
@@ -129,7 +151,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
     st_fft_params_dependencies current_dependencies = {.span = span,
                                                        .freq_mult = freq_mult,
                                                        .decimation_factor_max = config.fft.max_decimation_factor,
-                                                       .current_max_slices = current_max_slices,
+                                                       .max_slices = get_max_slices(),
                                                        .min_sample_rate = dsp::dsp_min_sample_rate,
                                                        .dsp_max_sample_rate = dsp::dsp_max_sample_rate};
 
@@ -142,7 +164,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
     fft_params_dependencies = current_dependencies;
 
     // Max span check
-    uint32_t max_span = current_max_slices * DSP_BANDWIDTH * 2;
+    uint32_t max_span = current_dependencies.max_slices * DSP_BANDWIDTH * 2;
 
     if (span > max_span) {
         span = max_span;
@@ -165,8 +187,8 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
 
     // if (log)
     // LOG("\n\n**** Required span: %d\n", span);
-    for (int s = 1; s <= current_max_slices; s++) {
-        for (int d = config.fft.max_decimation_factor; d >= 1; d >>= 1) {
+    for (int s = 1; s <= get_max_slices(); s++) {
+        for (int d = get_max_decimation(); d >= 1; d >>= 1) {
             // for (int d = 1; d <= config.fft.max_decimation_factor; d <<= 1) {
 
             params.decimation_factor = d;
@@ -205,8 +227,8 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
                 auto span_delta = abs((int)params.span - (int)span);
                 auto best_span_delta = abs((int)best.span - (int)span);
                 bool best_delta = span_delta < best_span_delta;
-                if (best_delta || abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px) ||
-                    (!ISANALOG && (params.decimation_factor > best.decimation_factor))) {
+                if (abs(params.timer_freq_error) < abs(best.timer_freq_error) || best_delta || abs(1 - params.bin_width_px) < abs(1 - best.bin_width_px) ||
+                    (config.mode == DIGITAL_RX && (params.decimation_factor > best.decimation_factor))) {
                     best = params;
                     //    if (log)
                     //        LOG("Best is sr: %u | span: %d | delta: %d | width: %.1f |", best.sample_freq, best.span, span_delta, params.bin_width_px);

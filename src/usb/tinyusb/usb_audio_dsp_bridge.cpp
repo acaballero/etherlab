@@ -126,7 +126,9 @@ void usb_audio_send(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
     }
 
     // Linear interpolation.
-    // Note we use the ring_buffer as a simple one-shot buffer. NOT as a ring buffer
+    // Note: we use the ring_buffer as a simple one-shot buffer. NOT as a ring buffer
+    // Note: Does not filter after interpolating to prevent images, but if the signal bandwidth is well below
+    // the nyquist frequency (as it is supposed being lo-fi audio) the images may be tolerable
 
     resample_linear(buffer, ring_buffer, count, output_count);
 

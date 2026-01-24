@@ -11,6 +11,7 @@
 #include "dsp/decimation/dsp_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
+#include "dsp/interpolation/dsp_fir_interpolator_float.h"
 #include "dsp/task.h"
 #include "main_board.h"
 #include "radio.h"
@@ -66,8 +67,10 @@ class TransmitTask : public Task {
 
     float32_t *out_accum_p;
 
-    DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS> decimator;
-    bool init_decimator(MODULATION_MODE mod);
+    std::unique_ptr<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>> decimator;
+    std::unique_ptr<DspFIRInterpolatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>> interpolator;
+
+    bool init_resampler(MODULATION_MODE mod);
 
     uint32_t modulation_bandwidth_hz; // Minimum bandwidth for demodulation (measured as double sideband)
     uint32_t demodulation_sample_rate;

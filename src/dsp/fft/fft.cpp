@@ -125,15 +125,23 @@ adc_type adc_max_ampl;
 
 bool iq_balance_enabled = true;
 
-uint8_t current_max_slices = config.fft.max_slices;
+uint8_t max_slices = config.fft.max_slices;
+uint8_t max_decimation_factor = config.fft.max_decimation_factor;
 
 void set_max_slices(uint8_t n) {
+    max_slices = min2(max_slices, n);
+}
 
-    config.fft.max_slices = n;
+void set_max_decimation(uint8_t n) {
+    max_decimation_factor = min2(max_decimation_factor, n);
+}
 
-    if (ISANALOG) {
-        current_max_slices = n;
-    }
+uint8_t get_max_slices() {
+    return max_slices;
+}
+
+uint8_t get_max_decimation() {
+    return max_decimation_factor;
 }
 
 void enable_iq_balance(bool v) {
@@ -317,14 +325,15 @@ void set_waterfall_speed(uint16_t pps) {
 
 void apply_fft_params(st_fft_params params) {
 
-    uint8_t current_dec_factor = fft::fft_params.decimation_factor;
-    uint32_t current_sample_rate = config.fft.sample_rate;
-    uint32_t current_bw = fft::fft_params.bw;
+    uint8_t current_dec_factor = fft_params.decimation_factor;
+    uint32_t current_sample_rate = fft_params.sample_freq;
+    uint32_t current_bw = fft_params.bw;
 
-    LOG("apply_fft_params: Before calc | rate: %d | span: %d | factor: %d\n", current_sample_rate, fft_params.span, fft_params.decimation_factor);
+    //  LOG("apply_fft_params: Before calc | rate: %d | span: %d | factor: %d\n", current_sample_rate, fft_params.span, fft_params.decimation_factor);
+
     params.calc(params.span); // Recalculate all params, maintaining the desired visible span
 
-    LOG("apply_fft_params: After calc | rate: %d | span: %d | factor: %d\n", params.sample_freq, params.span, params.decimation_factor);
+    //  LOG("apply_fft_params: After calc | rate: %d | span: %d | factor: %d\n", params.sample_freq, params.span, params.decimation_factor);
 
     fft::fft_params = params;
 
@@ -332,7 +341,7 @@ void apply_fft_params(st_fft_params params) {
     float bin_offset = main_board::get_modulation_mode() == CW ? ((float32_t)CW_PITCH_HZ / fft_params.rbw) : 0;
     fft_params.start_bin -= (uint16_t)(bin_offset + 0.5f); // integer round
 
-    config.fft.sample_rate = fft::fft_params.sample_freq;
+    config.fft.sample_rate = fft_params.sample_freq;
 
     // TODO: Decimate in cascade with multiple 2M decimators instead of using bigger factors. It's way more efficient since the
     // required filter tap number increases exponentially with the order of the decimation. Plus, a 50% low pass filter has nulls in its even taps.
@@ -355,7 +364,7 @@ void apply_fft_params(st_fft_params params) {
         fft_fifo.reset();
     }
 
-    if (current_sample_rate != config.fft.sample_rate || current_bw != fft::fft_params.bw ||
+    if (current_sample_rate != fft_params.sample_freq || current_bw != fft_params.bw ||
         !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
 
         bool b = decimator_i.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
@@ -366,17 +375,21 @@ void apply_fft_params(st_fft_params params) {
             status::pop_alert(status::ERROR, "apply_fft_params: Error initializing FFT decimator");
         }
 
-        set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, config.fft.sample_rate, MAX_DSP_DECIMATION_FACTOR);
-
-        // Since the timer cannot be set to match exact frequencies, we store the actual ADC frequency
-        fft_params.sample_freq = config.fft.sample_rate = get_adc_timer_frequency();
-
-        if (current_sample_rate != config.fft.sample_rate) {
-            LOG("apply_fft_params: Changed sample rate: %lu\n", config.fft.sample_rate);
+        if (current_sample_rate != fft_params.sample_freq) {
+            LOG("apply_fft_params: Changed sample rate: %lu\n", fft_params.sample_freq);
         }
 
-        if (current_bw != config.fft.bw) {
-            LOG("apply_fft_params: Changed bandwidth: %d\n", config.fft.bw);
+        if (current_bw != fft_params.bw) {
+            LOG("apply_fft_params: Changed bandwidth: %d\n", fft_params.bw);
+        }
+
+        set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, fft_params.sample_freq, MAX_DSP_DECIMATION_FACTOR);
+
+        // Since the timer cannot be set to match exact frequencies, we store the actual ADC frequency
+        uint32_t actual_timer_freq = get_adc_timer_frequency();
+
+        if (actual_timer_freq != fft_params.sample_freq) {
+            LOG("apply_fft_params: ERROR trying to set DSP timer sample rate to %lu. Actual freq: %lu\n", fft_params.sample_freq, actual_timer_freq);
         }
 
         // Clear FFT
@@ -537,6 +550,7 @@ void reset_iq_balancer() {
  */
 bool fft_config(uint32_t span) {
 
+    //  LOG("fft_config | span: %d\n", span);
     st_fft_params best = st_fft_params::find(span);
 
     apply_fft_params(best);

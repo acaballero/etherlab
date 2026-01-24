@@ -116,17 +116,22 @@ void FFTWidget::draw_freq_marks() {
 }
 
 bool FFTWidget::on_touch(const st_inputEvent e) {
-    if (e.ms > LONG_PRESS_MS) {
-        // Toggle between max span and configured span
-        if (fft::fft_params.span == config.fft.span) {
-            fft_config(FFT_MAX_SPAN);
+
+    if (!ISTX) { // Disabled while transmitting
+        if (e.ms > LONG_PRESS_MS) {
+            // Toggle between max span and configured span
+            if (fft::fft_params.span == config.fft.span) {
+                fft_config(FFT_MAX_SPAN);
+            } else {
+                fft_config(config.fft.span);
+            }
         } else {
-            fft_config(config.fft.span);
+            fftUI::open_span_config();
         }
-    } else {
-        fftUI::open_span_config();
+        return true;
     }
-    return true;
+
+    return false;
 }
 
 void FFTWidget::draw_span_marks() {

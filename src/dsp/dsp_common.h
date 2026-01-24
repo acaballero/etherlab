@@ -172,7 +172,7 @@ struct st_dsp_params {
 
     uint32_t bandwidth;
     uint32_t sample_rate;
-    uint8_t decimation_factor;
+  uint8_t decimation_factor{1};
     uint32_t decimated_block_size_bytes;
     uint16_t decimated_block_size;
     uint16_t bits_per_sample;

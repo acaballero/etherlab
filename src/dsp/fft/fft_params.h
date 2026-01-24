@@ -47,12 +47,16 @@ typedef class st_fft_params {
     float display_rbw = 0;
 
     // Absolute start frequency of the span
-    uint64_t span_f_start;
+    uint64_t span_f_start = 0;
 
     // Starting intermediate frequency of the span
-    uint64_t span_if_start;
+    uint64_t span_if_start = 0;
 
     uint32_t freq_mult = 0;
+
+    // Frequency offset of the nearest achievable frequency with a timer
+    // TODO: This entity shouldn't know about timers (but it's convenient)
+    int16_t timer_freq_error = 0;
 
     void calc(uint32_t span = 0);
 

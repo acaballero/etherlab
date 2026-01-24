@@ -85,19 +85,19 @@ DCBlock dc_block_q{0.987};
 std::function<void(st_dsp_params *)> on_event;
 
 /** Sets or unsets the real-time DSP mode, for which only one slice of FFT can be used **/
-void dsp_set_real_time(bool b) {
+void dsp_set_real_time(bool real_time) {
 
     // LOG("Setting real time: %d\n", b);
 
-    if (b) {
-        // When doing real-time DSP, we can only process one slice (no frequency hops allowed)
-        fft::current_max_slices = 1;
-    } else {
-        fft::current_max_slices = config.fft.max_slices;
-    }
+    // When doing real-time DSP, we can only process one slice (no frequency hops allowed)
+    fft::set_max_slices(real_time ? 1 : config.fft.max_slices);
+
+    // In DIGITAL_TX mode we don't want the FFT to decimate. The stream will be sent to the FFT FIFO with the final sample rate
+
+    fft::set_max_decimation(config.mode == DIGITAL_TX ? 1 : config.fft.max_decimation_factor);
 
     //  Update FFT and sample rate parameters
-    dsp::set_sample_freq_limits(b);
+    dsp::set_sample_freq_limits(real_time);
 }
 
 void restart_callback(void *, const void *) {

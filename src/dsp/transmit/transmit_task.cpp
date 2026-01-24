@@ -32,6 +32,7 @@
 #include <cstddef>
 #include <cstring>
 #include <memory>
+#include <sys/_stdint.h>
 
 #include "printf.h"
 #include "utils.hpp"
@@ -50,10 +51,28 @@ void TransmitTask::work() {
         uint32_t free = output_stream.free(&out_p);
         uint32_t av = input_stream.available(&in_p);
         uint32_t output_samples = 0;
+        uint32_t required_av;
+        uint32_t required_free;
+        uint32_t n_in;
+        uint32_t n_in_bytes;
+        uint32_t n_out;
 
         // This consumes real-values and produces complex samples, so twice the required available size
-        uint32_t required_av = DSP_FIFO_BLOCK_BYTES / 2;
-        uint32_t required_free = required_av * 2 / status.decimation_factor;
+
+        if (interpolator) {
+            required_av = DSP_FIFO_BLOCK_BYTES / 2 / status.decimation_factor;
+            required_free = required_av * 2;
+            n_in = status.decimated_block_size;
+            n_in_bytes = status.decimated_block_size_bytes / 2;
+            n_out = samples_per_batch;
+
+        } else {
+            required_av = DSP_FIFO_BLOCK_BYTES / 2;
+            required_free = required_av * 2 / status.decimation_factor;
+            n_in = samples_per_batch;
+            n_in_bytes = bytes_per_batch_real;
+            n_out = status.decimated_block_size;
+        }
 
         if (av >= required_av && free >= required_free) {
 
@@ -62,19 +81,23 @@ void TransmitTask::work() {
             in_start = in_p;
 
             // Process blocks (DSP_BLOCK items each)
-            while (av >= bytes_per_batch_real) {
+            while (av >= n_in_bytes) {
 
-                dsp::s16_to_f32((const adc_type *)in_p, bi1_p, samples_per_batch);
+                dsp::s16_to_f32((const adc_type *)in_p, bi1_p, n_in);
 
-                buffer_t<float32_t> src = {bi1_p, samples_per_batch, REAL};
-                buffer_t<float32_t> dst = {out_accum_p, status.decimated_block_size, REAL};
+                buffer_t<float32_t> src = {bi1_p, n_in, REAL};
+                buffer_t<float32_t> dst = {out_accum_p, n_out, REAL};
 
-                decimator.decimate(src, dst);
+                if (interpolator) {
+                    interpolator->interpolate(src, dst);
+                } else if (decimator) {
+                    decimator->decimate(src, dst);
+                }
 
                 //       demodulator->work_real(half_accum_buff_f32_p, half_accum_buff_f32_p + samples_per_batch, bi1_p, samples_per_batch);
 
-                output_samples += status.decimated_block_size;
-                out_accum_p += status.decimated_block_size;
+                output_samples += n_out;
+                out_accum_p += n_out;
 
                 if (output_samples == samples_per_batch) {
 
@@ -87,13 +110,13 @@ void TransmitTask::work() {
 
                     dsp::f32_to_s16((const float32_t *)out_accum_p, (adc_type *)out_p, samples_per_batch);
 
-                    out_p += bytes_per_batch;
+                    out_p += bytes_per_batch_real;
                     output_samples = 0;
-                    output_stream.feed(bytes_per_batch);
+                    x output_stream.feed(bytes_per_batch_real);
                 }
 
-                in_p += bytes_per_batch_real;
-                av -= bytes_per_batch_real;
+                in_p += n_in_bytes;
+                av -= n_in_bytes;
             }
 
             uint32_t processed = required_av - av;
@@ -114,18 +137,32 @@ void TransmitTask::work() {
     }
 }
 
-bool TransmitTask::init_decimator(MODULATION_MODE mod) {
+bool TransmitTask::init_resampler(MODULATION_MODE mod) {
 
-    bool ret = decimator.config(status.sample_rate * status.decimation_factor, status.bandwidth,
+    bool ret;
+
+    decimator.reset();
+    interpolator.reset();
+
+    if (status.sample_rate <= DSP_AUDIO_SAMPLE_RATE) { // Even it no data conversion is required, the decimator serves as filter
+        decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
+        ret = decimator->config(status.sample_rate * status.decimation_factor, status.bandwidth,
                                 status.decimation_factor); // Here the bandwidth is halved for double sideband modulations
 
+    } else {
+        interpolator = std::make_unique<DspFIRInterpolatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
+        ret = interpolator->config(status.sample_rate / status.decimation_factor, status.bandwidth,
+                                   status.decimation_factor); // Here the bandwidth is halved for double sideband modulations
+    }
+
     if (!ret) {
-        LOG("Error configuring decimator for mod:%d, fs:%d, bw:%d, dec:%d\n", mod, status.sample_rate * status.decimation_factor, status.sample_rate,
-            status.decimation_factor);
+        LOG("Error configuring resampler for mod:%d, fs:%d, bw:%d, factor:%d\n", mod, status.sample_rate, status.bandwidth, status.decimation_factor);
         return false;
     }
 
-    LOG("Rate %d / %d -> %d (filter: %d)\n", status.sample_rate * status.decimation_factor, status.decimation_factor, status.sample_rate, status.sample_rate);
+    LOG("Rate %d -> %d (filter: %d)\n",
+        status.sample_rate <= DSP_AUDIO_SAMPLE_RATE ? status.sample_rate * status.decimation_factor : status.sample_rate / status.decimation_factor,
+        status.sample_rate, status.bandwidth);
 
     return true;
 }
@@ -171,9 +208,9 @@ bool TransmitTask::start() {
 
     dsp_set_real_time(true);
 
-    status.sample_rate = USB_AUDIO_SAMPLE_RATE;
+    status.sample_rate = DSP_AUDIO_SAMPLE_RATE;
 
-    uint32_t dac_sample_rate = get_audio_sample_rate();
+    uint32_t dac_sample_rate = fft::fft_params.sample_freq;
 
     modulation_bandwidth_hz = get_modulation_bw_hz();
 
@@ -188,9 +225,15 @@ bool TransmitTask::start() {
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
     // (while using decimation factors of 2^n)
     int dec_factor = 1;
-    while (status.sample_rate > dac_sample_rate * 2 && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
+    while (status.sample_rate > dac_sample_rate && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
         dec_factor <<= 1;
         status.sample_rate /= 2;
+    }
+
+    // If target sample rate is higher: interpolate
+    while (status.sample_rate < dac_sample_rate && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
+        dec_factor <<= 1;
+        status.sample_rate *= 2;
     }
 
     status.bandwidth = modulation_bandwidth_hz;
@@ -206,7 +249,7 @@ bool TransmitTask::start() {
 
     LOG("Bandwidth: %d | Sample rate: %d | Modulation bandwidth: %d\n", status.bandwidth, status.sample_rate, modulation_bandwidth_hz);
 
-    bool ret = init_decimator(mod);
+    bool ret = init_resampler(mod);
 
     if (!ret) {
 
