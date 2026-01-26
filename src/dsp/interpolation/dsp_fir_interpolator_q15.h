@@ -17,11 +17,6 @@ template <int TAPS, typename T> class DspFIRInterpolatorQ15Base : public DspInte
   public:
     DspFIRInterpolatorQ15Base() : DspInterpolator<T>(0){};
 
-    virtual ~DspFIRInterpolatorQ15Base() {
-        CCMMemoryAllocator::free(coeffs);
-        CCMMemoryAllocator::free(state);
-    }
-
     DspFIRInterpolatorQ15Base(uint32_t input_rate, uint32_t bandwidth, uint16_t factor) : DspInterpolator<T>(input_rate, bandwidth, factor) {
         init();
     };
@@ -36,8 +31,8 @@ template <int TAPS, typename T> class DspFIRInterpolatorQ15Base : public DspInte
 
     bool initialized = false;
 
-    q15_t *coeffs = nullptr;
-    q15_t *state = nullptr;
+    q15_t coeffs[TAPS];
+    q15_t state[TAPS + DSP_BLOCK];
     q15_t tmp_buff_in[DSP_BLOCK];
     q15_t tmp_buff_out[DSP_BLOCK];
 

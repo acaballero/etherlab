@@ -107,13 +107,16 @@ void restart_callback(void *, const void *) {
         dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, current_task->status.id, current_task}, nullptr);
     } else if (config.mode == DIGITAL_RX && (!current_task || (current_task->status.id == dsp::DSP_PROCESSOR_TRANSMIT))) {
         LOG("restart_callback: Toggle digital TX->RX\n");
+
         dsp_stop();
+
         dsp_task = std::make_unique<ReceiveTask>(dspSuccess, dspError);
 
         dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE, dsp_task.get()}, nullptr);
     } else if (config.mode == DIGITAL_TX && (!current_task || (current_task->status.id == dsp::DSP_PROCESSOR_RECEIVE))) {
         LOG("restart_callback: Toggle digital RX->TX\n");
         dsp_stop();
+
         dsp_task = std::make_unique<TransmitTask>(dspSuccess, dspError);
         dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_TRANSMIT, dsp_task.get()}, nullptr);
     } else {
@@ -147,6 +150,7 @@ void dsp_stop_task() {
     if (current_task) {
         LOG("stopping task\n");
         current_task->stop();
+        dsp_task.reset(); // Forces deallocation before new construct reclaim memory
     }
 
     LOG_IND_RAW(-2, "");

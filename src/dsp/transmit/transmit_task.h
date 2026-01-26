@@ -12,6 +12,7 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/interpolation/dsp_fir_interpolator_float.h"
+#include "dsp/modulation/dsp_modulate.h"
 #include "dsp/task.h"
 #include "main_board.h"
 #include "radio.h"
@@ -69,6 +70,9 @@ class TransmitTask : public Task {
 
     std::unique_ptr<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>> decimator;
     std::unique_ptr<DspFIRInterpolatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>> interpolator;
+    std::unique_ptr<dsp::modulator> modulator;
+
+    std::unique_ptr<dsp::modulator> get_modulator();
 
     bool init_resampler(MODULATION_MODE mod);
 
@@ -82,14 +86,15 @@ class TransmitTask : public Task {
         return true;
     };
 
-    virtual void process_audio(buffer_t<float32_t> &){};
+    // TODO: If this class is ever extened (as ReplayTaskBase is), use this for specific pre-modulation audio processing
+    // virtual void process_audio(buffer_t<float32_t> &){};
 
     // Skips demodulation step for testing purposes, echoing the baseband signal
     bool baseband_echo = false;
 
     /* Bandwidth of the output audio stream (IIR LPF config will match this) */
     virtual uint32_t get_audio_bw_hz() const {
-        return 4000;
+        return DSP_AUDIO_SAMPLE_RATE >> 2;
     };
 
     /* Sample rate of the output audio stream. Must be a factor/divisor of 48000  */

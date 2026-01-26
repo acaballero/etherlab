@@ -65,7 +65,7 @@ void *CCMMemoryAllocator::alloc(size_t size, size_t alignment) {
                 // Handle alignment offset
                 if (offset > 0) {
                     // Find free block slot for the offset part
-                    for (int i = 1; i < 64; i++) {
+                    for (int i = 1; i < max_blocks; i++) {
                         if (blocks[i].ptr == nullptr) {
                             blocks[i].ptr = current->ptr;
                             blocks[i].size = offset;
@@ -91,7 +91,7 @@ void *CCMMemoryAllocator::alloc(size_t size, size_t alignment) {
 
                 // Split if there's remaining space
                 if (current->size > aligned_size) {
-                    for (int i = 1; i < 64; i++) {
+                    for (int i = 1; i < max_blocks; i++) {
                         if (blocks[i].ptr == nullptr) {
                             blocks[i].ptr = (uint8_t *)current->ptr + aligned_size;
                             blocks[i].size = current->size - aligned_size;
@@ -115,6 +115,7 @@ void *CCMMemoryAllocator::alloc(size_t size, size_t alignment) {
     }
 
     status::pop_alert(status::ERROR, "CCM memory allocation failed\n");
+    print_usage();
     return nullptr;
 }
 
@@ -124,7 +125,7 @@ void CCMMemoryAllocator::free(void *ptr) {
     }
 
     // Find the block
-    for (int i = 0; i < 64; i++) {
+    for (int i = 0; i < max_blocks; i++) {
         if (blocks[i].ptr == ptr && !blocks[i].free) {
             blocks[i].free = true;
             total_allocated -= blocks[i].size;

@@ -15,6 +15,7 @@
 #include "dsp/fir_filter.h"
 #include "dsp/dsp_common.h"
 #include "dsp/modulation/dsp_demodulate.h"
+#include "dsp/modulation/dsp_modulate.h"
 #include "main_board.h"
 #include "radio.h"
 #include "status.h"
@@ -56,6 +57,10 @@ void TransmitTask::work() {
         uint32_t n_in;
         uint32_t n_in_bytes;
         uint32_t n_out;
+        float32_t s16_scale = 1 / 32768.0f;
+        float32_t s16_scale_inv = 32768.0f;
+
+        MODULATION_MODE mode = get_modulation_mode();
 
         // This consumes real-values and produces complex samples, so twice the required available size
 
@@ -83,7 +88,7 @@ void TransmitTask::work() {
             // Process blocks (DSP_BLOCK items each)
             while (av >= n_in_bytes) {
 
-                dsp::s16_to_f32((const adc_type *)in_p, bi1_p, n_in);
+                dsp::s16_to_f32_norm((const adc_type *)in_p, bi1_p, n_in, s16_scale);
 
                 buffer_t<float32_t> src = {bi1_p, n_in, REAL};
                 buffer_t<float32_t> dst = {out_accum_p, n_out, REAL};
@@ -94,8 +99,6 @@ void TransmitTask::work() {
                     decimator->decimate(src, dst);
                 }
 
-                //       demodulator->work_real(half_accum_buff_f32_p, half_accum_buff_f32_p + samples_per_batch, bi1_p, samples_per_batch);
-
                 output_samples += n_out;
                 out_accum_p += n_out;
 
@@ -103,16 +106,20 @@ void TransmitTask::work() {
 
                     out_accum_p = bq1_p;
 
-                    if (!baseband_echo) {
-                        buffer_t<float32_t> buff_out_f32 = {out_accum_p, (size_t)samples_per_batch, status.sample_rate, REAL};
-                        process_audio(buff_out_f32);
+                    buffer_t<complex_t_f32> out_buffer = {(complex_t_f32 *)bi1_p, samples_per_batch, COMPLEX_INTERLEAVED};
+
+                    if (get_baseband_echo() || mode == NONE) {
+                        // Just copy the unmodulated buffer
+                        dsp::f32_to_s16_norm((const float32_t *)out_accum_p, (adc_type *)out_p, samples_per_batch, s16_scale_inv);
+
+                    } else {
+                        modulator->work(out_accum_p, out_buffer);
+                        dsp::f32_to_s16_norm((const float32_t *)bi1_p, (adc_type *)out_p, samples_per_batch << 1, s16_scale_inv);
                     }
 
-                    dsp::f32_to_s16((const float32_t *)out_accum_p, (adc_type *)out_p, samples_per_batch);
-
-                    out_p += bytes_per_batch_real;
+                    out_p += bytes_per_batch;
                     output_samples = 0;
-                    x output_stream.feed(bytes_per_batch_real);
+                    output_stream.feed(bytes_per_batch);
                 }
 
                 in_p += n_in_bytes;
@@ -146,7 +153,7 @@ bool TransmitTask::init_resampler(MODULATION_MODE mod) {
 
     if (status.sample_rate <= DSP_AUDIO_SAMPLE_RATE) { // Even it no data conversion is required, the decimator serves as filter
         decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
-        ret = decimator->config(status.sample_rate * status.decimation_factor, status.bandwidth,
+        ret = decimator->config(status.sample_rate, status.bandwidth,
                                 status.decimation_factor); // Here the bandwidth is halved for double sideband modulations
 
     } else {
@@ -160,42 +167,47 @@ bool TransmitTask::init_resampler(MODULATION_MODE mod) {
         return false;
     }
 
-    LOG("Rate %d -> %d (filter: %d)\n",
-        status.sample_rate <= DSP_AUDIO_SAMPLE_RATE ? status.sample_rate * status.decimation_factor : status.sample_rate / status.decimation_factor,
+    LOG("Rate %d -> %d (filter: %d)\n", status.sample_rate <= DSP_AUDIO_SAMPLE_RATE ? status.sample_rate : status.sample_rate / status.decimation_factor,
         status.sample_rate, status.bandwidth);
 
     return true;
 }
 
-// std::unique_ptr<dsp::demodulator> TransmitTask::get_modulator() {
+std::unique_ptr<dsp::modulator> TransmitTask::get_modulator() {
 
-//     std::unique_ptr<dsp::demodulator> demod;
+    std::unique_ptr<dsp::modulator> mod;
 
-//     auto mode = get_modulation_mode();
+    auto mode = get_modulation_mode();
 
-//     if (get_baseband_echo() || mode == NONE) {
-//         return std::make_unique<dsp::ssb_demodulator>();
-//     } else {
-//         switch (mode) {
-//             case AM:
-//                 return std::make_unique<dsp::am_demodulator>();
-//             case CW:
-//             case SSB_LSB:
-//             case SSB_USB:
-//                 return std::make_unique<dsp::ssb_demodulator>();
-//             case FM:
-//                 demod = std::make_unique<dsp::fm_demodulator>();
-//                 ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, config.dsp.fm_max_deviation);
-//                 return demod;
-//             case WFM:
-//                 demod = std::make_unique<dsp::fm_demodulator>();
-//                 ((dsp::fm_demodulator *)demod.get())->configure(demodulation_sample_rate, config.dsp.wideband_fm_max_deviation);
-//                 return demod;
-//             default:
-//                 return std::make_unique<dsp::ssb_demodulator>();
-//         }
-//     }
-// }
+    if (get_baseband_echo() || mode == NONE) {
+        return nullptr;
+    } else {
+        switch (mode) {
+            case AM:
+                return std::make_unique<dsp::am_modulator>();
+            case CW:
+                mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::USB);
+                ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                return mod;
+            case SSB_LSB:
+                mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::LSB);
+                ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                return mod;
+            case SSB_USB:
+                mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::USB);
+                ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                return mod;
+            case FM:
+                mod = std::make_unique<dsp::fm_modulator>();
+                ((dsp::fm_modulator *)mod.get())->configure(status.sample_rate, config.dsp.fm_max_deviation);
+                return mod;
+
+            default:
+                status::pop_alert(status::ERROR, "ERROR: Unsupported DSP modulation mode: Using SSB as fallback");
+                return std::make_unique<dsp::ssb_modulator>();
+        }
+    }
+}
 
 bool TransmitTask::start() {
 
@@ -257,7 +269,7 @@ bool TransmitTask::start() {
         return false;
     }
 
-    // demodulator = get_modulator();
+    modulator = get_modulator();
 
     out_accum_p = bq1_p;
 
@@ -292,7 +304,8 @@ void TransmitTask::stop() {
 
         // Free decimators memory (wish this wouldn't be necessary but there must be room for other allocations while stopped)
 
-        // decimator.reset();
+        decimator.reset();
+        interpolator.reset();
 
         status.status = DSP_STATUS_STOPPED;
 

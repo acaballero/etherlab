@@ -4,9 +4,8 @@
 #include "dsp_digital_demodulate.h"
 #include <cstdint>
 #include <cstdio>
-
-#include "arm_math.h"
 #include "dsp/dsp_common.h"
+#include "dsp/fir_filter.h"
 
 namespace dsp {
 

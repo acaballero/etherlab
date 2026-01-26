@@ -7,7 +7,7 @@
 #include "arm_math.h"
 #include "dsp/dsp_common.h"
 #include "dsp/fft/fft_types.h"
-#include "dsp_hilbert.hpp"
+#include "dsp_hilbert.h"
 #include "status.h"
 #include "stm32f4xx_hal_tim.h"
 

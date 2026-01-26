@@ -18,7 +18,8 @@ class CCMMemoryAllocator {
     };
 
   private:
-    static Block blocks[64];
+    static constexpr uint16_t max_blocks = 64;
+    static Block blocks[max_blocks];
     static Block *free_blocks;
     static size_t total_allocated;
     static bool initialized;

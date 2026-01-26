@@ -46,14 +46,17 @@ bool usb_audio_is_streaming(uint8_t itf_ix, bool check_connection = true);
 
 /*
  * Expects 12-bit resolution, single channel samples
- * sample_rate must be lower thant USB_AUDIO_SAMPLE_RATE and the buffer is interpolated if that case
+ * sample_rate must be lower than USB_AUDIO_SAMPLE_RATE. Otherwise buffer is linearly interpolated 
  */
 void usb_audio_send(int16_t *buffer, uint32_t count, uint16_t sample_rate);
 
+/*
+ * @returns Number of bytes available
+ */
 uint16_t usb_audio_available();
 
 /*
- * Feeds a buffer with 12-bit resolution, single channel samples at USB_AUDIO_SAMPLE_RATE
+ * Feeds a buffer with 16-bit resolution, single channel samples at USB_AUDIO_SAMPLE_RATE
  * @returns the actual number of samples retrieved
  */
 uint16_t usb_audio_receive(int16_t *buffer, uint32_t count);

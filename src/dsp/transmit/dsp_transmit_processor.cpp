@@ -31,9 +31,9 @@ void DspTransmitProcessor::work(const buffer_t<adc_type> *buffer) {
         int16_t *out_p = (int16_t *)buffer->p;
 
         // DAC output
-        for (size_t i = 0; i < buffer->count / 2; i++) {
+        for (size_t i = 0; i < buffer->count; i += 2) {
             *(out_p++) = ((int16_t *)p)[i];
-            *(out_p++) = 0;
+            *(out_p++) = ((int16_t *)p)[i + 1];
         }
 
         output_stream.consume(block_size_bytes, (char **)&p);

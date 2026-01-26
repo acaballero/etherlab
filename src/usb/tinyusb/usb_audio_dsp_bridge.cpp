@@ -102,7 +102,7 @@ uint16_t usb_audio_receive(int16_t *buffer, uint32_t count) {
     uint16_t samples_read = bytes_read / sizeof(int16_t);
 
     for (size_t i = 0; i < samples_read; i++) {
-        buffer[i] = (adc_type)(buffer[i] * usb::volume_factor[ITF_IX_SPEAKER][1]) >> 3; // 16 to 12 bit resolution
+        buffer[i] = (adc_type)(buffer[i] * usb::volume_factor[ITF_IX_SPEAKER][1]);
     }
 
     return samples_read;

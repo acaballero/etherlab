@@ -1,377 +1,257 @@
 //
-// Created by Angel Dust on 23/06/2026.
+// Improved modulators implementation - Final Version
+// Auto-generates filter coefficients using DSPFilters library
 //
 #include "dsp_modulate.h"
-#include <cstdint>
-#include <cstdio>
 #include "arm_math.h"
-#include "dsp/dsp_common.h"
-#include "dsp/fft/fft_types.h"
-#include "dsp_hilbert.hpp"
-#include "status.h"
-#include "stm32f4xx_hal_tim.h"
 
 namespace dsp {
-
-static inline float angle_approx_0deg27(const complex_t t) {
-    if (t.r) {
-        const auto x = static_cast<float>(t.i) / static_cast<float>(t.r); // Fixed: was t.i / t.i
-        return x / (1.0f + 0.28086f * x * x);
-    } else {
-        return (t.i < 0) ? -1.5707963268f : 1.5707963268f;
-    }
-}
-
-static inline float angle_precise(const complex_t_f32 t) {
-    return atan2f(t.i, t.r);
-}
-
-static inline complex_t_f32 multiply_conjugate_cs16_cf32(const complex_t a, const complex_t b) {
-    /* (a + bj) * (c + dj) = (ac - bd) + (bc + ad)j */
-    /* a = i, b = q
-     * c = iz1, d = qz1
-     */
-    const complex_t_f32 result = {(float32_t)a.i * b.r - a.r * b.i, (float32_t)a.i * b.i + a.r * b.r};
-    return result;
-}
-
-static inline complex_t_f32 multiply_conjugate_cf32_cf32(const complex_t_f32 a, const complex_t_f32 b) {
-    /* (a + bj) * (c + dj) = (ac - bd) + (bc + ad)j */
-    /* a = i, b = q
-     * c = iz1, d = qz1
-     */
-    const complex_t_f32 result = {a.i * b.r - a.r * b.i, a.i * b.i + a.r * b.r};
-    return result;
-}
-
-/*
- * Rotate 90 degrees for f/4 frequency shift (to avoid DC-centered modulation)
- * Static state: No thread safe, and so on...
- */
-static inline void rotate_fs4(int16_t &i, int16_t &q) {
-    static uint32_t rot_state = 0;
-    switch (rot_state++ & 0x3) {
-        case 0: // Nothing to be done
-            break;
-        case 1:
-            std::swap(i, q);
-            i = -i;
-            break;
-        case 2:
-            i = -i;
-            q = -q;
-            break;
-        case 3:
-            std::swap(i, q);
-            q = -q;
-            break;
-    }
-}
 
 // ============================================================================
 // AM MODULATOR
 // ============================================================================
 
-void am_modulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
-    const complex_t *src_p = src.p;
-    const auto src_end = &src.p[src.count];
+void am_modulator::work(const float32_t *audio_in, buffer_t<complex_t_f32> &iq_out) {
+    const float32_t carrier_level = 1.0f;
+    const size_t count = iq_out.count;
 
-    while (src_p < src_end) {
-        // two consecutive samples optimized sqrt(i²+q²)
-        const uint32_t sample0 = *__SIMD32(src_p)++;
-        const uint32_t sample1 = *__SIMD32(src_p)++;
-        const uint32_t mag_sq0 = __SMUAD(sample0, sample0);
-        const uint32_t mag_sq1 = __SMUAD(sample1, sample1);
-        *(dst_p) = __builtin_sqrtf(mag_sq0);
-        dst_p += 2;
-        *(dst_p) = __builtin_sqrtf(mag_sq1);
-        dst_p += 2;
+    // Process 4 samples at a time for FPU pipeline
+    size_t i = 0;
+    for (; i + 3 < count; i += 4) {
+        const float32_t a0 = audio_in[i];
+        const float32_t a1 = audio_in[i + 1];
+        const float32_t a2 = audio_in[i + 2];
+        const float32_t a3 = audio_in[i + 3];
+
+        const float32_t mod0 = carrier_level + mod_index * a0;
+        const float32_t mod1 = carrier_level + mod_index * a1;
+        const float32_t mod2 = carrier_level + mod_index * a2;
+        const float32_t mod3 = carrier_level + mod_index * a3;
+
+        // Both I and Q get same signal for AM
+        iq_out.p[i].i = mod0;
+        iq_out.p[i].r = mod0;
+        iq_out.p[i + 1].i = mod1;
+        iq_out.p[i + 1].r = mod1;
+        iq_out.p[i + 2].i = mod2;
+        iq_out.p[i + 2].r = mod2;
+        iq_out.p[i + 3].i = mod3;
+        iq_out.p[i + 3].r = mod3;
+    }
+
+    for (; i < count; i++) {
+        const float32_t mod = carrier_level + mod_index * audio_in[i];
+        iq_out.p[i].i = mod;
+        iq_out.p[i].r = mod;
     }
 }
 
-void am_modulator::work(buffer_t<complex_t_f32> &src, float32_t *dst_p) {
-    const complex_t_f32 *src_p = src.p;
-    const auto src_end = &src.p[src.count];
+void am_modulator::work(const float32_t *audio_in, float32_t *iq_out_i, float32_t *iq_out_q, size_t count) {
+    const float32_t carrier_level = 1.0f;
 
-    while (src_p < src_end) {
-        auto sample = src_p++;
-        *(dst_p) = __builtin_sqrtf(sample->i * sample->i + sample->r * sample->r);
-        dst_p += 2;
+    size_t i = 0;
+    for (; i + 3 < count; i += 4) {
+        const float32_t a0 = audio_in[i];
+        const float32_t a1 = audio_in[i + 1];
+        const float32_t a2 = audio_in[i + 2];
+        const float32_t a3 = audio_in[i + 3];
+
+        const float32_t mod0 = carrier_level + mod_index * a0;
+        const float32_t mod1 = carrier_level + mod_index * a1;
+        const float32_t mod2 = carrier_level + mod_index * a2;
+        const float32_t mod3 = carrier_level + mod_index * a3;
+
+        iq_out_i[i] = mod0;
+        iq_out_q[i] = mod0;
+        iq_out_i[i + 1] = mod1;
+        iq_out_q[i + 1] = mod1;
+        iq_out_i[i + 2] = mod2;
+        iq_out_q[i + 2] = mod2;
+        iq_out_i[i + 3] = mod3;
+        iq_out_q[i + 3] = mod3;
+    }
+
+    for (; i < count; i++) {
+        const float32_t mod = carrier_level + mod_index * audio_in[i];
+        iq_out_i[i] = mod;
+        iq_out_q[i] = mod;
     }
 }
 
-void am_modulator::work(const float32_t *src_i, const float32_t *src_q, float32_t *dst_p, size_t count) {
-    // Process 4 at a time to maximize FPU pipeline
-    for (size_t i = 0; i < count; i += 4) {
-        // Prefetch next cache line
-        __builtin_prefetch(&src_i[i + 16], 0, 3);
-        __builtin_prefetch(&src_q[i + 16], 0, 3);
+// ============================================================================
+// DSB MODULATOR
+// ============================================================================
 
-        // Load in burst
-        const float32_t i0 = src_i[i], q0 = src_q[i];
-        const float32_t i1 = src_i[i + 1], q1 = src_q[i + 1];
-        const float32_t i2 = src_i[i + 2], q2 = src_q[i + 2];
-        const float32_t i3 = src_i[i + 3], q3 = src_q[i + 3];
+void dsb_modulator::work(const float32_t *audio_in, buffer_t<complex_t_f32> &iq_out) {
+    const size_t count = iq_out.count;
 
-        // Compute in parallel (FPU can pipeline these)
-        const float32_t mag0 = __builtin_sqrtf(i0 * i0 + q0 * q0);
-        const float32_t mag1 = __builtin_sqrtf(i1 * i1 + q1 * q1);
-        const float32_t mag2 = __builtin_sqrtf(i2 * i2 + q2 * q2);
-        const float32_t mag3 = __builtin_sqrtf(i3 * i3 + q3 * q3);
+    size_t i = 0;
+    for (; i + 7 < count; i += 8) {
+        __builtin_prefetch(&audio_in[i + 16], 0, 3);
 
-        // Store with stride
-        dst_p[2 * i] = mag0;
-        dst_p[2 * i + 2] = mag1;
-        dst_p[2 * i + 4] = mag2;
-        dst_p[2 * i + 6] = mag3;
+        iq_out.p[i].i = audio_in[i];
+        iq_out.p[i].r = audio_in[i];
+        iq_out.p[i + 1].i = audio_in[i + 1];
+        iq_out.p[i + 1].r = audio_in[i + 1];
+        iq_out.p[i + 2].i = audio_in[i + 2];
+        iq_out.p[i + 2].r = audio_in[i + 2];
+        iq_out.p[i + 3].i = audio_in[i + 3];
+        iq_out.p[i + 3].r = audio_in[i + 3];
+        iq_out.p[i + 4].i = audio_in[i + 4];
+        iq_out.p[i + 4].r = audio_in[i + 4];
+        iq_out.p[i + 5].i = audio_in[i + 5];
+        iq_out.p[i + 5].r = audio_in[i + 5];
+        iq_out.p[i + 6].i = audio_in[i + 6];
+        iq_out.p[i + 6].r = audio_in[i + 6];
+        iq_out.p[i + 7].i = audio_in[i + 7];
+        iq_out.p[i + 7].r = audio_in[i + 7];
+    }
+
+    for (; i < count; i++) {
+        iq_out.p[i].i = audio_in[i];
+        iq_out.p[i].r = audio_in[i];
     }
 }
 
-void am_modulator::work_real(const float32_t *src_i, const float32_t *src_q, float32_t *dst_p, size_t count) {
-    // Optimized sequential output - much faster than interleaved
-    for (size_t i = 0; i < count; i += 4) {
-        // Prefetch next cache line
-        __builtin_prefetch(&src_i[i + 16], 0, 3);
-        __builtin_prefetch(&src_q[i + 16], 0, 3);
+void dsb_modulator::work(const float32_t *audio_in, float32_t *iq_out_i, float32_t *iq_out_q, size_t count) {
+    // Manual copy with loop unrolling (more efficient than memcpy for small sizes)
+    size_t i = 0;
+    for (; i + 7 < count; i += 8) {
+        __builtin_prefetch(&audio_in[i + 16], 0, 3);
 
-        // Load in burst
-        const float32_t i0 = src_i[i], q0 = src_q[i];
-        const float32_t i1 = src_i[i + 1], q1 = src_q[i + 1];
-        const float32_t i2 = src_i[i + 2], q2 = src_q[i + 2];
-        const float32_t i3 = src_i[i + 3], q3 = src_q[i + 3];
+        iq_out_i[i] = audio_in[i];
+        iq_out_q[i] = audio_in[i];
+        iq_out_i[i + 1] = audio_in[i + 1];
+        iq_out_q[i + 1] = audio_in[i + 1];
+        iq_out_i[i + 2] = audio_in[i + 2];
+        iq_out_q[i + 2] = audio_in[i + 2];
+        iq_out_i[i + 3] = audio_in[i + 3];
+        iq_out_q[i + 3] = audio_in[i + 3];
+        iq_out_i[i + 4] = audio_in[i + 4];
+        iq_out_q[i + 4] = audio_in[i + 4];
+        iq_out_i[i + 5] = audio_in[i + 5];
+        iq_out_q[i + 5] = audio_in[i + 5];
+        iq_out_i[i + 6] = audio_in[i + 6];
+        iq_out_q[i + 6] = audio_in[i + 6];
+        iq_out_i[i + 7] = audio_in[i + 7];
+        iq_out_q[i + 7] = audio_in[i + 7];
+    }
 
-        // Compute magnitudes in parallel
-        const float32_t mag0 = __builtin_sqrtf(i0 * i0 + q0 * q0);
-        const float32_t mag1 = __builtin_sqrtf(i1 * i1 + q1 * q1);
-        const float32_t mag2 = __builtin_sqrtf(i2 * i2 + q2 * q2);
-        const float32_t mag3 = __builtin_sqrtf(i3 * i3 + q3 * q3);
-
-        // Sequential writes - cache friendly!
-        dst_p[i] = mag0;
-        dst_p[i + 1] = mag1;
-        dst_p[i + 2] = mag2;
-        dst_p[i + 3] = mag3;
+    for (; i < count; i++) {
+        iq_out_i[i] = audio_in[i];
+        iq_out_q[i] = audio_in[i];
     }
 }
-
 // ============================================================================
 // SSB MODULATOR
 // ============================================================================
 
-void ssb_modulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
-    const complex_t *src_p = src.p;
-    const auto src_end = &src.p[src.count];
+bool ssb_modulator::configure(uint32_t sr, uint32_t bw) {
+    // Check if reconfiguration needed
+    if (configured && sample_rate == sr && bandwidth == bw) {
+        return true;
+    }
 
-    while (src_p < src_end) { // Loop unrolled for pipeline optimization
-        *(dst_p) = (src_p++)->r;
-        dst_p += 2;
-        *(dst_p) = (src_p++)->r;
-        dst_p += 2;
-        *(dst_p) = (src_p++)->r;
-        dst_p += 2;
-        *(dst_p) = (src_p++)->r;
-        dst_p += 2;
+    sample_rate = sr;
+    bandwidth = bw;
+    configured = hilbert.configure(sample_rate);
+
+    return configured;
+}
+
+void ssb_modulator::work(const float32_t *audio_in, buffer_t<complex_t_f32> &iq_out) {
+    const size_t count = iq_out.count;
+
+    for (size_t i = 0; i < count; i++) {
+        float32_t i_sample, q_sample;
+
+        // Hilbert transform creates I/Q pair
+        hilbert.execute(audio_in[i], i_sample, q_sample);
+
+        // Apply sideband selection
+        if (mode == USB) {
+            iq_out.p[i].i = i_sample;
+            iq_out.p[i].r = q_sample;
+        } else { // LSB
+            iq_out.p[i].i = i_sample;
+            iq_out.p[i].r = -q_sample; // Conjugate for LSB
+        }
     }
 }
 
-void ssb_modulator::work(buffer_t<complex_t_f32> &src, float32_t *dst_p) {
-    const complex_t_f32 *src_p = src.p;
-    const auto src_end = &src.p[src.count];
+void ssb_modulator::work(const float32_t *audio_in, float32_t *iq_out_i, float32_t *iq_out_q, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        float32_t i_sample, q_sample;
 
-    while (src_p < src_end) {
-        *(dst_p) = (src_p++)->r;
-        dst_p += 2;
+        hilbert.execute(audio_in[i], i_sample, q_sample);
+
+        iq_out_i[i] = i_sample;
+        iq_out_q[i] = (mode == USB) ? q_sample : -q_sample;
     }
-}
-
-void ssb_modulator::work(const float32_t *src_i, const float32_t *, float32_t *dst_p, size_t count) {
-    for (size_t i = 0; i < count; i += 4) {
-        dst_p[2 * i] = src_i[i];
-        dst_p[2 * i + 2] = src_i[i + 1];
-        dst_p[2 * i + 4] = src_i[i + 2];
-        dst_p[2 * i + 6] = src_i[i + 3];
-    }
-}
-
-void ssb_modulator::work_real(const float32_t *src_i, const float32_t *, float32_t *dst_p, size_t count) {
-    // Super efficient - just copy I channel sequentially
-    // This could even be optimized to a single memcpy or ARM optimized copy
-    for (size_t i = 0; i < count; i += 8) {
-        // Unroll by 8 for maximum throughput
-        dst_p[i] = src_i[i];
-        dst_p[i + 1] = src_i[i + 1];
-        dst_p[i + 2] = src_i[i + 2];
-        dst_p[i + 3] = src_i[i + 3];
-        dst_p[i + 4] = src_i[i + 4];
-        dst_p[i + 5] = src_i[i + 5];
-        dst_p[i + 6] = src_i[i + 6];
-        dst_p[i + 7] = src_i[i + 7];
-    }
-    // Alternative: arm_copy_f32(src_i, dst_p, count);
-}
-
-// ============================================================================
-// SSB_FM MODULATOR
-// ============================================================================
-
-void ssb_fm_modulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
-    complex_t *src_p = src.p;
-    const auto src_end = &src.p[src.count];
-    float mag_sq_lpf_norm;
-
-    status::pop_alert(status::ERROR, "Not implemented: SOS filters still not implemented");
-
-    while (src_p < src_end) {
-        // FM APT audio tone mod: real part (USB-differentiator)  and AM tone modulation + lpf (to remove the subcarrier.)
-        real_to_complex.execute((src_p++)->r, mag_sq_lpf_norm);
-        *(dst_p++) = mag_sq_lpf_norm; // already normalized/32.768f and clipped to +1.0f for the wav file.
-
-        real_to_complex.execute((src_p++)->r, mag_sq_lpf_norm);
-        *(dst_p++) = mag_sq_lpf_norm;
-
-        real_to_complex.execute((src_p++)->r, mag_sq_lpf_norm);
-        *(dst_p++) = mag_sq_lpf_norm;
-
-        real_to_complex.execute((src_p++)->r, mag_sq_lpf_norm);
-        *(dst_p++) = mag_sq_lpf_norm;
-    }
-}
-
-void ssb_fm_modulator::work(buffer_t<complex_t_f32> &, float32_t *) {
-    status::pop_alert(status::ERROR, "Not implemented: SOS filters still not implemented");
-}
-
-void ssb_fm_modulator::work(const float32_t *, const float32_t *, float32_t *, size_t) {
-    status::pop_alert(status::ERROR, "Not implemented");
-}
-
-void ssb_fm_modulator::work_real(const float32_t *, const float32_t *, float32_t *, size_t) {
-    status::pop_alert(status::ERROR, "Not implemented");
 }
 
 // ============================================================================
 // FM MODULATOR
 // ============================================================================
 
-void fm_modulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
-    auto z = z_;
+void fm_modulator::configure(float32_t sr, float32_t dev) {
+    sample_rate = sr;
+    deviation = dev;
 
-    const void *src_p = src.p;
-    const auto src_end = &src.p[src.count];
+    // Calculate modulation constant
+    // φ(t) = 2π * deviation * ∫audio(t)dt
+    // Phase increment per sample = 2π * deviation * audio / sample_rate
+    kf = (2.0f * PI * deviation) / sample_rate;
+}
 
-    while (src_p < src_end) {
-        const auto s0 = *__SIMD32(src_p)++;
-        const auto s1 = *__SIMD32(src_p)++;
-        // Note the use of _rep union to multiply I,Q as a packet
-        const auto t0 = multiply_conjugate_cs16_cf32((complex_t){._rep = (uint32_t)s0}, (complex_t){._rep = (uint32_t)z});
-        const auto t1 = multiply_conjugate_cs16_cf32((complex_t){._rep = (uint32_t)s1}, (complex_t){._rep = (uint32_t)s0});
-        z = s1;
-        *(dst_p) = angle_precise(t0) * kf;
-        dst_p += 2;
-        *(dst_p) = angle_precise(t1) * kf;
-        dst_p += 2;
+inline void fm_modulator::get_sin_cos(float32_t phase, float32_t &sin_val, float32_t &cos_val) {
+    // Use CMSIS-DSP fast sine/cosine (expects degrees)
+    arm_sin_cos_f32(phase * (180.0f / PI), &sin_val, &cos_val);
+}
+
+void fm_modulator::work(const float32_t *audio_in, buffer_t<complex_t_f32> &iq_out) {
+
+    const size_t count = iq_out.count;
+
+    for (size_t i = 0; i < count; i++) {
+        // Phase modulation
+        phase += kf * audio_in[i];
+
+        // Wrap phase to [-π, π] for numerical stability
+        while (phase > PI) {
+            phase -= 2.0f * PI;
+        }
+        while (phase < -PI) {
+            phase += 2.0f * PI;
+        }
+
+        // Generate I/Q samples
+        float32_t sin_val, cos_val;
+        get_sin_cos(phase, sin_val, cos_val);
+
+        iq_out.p[i].i = cos_val; // I = cos(phase)
+        iq_out.p[i].r = sin_val; // Q = sin(phase)
     }
-    z_ = z;
 }
 
-void fm_modulator::work(buffer_t<complex_t_f32> &src, float32_t *dst_p) {
-    auto prev = zcf32_;
-    const complex_t_f32 *src_p = src.p;
-    const auto src_end = &src.p[src.count];
+void fm_modulator::work(const float32_t *audio_in, float32_t *iq_out_i, float32_t *iq_out_q, size_t count) {
 
-    while (src_p < src_end) {
-        const auto current = *(src_p);
-        const auto t0 = multiply_conjugate_cf32_cf32(current, prev);
+    for (size_t i = 0; i < count; i++) {
+        phase += kf * audio_in[i];
 
-        prev = current;
+        while (phase > PI) {
+            phase -= 2.0f * PI;
+        }
+        while (phase < -PI) {
+            phase += 2.0f * PI;
+        }
 
-        // kf is an improvement for scaling (might be omitted)
-        // the angle_precise is slow but necessary for wideband FM. For narrowband, a good aproximation is: Phase difference ~ (i0*q1 - q0*i1) / (i0^2 + q0^2)
-        *(dst_p) = angle_precise(t0) * kf * 10.0;
+        float32_t sin_val, cos_val;
+        get_sin_cos(phase, sin_val, cos_val);
 
-        // Destination assumed to be interleaved complex.
-        // Not required if the target stream is an audio DAC. It'd prevent proper loop unrolling in 16 bit types but with f32 my bet (not measured) is it does
-        // not make such a difference other than memory prefetch is not feasible if memory is not linearly accessed. To speed this up, a pointer to 32 bit can
-        // be used where only half word is written. However, whatever is gained with the prefetch can be lost in bitwise operations which, by the way, are
-        // probably already optimized by the compiler
-        dst_p += 2;
-        src_p++;
+        iq_out_i[i] = cos_val;
+        iq_out_q[i] = sin_val;
     }
-    zcf32_ = prev;
 }
 
-void fm_modulator::work(const float32_t *src_i, const float32_t *src_q, float32_t *dst_p, size_t count) {
-    float32_t prev_i = prev_i_f32, prev_q = prev_q_f32;
-
-    // Process 2 samples at a time for better pipeline utilization
-    for (size_t i = 0; i < count; i += 2) {
-        // Sample 0
-        const float32_t curr_i0 = src_i[i];
-        const float32_t curr_q0 = src_q[i];
-
-        // Cross-correlation: curr * conj(prev)
-        const float32_t real0 = curr_i0 * prev_i + curr_q0 * prev_q;
-        const float32_t imag0 = curr_q0 * prev_i - curr_i0 * prev_q;
-
-        // Sample 1 (pipeline with sample 0)
-        const float32_t curr_i1 = src_i[i + 1];
-        const float32_t curr_q1 = src_q[i + 1];
-
-        const float32_t real1 = curr_i1 * curr_i0 + curr_q1 * curr_q0;
-        const float32_t imag1 = curr_q1 * curr_i0 - curr_i1 * curr_q0;
-
-        // Compute angles (this is the bottleneck)
-        dst_p[2 * i] = atan2f(imag0, real0) * kf * 10.0f;
-        dst_p[2 * i + 2] = atan2f(imag1, real1) * kf * 10.0f;
-
-        prev_i = curr_i1;
-        prev_q = curr_q1;
-    }
-
-    prev_i_f32 = prev_i;
-    prev_q_f32 = prev_q;
-}
-
-void fm_modulator::work_real(const float32_t *src_i, const float32_t *src_q, float32_t *dst_p, size_t count) {
-    float32_t prev_i = prev_i_f32, prev_q = prev_q_f32;
-
-    // Optimized for sequential output - much better cache performance
-    for (size_t i = 0; i < count; i += 2) {
-        // Sample 0
-        const float32_t curr_i0 = src_i[i];
-        const float32_t curr_q0 = src_q[i];
-
-        // Cross-correlation: curr * conj(prev)
-        const float32_t real0 = curr_i0 * prev_i + curr_q0 * prev_q;
-        const float32_t imag0 = curr_q0 * prev_i - curr_i0 * prev_q;
-
-        // Sample 1 (pipeline with sample 0)
-        const float32_t curr_i1 = src_i[i + 1];
-        const float32_t curr_q1 = src_q[i + 1];
-
-        const float32_t real1 = curr_i1 * curr_i0 + curr_q1 * curr_q0;
-        const float32_t imag1 = curr_q1 * curr_i0 - curr_i1 * curr_q0;
-
-        // Sequential writes - much better for cache and memory bandwidth
-        dst_p[i] = atan2f(imag0, real0) * kf * 30.0f;
-        dst_p[i + 1] = atan2f(imag1, real1) * kf * 30.0f;
-
-        prev_i = curr_i1;
-        prev_q = curr_q1;
-    }
-
-    prev_i_f32 = prev_i;
-    prev_q_f32 = prev_q;
-}
-
-void fm_modulator::configure(const float sampling_rate, const float deviation_hz) {
-    /*
-     * angle: -pi to pi. output range: -32768 to 32767.
-     * Maximum delta-theta (output of atan2) at maximum deviation frequency:
-     * delta_theta_max = 2 * pi * deviation / sampling_rate
-     */
-    LOG("Configuring FM modulator | deviation: %d | rate: %d\n", (int)deviation_hz, (int)sampling_rate);
-    kf = static_cast<float>((1.0f / (2.0 * PI * deviation_hz / sampling_rate)));
-}
-
-} // namespace dsp
+} /* namespace dsp */

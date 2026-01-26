@@ -172,7 +172,7 @@ struct st_dsp_params {
 
     uint32_t bandwidth;
     uint32_t sample_rate;
-  uint8_t decimation_factor{1};
+    uint8_t decimation_factor{1};
     uint32_t decimated_block_size_bytes;
     uint16_t decimated_block_size;
     uint16_t bits_per_sample;
@@ -278,11 +278,11 @@ void set_gain_db(int8_t gain_db);
 
 void s16_to_q15(const adc_type *src, q15_t *dst, size_t size);
 void s16_to_f32(const adc_type *src, float32_t *dst, size_t size);
+void s16_to_f32_norm(const adc_type *src, float32_t *dst, size_t size, float32_t scale);
 adc_type s16_to_f32_and_max_s16(const adc_type *src, float32_t *dst, size_t size);
-
 void q15_to_s16(const q15_t *src, adc_type *dst, size_t size);
 void f32_to_s16(const float32_t *src, adc_type *dst, size_t size);
-
+void f32_to_s16_norm(const float32_t *src, adc_type *dst, size_t size, float32_t scale);
 void unzip_c16(const adc_type *__restrict src, adc_type *__restrict dst_i, adc_type *__restrict dst_q, size_t n_samples);
 void zip_c16(const adc_type *__restrict src_i, adc_type *__restrict src_q, adc_type *__restrict dst, size_t n_samples);
 void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples);

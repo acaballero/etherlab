@@ -84,11 +84,6 @@ template <int TAPS> void DspFIRInterpolatorQ15<TAPS, complex_t>::interpolate(adc
 
 template <int TAPS, typename T> bool DspFIRInterpolatorQ15Base<TAPS, T>::init() {
 
-    if (coeffs == nullptr) {
-        coeffs = (q15_t *)CCMMemoryAllocator::alloc(TAPS * sizeof(q15_t));
-        state = (q15_t *)CCMMemoryAllocator::alloc((TAPS + DSP_BLOCK - 1) * sizeof(q15_t));
-    }
-
     float32_t coeffs_f32[TAPS];
 
     // For interpolation, the filter operates at the OUTPUT rate (input_rate * factor)

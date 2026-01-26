@@ -7,7 +7,7 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/blocks/output.h"
-#include "dsp_hilbert.hpp"
+#include "dsp_hilbert.h"
 #include "dsp/blocks/nco.h"
 #include <stdint.h>
 

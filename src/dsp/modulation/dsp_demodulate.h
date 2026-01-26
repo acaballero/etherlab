@@ -5,7 +5,7 @@
 #define __DSP_DEMODULATE_H__
 #include "dsp/dsp_common.h"
 #include "dsp/blocks/output.h"
-#include "dsp_hilbert.hpp"
+#include "dsp_hilbert.h"
 
 namespace dsp {
 
@@ -45,7 +45,7 @@ class ssb_fm_demodulator : public demodulator {
     void work_real(const float32_t *src_i, const float32_t *src_q, float32_t *dst_p, size_t count) override;
 
   private:
-    dsp::Real_to_Complex real_to_complex{};
+    dsp::RealToComplex real_to_complex{};
 };
 
 class fm_demodulator : public demodulator {

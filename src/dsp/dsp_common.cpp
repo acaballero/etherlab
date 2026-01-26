@@ -179,10 +179,35 @@ void s16_to_f32(const adc_type *src, float32_t *dst, size_t size) {
     for (; i < size; i++) {
         dst[i] = (float32_t)src[i];
     }
+}
 
-    // for (size_t i = 0; i < size; i++) {
-    //     *(dst++) = *(src++);
-    // }
+void s16_to_f32_norm(const adc_type *src, float32_t *dst, size_t size, float32_t scale) {
+    size_t i = 0;
+
+    // Unrolling for optimization (not needed when -O3 is used, but nice to have for -Og)
+    for (; i + 3 < size; i += 4) {
+        dst[i] = (float32_t)src[i] * scale;
+        dst[i + 1] = (float32_t)src[i + 1] * scale;
+        dst[i + 2] = (float32_t)src[i + 2] * scale;
+        dst[i + 3] = (float32_t)src[i + 3] * scale;
+    }
+
+    // Handle remainder
+    for (; i < size; i++) {
+        dst[i] = (float32_t)src[i] * scale;
+    }
+}
+
+void f32_to_s16(const float32_t *src, adc_type *dst, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        *(dst++) = (adc_type)(*(src++));
+    }
+}
+
+void f32_to_s16_norm(const float32_t *src, adc_type *dst, size_t size, float32_t scale) {
+    for (size_t i = 0; i < size; i++) {
+        *(dst++) = (adc_type)((*(src++)) * scale);
+    }
 }
 
 void q15_to_s16(const q15_t *src, adc_type *dst, size_t size) {
@@ -202,12 +227,6 @@ void q15_to_s16(const q15_t *src, adc_type *dst, size_t size) {
 
         // Store the results into the output array
         *__SIMD32(dst)++ = ((q1_shifted << 16) & 0xFFFF0000) | (q0_shifted & 0x0000FFFF);
-    }
-}
-
-void f32_to_s16(const float32_t *src, adc_type *dst, size_t size) {
-    for (size_t i = 0; i < size; i++) {
-        *(dst++) = (adc_type) * (src++);
     }
 }
 

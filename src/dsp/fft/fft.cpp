@@ -129,11 +129,11 @@ uint8_t max_slices = config.fft.max_slices;
 uint8_t max_decimation_factor = config.fft.max_decimation_factor;
 
 void set_max_slices(uint8_t n) {
-    max_slices = min2(max_slices, n);
+    max_slices = n;
 }
 
 void set_max_decimation(uint8_t n) {
-    max_decimation_factor = min2(max_decimation_factor, n);
+    max_decimation_factor = n;
 }
 
 uint8_t get_max_slices() {

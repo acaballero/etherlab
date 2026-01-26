@@ -1,25 +1,95 @@
 //
-// Created by Angel Dust on 11/04/2025.
+// Enhanced HilbertTransform implementation
 //
-#include "dsp_hilbert.hpp"
+#include "dsp_hilbert.h"
+#include "../../../lib/DspFilters/include/Dsp.h"
+#include "../../../lib/DspFilters/include/ChebyshevI.h"
+#include "../../../lib/DspFilters/include/State.h"
+#include "../../../lib/DspFilters/include/Cascade.h"
+#include "../../../lib/DspFilters/include/Filter.h"
+#include "../../status.h"
 
 namespace dsp {
 
+// ============================================================================
+// HILBERT TRANSFORM
+// ============================================================================
+
 HilbertTransform::HilbertTransform() {
     n = 0;
+    configured_ = false;
+}
 
-    //   sos_input.configure(half_band_lpf_config);
-    // sos_i.configure(half_band_lpf_config);
-    // sos_q.configure(half_band_lpf_config);
+bool HilbertTransform::configure(float32_t *coeffs) {
+    // Configure all three filters with the same coefficients
+    sos_input.configure(coeffs);
+    sos_i.configure(coeffs);
+    sos_q.configure(coeffs);
+
+    configured_ = true;
+    return true;
+}
+
+bool HilbertTransform::configure(uint32_t sample_rate) {
+    // Check if reconfiguration needed
+    if (configured_ && sample_rate == sample_rate_) {
+        return true;
+    }
+
+    sample_rate_ = sample_rate;
+
+    // For Hilbert transform, use half-band filter at fs/4
+    // This is standard practice for SSB generation
+    const int order = 10; // 5 biquad stages
+    float32_t cutoff_freq = sample_rate / 4.0f;
+
+    // Design Butterworth lowpass
+    Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> filter;
+    filter.setup(order, (double)sample_rate, (double)cutoff_freq);
+
+    // Get cascade stages
+    Dsp::Cascade::Storage st = filter.getCascadeStorage();
+    int n_stages = filter.getNumStages();
+
+    if (n_stages != 5) {
+        LOG("HilbertTransform::configure: Expected 5 stages, got %d\n", n_stages);
+        return false;
+    }
+
+    // Convert to CMSIS format
+    float32_t coeffs[25];
+    for (int stage = 0; stage < n_stages; stage++) {
+        const auto &dg = st.stageArray[stage];
+        int offset = stage * 5;
+
+        // Normalize by a0 and negate a1, a2
+        coeffs[offset + 0] = dg.m_b0 / dg.m_a0;
+        coeffs[offset + 1] = dg.m_b1 / dg.m_a0;
+        coeffs[offset + 2] = dg.m_b2 / dg.m_a0;
+        coeffs[offset + 3] = -dg.m_a1 / dg.m_a0;
+        coeffs[offset + 4] = -dg.m_a2 / dg.m_a0;
+    }
+
+    // Configure filters
+    configure(coeffs);
+
+    LOG("HilbertTransform configured: fs=%u, fc=%u\n", sample_rate, (uint32_t)cutoff_freq);
+    configured_ = true;
+    return true;
 }
 
 void HilbertTransform::execute(float in, float &out_i, float &out_q) {
-    // Synthesized Hilbert Transform, it is implemented  based on 1/2 band LPF and later freq shift fs/4, achieving a H.T_BW of transmitted = fs/2 ;
-    // Half_band LPF  means a LP filter with f_cut_off = fs/4; Half band = Half max band = 1/2 * fs_max =  1/2 x f_Nyquist = 1/2 * fs/2 = fs/4
+    // Synthesized Hilbert Transform using fs/4 frequency shifting
+    // Input -> LPF -> fs/4 shift -> I and Q paths -> LPF each -> output
+
     float a = 0, b = 0;
 
-    float in_filtered = sos_input.execute(in) * 1.0f; // Anti-aliasing LPF at fs/4 mic audio filter front-end.
+    // Anti-aliasing LPF at fs/4
+    float in_filtered = sos_input.execute(in);
 
+    LOG("%.3f->%.3f\n", in, in_filtered);
+
+    // fs/4 frequency shift (rotation by n*90°)
     switch (n) {
         case 0:
             a = in_filtered;
@@ -39,9 +109,11 @@ void HilbertTransform::execute(float in, float &out_i, float &out_q) {
             break;
     }
 
+    // Filter I and Q paths
     float i = sos_i.execute(a) * 2.0f;
     float q = sos_q.execute(b) * 2.0f;
 
+    // Rotate back
     switch (n) {
         case 0:
             out_i = i;
@@ -64,28 +136,91 @@ void HilbertTransform::execute(float in, float &out_i, float &out_q) {
     n = (n + 1) % 4;
 }
 
-Real_to_Complex::Real_to_Complex() {
-    // No need to call a separate configuration method like "Real_to_Complex()" externally before using the execute() method
-    // This is the constructor for the Real_to_Complex class.
-    // It initializes the member variables and calls the configure function for the sos_input, sos_i, and sos_q filters.
-    // to ensure the object is ready to use right after instantiation.
-
+void HilbertTransform::reset() {
+    sos_input.reset();
+    sos_i.reset();
+    sos_q.reset();
     n = 0;
-
-    // sos_input.configure(full_band_lpf_config);
-    // sos_i.configure(full_band_lpf_config);
-    // sos_q.configure(full_band_lpf_config);
-    // sos_mag_sq.configure(quarter_band_lpf_config); // for APT LPF subcarrier filter. (1/4 Nyquist fs/2 = 1/4 * 12Khz/2 = 1.5khz)
 }
 
-void Real_to_Complex::execute(float in, float &out_mag_sq_lpf) {
-    // Full_band LPF  means a LP filter with f_cut_off = fs/2; Full band = Full max band = 1/2 * fs_max =  1.0 x f_Nyquist = 1 * fs/2 = fs/2
+// ============================================================================
+// REAL TO COMPLEX
+// ============================================================================
+
+RealToComplex::RealToComplex() {
+    n = 0;
+    configured_ = false;
+}
+
+bool RealToComplex::configure(uint32_t sample_rate) {
+    if (configured_ && sample_rate == sample_rate_) {
+        return true;
+    }
+
+    sample_rate_ = sample_rate;
+
+    const int order = 10;
+
+    // Full-band LPF for input (fc = fs/2)
+    Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> full_band_filter;
+    full_band_filter.setup(order, (double)sample_rate, (double)(sample_rate / 2.0f));
+
+    // Quarter-band LPF for magnitude (fc = fs/4)
+    Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> quarter_band_filter;
+    quarter_band_filter.setup(order, (double)sample_rate, (double)(sample_rate / 4.0f));
+
+    // Configure full-band filters (input, i, q)
+    Dsp::Cascade::Storage st_full = full_band_filter.getCascadeStorage();
+    int n_stages = full_band_filter.getNumStages();
+
+    if (n_stages != 5) {
+        LOG("RealTo cComplex::configure: Expected 5 stages, got %d\n", n_stages);
+        return false;
+    }
+
+    float32_t coeffs_full[25];
+    for (int stage = 0; stage < n_stages; stage++) {
+        const auto &dg = st_full.stageArray[stage];
+        int offset = stage * 5;
+        coeffs_full[offset + 0] = dg.m_b0 / dg.m_a0;
+        coeffs_full[offset + 1] = dg.m_b1 / dg.m_a0;
+        coeffs_full[offset + 2] = dg.m_b2 / dg.m_a0;
+        coeffs_full[offset + 3] = -dg.m_a1 / dg.m_a0;
+        coeffs_full[offset + 4] = -dg.m_a2 / dg.m_a0;
+    }
+
+    sos_input.configure(coeffs_full);
+    sos_i.configure(coeffs_full);
+    sos_q.configure(coeffs_full);
+
+    // Configure quarter-band filter for magnitude
+    Dsp::Cascade::Storage st_quarter = quarter_band_filter.getCascadeStorage();
+    float32_t coeffs_quarter[25];
+    for (int stage = 0; stage < n_stages; stage++) {
+        const auto &dg = st_quarter.stageArray[stage];
+        int offset = stage * 5;
+        coeffs_quarter[offset + 0] = dg.m_b0 / dg.m_a0;
+        coeffs_quarter[offset + 1] = dg.m_b1 / dg.m_a0;
+        coeffs_quarter[offset + 2] = dg.m_b2 / dg.m_a0;
+        coeffs_quarter[offset + 3] = -dg.m_a1 / dg.m_a0;
+        coeffs_quarter[offset + 4] = -dg.m_a2 / dg.m_a0;
+    }
+
+    sos_mag_sq.configure(coeffs_quarter);
+
+    configured_ = true;
+    LOG("RealToComplex configured: fs=%u\n", sample_rate);
+    return true;
+}
+
+void RealToComplex::execute(float in, float &out_mag_sq_lpf) {
     float a = 0, b = 0;
-    float out_i = 0, out_q = 0, out_mag_sq = 0;
-    // int32_t packed;
+    float out_i = 0, out_q = 0;
 
-    float in_filtered = sos_input.execute(in) * 1.0f; // Anti-aliasing full band LPF,  fc = fs/2= 6k, audio filter front-end.
+    // Full-band anti-aliasing LPF
+    float in_filtered = sos_input.execute(in);
 
+    // fs/4 frequency shift
     switch (n) {
         case 0:
             a = in_filtered;
@@ -105,10 +240,12 @@ void Real_to_Complex::execute(float in, float &out_mag_sq_lpf) {
             break;
     }
 
-    float i = sos_i.execute(a) * 1.0f; // better keep <1.0f to minimize recorded APT(t) black level artifacts.-
-    float q = sos_q.execute(b) * 1.0f;
+    // Filter I and Q paths
+    float i = sos_i.execute(a);
+    float q = sos_q.execute(b);
 
-    switch (n) { // shifting down -fs4 (fs = 12khz , fs/4 = 3khz)
+    // Shift down -fs/4
+    switch (n) {
         case 0:
             out_i = i;
             out_q = q;
@@ -129,16 +266,18 @@ void Real_to_Complex::execute(float in, float &out_mag_sq_lpf) {
 
     n = (n + 1) % 4;
 
-    // Not strict Magnitude complex calculation, it is a cross multiplication (lower 16 bit real x lower 16 imag) + 0 (higher 16 bits comp),
-    // but better visual results comparing real magnitude calculation, (better map diagonal lines reproduction, and less artifacts in APT signal(t)
-    out_mag_sq = __SMUAD(out_i, out_q);                       // "cross-magnitude" of the complex (out_i + j out_q)
-    out_mag_sq_lpf = sos_mag_sq.execute((out_mag_sq)) * 2.0f; // LPF quater band = 1.5khz APT signal
+    // Compute cross-magnitude (for APT satellite signals)
+    float out_mag_sq = out_i * out_q; // Cross product approximation
 
-    out_mag_sq_lpf /= 32768.0f; // normalize ;
-    // Compress clipping positive APT signal [-1.5 ..1.5] input , converted to [-1.0 ...1.0] with "S" compressor gain shape.
+    // LPF to remove subcarrier
+    out_mag_sq_lpf = sos_mag_sq.execute(out_mag_sq) * 2.0f;
+
+    // Normalize and compress
+    out_mag_sq_lpf /= 32768.0f;
     if (out_mag_sq_lpf > 1.0f) {
-        out_mag_sq_lpf = 1.0f; // clipped signal  at +1.0f,  APT signal is positive, no need to clip -1.0
+        out_mag_sq_lpf = 1.0f;
     } else {
+        // S-curve compression
         out_mag_sq_lpf = out_mag_sq_lpf * (1.5f - ((out_mag_sq_lpf * out_mag_sq_lpf) / 2.0f));
     }
 }
