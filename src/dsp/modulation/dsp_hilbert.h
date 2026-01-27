@@ -54,9 +54,11 @@ class HilbertTransform {
     SOSFilter<5> sos_i;
     SOSFilter<5> sos_q;
 
-    uint32_t sample_rate_ = 0;
+    float32_t coeffs[25];
 
-    bool configured_ = false;
+    uint32_t sample_rate = 0;
+
+    bool configured = false;
 };
 
 /**

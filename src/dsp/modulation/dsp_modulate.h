@@ -96,8 +96,8 @@ class ssb_modulator : public modulator {
      */
     bool configure(uint32_t sample_rate, uint32_t bandwidth);
 
-    void set_mode(Mode mode) {
-        mode = mode;
+    void set_mode(Mode m) {
+        mode = m;
     }
     Mode get_mode() const {
         return mode;

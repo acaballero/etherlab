@@ -57,8 +57,8 @@ void TransmitTask::work() {
         uint32_t n_in;
         uint32_t n_in_bytes;
         uint32_t n_out;
-        float32_t s16_scale = 1 / 32768.0f;
-        float32_t s16_scale_inv = 32768.0f;
+        float32_t s16_scale = 1 / 2048.0f; // 12 bits precission for the DAC
+        float32_t s16_scale_inv = 2048.0f;
 
         MODULATION_MODE mode = get_modulation_mode();
 
@@ -78,7 +78,7 @@ void TransmitTask::work() {
             n_in_bytes = bytes_per_batch_real;
             n_out = status.decimated_block_size;
         }
-
+        GPIOD->BSRR |= GPIO_PIN_9;
         if (av >= required_av && free >= required_free) {
 
             status.processed_blocks++;
@@ -106,12 +106,14 @@ void TransmitTask::work() {
 
                     out_accum_p = bq1_p;
 
-                    buffer_t<complex_t_f32> out_buffer = {(complex_t_f32 *)bi1_p, samples_per_batch, COMPLEX_INTERLEAVED};
+                    buffer_t<complex_t_f32> out_buffer = {(complex_t_f32 *)out_accum_p, samples_per_batch, COMPLEX_INTERLEAVED};
+                    buffer_t<float32_t> src = {out_accum_p, samples_per_batch, REAL};
+
+                    high_pass_filter.decimate(src, src, 0, 1, 1);
 
                     if (get_baseband_echo() || mode == NONE) {
                         // Just copy the unmodulated buffer
                         dsp::f32_to_s16_norm((const float32_t *)out_accum_p, (adc_type *)out_p, samples_per_batch, s16_scale_inv);
-
                     } else {
                         modulator->work(out_accum_p, out_buffer);
                         dsp::f32_to_s16_norm((const float32_t *)bi1_p, (adc_type *)out_p, samples_per_batch << 1, s16_scale_inv);
@@ -141,6 +143,7 @@ void TransmitTask::work() {
                 status.fifo_underruns++;
             }
         }
+        GPIOD->BSRR |= GPIO_PIN_9 << 16;
     }
 }
 
@@ -222,7 +225,7 @@ bool TransmitTask::start() {
 
     status.sample_rate = DSP_AUDIO_SAMPLE_RATE;
 
-    uint32_t dac_sample_rate = fft::fft_params.sample_freq;
+    uint32_t dac_sample_rate = 12000; // fft::fft_params.sample_freq;
 
     modulation_bandwidth_hz = get_modulation_bw_hz();
 
@@ -247,6 +250,8 @@ bool TransmitTask::start() {
         dec_factor <<= 1;
         status.sample_rate *= 2;
     }
+
+    high_pass_filter.config(status.sample_rate, 300, 1, HPF);
 
     status.bandwidth = modulation_bandwidth_hz;
 
@@ -290,7 +295,7 @@ bool TransmitTask::start() {
     // TODO: This should be done by the caller of this method and be generic for all tasks
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
-    // Se the fifo processing frequency
+    // Set the fifo processing frequency
     update_timer(TASKS_TIMER_TYPEDEF, 40, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
     status.status = DSP_STATUS_RUNNING;
     return true;

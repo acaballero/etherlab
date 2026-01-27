@@ -58,7 +58,7 @@ void set_sample_freq_limits(bool dsp) {
     } else {
         set_max_sample_freq(config.fft.dsp_max_sample_rate);
         if (ISTX) {
-            set_min_sample_freq(DSP_AUDIO_SAMPLE_RATE);
+            set_min_sample_freq(DSP_AUDIO_SAMPLE_RATE / 4);
         } else {
             set_min_sample_freq(config.fft.min_sample_rate);
         }

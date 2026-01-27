@@ -17,7 +17,7 @@ namespace dsp {
 
 HilbertTransform::HilbertTransform() {
     n = 0;
-    configured_ = false;
+    configured = false;
 }
 
 bool HilbertTransform::configure(float32_t *coeffs) {
@@ -26,20 +26,20 @@ bool HilbertTransform::configure(float32_t *coeffs) {
     sos_i.configure(coeffs);
     sos_q.configure(coeffs);
 
-    configured_ = true;
+    configured = true;
     return true;
 }
 
-bool HilbertTransform::configure(uint32_t sample_rate) {
+bool HilbertTransform::configure(uint32_t sr) {
     // Check if reconfiguration needed
-    if (configured_ && sample_rate == sample_rate_) {
+    if (configured && sample_rate == sr) {
         return true;
     }
 
-    sample_rate_ = sample_rate;
+    sample_rate = sr;
 
-    // For Hilbert transform, use half-band filter at fs/4
-    // This is standard practice for SSB generation
+    // For Hilbert transform we use half-band filter at fs/4
+    // Higher rate/cutoff ratios require more stages
     const int order = 10; // 5 biquad stages
     float32_t cutoff_freq = sample_rate / 4.0f;
 
@@ -57,7 +57,7 @@ bool HilbertTransform::configure(uint32_t sample_rate) {
     }
 
     // Convert to CMSIS format
-    float32_t coeffs[25];
+
     for (int stage = 0; stage < n_stages; stage++) {
         const auto &dg = st.stageArray[stage];
         int offset = stage * 5;
@@ -68,13 +68,17 @@ bool HilbertTransform::configure(uint32_t sample_rate) {
         coeffs[offset + 2] = dg.m_b2 / dg.m_a0;
         coeffs[offset + 3] = -dg.m_a1 / dg.m_a0;
         coeffs[offset + 4] = -dg.m_a2 / dg.m_a0;
+
+        // LOG THE COEFFICIENTS
+        LOG("Stage %d: b=[%.6f, %.6f, %.6f] ", stage, coeffs[offset + 0], coeffs[offset + 1], coeffs[offset + 2]);
+        LOG_RAW("a=[%.6f, %.6f]\n", coeffs[offset + 3], coeffs[offset + 4]);
     }
 
     // Configure filters
     configure(coeffs);
 
     LOG("HilbertTransform configured: fs=%u, fc=%u\n", sample_rate, (uint32_t)cutoff_freq);
-    configured_ = true;
+    configured = true;
     return true;
 }
 
@@ -86,8 +90,6 @@ void HilbertTransform::execute(float in, float &out_i, float &out_q) {
 
     // Anti-aliasing LPF at fs/4
     float in_filtered = sos_input.execute(in);
-
-    LOG("%.3f->%.3f\n", in, in_filtered);
 
     // fs/4 frequency shift (rotation by n*90°)
     switch (n) {

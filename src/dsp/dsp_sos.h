@@ -20,6 +20,11 @@
 template <size_t N> class SOSFilter {
   public:
     SOSFilter() {
+
+        // Initialize the CMSIS structure
+        biquad_instance.numStages = N;
+        biquad_instance.pState = state_;
+
         reset();
     }
 
@@ -31,6 +36,7 @@ template <size_t N> class SOSFilter {
      */
     void configure(float32_t coeffs[5 * N]) {
 
+        biquad_instance.pCoeffs = coeffs;
         // Re-initialize with new coefficients
         arm_biquad_cascade_df1_init_f32(&biquad_instance, N, coeffs, state_);
     }

@@ -4,6 +4,7 @@
 //
 #include "dsp_modulate.h"
 #include "arm_math.h"
+#include "status.h"
 
 namespace dsp {
 
@@ -161,9 +162,9 @@ bool ssb_modulator::configure(uint32_t sr, uint32_t bw) {
 
 void ssb_modulator::work(const float32_t *audio_in, buffer_t<complex_t_f32> &iq_out) {
     const size_t count = iq_out.count;
+    float32_t i_sample, q_sample;
 
     for (size_t i = 0; i < count; i++) {
-        float32_t i_sample, q_sample;
 
         // Hilbert transform creates I/Q pair
         hilbert.execute(audio_in[i], i_sample, q_sample);

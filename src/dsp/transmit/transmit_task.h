@@ -9,6 +9,7 @@
 
 #include "dsp/buffer.hpp"
 #include "dsp/decimation/dsp_decimator.h"
+#include "dsp/decimation/dsp_iir_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/interpolation/dsp_fir_interpolator_float.h"
@@ -106,6 +107,8 @@ class TransmitTask : public Task {
     virtual uint32_t get_modulation_bw_hz() const {
         return radio::get_bandwidth_hz();
     };
+
+    DspIIRDecimator<2> high_pass_filter;
 };
 
 #endif // TRX_TRANSMIT_TASK_H

@@ -66,7 +66,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
     if (htim_base->Instance == TIM6) {
 
         __HAL_RCC_TIM6_CLK_ENABLE();
-        HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 5, 0); // Medium priority
+        HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 4, 0); // This has to have higher priority than the task timer
         HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
     }
     if (htim_base->Instance == TIM13) {
@@ -88,7 +88,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
         /* Peripheral clock enable */
         __HAL_RCC_TIM14_CLK_ENABLE();
         /* TIM14 interrupt Init */
-        HAL_NVIC_SetPriority(TIM8_TRG_COM_TIM14_IRQn, 4, 0);
+        HAL_NVIC_SetPriority(TIM8_TRG_COM_TIM14_IRQn, 5, 0);
         HAL_NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
         /* USER CODE BEGIN TIM14_MspInit 1 */
 
@@ -100,7 +100,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
         /* Peripheral clock enable */
         __HAL_RCC_TIM3_CLK_ENABLE();
         /* TIM3 interrupt Init */
-        HAL_NVIC_SetPriority(TIM3_IRQn, 5, 0);
+        HAL_NVIC_SetPriority(TIM3_IRQn, 6, 0);
         HAL_NVIC_EnableIRQ(TIM3_IRQn);
         /* USER CODE BEGIN TIM3_MspInit 1 */
 

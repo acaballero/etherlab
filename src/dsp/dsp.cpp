@@ -382,7 +382,7 @@ void dsp_loop() {
 
 //__attribute__((section(".ccmram")))
 inline void dac_work() {
-    GPIOD->BSRR |= GPIO_PIN_9;
+    //    GPIOD->BSRR |= GPIO_PIN_9;
 
     if (current_processor && (current_processor->status.direction == DSP_DIRECTION_OUT || current_processor->status.direction == DSP_DIRECTION_INOUT)) {
         current_processor->work(current_buffer);
@@ -413,7 +413,7 @@ inline void dac_work() {
         p[i + 1] = (adc_type)(p[i + 1] * config.hw.dac_amp_balance) + offset_balance;
     }
 
-    GPIOD->BSRR |= GPIO_PIN_9 << 16;
+    //  GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }
 
 inline void adc_work() {
