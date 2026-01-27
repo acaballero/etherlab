@@ -8,6 +8,7 @@
 #include "../../../lib/DspFilters/include/Cascade.h"
 #include "../../../lib/DspFilters/include/Filter.h"
 #include "../../status.h"
+#include <sys/_stdint.h>
 
 namespace dsp {
 
@@ -32,6 +33,7 @@ bool HilbertTransform::configure(float32_t *coeffs) {
 
 bool HilbertTransform::configure(uint32_t sr) {
     // Check if reconfiguration needed
+
     if (configured && sample_rate == sr) {
         return true;
     }
@@ -42,6 +44,8 @@ bool HilbertTransform::configure(uint32_t sr) {
     // Higher rate/cutoff ratios require more stages
     const int order = 10; // 5 biquad stages
     float32_t cutoff_freq = sample_rate / 4.0f;
+
+    LOG("Configuring Hilbert transform | rate: %lu | cutoff: %lu\n", sample_rate, (uint32_t)cutoff_freq);
 
     // Design Butterworth lowpass
     Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> filter;
@@ -83,7 +87,7 @@ bool HilbertTransform::configure(uint32_t sr) {
 }
 
 void HilbertTransform::execute(float in, float &out_i, float &out_q) {
-    // Synthesized Hilbert Transform using fs/4 frequency shifting
+    // Discrete Hilbert transform using fs/4 frequency shifting
     // Input -> LPF -> fs/4 shift -> I and Q paths -> LPF each -> output
 
     float a = 0, b = 0;
@@ -154,29 +158,29 @@ RealToComplex::RealToComplex() {
     configured_ = false;
 }
 
-bool RealToComplex::configure(uint32_t sample_rate) {
-    if (configured_ && sample_rate == sample_rate_) {
+bool RealToComplex::configure(uint32_t sr) {
+    if (configured_ && sr == sample_rate_) {
         return true;
     }
 
-    sample_rate_ = sample_rate;
+    sample_rate_ = sr;
 
     const int order = 10;
 
     // Full-band LPF for input (fc = fs/2)
     Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> full_band_filter;
-    full_band_filter.setup(order, (double)sample_rate, (double)(sample_rate / 2.0f));
+    full_band_filter.setup(order, (double)sr, (double)(sr / 2.0f));
 
     // Quarter-band LPF for magnitude (fc = fs/4)
     Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> quarter_band_filter;
-    quarter_band_filter.setup(order, (double)sample_rate, (double)(sample_rate / 4.0f));
+    quarter_band_filter.setup(order, (double)sr, (double)(sr / 4.0f));
 
     // Configure full-band filters (input, i, q)
     Dsp::Cascade::Storage st_full = full_band_filter.getCascadeStorage();
     int n_stages = full_band_filter.getNumStages();
 
     if (n_stages != 5) {
-        LOG("RealTo cComplex::configure: Expected 5 stages, got %d\n", n_stages);
+        LOG("RealToComplex::configure: Expected 5 stages, got %d\n", n_stages);
         return false;
     }
 
@@ -211,7 +215,7 @@ bool RealToComplex::configure(uint32_t sample_rate) {
     sos_mag_sq.configure(coeffs_quarter);
 
     configured_ = true;
-    LOG("RealToComplex configured: fs=%u\n", sample_rate);
+    LOG("RealToComplex configured: fs=%u\n", sr);
     return true;
 }
 

@@ -106,7 +106,8 @@ void TransmitTask::work() {
 
                     out_accum_p = bq1_p;
 
-                    buffer_t<complex_t_f32> out_buffer = {(complex_t_f32 *)out_accum_p, samples_per_batch, COMPLEX_INTERLEAVED};
+                    buffer_t<complex_t_f32> out_buffer = {(complex_t_f32 *)bi1_p, samples_per_batch, COMPLEX_INTERLEAVED};
+
                     buffer_t<float32_t> src = {out_accum_p, samples_per_batch, REAL};
 
                     high_pass_filter.decimate(src, src, 0, 1, 1);
@@ -114,6 +115,9 @@ void TransmitTask::work() {
                     if (get_baseband_echo() || mode == NONE) {
                         // Just copy the unmodulated buffer
                         dsp::f32_to_s16_norm((const float32_t *)out_accum_p, (adc_type *)out_p, samples_per_batch, s16_scale_inv);
+                        // Convert to interleaved format
+                        dsp::zip_c16((const adc_type *)out_p, (adc_type *)out_p + samples_per_batch, (adc_type *)out_p, samples_per_batch << 1);
+
                     } else {
                         modulator->work(out_accum_p, out_buffer);
                         dsp::f32_to_s16_norm((const float32_t *)bi1_p, (adc_type *)out_p, samples_per_batch << 1, s16_scale_inv);
@@ -154,9 +158,9 @@ bool TransmitTask::init_resampler(MODULATION_MODE mod) {
     decimator.reset();
     interpolator.reset();
 
-    if (status.sample_rate <= DSP_AUDIO_SAMPLE_RATE) { // Even it no data conversion is required, the decimator serves as filter
+    if (status.sample_rate <= USB_AUDIO_SAMPLE_RATE) { // Even it no data conversion is required, the decimator serves as filter
         decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
-        ret = decimator->config(status.sample_rate, status.bandwidth,
+        ret = decimator->config(status.sample_rate * status.decimation_factor, status.bandwidth,
                                 status.decimation_factor); // Here the bandwidth is halved for double sideband modulations
 
     } else {
@@ -170,7 +174,8 @@ bool TransmitTask::init_resampler(MODULATION_MODE mod) {
         return false;
     }
 
-    LOG("Rate %d -> %d (filter: %d)\n", status.sample_rate <= DSP_AUDIO_SAMPLE_RATE ? status.sample_rate : status.sample_rate / status.decimation_factor,
+    LOG("Rate %d -> %d (filter: %d)\n",
+        status.sample_rate <= USB_AUDIO_SAMPLE_RATE ? status.sample_rate * status.decimation_factor : status.sample_rate / status.decimation_factor,
         status.sample_rate, status.bandwidth);
 
     return true;
@@ -179,7 +184,7 @@ bool TransmitTask::init_resampler(MODULATION_MODE mod) {
 std::unique_ptr<dsp::modulator> TransmitTask::get_modulator() {
 
     std::unique_ptr<dsp::modulator> mod;
-
+    bool ret = false;
     auto mode = get_modulation_mode();
 
     if (get_baseband_echo() || mode == NONE) {
@@ -187,28 +192,38 @@ std::unique_ptr<dsp::modulator> TransmitTask::get_modulator() {
     } else {
         switch (mode) {
             case AM:
-                return std::make_unique<dsp::am_modulator>();
+
+                mod = std::make_unique<dsp::am_modulator>();
+                ret = true;
+                break;
             case CW:
                 mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::USB);
-                ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
-                return mod;
+                ret = ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                break;
             case SSB_LSB:
                 mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::LSB);
-                ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
-                return mod;
+                ret = ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                break;
             case SSB_USB:
                 mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::USB);
-                ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
-                return mod;
+                ret = ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                break;
             case FM:
                 mod = std::make_unique<dsp::fm_modulator>();
+                ret = true;
                 ((dsp::fm_modulator *)mod.get())->configure(status.sample_rate, config.dsp.fm_max_deviation);
-                return mod;
+                break;
 
             default:
-                status::pop_alert(status::ERROR, "ERROR: Unsupported DSP modulation mode: Using SSB as fallback");
-                return std::make_unique<dsp::ssb_modulator>();
+                status::pop_alert(status::ERROR, "Transmit task: Unsupported DSP modulation mode configuring modulator");
+                return nullptr;
         }
+
+        if (!ret) {
+            status::pop_alert(status::ERROR, "Transmit task: Error configuring DSP modulator");
+        }
+
+        return mod;
     }
 }
 
@@ -223,9 +238,9 @@ bool TransmitTask::start() {
 
     dsp_set_real_time(true);
 
-    status.sample_rate = DSP_AUDIO_SAMPLE_RATE;
+    status.sample_rate = USB_AUDIO_SAMPLE_RATE; // Start at the USB audio rate. Will bring it down/up to the FFT sample rate
 
-    uint32_t dac_sample_rate = 12000; // fft::fft_params.sample_freq;
+    uint32_t dac_sample_rate = fft::fft_params.sample_freq;
 
     modulation_bandwidth_hz = get_modulation_bw_hz();
 
@@ -264,7 +279,7 @@ bool TransmitTask::start() {
     status.decimated_block_size = DSP_BLOCK / dec_factor;
     status.decimated_block_size_bytes = status.decimated_block_size * sizeof(complex_t);
 
-    LOG("Bandwidth: %d | Sample rate: %d | Modulation bandwidth: %d\n", status.bandwidth, status.sample_rate, modulation_bandwidth_hz);
+    LOG("Bandwidth: %d | Sample rate: %d\n", status.bandwidth, status.sample_rate);
 
     bool ret = init_resampler(mod);
 

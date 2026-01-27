@@ -58,7 +58,7 @@ void set_sample_freq_limits(bool dsp) {
     } else {
         set_max_sample_freq(config.fft.dsp_max_sample_rate);
         if (ISTX) {
-            set_min_sample_freq(DSP_AUDIO_SAMPLE_RATE / 4);
+            set_min_sample_freq(DSP_TX_AUDIO_SAMPLE_RATE);
         } else {
             set_min_sample_freq(config.fft.min_sample_rate);
         }
@@ -286,7 +286,7 @@ void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t 
         *dst_q++ = *src++;
     }
 }
-void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_samples) {
+void zip_f32(const float32_t *src_i, const float32_t *src_q, float32_t *dst, size_t n_samples) {
     const float32_t *si_end = src_i + n_samples;
 
     // Unroll by 4 complex samples

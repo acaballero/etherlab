@@ -94,14 +94,14 @@ class TransmitTask : public Task {
     bool baseband_echo = false;
 
     /* Bandwidth of the output audio stream (IIR LPF config will match this) */
-    virtual uint32_t get_audio_bw_hz() const {
-        return DSP_AUDIO_SAMPLE_RATE >> 2;
-    };
+    // virtual uint32_t get_audio_bw_hz() const {
+    //     return DSP_AUDIO_SAMPLE_RATE >> 2;
+    // };
 
     /* Sample rate of the output audio stream. Must be a factor/divisor of 48000  */
-    virtual uint32_t get_audio_sample_rate() const {
-        return DSP_AUDIO_SAMPLE_RATE;
-    };
+    // virtual uint32_t get_audio_sample_rate() const {
+    //     return DSP_AUDIO_SAMPLE_RATE;
+    // };
 
     /* Bandwidth of the modulation */
     virtual uint32_t get_modulation_bw_hz() const {

@@ -141,7 +141,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
     // In DIGITAL_TX mode, the fft sample rate must be a multiple of DSP_AUDIO_SAMPLE_RATE so we can interpolate/decimate by integer factors
     if (!freq_mult) {
         if (config.mode == DIGITAL_TX) {
-            freq_mult = DSP_AUDIO_SAMPLE_RATE / 4;
+            freq_mult = DSP_TX_AUDIO_SAMPLE_RATE;
         } else {
             freq_mult = 0;
         }

@@ -127,7 +127,8 @@ enum DSP_ERROR {
     DSP_ERR_FIFO_UNDERRUN
 };
 
-#define DSP_AUDIO_SAMPLE_RATE 48000
+#define DSP_AUDIO_SAMPLE_RATE 24000
+#define DSP_TX_AUDIO_SAMPLE_RATE 12000
 // Max bandwidth of the DSP. This is the cutoff frequency of the low pass filters before the ADCs.
 // Note the complex bandwidth is twice since we're sampling quadrature signals
 #define DSP_BANDWIDTH 250000
@@ -284,9 +285,9 @@ void q15_to_s16(const q15_t *src, adc_type *dst, size_t size);
 void f32_to_s16(const float32_t *src, adc_type *dst, size_t size);
 void f32_to_s16_norm(const float32_t *src, adc_type *dst, size_t size, float32_t scale);
 void unzip_c16(const adc_type *__restrict src, adc_type *__restrict dst_i, adc_type *__restrict dst_q, size_t n_samples);
-void zip_c16(const adc_type *__restrict src_i, adc_type *__restrict src_q, adc_type *__restrict dst, size_t n_samples);
+void zip_c16(const adc_type *__restrict src_i, const adc_type *__restrict src_q, adc_type *__restrict dst, size_t n_samples);
 void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples);
-void zip_f32(const float32_t *src_i, float32_t *src_q, float32_t *dst, size_t n_samples);
+void zip_f32(const float32_t *src_i, const float32_t *src_q, float32_t *dst, size_t n_samples);
 
 void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples);
 // void rotate_fs8_q15(const q15_t *src, q15_t *dst, size_t n_samples);
