@@ -237,12 +237,28 @@ void process_command(st_usb_cdc_command *command) {
 void cmd_send_read_mode(st_usb_cdc_command *command, uint8_t *response, uint8_t *size) {
     uint8_t *buf = command->data;
     uint64_t bcdfreq = 0;
+
     switch (buf[5]) {
         case CMD_SEND_READ_MODE:
-            if (command->size == 7) {
-                main_board::set_mode(buf[5] == 0 ? ANALOG_RX : ANALOG_TX);
+            LOG_RAW("PTT |");
+            if (command->size == 8) {
+
+                bool set_tx = buf[6] == 1;
+                LOG_RAW(set_tx ? " set TX |" : " set RX |");
+
+                if (set_tx && !radio::tx_enabled()) {
+                    memcpy(response, nok_response_data, 5);
+                    return;
+                }
+
+                main_board::set_mode(set_tx ? DIGITAL_TX : DIGITAL_RX);
+
+                memcpy(response, ok_response_data, 5);
+                return;
+            } else {
+                response[(*size)++] = buf[5]; // Echoes the subcommand back
+                response[(*size)++] = ISTX ? 0x01 : 0x00;
             }
-            response[(*size)++] = !ISTX ? 0x01 : 0x00;
             break;
         case CMD_SEND_READ_TUNER:
             response[(*size)++] = 0;
@@ -251,7 +267,6 @@ void cmd_send_read_mode(st_usb_cdc_command *command, uint8_t *response, uint8_t 
             response[(*size)++] = 0;
             break;
         case CMD_READ_TX_FREQ:
-
             bcdfreq = uint64_to_bcd(radio::get_frequency());
             memcpy(response + *size, &bcdfreq, sizeof(bcdfreq));
             *size += 5;
@@ -594,10 +609,10 @@ void cmd_set_vfo_mode_handler(st_usb_cdc_command *command, uint8_t *response, ui
 
         main_board::set_modulation_mode(mode, false);
 
-        response[*size++] = 0;
-        response[*size++] = from_modulation_mode(main_board::get_modulation_mode());
-        response[*size++] = 0;    // Data mode off
-        response[*size++] = 0x01; // Filter 1
+        response[(*size)++] = 0;
+        response[(*size)++] = from_modulation_mode(main_board::get_modulation_mode());
+        response[(*size)++] = 0;    // Data mode off
+        response[(*size)++] = 0x01; // Filter 1
 
     } else {
         memcpy(response, nok_response_data, 5);

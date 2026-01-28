@@ -167,7 +167,8 @@ void ssb_modulator::work(const float32_t *audio_in, buffer_t<complex_t_f32> &iq_
     for (size_t i = 0; i < count; i++) {
 
         // Hilbert transform creates I/Q pair
-        hilbert.execute(audio_in[i], i_sample, q_sample);
+        // TODO: Note I and Q are swapped. Apparently they are swapped elsewhere
+        hilbert.execute(audio_in[i], q_sample, i_sample);
 
         // Apply sideband selection
         if (mode == USB) {
@@ -184,7 +185,8 @@ void ssb_modulator::work(const float32_t *audio_in, float32_t *iq_out_i, float32
     for (size_t i = 0; i < count; i++) {
         float32_t i_sample, q_sample;
 
-        hilbert.execute(audio_in[i], i_sample, q_sample);
+        // TODO: Note I and Q are swapped. Apparently they are swapped elsewhere.
+        hilbert.execute(audio_in[i], q_sample, i_sample);
 
         iq_out_i[i] = i_sample;
         iq_out_q[i] = (mode == USB) ? q_sample : -q_sample;

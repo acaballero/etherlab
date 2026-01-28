@@ -39,43 +39,64 @@ bool HilbertTransform::configure(uint32_t sr) {
     }
 
     sample_rate = sr;
-
+    float32_t cutoff_freq = sample_rate / 4.0f;
     // For Hilbert transform we use half-band filter at fs/4
     // Higher rate/cutoff ratios require more stages
-    const int order = 10; // 5 biquad stages
-    float32_t cutoff_freq = sample_rate / 4.0f;
 
-    LOG("Configuring Hilbert transform | rate: %lu | cutoff: %lu\n", sample_rate, (uint32_t)cutoff_freq);
+    if (sample_rate == 24000) {
+        // Pre-computed stable elliptic coeffs
 
-    // Design Butterworth lowpass
-    Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> filter;
-    filter.setup(order, (double)sample_rate, (double)cutoff_freq);
+        const float32_t elliptic_24k[5][6] = {{0.02338745f, 0.04115500f, 0.02338745f, 1.00000000f, -0.95319786f, 0.33447142f},
+                                              {1.00000000f, 0.82200025f, 1.00000000f, 1.00000000f, -0.50330056f, 0.63610440f},
+                                              {1.00000000f, 0.32518164f, 1.00000000f, 1.00000000f, -0.18145771f, 0.85268878f},
+                                              {1.00000000f, 0.14395936f, 1.00000000f, 1.00000000f, -0.04368649f, 0.94797653f},
+                                              {1.00000000f, 0.08722091f, 1.00000000f, 1.00000000f, 0.00220963f, 0.98743014f}};
 
-    // Get cascade stages
-    Dsp::Cascade::Storage st = filter.getCascadeStorage();
-    int n_stages = filter.getNumStages();
+        for (int stage = 0; stage < 5; stage++) {
+            int offset = stage * 5;
+            coeffs[offset + 0] = elliptic_24k[stage][0];  // b0
+            coeffs[offset + 1] = elliptic_24k[stage][1];  // b1
+            coeffs[offset + 2] = elliptic_24k[stage][2];  // b2
+            coeffs[offset + 3] = -elliptic_24k[stage][4]; // -a1 (NEGATE for CMSIS!)
+            coeffs[offset + 4] = -elliptic_24k[stage][5]; // -a2 (NEGATE for CMSIS!)
+        }
 
-    if (n_stages != 5) {
-        LOG("HilbertTransform::configure: Expected 5 stages, got %d\n", n_stages);
-        return false;
-    }
+    } else {
+        // Calculate coeffs (can't be elliptic because stability is not guaranteed)
 
-    // Convert to CMSIS format
+        const int order = 10; // 5 biquad stages
 
-    for (int stage = 0; stage < n_stages; stage++) {
-        const auto &dg = st.stageArray[stage];
-        int offset = stage * 5;
+        LOG("Configuring Hilbert transform | rate: %lu | cutoff: %lu\n", sample_rate, (uint32_t)cutoff_freq);
 
-        // Normalize by a0 and negate a1, a2
-        coeffs[offset + 0] = dg.m_b0 / dg.m_a0;
-        coeffs[offset + 1] = dg.m_b1 / dg.m_a0;
-        coeffs[offset + 2] = dg.m_b2 / dg.m_a0;
-        coeffs[offset + 3] = -dg.m_a1 / dg.m_a0;
-        coeffs[offset + 4] = -dg.m_a2 / dg.m_a0;
+        // Design Butterworth lowpass
+        Dsp::SimpleFilter<Dsp::ChebyshevI::LowPass<order>, 1, Dsp::DirectFormI> filter;
+        filter.setup(order, (double)sample_rate, (double)cutoff_freq, 0.5);
 
-        // LOG THE COEFFICIENTS
-        LOG("Stage %d: b=[%.6f, %.6f, %.6f] ", stage, coeffs[offset + 0], coeffs[offset + 1], coeffs[offset + 2]);
-        LOG_RAW("a=[%.6f, %.6f]\n", coeffs[offset + 3], coeffs[offset + 4]);
+        // Get cascade stages
+        Dsp::Cascade::Storage st = filter.getCascadeStorage();
+        int n_stages = filter.getNumStages();
+
+        if (n_stages != 5) {
+            LOG("HilbertTransform::configure: Expected 5 stages, got %d\n", n_stages);
+            return false;
+        }
+
+        // Convert to CMSIS format
+
+        for (int stage = 0; stage < n_stages; stage++) {
+            const auto &dg = st.stageArray[stage];
+            int offset = stage * 5;
+
+            // Normalize by a0 and negate a1, a2
+            coeffs[offset + 0] = dg.m_b0;
+            coeffs[offset + 1] = dg.m_b1;
+            coeffs[offset + 2] = dg.m_b2;
+            coeffs[offset + 3] = -dg.m_a1;
+            coeffs[offset + 4] = -dg.m_a2;
+
+            LOG("Stage %d: b=[%.6f, %.6f, %.6f] ", stage, dg.m_b0, dg.m_b1, dg.m_b2);
+            LOG_RAW("a=[%.6f, %.6f, %.6f]\n", dg.m_a0, dg.m_a1, dg.m_a2);
+        }
     }
 
     // Configure filters

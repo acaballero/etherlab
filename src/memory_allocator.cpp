@@ -114,7 +114,7 @@ void *CCMMemoryAllocator::alloc(size_t size, size_t alignment) {
         current = current->next;
     }
 
-    status::pop_alert(status::ERROR, "CCM memory allocation failed\n");
+    status::pop_alert(status::ERROR, "CCM memory allocation failed");
     print_usage();
     return nullptr;
 }
@@ -124,26 +124,46 @@ void CCMMemoryAllocator::free(void *ptr) {
         return;
     }
 
-    // Find the block
+    // Find the block and its predecessor
+    Block *target = nullptr;
+    Block *prev = nullptr;
+
     for (int i = 0; i < max_blocks; i++) {
         if (blocks[i].ptr == ptr && !blocks[i].free) {
-            blocks[i].free = true;
-            total_allocated -= blocks[i].size;
-
-            // Simple coalescing with next block
-            if (blocks[i].next && blocks[i].next->free) {
-                Block *next = blocks[i].next;
-                if ((uint8_t *)blocks[i].ptr + blocks[i].size == (uint8_t *)next->ptr) {
-                    blocks[i].size += next->size;
-                    blocks[i].next = next->next;
-                    memset(next, 0, sizeof(Block));
-                }
-            }
-            return;
+            target = &blocks[i];
+            break;
         }
     }
 
-    LOG("CMM free: invalid pointer\n");
+    if (!target) {
+        LOG("CCM free: invalid pointer\n");
+        return;
+    }
+
+    // Find previous block
+    Block *scan = free_blocks;
+    while (scan && scan->next != target) {
+        scan = scan->next;
+    }
+    prev = scan;
+
+    target->free = true;
+    total_allocated -= target->size;
+
+    // Coalesce forward
+    if (target->next && target->next->free && (uint8_t *)target->ptr + target->size == (uint8_t *)target->next->ptr) {
+        Block *next = target->next;
+        target->size += next->size;
+        target->next = next->next;
+        memset(next, 0, sizeof(Block));
+    }
+
+    // Coalesce backward
+    if (prev && prev->free && (uint8_t *)prev->ptr + prev->size == (uint8_t *)target->ptr) {
+        prev->size += target->size;
+        prev->next = target->next;
+        memset(target, 0, sizeof(Block));
+    }
 }
 
 void CCMMemoryAllocator::print_usage() {
