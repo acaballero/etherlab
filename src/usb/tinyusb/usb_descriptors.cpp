@@ -29,27 +29,30 @@ static bool msc_enabled = false;
  *   [MSB]     AUDIO | MIDI | HID | MSC | CDC          [LSB]
  */
 #define PID_MAP(itf, n) ((CFG_TUD_##itf) ? (1 << (n)) : 0)
-#define USB_PID (0x4000 | PID_MAP(CDC, 0) | PID_MAP(MSC, 1) | PID_MAP(HID, 2) | PID_MAP(MIDI, 3) | PID_MAP(AUDIO, 4) | PID_MAP(VENDOR, 5))
+#define USB_PID (0x4000 | PID_MAP(CDC, 0) | (msc_enabled ? 0 : PID_MAP(MSC, 1)) | PID_MAP(HID, 2) | PID_MAP(MIDI, 3) | PID_MAP(AUDIO, 4) | PID_MAP(VENDOR, 5))
 
-tusb_desc_device_t const desc_device = {.bLength = sizeof(tusb_desc_device_t),
-                                        .bDescriptorType = TUSB_DESC_DEVICE,
-                                        .bcdUSB = 0x0200,
-                                        .bDeviceClass = TUSB_CLASS_MISC,
-                                        .bDeviceSubClass = MISC_SUBCLASS_COMMON,
-                                        .bDeviceProtocol = MISC_PROTOCOL_IAD,
-                                        .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
+tusb_desc_device_t desc_device = {.bLength = sizeof(tusb_desc_device_t),
+                                  .bDescriptorType = TUSB_DESC_DEVICE,
+                                  .bcdUSB = 0x0200,
+                                  .bDeviceClass = TUSB_CLASS_MISC,
+                                  .bDeviceSubClass = MISC_SUBCLASS_COMMON,
+                                  .bDeviceProtocol = MISC_PROTOCOL_IAD,
+                                  .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
-                                        .idVendor = 0x0483,   // STMicroelectronics
-                                        .idProduct = USB_PID, // Unique PID for this device
-                                        .bcdDevice = 0x0100,
+                                  .idVendor = 0x0483, // STMicroelectronics
+                                  .idProduct = 0,     // The unique PID for this device will be set on re-enumeration callback
+                                  .bcdDevice = 0x0100,
 
-                                        .iManufacturer = 0x01,
-                                        .iProduct = 0x02,
-                                        .iSerialNumber = 0x03,
+                                  .iManufacturer = 0x01,
+                                  .iProduct = 0x02,
+                                  .iSerialNumber = 0x03,
 
-                                        .bNumConfigurations = 0x01};
+                                  .bNumConfigurations = 0x01};
 
 uint8_t const *tud_descriptor_device_cb(void) {
+
+    desc_device.idProduct = USB_PID;
+    LOG("usb: descriptor device callback | ID: 0x%x\n", USB_PID);
     return (uint8_t const *)&desc_device;
 }
 
@@ -199,6 +202,8 @@ bool usb_set_msc_enabled(bool enable) {
         return false;
     }
 
+    LOG("usb_set_msc_enabled: Enabling MSC device\n");
+
     if (lock_sd_card(5000)) { // Wait for SD card to be free
         restart_sdio(
             true); // FIXME: Using SDIO at high speed here does not increase the SD speed. The MSC usb interface does not use DMA which is a bottleneck.
@@ -213,7 +218,7 @@ bool usb_set_msc_enabled(bool enable) {
 
         return true;
     } else {
-        status::pop_alert(status::ERROR, "Timeout waiting for SD card");
+        status::pop_alert(status::ERROR, "usb_set_msc_enabled: Timeout waiting for SD card");
     }
 
     return false;

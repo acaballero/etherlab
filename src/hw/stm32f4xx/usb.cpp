@@ -13,8 +13,6 @@
 
 extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 
-volatile uint8_t usb_msc_active = 0;
-
 /**
  * @brief This function handles USB On The Go HS global interrupt.
  */

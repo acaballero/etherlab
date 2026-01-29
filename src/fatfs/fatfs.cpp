@@ -43,7 +43,6 @@ FIL FatFSFileHandle; /* File object for USER */
 sdcard_st_info sdcard_info;
 uint64_t sdcard_last_check_ms;
 Signal sdcard_signal;
-volatile bool sd_card_locked = false;
 
 void sdcard_loop();
 
@@ -62,6 +61,7 @@ sdcard_st_info &get_info() {
 void sdcard_loop() {
 
     uint64_t t = HAL_GetTick();
+    bool usb_msc_active = usb_get_msc_enabled();
 
     if (usb_msc_active &&
         usb_connected()) { // Some hosts (almost all) don't cause a MSC_DeInit when the USB is detacched or unplugged so we also check the dev_state
@@ -85,20 +85,23 @@ void sdcard_loop() {
 
 bool try_lock_sd_card() {
     bool b;
-    if (sd_card_locked || usb_msc_active) {
+    if (sdcard_info.locked || usb_get_msc_enabled()) {
         b = false;
     } else {
-        sd_card_locked = true;
+        sdcard_info.locked = true;
 
         if (SDIO_GetPowerState(SDIO_HANDLE.Instance) == 0) {
-            // LOG("Powering up SDIO\n");
-            SDIO_PowerState_ON(SDIO_HANDLE.Instance);
+            LOG("Powering up SDIO\n");
+            HAL_StatusTypeDef ret = SDIO_PowerState_ON(SDIO_HANDLE.Instance);
+            if (ret != HAL_OK) {
+                LOG("Error powering SDIO: %d\n", ret);
+            }
             HAL_Delay(10);
         }
         b = true;
     }
 
-    // LOG("SD card locked: %d, state: %d\n", b, sd_card_locked);
+    LOG("SD card locked: %d, state: %d\n", b, sdcard_info.locked);
     return b;
 }
 
@@ -106,7 +109,7 @@ bool lock_sd_card(uint32_t timeout_ms, const char *id) {
     // TODO: Save who locked it and prevent other client to unlock.
     // Currently, if someone unlocks the card (and thus shutting power off which, btw, owes to EMI and battery reasons)
     // and some fatfs file is tried, it will timeout.
-    // LOG("%s tries to lock SD card: current: %d\n", id ? id : "unknown", sd_card_locked);
+    LOG("%s tries to lock SD card: current: %d\n", id ? id : "unknown", sdcard_info.locked);
 
     volatile uint32_t start = HAL_GetTick();
     while (!try_lock_sd_card()) {
@@ -126,10 +129,10 @@ bool lock_sd_card(uint32_t timeout_ms, const char *id) {
 }
 
 bool unlock_sd_card() {
-    // LOG("UNLOCK:%d\n", sd_card_locked);
+    LOG("UNLOCK:%d\n", sdcard_info.locked);
     bool b;
     static int task_id;
-    if (sd_card_locked && sdcard_info.status != MassStorageDeviceActive) { // note: prevent someone powering the sd device off while MSD is on
+    if (sdcard_info.locked && sdcard_info.status != MassStorageDeviceActive) { // note: prevent someone powering the sd device off while MSD is on
 
         // Turn off SDIO clock after a while, but not inmmediatelly, so if the card is locked again we don't waste time turning it on and off
         // The drawback is this clock (until I put the SD card in the main board) emits EMI like hell and can leak to the ADC and everywhere
@@ -139,19 +142,19 @@ bool unlock_sd_card() {
         }
 
         task_id = os::task_manager.set_timeout(50, []() {
-            if (!sd_card_locked) {
-                //  LOG("SDIO clock power down\n");
+            if (!sdcard_info.locked) {
+                LOG("SDIO clock power down\n");
                 SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
             }
         });
 
-        sd_card_locked = false;
+        sdcard_info.locked = false;
         b = true;
     } else {
         b = false;
     }
 
-    //  LOG("SDcard unlocked: %d, state: %d\n", b, sd_card_locked);
+    LOG("SDcard unlocked: %d, state: %d\n", b, sdcard_info.locked);
     return b;
 }
 

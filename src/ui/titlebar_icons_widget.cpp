@@ -12,6 +12,7 @@
 #include "input/inputEvent.h"
 #include "ips_font.h"
 #include "stm32f4xx_hal.h"
+#include "tinyusb/usb_composite_device.h"
 #include "titlebar_icons_widget.h"
 #include "config.h"
 #include "battery.h"
@@ -124,8 +125,7 @@ bool TitleBarIconsWidget::paint_callback() {
             color = C565_GREY_DARK;
             break;
         case sdcard_STATUS::Mounted:
-            if (usb_msc_active) {
-                // Mounted but MSC is active and waiting for the USB host
+            if (usb_get_msc_enabled()) { // Mounted but MSC is active and waiting for the USB host
                 color = C565_PURPLE;
             } else {
                 color = C565_GREEN;

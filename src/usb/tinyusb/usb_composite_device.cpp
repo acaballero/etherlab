@@ -221,21 +221,18 @@ bool usb_cdc_transmit(const uint8_t *data, uint16_t len) {
 //--------------------------------------------------------------------+
 
 // Invoked when received SCSI_CMD_INQUIRY
-void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4]) {
-
-    if (!usb_get_msc_enabled()) { // Does nothing if MSC is explicitly disabled
-        return;
-    }
-
+uint32_t tud_msc_inquiry2_cb(uint8_t lun, scsi_inquiry_resp_t *inquiry_resp, uint32_t bufsize) {
     (void)lun;
+    (void)bufsize;
+    const char vid[] = "A.Dust";
+    const char pid[] = "EL24 USB storage";
+    const char rev[] = "24";
 
-    const char vid[] = "Angel Dust";
-    const char pid[] = "Etherlab EL24 SDR Transceiver";
-    const char rev[] = "EL24";
+    strncpy((char *)inquiry_resp->vendor_id, vid, 8);
+    strncpy((char *)inquiry_resp->product_id, pid, 16);
+    strncpy((char *)inquiry_resp->product_rev, rev, 4);
 
-    memcpy(vendor_id, vid, strlen(vid));
-    memcpy(product_id, pid, strlen(pid));
-    memcpy(product_rev, rev, strlen(rev));
+    return sizeof(scsi_inquiry_resp_t); // 36 bytes
 }
 
 // Invoked when received Test Unit Ready command
