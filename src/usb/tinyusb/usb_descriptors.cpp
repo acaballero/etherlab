@@ -12,6 +12,7 @@
 #include "hw/stm32f4xx/connectivity.h"
 #include "status.h"
 #include "stm32f4xx.h"
+#include "stm32f4xx_hal.h"
 #include "tinyusb/usb_composite_device.h"
 #include <string.h>
 
@@ -183,20 +184,18 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
 // Public API to enable/disable MSC
 //--------------------------------------------------------------------+
 
-// Call this to trigger re-enumeration with new descriptor
-void usb_trigger_reenumeration(void) {
-    // Disconnect from bus
-    tud_disconnect();
-
-    // Wait a bit
-    HAL_Delay(100);
-
-    // Reconnect - will use new descriptor
-    tud_connect();
+int8_t wait_for_sd_idle(uint32_t timeout_ms) {
+    uint32_t start = HAL_GetTick();
+    while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {
+        if ((HAL_GetTick() - start) > timeout_ms) {
+            return 0; // timeout
+        }
+    }
+    return 1;
 }
 
 // Must be called when USB is NOT connected
-bool usb_set_msc_enabled(bool enable) {
+bool usb_set_msc_enabled(bool enable, char err_msg[128]) {
 
     if (msc_enabled == enable) {
         return false;
@@ -204,24 +203,34 @@ bool usb_set_msc_enabled(bool enable) {
 
     LOG("usb_set_msc_enabled: Enabling MSC device\n");
 
-    if (lock_sd_card(5000)) { // Wait for SD card to be free
-        restart_sdio(
-            true); // FIXME: Using SDIO at high speed here does not increase the SD speed. The MSC usb interface does not use DMA which is a bottleneck.
-                   // However, I've tried enabling DMA for MSC operation and it seems to mess with the USB DMA or something (dindn't try much)
-
-        msc_enabled = enable;
-
-        if (usb_connected()) {
-            // USB already connected: re-enumerate
-            usb_trigger_reenumeration();
-        }
-
-        return true;
-    } else {
-        status::pop_alert(status::ERROR, "usb_set_msc_enabled: Timeout waiting for SD card");
+    if (!wait_for_sd_idle(5000)) {
+        strncpy(err_msg, "usb_set_msc_enabled: Timeout waiting for SD idle", strlen(err_msg));
+        return false;
     }
 
-    return false;
+    if (!lock_sd_card(5000)) { // Wait for SD card to be free
+        strncpy(err_msg, "usb_set_msc_enabled: Timeout waiting for SD card lock", strlen(err_msg));
+        return false;
+    }
+
+    // restart_sdio(true); // FIXME: Using SDIO at high speed here does not increase the SD speed. The MSC usb interface does not use DMA which is a bottleneck.
+    // However, I've tried enabling DMA for MSC operation and it seems to mess with the USB DMA or something (dindn't try much)
+
+    f_mount(NULL, "", 0); // In case fatfs has a mounted filesystem, it has to be unmounted
+
+    msc_enabled = enable;
+
+    if (!wait_for_sd_idle(5000)) {
+        strncpy(err_msg, "usb_set_msc_enabled: Timeout waiting for SD idle", strlen(err_msg));
+        return false;
+    }
+
+    if (usb_connected()) {
+        // USB already connected: re-enumerate
+        usb_trigger_reenumeration();
+    }
+
+    return true;
 }
 
 bool usb_get_msc_enabled(void) {

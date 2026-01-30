@@ -16,23 +16,20 @@ extern SD_HandleTypeDef hsd;
  * @param lba Logical block address
  * @param buffer Buffer to store data
  * @param block_count Number of 512-byte blocks to read
- * @return 0 on success, -1 on error
+ * @return HAL_StatusTypeDef integer value
  */
+
 int sd_card_read_blocks(uint32_t lba, uint8_t *buffer, uint32_t block_count) {
     HAL_StatusTypeDef status;
 
     // Use HAL to read blocks
     status = HAL_SD_ReadBlocks(&hsd, buffer, lba, block_count, 1000);
 
-    if (status != HAL_OK) {
-        return -1;
-    }
-
+    return status != HAL_OK ? hsd.ErrorCode : HAL_OK;
+    ;
     // Wait for transfer to complete if using DMA
     // If you're using DMA, uncomment this:
     // while (HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER) {}
-
-    return 0;
 }
 
 /**
@@ -61,7 +58,7 @@ int sd_card_write_blocks(uint32_t lba, const uint8_t *buffer, uint32_t block_cou
 
 /**
  * Get total number of blocks on SD card
- * @return Number of 512-byte blocks
+ * @return Number blocks
  */
 uint32_t sd_card_get_block_count(void) {
     HAL_SD_CardInfoTypeDef card_info;

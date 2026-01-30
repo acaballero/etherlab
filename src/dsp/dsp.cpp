@@ -263,8 +263,12 @@ void dsp_start_task() {
         //  LOG("dsp_start_task: starting task\n");
         current_task->status.reset();
 
-        // TODO: Do this elsewhere
-        dsp::set_gain_db(dsp::dsp_config.gain);
+        // TODO: Do this elsewhere. Also, read the analog volume pot or use a rotary encoder to set the gain
+        if (current_task->status.id == dsp::DSP_PROCESSOR_RECEIVE) {
+            dsp::set_gain_db(0);
+        } else {
+            dsp::set_gain_db(dsp::dsp_config.gain);
+        }
 
         if (current_task->start()) {
 

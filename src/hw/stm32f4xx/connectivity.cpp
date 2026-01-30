@@ -727,7 +727,9 @@ void restart_sdio(bool high_speed) {
     if (set_sdio_high_speed(high_speed)) {
 
         __HAL_SD_DISABLE(&SDIO_HANDLE);
+        HAL_Delay(10);
         MODIFY_REG(SDIO_HANDLE.Instance->CLKCR, SDIO_CLKCR_CLKDIV, high_speed ? 0 : 1); // SDIO clk = PLLQ freq / (2+clkdiv)
+        HAL_Delay(10);
         __HAL_SD_ENABLE(&SDIO_HANDLE);
     }
 }

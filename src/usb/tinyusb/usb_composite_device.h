@@ -18,6 +18,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
+#define MSD_BLOCK_SIZE 512
+
 // Interface numbers when MSC is ENABLED
 enum {
     ITF_NUM_CDC = 0,
@@ -48,6 +50,8 @@ enum { ITF_IX_MICROPHONE, ITF_IX_SPEAKER };
 void usb_composite_init(void);
 
 bool usb_connected();
+
+void usb_trigger_reenumeration(void);
 
 bool usb_cable_connected();
 
@@ -81,9 +85,10 @@ bool usb_msc_connected(void);
  * 2. Call usb_trigger_reenumeration()
  *
  * @param enable  true to enable MSC, false to disable
+ * @param msg_err  Error message, if any
  * @return true if successful, false if USB is currently connected
  */
-bool usb_set_msc_enabled(bool enable);
+bool usb_set_msc_enabled(bool enable, char msg_err[128]);
 
 /**
  * @brief Get current MSC enable state

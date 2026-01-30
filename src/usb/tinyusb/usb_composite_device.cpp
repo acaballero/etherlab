@@ -127,7 +127,30 @@ bool usb_connected() {
 }
 
 static uint32_t usb_task_cnt = 0; // A counter to be able to "prescale" the audio streaming check
+volatile bool usb_enabled = true;
+
+// Call this to trigger re-enumeration with new descriptor
+void usb_trigger_reenumeration(void) {
+
+    usb_enabled = false;
+
+    // Disconnect from bus
+    tud_disconnect();
+
+    // Wait a bit
+    HAL_Delay(100);
+
+    // Reconnect - will use new descriptor
+    tud_connect();
+
+    usb_enabled = true;
+}
+
 void usb_composite_task(void) {
+
+    if (!usb_enabled) {
+        return;
+    }
     // TinyUSB device task - must be called frequently
     tud_task_ext(1, false);
 
@@ -240,7 +263,16 @@ bool tud_msc_test_unit_ready_cb(uint8_t lun) {
     (void)lun;
 
     msc_connected = true;
-    return sd_card_is_ready();
+    bool b = sd_card_is_ready();
+    LOG("usb: tud_msc_test_unit_ready_cb | lun:%d : %d\n", lun, b);
+    return b;
+}
+
+bool tud_msc_is_writable_cb(uint8_t lun) {
+    (void)lun;
+
+    LOG("msc: tud_msc_is_writable_cb: 1\n");
+    return true;
 }
 
 // Invoked when received SCSI_CMD_READ_CAPACITY_10 and SCSI_CMD_READ_FORMAT_CAPACITY
@@ -248,7 +280,9 @@ void tud_msc_capacity_cb(uint8_t lun, uint32_t *block_count, uint16_t *block_siz
     (void)lun;
 
     *block_count = sd_card_get_block_count();
-    *block_size = 512;
+    *block_size = MSD_BLOCK_SIZE;
+
+    LOG("msc: tud_msc_capacity_cb | blocks: %lu | size: %d\n", *block_count, *block_size);
 }
 
 // Invoked when received Start Stop Unit command
@@ -267,14 +301,20 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void *buff
     (void)offset; // TinyUSB handles offset internally
 
     // Calculate number of blocks to read
-    uint32_t block_count = bufsize / 512;
+    uint32_t block_count = bufsize / MSD_BLOCK_SIZE;
+    int32_t ret = -1;
 
     // Read from SD card using your existing function
-    if (sd_card_read_blocks(lba, (uint8_t *)buffer, block_count) == 0) {
-        return bufsize;
+    int read_status = sd_card_read_blocks(lba, (uint8_t *)buffer, block_count);
+
+    if (read_status == 0) {
+        ret = bufsize;
+    } else {
+        LOG("msc: tud_msc_read10_cb | read blocks (lun: %d,lba: %d,offset: %d", lun, lba, offset);
+        LOG_RAW(",n_blocks: %d,ret: 0x%x) : %d\n", block_count, read_status, ret);
     }
 
-    return -1; // Error
+    return ret; // Error
 }
 
 // Callback invoked when received WRITE10 command
@@ -282,18 +322,23 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *
     (void)lun;
     (void)offset;
 
-    uint32_t block_count = bufsize / 512;
+    uint32_t block_count = bufsize / MSD_BLOCK_SIZE;
+    int32_t ret = -1;
 
     if (sd_card_write_blocks(lba, buffer, block_count) == 0) {
-        return bufsize;
+        ret = bufsize;
+    } else {
+        LOG("msc: tud_msc_write10_cb | write blocks (lun: %d,lba: %d", lun, lba);
+        LOG_RAW(",offset: %d,n_blocks: %d) : %d\n", offset, block_count, ret);
     }
 
-    return -1;
+    return ret;
 }
 
 // Callback invoked when WRITE10 command is completed
 void tud_msc_write10_complete_cb(uint8_t lun) {
     (void)lun;
+    // LOG("msc: tud_msc_write10_complete_cb: %d\n", lun);
     // Optional: flush SD card cache if needed
 }
 
@@ -302,6 +347,7 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, u
     void const *response = NULL;
     int32_t resplen = 0;
 
+    LOG("msc: tud_msc_scsi_sb | command: %d\n", scsi_cmd[0]);
     switch (scsi_cmd[0]) {
         default:
             // Set Sense = Invalid Command Operation

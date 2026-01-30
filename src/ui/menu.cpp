@@ -252,7 +252,15 @@ bool locked = false;
 result set_usb_msc_mode(eventMask) {
     main_board::set_mute(GPIO_PIN_SET); // TODO: SD card generates big EMI. Pending new board with integrated SD card
 
-    usb_set_msc_enabled(true);
+    char err_msg[128];
+
+    bool b = usb_set_msc_enabled(true, err_msg);
+
+    if (!b) {
+        using namespace status;
+        pop_alert(Level::ERROR, err_msg);
+        return quit;
+    }
 
     return proceed;
 }

@@ -66,7 +66,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim_base) {
     if (htim_base->Instance == TIM6) {
 
         __HAL_RCC_TIM6_CLK_ENABLE();
-        HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 4, 0); // This has to have higher priority than the task timer
+        HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 0, 0); // This has to have higher priority than the task timer
         HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
     }
     if (htim_base->Instance == TIM13) {
@@ -386,16 +386,9 @@ void MX_TIM6_Init(void) {
 
     htim6.Instance = TIM6;
 
-    // For 1kHz (1ms period) at 84 MHz APB1 clock:
-    // Prescaler: 84000 - 1 = 83999 (gives 1kHz clock)
-    // Period: 1 (1ms)
-    // Or alternatively:
-    // Prescaler: 840 - 1 = 839 (gives 100kHz clock)
-    // Period: 100 - 1 = 99 (gives 1kHz interrupt)
-
-    htim6.Init.Prescaler = 2000; // 84MHz / 840 = 100kHz
+    htim6.Init.Prescaler = 83;
     htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim6.Init.Period = 99; // 100kHz / 100 = 1kHz (1ms)
+    htim6.Init.Period = 999;
     htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
     if (HAL_TIM_Base_Init(&htim6) != HAL_OK) {
