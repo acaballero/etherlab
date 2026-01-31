@@ -292,9 +292,9 @@ void rtc_to_string(st_datetime dt, bool only_date, char *buffer) {
 }
 
 uint32_t rtc_uptime() {
-    rtc_update();
-    uint32_t epoch_now = rtc_to_epoch(&date_time.time, &date_time.date);
-    uint32_t epoch_boot = rtc_to_epoch(&last_boot.time, &last_boot.date);
+    auto dt = rtc_get_date_time();
+    uint32_t epoch_now = rtc_to_epoch(&dt.time, &dt.date);
+    uint32_t epoch_boot = rtc_to_epoch(&dt.time, &dt.date);
     uint32_t elapsed = epoch_now - epoch_boot;
     return elapsed;
 }

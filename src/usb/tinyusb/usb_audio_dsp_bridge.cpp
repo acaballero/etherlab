@@ -122,7 +122,7 @@ void usb_audio_send(int16_t *buffer, uint32_t count, uint16_t sample_rate) {
 
     // Apply volume and change resolution
     for (size_t i = 0; i < count; i++) {
-        buffer[i] = (adc_type)(buffer[i] * usb::volume_factor[ITF_IX_MICROPHONE][1]) << 3; // 12 to 16 bit resolution
+        buffer[i] = (adc_type)(buffer[i] * usb::volume_factor[ITF_IX_MICROPHONE][1]) << 4; // 12 to 16 bit resolution
     }
 
     // Linear interpolation.

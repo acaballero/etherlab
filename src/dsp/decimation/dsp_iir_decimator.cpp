@@ -84,12 +84,13 @@ template <int order> bool DspIIRDecimator<order>::init() {
     Dsp::Cascade::Stage *dg;
 
     if (type == LPF) {
-        Dsp::SimpleFilter<Dsp::Butterworth::LowPass<order>, 1, Dsp::DirectFormI> f;
+        Dsp::SimpleFilter<Dsp::ChebyshevI::LowPass<order>, 1, Dsp::DirectFormI> f;
 
-        f.setup(order,                    // order
-                this->input_rate,         // sample rate
-                ((double)this->bandwidth) // cutoff frequency
-        );                                // ripple dB
+        f.setup(order,                     // order
+                this->input_rate,          // sample rate
+                ((double)this->bandwidth), // cutoff frequency
+                0.5                        // ripple dB
+        );
 
         Dsp::Cascade::Storage st = f.getCascadeStorage();
         dg = st.stageArray;
@@ -107,15 +108,16 @@ template <int order> bool DspIIRDecimator<order>::init() {
         dg = st.stageArray;
         n_stages = f.getNumStages();
     } else {
-        Dsp::SimpleFilter<Dsp::Butterworth::BandPass<order>, 1, Dsp::DirectFormI> f;
+        Dsp::SimpleFilter<Dsp::ChebyshevI::BandPass<order>, 1, Dsp::DirectFormI> f;
         uint32_t bw = bandwidth - start_frequency; // I know, bandwidth is such a bad naming for the cutoff freq when it comes to band-pass
 
         // NOTE: The bandpass transform will have TWICE as poles as the base lowpass
         f.setup(order,                      // order
                 this->input_rate,           // sample rate
                 start_frequency + (bw / 2), // center frequency
-                bw                          // center frequency
-        );                                  // Rolloff
+                bw,                         // center frequency
+                0.5                         // ripple
+        );
 
         Dsp::Cascade::Storage st = f.getCascadeStorage();
         dg = st.stageArray;
