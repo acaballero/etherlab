@@ -23,6 +23,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
 
         CCMMemoryAllocator::free(coeffs);
         CCMMemoryAllocator::free(state);
+        CCMMemoryAllocator::free(tmp_buff);
     }
 
     DspFIRDecimatorFloatBase(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<T>(input_rate, output_rate, factor) {
@@ -48,11 +49,10 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
 
     filter_type type = LPF;
 
-    uint32_t start_frequency;    // Start frequency for the band-pass case
-    float32_t *coeffs = nullptr; //[TAPS];
-    float32_t *state = nullptr;  //[TAPS + DSP_BLOCK - 1];
-    float tmp_buff_in[DSP_BLOCK];
-    float tmp_buff_out[DSP_BLOCK];
+    uint32_t start_frequency;      // Start frequency for the band-pass case
+    float32_t *coeffs = nullptr;   //[TAPS];
+    float32_t *state = nullptr;    //[TAPS + DSP_BLOCK - 1];
+    float32_t *tmp_buff = nullptr; //[DSP_BLOCK];
 
     arm_fir_decimate_instance_f32 dsp_fir_decimate_instance = {1, TAPS, coeffs, state};
 };
@@ -62,6 +62,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloat : publ
     ~DspFIRDecimatorFloat() override {
 
         CCMMemoryAllocator::free(state_q);
+        CCMMemoryAllocator::free(tmp_buff_q);
     }
 
     void set_factor(uint16_t factor) override;
@@ -77,16 +78,15 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloat : publ
   protected:
     using DspFIRDecimatorFloatBase<TAPS, float32_t>::state;
     using DspFIRDecimatorFloatBase<TAPS, float32_t>::state_size;
-    using DspFIRDecimatorFloatBase<TAPS, float32_t>::tmp_buff_in;
-    using DspFIRDecimatorFloatBase<TAPS, float32_t>::tmp_buff_out;
+    using DspFIRDecimatorFloatBase<TAPS, float32_t>::tmp_buff;
     using DspFIRDecimatorFloatBase<TAPS, float32_t>::dsp_fir_decimate_instance;
 
     bool init() override;
     void clear_state() override;
 
-    float32_t *state_q = nullptr; //[TAPS + DSP_BLOCK - 1];
-    float tmp_buff_in_q[DSP_BLOCK];
-    float tmp_buff_out_q[DSP_BLOCK];
+    float32_t *state_q = nullptr;    //[TAPS + DSP_BLOCK - 1];
+    float32_t *tmp_buff_q = nullptr; // DSP_BLOCK
+
     arm_fir_decimate_instance_f32 dsp_fir_decimate_instance_q = {1, TAPS, this->coeffs, state_q};
 };
 

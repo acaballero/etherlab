@@ -21,7 +21,7 @@ void debug_print(const char *str, int timestamp, ...) {
     auto t = HAL_GetTick();
 
 #if SWO_ENABLED
-    if (debug_indent) {
+    if (timestamp && debug_indent) {
         printf_("%*s", debug_indent, "");
     }
     if (timestamp) {

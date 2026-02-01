@@ -255,10 +255,14 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
                 factor = dec >= 16 ? 8 : (dec >= 8 ? 4 : (dec >= 4 ? 2 : 2));
                 next_stage_bandwidth = (stage_sr / (factor * 3)); // Low pass fiter to 1/3 sample rate
                 decimators[n_decimators] = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS>>();
-                LOG("ReceiveTask::init_decimators: Decimation step => \n");
+
+                LOG("ReceiveTask::init_decimators: Decimation step %d => \n", n_decimators);
             }
 
+            auto volatile dec = (DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS> *)(decimators[n_decimators].get());
             ret = decimators[n_decimators]->config(stage_sr, next_stage_bandwidth, factor);
+            auto f = dec->get_factor();
+            LOG("Decimation step %d configured | factor: %u => \n", n_decimators, f);
         }
 
         if (!ret) {
@@ -266,9 +270,9 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
             return false;
         }
 
-        n_decimators++;
-
         LOG("Rate %d / %d -> %d (filter: %d)\n", stage_sr, factor, stage_sr / factor, next_stage_bandwidth);
+
+        n_decimators++;
         dec /= factor;
         stage_sr = stage_sr / factor;
     }
@@ -413,8 +417,9 @@ void ReceiveTaskBase::stop() {
         HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
 
         // Free decimators memory (wish this wouldn't be necessary but there must be room for other allocations while stopped)
-        decimators[0].reset();
-        decimators[1].reset();
+        for (auto &dec : decimators) {
+            dec.reset();
+        }
         signal_decimator.reset();
 
         status.status = DSP_STATUS_STOPPED;

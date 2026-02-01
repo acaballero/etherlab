@@ -7,6 +7,7 @@
 #include "dsp/fft/fft.h"
 #include "dsp/replay/dsp_replay_ui.h"
 #include "dsp_capture_ui.h"
+#include "io/fatfs_file.h"
 #include "io/file_types.h"
 #include "items.h"
 #include "menuBase.h"
@@ -103,6 +104,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
             // Don't try to set the file name before configuring dsp params
             fname = WAVEFILE_DEFAULT_FOLDER;
+            io::check_and_create_folder(WAVEFILE_DEFAULT_FOLDER);
             fname += "/" + get_file_name();
 
             task->setFile(FileFactory::getFile(ftype, fname));

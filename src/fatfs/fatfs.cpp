@@ -91,7 +91,7 @@ bool try_lock_sd_card() {
         sdcard_info.locked = true;
 
         if (SDIO_GetPowerState(SDIO_HANDLE.Instance) == 0) {
-            LOG("Powering up SDIO\n");
+            //   LOG("Powering up SDIO\n");
             HAL_StatusTypeDef ret = SDIO_PowerState_ON(SDIO_HANDLE.Instance);
             if (ret != HAL_OK) {
                 LOG("Error powering SDIO: %d\n", ret);
@@ -101,7 +101,7 @@ bool try_lock_sd_card() {
         b = true;
     }
 
-    LOG("SD card locked: %d, state: %d\n", b, sdcard_info.locked);
+    // LOG("SD card locked: %d, state: %d\n", b, sdcard_info.locked);
     return b;
 }
 
@@ -109,7 +109,7 @@ bool lock_sd_card(uint32_t timeout_ms, const char *id) {
     // TODO: Save who locked it and prevent other client to unlock.
     // Currently, if someone unlocks the card (and thus shutting power off which, btw, owes to EMI and battery reasons)
     // and some fatfs file is tried, it will timeout.
-    LOG("%s tries to lock SD card: current: %d\n", id ? id : "unknown", sdcard_info.locked);
+    // LOG("%s tries to lock SD card: current: %d\n", id ? id : "unknown", sdcard_info.locked);
 
     volatile uint32_t start = HAL_GetTick();
     while (!try_lock_sd_card()) {
@@ -129,7 +129,7 @@ bool lock_sd_card(uint32_t timeout_ms, const char *id) {
 }
 
 bool unlock_sd_card() {
-    LOG("UNLOCK:%d\n", sdcard_info.locked);
+    //  LOG("UNLOCK:%d\n", sdcard_info.locked);
     bool b;
     static int task_id;
     if (sdcard_info.locked && sdcard_info.status != MassStorageDeviceActive) { // note: prevent someone powering the sd device off while MSD is on
@@ -143,7 +143,7 @@ bool unlock_sd_card() {
 
         task_id = os::task_manager.set_timeout(50, []() {
             if (!sdcard_info.locked) {
-                LOG("SDIO clock power down\n");
+                //      LOG("SDIO clock power down\n");
                 SDIO_PowerState_OFF(SDIO_HANDLE.Instance);
             }
         });
@@ -154,7 +154,7 @@ bool unlock_sd_card() {
         b = false;
     }
 
-    LOG("SDcard unlocked: %d, state: %d\n", b, sdcard_info.locked);
+    //   LOG("SDcard unlocked: %d, state: %d\n", b, sdcard_info.locked);
     return b;
 }
 

@@ -107,18 +107,13 @@ void restart_callback(void *, const void *) {
         dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, current_task->status.id, current_task}, nullptr);
     } else if (config.mode == DIGITAL_RX && (!current_task || (current_task->status.id == dsp::DSP_PROCESSOR_TRANSMIT))) {
         LOG("restart_callback: Toggle digital TX->RX\n");
-
         dsp_stop();
-
-        dsp_task = std::make_unique<ReceiveTask>(dspSuccess, dspError);
-
-        dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE, dsp_task.get()}, nullptr);
+        dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
     } else if (config.mode == DIGITAL_TX && (!current_task || (current_task->status.id == dsp::DSP_PROCESSOR_RECEIVE))) {
         LOG("restart_callback: Toggle digital RX->TX\n");
         dsp_stop();
-
         dsp_task = std::make_unique<TransmitTask>(dspSuccess, dspError);
-        dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_TRANSMIT, dsp_task.get()}, nullptr);
+        dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_TRANSMIT}, nullptr);
     } else {
         LOG("restart_callback:dsp_restart\n");
         dsp_restart();
@@ -165,12 +160,26 @@ Task *get_command_task(dsp::st_dsp_command &command) {
         task = command.task;
     } else {
         if (command.id < dsp::DSP_TASKS_N) {
+            // TODO: Elimitate pre-created tasks
             task = dsp::tasks[command.id];
         } else {
-            status::pop_alert(status::ERROR, "Error getting task from command ID");
 
-            do {
-            } while (0); // Breakpoint
+            switch (command.id) {
+                case dsp::DSP_PROCESSOR_RECEIVE:
+                    dsp_task = std::make_unique<ReceiveTask>(dspSuccess, dspError);
+                    task = dsp_task.get();
+                    break;
+                case dsp::DSP_PROCESSOR_TRANSMIT:
+                    dsp_task = std::make_unique<TransmitTask>(dspSuccess, dspError);
+                    task = dsp_task.get();
+                    break;
+
+                default:
+                    status::pop_alert(status::ERROR, "Error getting task from command ID");
+
+                    do {
+                    } while (0); // Breakpoint
+            }
         }
     }
 

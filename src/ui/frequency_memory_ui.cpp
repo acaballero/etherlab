@@ -365,7 +365,7 @@ auto extract_freq_func = [](const std::string &line) {
     return m.freq;
 };
 
-void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories, FREQ_TYPE type) {
+void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories, const std::vector<FREQ_TYPE> &types) {
 
     //  LOG("find_in_freq_range %d, %d\n", freq_min, freq_max);
     INIT_OR_ABORT()
@@ -392,12 +392,17 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
         for (auto line : lines) {
             if (!line.empty()) {
                 auto item = deserialize_freq_mem(line.c_str());
-                if (type == ALL || item.type == type) {
+                if (types.empty() || std::find(types.begin(), types.end(), item.type) != types.end()) {
                     out_memories.push_back(item);
                 }
             }
         }
     }
+}
+
+void get_band_modes_in_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories) {
+
+    find_in_freq_range(freq_min, freq_max, out_memories, {BAND_START, BAND_END});
 }
 
 // Get total number of frequency memory entries

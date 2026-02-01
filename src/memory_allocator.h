@@ -23,7 +23,7 @@ class CCMMemoryAllocator {
     static Block *free_blocks;
     static size_t total_allocated;
     static bool initialized;
-    static constexpr int size = 16384;
+    static constexpr int size = 20480;
 
   public:
     static uint8_t ccm_memory_pool[size] __attribute__((section(".ccmram"))) __attribute__((aligned(32)));

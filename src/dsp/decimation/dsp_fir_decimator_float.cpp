@@ -38,14 +38,14 @@ void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<float32_t> &src, buffer_t<flo
 
     // Extract the signal from the interleaved IQ buffer
     for (uint16_t i = start, j = 0; j < n_samples; i += n_channels, j++) {
-        this->tmp_buff_in[j] = src.p[i];
+        this->tmp_buff[j] = src.p[i];
     }
 
-    arm_fir_decimate_f32(&this->dsp_fir_decimate_instance, this->tmp_buff_in, this->tmp_buff_out, n_samples);
+    arm_fir_decimate_f32(&this->dsp_fir_decimate_instance, this->tmp_buff, this->tmp_buff, n_samples);
 
     // Write to the final adc_buffer in interleaved IQ format
     for (uint16_t i = start_dst, j = 0; j < decimated_block_size; i += n_channels, j++) {
-        dst.p[i] = this->tmp_buff_out[j];
+        dst.p[i] = this->tmp_buff[j];
         // LOG_RAW("%.1f,", tmp_buff_out[j]);
     }
     // LOG_RAW("\n");
@@ -76,10 +76,10 @@ template <int TAPS> void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<complex_t
 
     uint16_t n_samples = src.count;
 
-    dsp::unzip_f32((const float32_t *)src.p, tmp_buff_in, tmp_buff_in_q, n_samples);
+    dsp::unzip_f32((const float32_t *)src.p, tmp_buff, tmp_buff_q, n_samples);
 
-    arm_fir_decimate_f32(&dsp_fir_decimate_instance, tmp_buff_in, dst_i, n_samples);
-    arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, tmp_buff_in_q, dst_q, n_samples);
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance, tmp_buff, dst_i, n_samples);
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, tmp_buff_q, dst_q, n_samples);
 }
 
 template <int TAPS> void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst) {
@@ -89,12 +89,12 @@ template <int TAPS> void DspFIRDecimatorFloat<TAPS>::decimate(buffer_t<float32_t
 
         uint16_t decimated_block_size = n_samples / this->factor; // DMA buffer size (DSP_BLOCK) / decimation factor
 
-        dsp::unzip_f32((const float32_t *)src.p, tmp_buff_in, tmp_buff_in_q, n_samples);
+        dsp::unzip_f32((const float32_t *)src.p, tmp_buff, tmp_buff_q, n_samples);
 
-        arm_fir_decimate_f32(&dsp_fir_decimate_instance, tmp_buff_in, tmp_buff_out, n_samples);
-        arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, tmp_buff_in_q, tmp_buff_out_q, n_samples);
+        arm_fir_decimate_f32(&dsp_fir_decimate_instance, tmp_buff, tmp_buff, n_samples);
+        arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, tmp_buff_q, tmp_buff_q, n_samples);
 
-        dsp::zip_f32(tmp_buff_out, tmp_buff_out_q, (float32_t *)dst.p, decimated_block_size);
+        dsp::zip_f32(tmp_buff, tmp_buff_q, (float32_t *)dst.p, decimated_block_size);
     } else if (src.format == COMPLEX_SEQUENTIAL && dst.format == COMPLEX_SEQUENTIAL) {
         decimate((float32_t *)src.p, (float32_t *)src.p + src.count, (float32_t *)dst.p, (float32_t *)dst.p + src.count / this->factor, src.count);
     } else if (src.format == COMPLEX_SEQUENTIAL && dst.format == COMPLEX_INTERLEAVED) {
@@ -119,10 +119,10 @@ template <int TAPS> void DspFIRDecimatorFloat<TAPS>::decimate(float32_t *src_i, 
 
     uint16_t decimated_block_size = n_samples / this->factor; // DMA buffer size (DSP_BLOCK) / decimation factor
 
-    arm_fir_decimate_f32(&dsp_fir_decimate_instance, src_i, tmp_buff_out, n_samples);
-    arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, src_q, tmp_buff_out_q, n_samples);
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance, src_i, tmp_buff, n_samples);
+    arm_fir_decimate_f32(&dsp_fir_decimate_instance_q, src_q, tmp_buff_q, n_samples);
 
-    dsp::zip_f32(tmp_buff_out, tmp_buff_out_q, (float32_t *)dst.p, decimated_block_size);
+    dsp::zip_f32(tmp_buff, tmp_buff_q, (float32_t *)dst.p, decimated_block_size);
 }
 
 template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
@@ -132,6 +132,7 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
     if (coeffs == nullptr) {
         coeffs = (float32_t *)CCMMemoryAllocator::alloc(TAPS * sizeof(float32_t));
         state = (float32_t *)CCMMemoryAllocator::alloc(state_size);
+        tmp_buff = (float32_t *)CCMMemoryAllocator::alloc(DSP_BLOCK * sizeof(float32_t));
     }
 
     if (type == BPF) {
@@ -159,6 +160,7 @@ template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::init() {
 
     if (state_q == nullptr) {
         state_q = (float32_t *)CCMMemoryAllocator::alloc(state_size);
+        tmp_buff_q = (float32_t *)CCMMemoryAllocator::alloc(DSP_BLOCK * sizeof(float32_t));
     }
 
     arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance_q, TAPS, this->factor, this->coeffs, state_q, DSP_BLOCK);

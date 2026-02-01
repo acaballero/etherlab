@@ -5,6 +5,7 @@
 #include "lock_view.h"
 #include "hw/stm32f4xx/usb.h"
 #include "ips_font.h"
+#include "tinyusb/usb_composite_device.h"
 #include "ui/widget.h"
 
 void LockView::init() {
@@ -30,8 +31,10 @@ void LockView::before_paint() {
 
 bool LockView::on_input(const st_inputEvent e) {
     if (!e.is_touch()) {
-        // TINYUSB REMOVED
-        //   init_USB_CDC();
+        char msg_err[128];
+        if (!usb_set_msc_enabled(false, msg_err)) {
+            LOG("Error disabling sass storage USB mode: %s", msg_err);
+        }
         return true;
     } else {
         return false;

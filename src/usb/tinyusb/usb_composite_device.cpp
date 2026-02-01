@@ -148,6 +148,10 @@ void usb_trigger_reenumeration(void) {
 
 void usb_composite_task(void) {
 
+    if (!usb_cable_connected()) {
+        return;
+    }
+
     if (!usb_enabled) {
         return;
     }

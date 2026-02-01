@@ -49,7 +49,7 @@ enum WATERFALL_MODE { AVERAGE, MAX_HOLD };
 #define FFT_MIN_DB -145
 #define FFT_MAX_DB -30
 // When the min/max is auto, the desired headroom
-#define FFT_HEADROOM_DB 40
+#define FFT_HEADROOM_DB 25
 
 // Threshold above noise floor to take a signal into account
 #define FFT_SIGNAL_THRESHOLD_DB 20
