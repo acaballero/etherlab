@@ -161,12 +161,12 @@ void on_event(st_dsp_params *status) {
             captureMenu[captureMenu.sz() - 1].enable();
 
             // Set the previous mode
-            os::task_manager.set_timeout(1, []() {
-                if (previous_mode == DIGITAL_RX) {
-                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
-                }
-                main_board::set_mode(previous_mode);
-            });
+            // os::task_manager.set_timeout(1, []() {
+            // if (previous_mode == DIGITAL_RX) {
+            //     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
+            // }
+            //    main_board::set_mode(previous_mode);
+            //});
 
             break;
         case DSP_STATUS_STOPPING:

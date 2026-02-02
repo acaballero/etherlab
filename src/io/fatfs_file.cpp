@@ -11,6 +11,8 @@
 #include <locale>
 #include "status.h"
 
+FILINFO tmp_filinfo{};
+
 io::filesystem_error FatFSFile::open_fatfs(const io::path &filename) {
     FRESULT result = FR_LOCKED;
     path = filename;
@@ -369,23 +371,22 @@ io::filesystem_error copy_file(const io::path &file_path, const io::path &dest_p
 }
 
 FATTimestamp file_created_date(const io::path &file_path) {
-    FILINFO filinfo;
 
     FRESULT res = FR_LOCKED;
     if (lock_sd_card()) {
-        res = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
+        res = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &tmp_filinfo);
         unlock_sd_card();
     }
-    return {filinfo.fdate, filinfo.ftime};
+    return {tmp_filinfo.fdate, tmp_filinfo.ftime};
 }
 
 io::filesystem_error file_update_date(const io::path &file_path, FATTimestamp timestamp) {
-    FILINFO filinfo{};
+    tmp_filinfo = {};
 
-    filinfo.fdate = timestamp.FAT_date;
-    filinfo.ftime = timestamp.FAT_time;
+    tmp_filinfo.fdate = timestamp.FAT_date;
+    tmp_filinfo.ftime = timestamp.FAT_time;
     lock_sd_card();
-    return f_utime(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
+    return f_utime(reinterpret_cast<const TCHAR *>(file_path.c_str()), &tmp_filinfo);
     unlock_sd_card();
 }
 
@@ -522,33 +523,32 @@ bool is_regular_file(const file_status s) {
 }
 
 bool file_exists(const path &file_path) {
-    FILINFO filinfo;
+
     lock_sd_card();
-    auto fr = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
+    auto fr = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &tmp_filinfo);
     unlock_sd_card();
     return fr == FR_OK;
 }
 
 bool is_directory(const path &file_path) {
-    FILINFO filinfo;
+
     lock_sd_card();
-    auto fr = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &filinfo);
+    auto fr = f_stat(reinterpret_cast<const TCHAR *>(file_path.c_str()), &tmp_filinfo);
     unlock_sd_card();
 
-    return fr == FR_OK && is_directory(static_cast<file_status>(filinfo.fattrib));
+    return fr == FR_OK && is_directory(static_cast<file_status>(tmp_filinfo.fattrib));
 }
 
 FRESULT check_and_create_folder(const char *path) {
 
-    FILINFO fno;
     FRESULT res = FR_LOCKED;
     if (lock_sd_card()) {
         // Check if folder exists
-        res = f_stat(path, &fno);
+        res = f_stat(path, &tmp_filinfo);
 
         if (res == FR_OK) {
             // Path exists, check if it's a directory
-            if (fno.fattrib & AM_DIR) {
+            if (tmp_filinfo.fattrib & AM_DIR) {
                 res = FR_OK; // Folder exists
             } else {
                 res = FR_EXIST; // Path exists but it's a file, not a folder
@@ -565,7 +565,6 @@ FRESULT check_and_create_folder(const char *path) {
 
 bool is_empty_directory(const path &file_path) {
     DIR dir;
-    FILINFO filinfo;
 
     if (!is_directory(file_path)) {
         return false;
@@ -573,10 +572,10 @@ bool is_empty_directory(const path &file_path) {
 
     FRESULT res = FR_LOCKED;
     if (lock_sd_card()) {
-        res = f_findfirst(&dir, &filinfo, reinterpret_cast<const TCHAR *>(file_path.c_str()), (const TCHAR *)"*");
+        res = f_findfirst(&dir, &tmp_filinfo, reinterpret_cast<const TCHAR *>(file_path.c_str()), (const TCHAR *)"*");
         unlock_sd_card();
     }
-    return !((res == FR_OK) && (filinfo.fname[0] != (TCHAR)'\0'));
+    return !((res == FR_OK) && (tmp_filinfo.fname[0] != (TCHAR)'\0'));
 }
 
 int file_count(const path &directory) {

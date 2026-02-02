@@ -199,7 +199,9 @@ uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_param
         }
     }
 
-    dsp_stop();
+    if (command.command != DSP_COMMAND_STOP) {
+        dsp_stop();
+    }
 
     on_event = cb;
     pending_command = command;
@@ -543,7 +545,7 @@ void dsp_stop() {
 
         dspstatus = DSP_STATUS_STOPPING;
 
-        Task *current_t = current_task;
+        auto current_task_id = current_task ? current_task->status.id : -1;
 
         dsp_stop_task();
 
@@ -560,9 +562,9 @@ void dsp_stop() {
 
         dspstatus = DSP_STATUS_STOPPED;
 
-        if (!ISANALOG && current_t != dsp::tasks[dsp::DSP_PROCESSOR_RECEIVE]) {
-            // TODO: This prevents stopping all tasks in digital mode by indirectly causing the receive task to be restarted. But its ugly
-            fft_config(fft::fft_params.span);
+        if (!ISANALOG && current_task_id >= 0 && current_task_id != dsp::DSP_PROCESSOR_RECEIVE) {
+            // TODO: This prevents stopping all tasks in digital mode by  causing the receive task to be restarted. But its ugly
+            dsp_command({DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
         }
 
         dsp_stop_usb_bridge();

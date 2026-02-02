@@ -145,6 +145,7 @@ bool CaptureTask::start() {
         this->halt(DSP_ERR_FILEOPEN);
         return false;
     } else {
+        dsp::enable_frequency_shift(false);
 
         // Update FFT and sample rate parameters
         fft_config(config.fft.span);
@@ -183,6 +184,8 @@ void CaptureTask::stop() {
         }
 
         Task::stop(); // Let the base class do its common finish
+
+        dsp::enable_frequency_shift(true);
 
         dsp::set_sample_freq_limits(false);
 

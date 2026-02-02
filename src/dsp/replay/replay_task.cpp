@@ -206,7 +206,11 @@ bool ReplayTask::start() {
             return false;
         }
 
-        dsp::enable_frequency_shift(false); // Capture/Replay wont apply frequency shifts for DC issues mitigation
+        // Capture/Replay won't apply frequency shifts (for DC issues mitigation) because:
+        // - The ReplayProcessor is also used in other tasks (e.g. APRS trasnsmit) that do not accout for the shift
+        // - Honestly I haven't take the time to think about why it would benefit from the shifting, but it is very likely
+        //   required since the DC blocker is surely killing whatever is at DC (the carrier itself if any)
+        dsp::enable_frequency_shift(false);
     }
 
     return true;

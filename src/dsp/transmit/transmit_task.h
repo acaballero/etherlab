@@ -87,7 +87,7 @@ class TransmitTask : public Task {
         return true;
     };
 
-    // TODO: If this class is ever extened (as ReplayTaskBase is), use this for specific pre-modulation audio processing
+    // TODO: If this class is ever extened (as ReceiveTaskBase is), use this for specific pre-modulation audio processing
     // virtual void process_audio(buffer_t<float32_t> &){};
 
     // Skips demodulation step for testing purposes, echoing the baseband signal

@@ -19,6 +19,8 @@ void DspCaptureProcessor::work(const buffer_t<adc_type> *buffer) {
         return;
     }
 
+    GPIOD->BSRR |= GPIO_PIN_9;
+
     auto p = buffer->p;
     size_t size = buffer->count;
 
@@ -51,6 +53,8 @@ void DspCaptureProcessor::work(const buffer_t<adc_type> *buffer) {
     if (err != FIFO_ERROR_NONE) {
         this->status.fifo_overruns++;
     }
+
+    GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }
 bool DspCaptureProcessor::start() {
 
