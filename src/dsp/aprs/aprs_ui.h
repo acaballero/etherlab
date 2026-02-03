@@ -104,8 +104,7 @@ class APRSView : public View {
     }
 
     SignalToken aprs_signal_token;
-    APRSTask aprs_task{dspSuccess, dspError};
-    AFSKTXTask aprs_tx_task{dspSuccess, dspError};
+
     APRSSource current_source;
 
     std::unique_ptr<ui::MapView> map;

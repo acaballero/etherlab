@@ -5,7 +5,9 @@
 #ifndef TRX_FRONTEND_TASK_H
 #define TRX_FRONTEND_TASK_H
 
+#include "dsp/dsp_processor.h"
 #include "dsp_common.h"
+#include <memory>
 
 class Task {
 
@@ -21,14 +23,40 @@ class Task {
     virtual void work() = 0;
     virtual void reset();
     void halt(DSP_ERROR);
-    st_dsp_params status;
+    st_dsp_params info;
+
+    // Get the status
+    virtual st_dsp_params *get_info() {
+        // FIXME: The authoritative info is from the processor or the task depending on who carries the relevant information regarding overruns/underruns
+        // This is so ugly
+        return info.direction != DSP_DIRECTION_IN ? &processor->info : &info;
+    }
+
+    DspProcessor *get_processor() {
+        return processor.get();
+    }
 
     // Callback for the first processed block
     std::function<void()> on_first_block{};
 
   protected:
+    // Task-specific initialization. Subclasses override this
+    // Called before processor startup
+    virtual bool start_impl() = 0;
+
     void (*on_success)();
     void (*on_error)(DSP_ERROR);
+
+    std::unique_ptr<DspProcessor> processor;
+
+  private:
+    // Common processor startup logic
+    bool start_processor();
+
+    // Creates the processor for this task (nullptr if task has no processor)
+    virtual std::unique_ptr<DspProcessor> create_processor() {
+        return nullptr;
+    }
 };
 
 #endif // TRX_FRONTEND_TASK_H

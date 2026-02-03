@@ -13,7 +13,7 @@ class DspReplayProcessor : public DspProcessor {
 
   public:
     DspReplayProcessor() {
-        this->status.direction = DSP_DIRECTION_OUT;
+        this->info.direction = DSP_DIRECTION_OUT;
     }
 
     void work(const buffer_t<adc_type> *buffer) override;

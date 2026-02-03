@@ -8,8 +8,9 @@
 #include "dsp/aprs/aprs_packet.h"
 #include "dsp/aprs/aprs_rx_task.h"
 #include "dsp/aprs/aprs_settings.h"
+#include "dsp/aprs/aprs_table_widget.h"
+#include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
-#include "dsp/dsp_processors.h"
 #include "dsp/dsp_tasks.h"
 #include "dsp/fft/fft.h"
 #include "hw/board/board_v2.h"
@@ -30,6 +31,7 @@
 #include <cstddef>
 #include <cstring>
 #include <iterator>
+#include <memory>
 #include <string>
 
 #include "dsp/protocols/aprs.hpp"
@@ -157,7 +159,8 @@ void APRSView::toggle_beacon() {
 
 void APRSView::start_rx() {
     //  LOG("START RX\n");
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE, &aprs_task}, [this](st_dsp_params *status) {
+
+    dsp_start(std::make_unique<APRSTask>(dspSuccess, dspError), [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();
@@ -165,7 +168,7 @@ void APRSView::start_rx() {
             }
         }
     });
-    // To execute a task other than DSP_TASK_RECEIVE, set_mode has to be called
+    // To execute a tas k other than DSP_TASK_RECEIVE, set_mode has to be called
     main_board::set_mode(DIGITAL_RX);
 
     set_agc_enabled(false); // Prevent sudden changes in gain from the digital AGC. TODO: Whether digital AGC is enabled or not should be a property of the
@@ -193,44 +196,41 @@ void APRSView::settings() {
 
 void APRSView::threshold() {
 
-    Menu::open_number_edit<int8_t>(
-        aprs_task.get_bit_threshold(), "", "Bit threshold", 0,
-        [this](int8_t v) {
-            aprs_task.set_bit_threshold(v);
-        },
-        -128, 127, 1, 1);
+    Menu::open_number_edit<int8_t>(((APRSTask *)dsp_task.get())->get_bit_threshold(), "", "Bit threshold", 0,
+                                   [this](int8_t v) {
+                                       ((APRSTask *)dsp_task.get())->set_bit_threshold(v);
+                                   },
+                                   -128, 127, 1, 1);
 }
 
 void APRSView::exit() {
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_PROCESSOR_RECEIVE, &aprs_task}, [this](st_dsp_params *status) {
-        if (status->status == DSP_STATUS_STOPPED) {
+    dsp_stop();
 
-            os::task_manager.remove(beacon_task_id);
+    os::task_manager.remove(beacon_task_id);
 
-            aprs_signal.remove(aprs_signal_token);
+    aprs_signal.remove(aprs_signal_token);
 
-            set_agc_enabled(true); // Turn on AGC
+    set_agc_enabled(true); // Turn on AGC
 
-            MODE m = previous_mode;
-            uint16_t ws = previous_waterfall_speed;
+    MODE m = previous_mode;
+    uint16_t ws = previous_waterfall_speed;
 
-            os::task_manager.set_timeout(1, [m, ws]() {
-                if (m == DIGITAL_RX) {
-                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
-                }
-                //  LOG("Fired delayed close of APRS view\n");
-                main_board::set_mode(m);
+    os::task_manager.set_timeout(1, [m, ws]() {
+        // if (m == DIGITAL_RX) {
+        //     dsp_start(dsp::DSP_TASK_RECEIVE, nullptr);
+        // }
 
-                fft::set_waterfall_speed(ws);
+        //  LOG("Fired delayed close of APRS view\n");
+        main_board::set_mode(m);
 
-                // Re-enable analog mute
-                main_board::enable_analog_mute(true);
-            });
+        fft::set_waterfall_speed(ws);
 
-            set_visible(false);
-        }
+        // Re-enable analog mute
+        main_board::enable_analog_mute(true);
     });
+
+    set_visible(false);
 }
 
 bool APRSView::on_input(const st_inputEvent e) {
@@ -319,10 +319,12 @@ void APRSView::send_packet(std::string info) {
 
     LOG_IND(2, "Sending APRS packet: Address: %s | path: %s | payload: %s\n", config.callsign, aprs_settings.path, info.c_str());
 
-    aprs_tx_task.configure(1200, 2200, 1, 8, aprs_settings.deviation, 300, 300); // Set a deviation for around 10k bandwidth
-    aprs_tx_task.set_data(buffer);
+    auto aprs_tx_task = std::make_unique<AFSKTXTask>(dspSuccess, dspError);
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, DSP_TASK_REPLAY, &aprs_tx_task}, [this](st_dsp_params *status) {
+    aprs_tx_task->configure(1200, 2200, 1, 8, aprs_settings.deviation, 300, 300); // Set a deviation for around 10k bandwidth
+    aprs_tx_task->set_data(buffer);
+
+    dsp_start(move(aprs_tx_task), [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->fifo_underruns) {
                 status::pop_alert(status::ERROR, "FIFO underruns");

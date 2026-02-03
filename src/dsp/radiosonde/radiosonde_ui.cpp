@@ -1,9 +1,10 @@
 #include "radiosonde_ui.hpp"
 
-#include "dsp/dsp_processors.h"
+#include "dsp/dsp_tasks.h"
 #include "dsp/radiosonde/radiosonde_task.hpp"
 
 #include <cstring>
+#include <memory>
 #include <stdio.h>
 #include "dsp/dsp_tasks.h"
 #include "input/inputEvent.h"
@@ -73,32 +74,29 @@ void RadiosondeView::open_map() {
 
 void RadiosondeView::exit() {
 
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_STOP, dsp::DSP_PROCESSOR_RECEIVE, &radiosonde_task}, [this](st_dsp_params *status) {
-        if (status->status == DSP_STATUS_STOPPED) {
+    dsp_stop();
 
-            radiosonde_signal.remove(radiosonde_signal_token);
+    radiosonde_signal.remove(radiosonde_signal_token);
 
-            dsp::set_agc_enabled(true); // Turn on AGC
+    dsp::set_agc_enabled(true); // Turn on AGC
 
-            MODE m = previous_mode;
-            uint16_t ws = previous_waterfall_speed;
+    MODE m = previous_mode;
+    uint16_t ws = previous_waterfall_speed;
 
-            os::task_manager.set_timeout(1, [m, ws]() {
-                if (m == DIGITAL_RX) {
-                    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
-                }
-                //  LOG("Fired delayed close of APRS view\n");
-                main_board::set_mode(m);
+    os::task_manager.set_timeout(1, [m, ws]() {
+        // if (m == DIGITAL_RX) {
+        //     dsp_start( dsp::DSP_TASK_RECEIVE, nullptr);
+        // }
+        //  LOG("Fired delayed close of APRS view\n");
+        main_board::set_mode(m);
 
-                fft::set_waterfall_speed(ws);
+        fft::set_waterfall_speed(ws);
 
-                // Re-enable analog mute
-                main_board::enable_analog_mute(true);
-            });
-
-            set_visible(false);
-        }
+        // Re-enable analog mute
+        main_board::enable_analog_mute(true);
     });
+
+    set_visible(false);
 }
 
 void RadiosondeView::before_paint() {
@@ -107,7 +105,7 @@ void RadiosondeView::before_paint() {
 
 void RadiosondeView::start_rx() {
     //  LOG("START RX\n");
-    dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE, &radiosonde_task}, [this](st_dsp_params *status) {
+    dsp_start(std::make_unique<dsp::RadiosondeTask>(dspSuccess, dspError), [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();

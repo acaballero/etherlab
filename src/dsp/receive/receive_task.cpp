@@ -99,7 +99,7 @@ void ReceiveTask::set_squelch() {
     MODULATION_MODE m = get_modulation_mode();
     if ((m == FM || m == WFM) && config.squelch_level) {
         float threshold = max2(0, 10 - config.squelch_level);
-        squelch.config(threshold, status.sample_rate, 1.4f * get_audio_bw_hz());
+        squelch.config(threshold, info.sample_rate, 1.4f * get_audio_bw_hz());
         squelch_enabled = true;
     } else {
         squelch_enabled = false;
@@ -111,7 +111,7 @@ bool ReceiveTask::init() {
     MODULATION_MODE mod = main_board::get_modulation_mode();
 
     if (dsp::apply_audio_bpf()) {
-        audio_bpf.config(status.sample_rate, get_audio_bw_hz(), 1, mod == WFM ? 30 : 300);
+        audio_bpf.config(info.sample_rate, get_audio_bw_hz(), 1, mod == WFM ? 30 : 300);
         audio_bpf_enabled = true;
     } else {
         audio_bpf_enabled = false;
@@ -120,7 +120,7 @@ bool ReceiveTask::init() {
     if (dsp::apply_deemph(mod)) {
         // Init de-emphasis FM filter
         // FIXME: This is a 2nd order (12db octave). Too much slope. I has to be a 1st order (1 pole) IIR filter
-        deemph_filter.config(status.sample_rate, 300, 1, LPF);
+        deemph_filter.config(info.sample_rate, 300, 1, LPF);
         deemph_enabled = true;
     } else {
         deemph_enabled = false;
@@ -128,14 +128,14 @@ bool ReceiveTask::init() {
 
     if (dsp::apply_compression(mod)) {
         compressor_enabled = true;
-        compressor.config(status.sample_rate, dsp::dsp_config.audio_compressor_threshold);
+        compressor.config(info.sample_rate, dsp::dsp_config.audio_compressor_threshold);
     } else {
         compressor_enabled = false;
     }
 
     if (!squelch_signal_token) {
         squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, const void *) {
-            if (status.status == DSP_STATUS_RUNNING) {
+            if (info.status == DSP_STATUS_RUNNING) {
                 set_squelch();
             }
         });

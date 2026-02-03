@@ -150,7 +150,7 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
 
 void APRSTask::set_beeper() {
 
-    beeper.set_sample_rate(status.sample_rate);
+    beeper.set_sample_rate(info.sample_rate);
     beeper.init(BEEP_SUCCESS);
 }
 
@@ -158,7 +158,7 @@ void APRSTask::set_squelch() {
 
     if (config.squelch_level) {
         float threshold = max2(0, 10 - config.squelch_level);
-        squelch.config(threshold, status.sample_rate, 2.2f * get_audio_bw_hz());
+        squelch.config(threshold, info.sample_rate, 2.2f * get_audio_bw_hz());
         squelch_enabled = true;
 
     } else {
@@ -281,9 +281,9 @@ bool APRSTask::init() {
     //     return false;
     // }
 
-    samples_per_bit = (float32_t)this->status.sample_rate / baudrate;
+    samples_per_bit = (float32_t)this->info.sample_rate / baudrate;
 
-    phase_inc = (float32_t)baudrate / this->status.sample_rate;
+    phase_inc = (float32_t)baudrate / this->info.sample_rate;
     phase = 0.0f;
 
     LOG("Initializing APRS | samples per bit: %.2f | phase delta: %.2f\n", samples_per_bit, phase_inc);
@@ -293,10 +293,10 @@ bool APRSTask::init() {
 
     state = WAIT_FLAG;
 
-    bool ok = deemph_filter.config(status.sample_rate, 300, 1, LPF);
+    bool ok = deemph_filter.config(info.sample_rate, 300, 1, LPF);
 
     if (dsp::apply_audio_bpf()) {
-        ok = ok && audio_bpf.config(status.sample_rate, get_audio_bw_hz(), 1, 800);
+        ok = ok && audio_bpf.config(info.sample_rate, get_audio_bw_hz(), 1, 800);
         audio_bpf_enabled = true;
     } else {
         audio_bpf_enabled = false;

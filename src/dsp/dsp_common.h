@@ -113,7 +113,6 @@ typedef struct {
         (b) = (decltype(a))_tmp;                                                                                                                               \
     } while (0)
 
-enum DSP_COMMAND { DSP_COMMAND_NONE, DSP_COMMAND_STOP, DSP_COMMAND_START };
 enum DSP_STATUS { DSP_STATUS_STOPPED, DSP_STATUS_STOPPING, DSP_STATUS_RUNNING, DSP_STATUS_PENDING };
 enum DSP_ERROR {
     DSP_ERR_NONE,
@@ -222,8 +221,6 @@ struct st_dsp_params {
 };
 
 namespace dsp {
-
-extern const char *commandNames[];
 
 struct st_test_signal_params {
     int8_t pulse_duty = 10;

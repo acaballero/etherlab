@@ -43,7 +43,7 @@ extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
 HOT_FUNCTION
 void TransmitTask::work() {
-    if (status.status == DSP_STATUS_RUNNING) {
+    if (info.status == DSP_STATUS_RUNNING) {
 
         char *in_start;
         char *in_p;
@@ -65,23 +65,23 @@ void TransmitTask::work() {
         // This consumes real-values and produces complex samples, so twice the required available size
 
         if (interpolator) {
-            required_av = DSP_FIFO_BLOCK_BYTES / 2 / status.decimation_factor;
+            required_av = DSP_FIFO_BLOCK_BYTES / 2 / info.decimation_factor;
             required_free = required_av * 2;
-            n_in = status.decimated_block_size;
-            n_in_bytes = status.decimated_block_size_bytes / 2;
+            n_in = info.decimated_block_size;
+            n_in_bytes = info.decimated_block_size_bytes / 2;
             n_out = samples_per_batch;
 
         } else {
             required_av = DSP_FIFO_BLOCK_BYTES / 2;
-            required_free = required_av * 2 / status.decimation_factor;
+            required_free = required_av * 2 / info.decimation_factor;
             n_in = samples_per_batch;
             n_in_bytes = bytes_per_batch_real;
-            n_out = status.decimated_block_size;
+            n_out = info.decimated_block_size;
         }
         GPIOD->BSRR |= GPIO_PIN_9;
         if (av >= required_av && free >= required_free) {
 
-            status.processed_blocks++;
+            info.processed_blocks++;
             av = required_av;
             in_start = in_p;
 
@@ -135,16 +135,16 @@ void TransmitTask::work() {
             uint32_t processed = required_av - av;
             input_stream.consume(processed, &in_start);
 
-            if (status.processed_blocks == 1 && on_first_block) {
+            if (info.processed_blocks == 1 && on_first_block) {
                 on_first_block();
             }
 
         } else {
             if (free < required_free) {
-                status.fifo_overruns++;
+                info.fifo_overruns++;
             }
             if (av < required_av) {
-                status.fifo_underruns++;
+                info.fifo_underruns++;
             }
         }
         GPIOD->BSRR |= GPIO_PIN_9 << 16;
@@ -158,25 +158,25 @@ bool TransmitTask::init_resampler(MODULATION_MODE mod) {
     decimator.reset();
     interpolator.reset();
 
-    if (status.sample_rate <= USB_AUDIO_SAMPLE_RATE) { // Even it no data conversion is required, the decimator serves as filter
+    if (info.sample_rate <= USB_AUDIO_SAMPLE_RATE) { // Even it no data conversion is required, the decimator serves as filter
         decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
-        ret = decimator->config(status.sample_rate * status.decimation_factor, status.bandwidth,
-                                status.decimation_factor); // Here the bandwidth is halved for double sideband modulations
+        ret = decimator->config(info.sample_rate * info.decimation_factor, info.bandwidth,
+                                info.decimation_factor); // Here the bandwidth is halved for double sideband modulations
 
     } else {
         interpolator = std::make_unique<DspFIRInterpolatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
-        ret = interpolator->config(status.sample_rate / status.decimation_factor, status.bandwidth,
-                                   status.decimation_factor); // Here the bandwidth is halved for double sideband modulations
+        ret = interpolator->config(info.sample_rate / info.decimation_factor, info.bandwidth,
+                                   info.decimation_factor); // Here the bandwidth is halved for double sideband modulations
     }
 
     if (!ret) {
-        LOG("Error configuring resampler for mod:%d, fs:%d, bw:%d, factor:%d\n", mod, status.sample_rate, status.bandwidth, status.decimation_factor);
+        LOG("Error configuring resampler for mod:%d, fs:%d, bw:%d, factor:%d\n", mod, info.sample_rate, info.bandwidth, info.decimation_factor);
         return false;
     }
 
     LOG("Rate %d -> %d (filter: %d)\n",
-        status.sample_rate <= USB_AUDIO_SAMPLE_RATE ? status.sample_rate * status.decimation_factor : status.sample_rate / status.decimation_factor,
-        status.sample_rate, status.bandwidth);
+        info.sample_rate <= USB_AUDIO_SAMPLE_RATE ? info.sample_rate * info.decimation_factor : info.sample_rate / info.decimation_factor, info.sample_rate,
+        info.bandwidth);
 
     return true;
 }
@@ -198,20 +198,20 @@ std::unique_ptr<dsp::modulator> TransmitTask::get_modulator() {
                 break;
             case CW:
                 mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::USB);
-                ret = ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                ret = ((dsp::ssb_modulator *)mod.get())->configure(info.sample_rate, info.bandwidth);
                 break;
             case SSB_LSB:
                 mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::LSB);
-                ret = ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                ret = ((dsp::ssb_modulator *)mod.get())->configure(info.sample_rate, info.bandwidth);
                 break;
             case SSB_USB:
                 mod = std::make_unique<dsp::ssb_modulator>(dsp::ssb_modulator::USB);
-                ret = ((dsp::ssb_modulator *)mod.get())->configure(status.sample_rate, status.bandwidth);
+                ret = ((dsp::ssb_modulator *)mod.get())->configure(info.sample_rate, info.bandwidth);
                 break;
             case FM:
                 mod = std::make_unique<dsp::fm_modulator>();
                 ret = true;
-                ((dsp::fm_modulator *)mod.get())->configure(status.sample_rate, config.dsp.fm_max_deviation);
+                ((dsp::fm_modulator *)mod.get())->configure(info.sample_rate, config.dsp.fm_max_deviation);
                 break;
 
             default:
@@ -227,7 +227,7 @@ std::unique_ptr<dsp::modulator> TransmitTask::get_modulator() {
     }
 }
 
-bool TransmitTask::start() {
+bool TransmitTask::start_impl() {
 
     LOG("___ [START] Transmit task ___\n");
 
@@ -238,7 +238,7 @@ bool TransmitTask::start() {
 
     dsp_set_real_time(true);
 
-    status.sample_rate = USB_AUDIO_SAMPLE_RATE; // Start at the USB audio rate. Will bring it down/up to the FFT sample rate
+    info.sample_rate = USB_AUDIO_SAMPLE_RATE; // Start at the USB audio rate. Will bring it down/up to the FFT sample rate
 
     uint32_t dac_sample_rate = fft::fft_params.sample_freq;
 
@@ -255,31 +255,31 @@ bool TransmitTask::start() {
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
     // (while using decimation factors of 2^n)
     int dec_factor = 1;
-    while (status.sample_rate > dac_sample_rate && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
+    while (info.sample_rate > dac_sample_rate && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
         dec_factor <<= 1;
-        status.sample_rate /= 2;
+        info.sample_rate /= 2;
     }
 
     // If target sample rate is higher: interpolate
-    while (status.sample_rate < dac_sample_rate && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
+    while (info.sample_rate < dac_sample_rate && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
         dec_factor <<= 1;
-        status.sample_rate *= 2;
+        info.sample_rate *= 2;
     }
 
-    high_pass_filter.config(status.sample_rate, 300, 1, HPF);
+    high_pass_filter.config(info.sample_rate, 300, 1, HPF);
 
-    status.bandwidth = modulation_bandwidth_hz;
+    info.bandwidth = modulation_bandwidth_hz;
 
-    status.direction = DSP_DIRECTION_OUT;
+    info.direction = DSP_DIRECTION_OUT;
 
-    status.decimation_factor = dec_factor;
-    status.bits_per_sample = sizeof(adc_type) * 8;
-    status.n_channels = 2;
-    status.block_size_bytes = DSP_BLOCK * sizeof(complex_t);
-    status.decimated_block_size = DSP_BLOCK / dec_factor;
-    status.decimated_block_size_bytes = status.decimated_block_size * sizeof(complex_t);
+    info.decimation_factor = dec_factor;
+    info.bits_per_sample = sizeof(adc_type) * 8;
+    info.n_channels = 2;
+    info.block_size_bytes = DSP_BLOCK * sizeof(complex_t);
+    info.decimated_block_size = DSP_BLOCK / dec_factor;
+    info.decimated_block_size_bytes = info.decimated_block_size * sizeof(complex_t);
 
-    LOG("Bandwidth: %d | Sample rate: %d\n", status.bandwidth, status.sample_rate);
+    LOG("Bandwidth: %d | Sample rate: %d\n", info.bandwidth, info.sample_rate);
 
     bool ret = init_resampler(mod);
 
@@ -296,7 +296,7 @@ bool TransmitTask::start() {
     ret = init();
 
     ret = ret && radio_config({.direction = RF_DIRECTION_TX,
-                               .sample_freq = status.sample_rate,
+                               .sample_freq = info.sample_rate,
                                .freq = 0,
                                .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
 
@@ -312,13 +312,13 @@ bool TransmitTask::start() {
 
     // Set the fifo processing frequency
     update_timer(TASKS_TIMER_TYPEDEF, 40, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
-    status.status = DSP_STATUS_RUNNING;
+    info.status = DSP_STATUS_RUNNING;
     return true;
 }
 
 void TransmitTask::stop() {
 
-    if (status.status != DSP_STATUS_STOPPED) {
+    if (info.status != DSP_STATUS_STOPPED) {
         // Stop task processing timer
         HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
 
@@ -327,7 +327,7 @@ void TransmitTask::stop() {
         decimator.reset();
         interpolator.reset();
 
-        status.status = DSP_STATUS_STOPPED;
+        info.status = DSP_STATUS_STOPPED;
 
         dsp_set_real_time(false);
 

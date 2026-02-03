@@ -19,7 +19,7 @@ extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
 void ReplayTask::work() {
 
-    if (this->status.status == DSP_STATUS_RUNNING) {
+    if (this->info.status == DSP_STATUS_RUNNING) {
 
         // UINT bytesRead;
         char *p;
@@ -40,9 +40,9 @@ void ReplayTask::work() {
                     FIFO_ERROR fifo_res = output_stream.feed(DSP_FIFO_BLOCK_BYTES);
 
                     if (fifo_res != FIFO_ERROR_NONE) {
-                        this->status.fifo_overruns++; // won't stop for an overrun, just count them
+                        this->info.fifo_overruns++; // won't stop for an overrun, just count them
                     }
-                } else if (fres != FR_DISK_ERR || this->status.status == DSP_STATUS_RUNNING) {
+                } else if (fres != FR_DISK_ERR || this->info.status == DSP_STATUS_RUNNING) {
 
                     // We check again for the status because the ADC interrupt could've stopped the capture before
                     // TODO: do better error handling
@@ -77,19 +77,19 @@ void ReplayTask::work() {
                 }
             }
 
-            if (++status.processed_blocks == 1 && on_first_block) {
+            if (++info.processed_blocks == 1 && on_first_block) {
                 on_first_block();
             }
 
             // GPIOA->BSRR = GPIO_PIN_12 << 16;
 
         } else {
-            this->status.fifo_overruns++; // won't stop for an overrun, just count them
+            this->info.fifo_overruns++; // won't stop for an overrun, just count them
         }
     }
 }
 
-bool ReplayTask::start() {
+bool ReplayTask::start_impl() {
 
 #if LCD_DISABLE_ON_DSP
     lcd.setEnabled(false);
@@ -107,7 +107,7 @@ bool ReplayTask::start() {
     // Read the header info block
     WaveInfo wi;
 
-    status.reset();
+    info.reset();
 
     fres = m_file->open(wi);
 
@@ -168,15 +168,15 @@ bool ReplayTask::start() {
             decimation_factor = fft::fft_params.decimation_factor;
         }
 
-        this->status.direction = DSP_DIRECTION_OUT;
-        this->status.bandwidth = fft::fft_params.span;
-        this->status.sample_rate = wi.sample_rate;
-        this->status.decimation_factor = decimation_factor;
-        this->status.bits_per_sample = wi.bits_sample;
-        this->status.n_channels = wi.n_channels; // I/Q
-        this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
-        this->status.decimated_block_size = DSP_BLOCK * 2 / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
-        this->status.decimated_block_size_bytes = this->status.block_size_bytes / decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+        this->info.direction = DSP_DIRECTION_OUT;
+        this->info.bandwidth = fft::fft_params.span;
+        this->info.sample_rate = wi.sample_rate;
+        this->info.decimation_factor = decimation_factor;
+        this->info.bits_per_sample = wi.bits_sample;
+        this->info.n_channels = wi.n_channels; // I/Q
+        this->info.block_size_bytes = DSP_BLOCK * 2 * 2;
+        this->info.decimated_block_size = DSP_BLOCK * 2 / decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
+        this->info.decimated_block_size_bytes = this->info.block_size_bytes / decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
 
         // Start media read processing timer
         HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
@@ -194,12 +194,12 @@ bool ReplayTask::start() {
         // to that of the FFT processing chain (which will in turn downsample them by the same factor)
         // So we write samples to the DAC at a rate equal to the desired sample rate multiplied
         // by the interpolation (->DAC) or decimation (ADC->) factor
-        bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = this->status.sample_rate * this->status.decimation_factor});
+        bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = this->info.sample_rate * this->info.decimation_factor});
 
         // TODO: Manage gain globally. Not that easy considering in receive we'd need to normalize it and that's not easy for all modulations
         dsp::set_gain_db(0);
 
-        this->status.status = DSP_STATUS_RUNNING;
+        this->info.status = DSP_STATUS_RUNNING;
 
         if (!ret) {
             this->halt(DSP_ERR);
@@ -218,19 +218,19 @@ bool ReplayTask::start() {
 
 void ReplayTask::stop() {
 
-    if (this->status.status != DSP_STATUS_STOPPED) {
+    if (this->info.status != DSP_STATUS_STOPPED) {
 
         output_stream.close();
 
-        this->status.status = DSP_STATUS_STOPPED;
+        this->info.status = DSP_STATUS_STOPPED;
 
         FRESULT fres; // Result after operations
 
         fres = m_file->close();
 
         if (fres != FR_OK) {
-            if (this->status.error != DSP_ERR_NONE) {
-                status.error = DSP_ERR_FILECLOSE;
+            if (this->info.error != DSP_ERR_NONE) {
+                info.error = DSP_ERR_FILECLOSE;
             }
         }
 

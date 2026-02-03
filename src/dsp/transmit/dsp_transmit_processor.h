@@ -13,7 +13,7 @@ class DspTransmitProcessor : public DspProcessor {
   public:
     DspTransmitProcessor() {
         // This processor takes samples from the USB and puts samples in the DAC
-        this->status.direction = DSP_DIRECTION_OUT;
+        this->info.direction = DSP_DIRECTION_OUT;
     }
 
     void work(const buffer_t<adc_type> *buffer) override;

@@ -16,7 +16,7 @@ class DspSignalGeneratorProcessor : public DspProcessor {
 
   public:
     DspSignalGeneratorProcessor() : modulator(&signal, &baseband) {
-        this->status.direction = DSP_DIRECTION_OUT;
+        this->info.direction = DSP_DIRECTION_OUT;
     }
 
     void set_config(uint32_t baseband_f, uint32_t mod_f, uint8_t mod_duty, uint32_t sample_rate);

@@ -16,7 +16,7 @@ SignalGenerator sig_gen(1000, 346666);
 
 void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
-    if (this->status.status != DSP_STATUS_RUNNING) {
+    if (this->info.status != DSP_STATUS_RUNNING) {
         memset((char *)buffer->p, 0, buffer->count << 1);
         return;
     }
@@ -28,12 +28,12 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
     // if we need to output the result to a DAC, we will need to make it here
     // TODO: Use better interpolation, at least in the FFT code. Otherwise, the spectrum will show harmonics at the saved sample rate
 
-    this->status.processed_blocks++;
+    this->info.processed_blocks++;
 
     char *p;
 
     // e.g. if interpolation/decimation factor is 4, we read 4 times fewer bytes that the DAC block size
-    volatile uint16_t bytesToRead = this->status.decimated_block_size_bytes;
+    volatile uint16_t bytesToRead = this->info.decimated_block_size_bytes;
 
     uint32_t av = output_stream.available(&p);
 
@@ -46,7 +46,7 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
         // Expects buffer to be complex interleaved
         for (size_t i = 0, j = 0; i < buffer->count; i += 2) {
 
-            if ((i >> 1) & (this->status.decimation_factor - 1)) {
+            if ((i >> 1) & (this->info.decimation_factor - 1)) {
                 // if (d > 0) {
                 out_p[i] = out_p[i - 2];
                 //  if (this->status.n_channels==2) {
@@ -58,7 +58,7 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
                 out_p[i] = ((adc_type *)p)[j];
                 //           LOG("%d,", out_p[i]);
 
-                if (this->status.n_channels == 2) {
+                if (this->info.n_channels == 2) {
                     out_p[i + 1] = ((adc_type *)p)[j + 1];
                     j++;
                 } else {
@@ -83,7 +83,7 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
     } else {
         if (!output_stream.is_closed()) {
-            this->status.fifo_underruns++;
+            this->info.fifo_underruns++;
         }
 
         memset((char *)buffer->p, 0, buffer->count << 1);

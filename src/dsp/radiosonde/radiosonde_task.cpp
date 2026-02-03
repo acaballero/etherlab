@@ -23,7 +23,7 @@ void RadiosondeTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
 }
 
 void RadiosondeTask::set_beeper() {
-    beeper.set_sample_rate(status.sample_rate);
+    beeper.set_sample_rate(info.sample_rate);
 }
 
 bool RadiosondeTask::init() {

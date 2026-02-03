@@ -15,6 +15,7 @@
 #include "dsp/interpolation/dsp_fir_interpolator_float.h"
 #include "dsp/modulation/dsp_modulate.h"
 #include "dsp/task.h"
+#include "dsp/transmit/dsp_transmit_processor.h"
 #include "main_board.h"
 #include "radio.h"
 #include "types.h"
@@ -39,7 +40,7 @@ class TransmitTask : public Task {
 
     void work() override;
 
-    bool start() override;
+    bool start_impl() override;
 
     void stop() override;
 
@@ -52,8 +53,9 @@ class TransmitTask : public Task {
     }
 
   protected:
-    // std::unique_ptr<dsp::demodulator> demodulator;
-    // std::unique_ptr<dsp::demodulator> get_modulator();
+    std::unique_ptr<DspProcessor> create_processor() override {
+        return std::make_unique<DspTransmitProcessor>();
+    }
 
     static constexpr int samples_per_batch =
         DSP_BLOCK; // Note all decimators are configured for a block size of DSP_BLOCK. Don't use bigger blocks or memory will be corrupted

@@ -18,18 +18,19 @@
 #include "radio.h"
 #include "status.h"
 #include "dsp/replay/dsp_replay_processor.h"
-#include "dsp/dsp_processors.h"
+#include "dsp/dsp_tasks.h"
 #include "dsp/capture/capture_task.h"
 #include "ui/view_manager.h"
 
 namespace dspReplayUI {
 
 int8_t gain;
-int command = DSP_COMMAND_START;
+bool stopped = true;
 bool loop = false;
 SignalToken signal_token;
 WaveInfo wi;
 ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y - 35, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 6 + 35}, &lcd, "replay"};
+std::unique_ptr<File> file;
 
 void on_freq_signal(void *thisptr, const void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
@@ -45,11 +46,11 @@ void on_event(st_dsp_params *status) {
 
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
-            command = DSP_COMMAND_STOP;
+            stopped = false;
             filePicker.disable();
             break;
         case DSP_STATUS_STOPPED:
-            command = DSP_COMMAND_START;
+            stopped = true;
             filePicker.enable();
             break;
     }
@@ -57,10 +58,17 @@ void on_event(st_dsp_params *status) {
 
 Menu::result change_dsp_status(Menu::eventMask e) {
 
+    Task *task = dsp_task.get();
+    bool start = task && task->info.id == dsp::DSP_TASK_REPLAY && task->info.status != DSP_STATUS_RUNNING;
+
     if (e == Menu::activateEvent) {
-        DSP_COMMAND nextCommand = command == DSP_COMMAND_START ? DSP_COMMAND_STOP : DSP_COMMAND_START;
-        ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->setLoop(loop);
-        dsp_command({(DSP_COMMAND)nextCommand, dsp::DSP_TASK_REPLAY}, on_event);
+
+        if (start) {
+            dsp_stop();
+        } else {
+            dsp_start(dsp::DSP_TASK_REPLAY, on_event);
+            ((ReplayTask *)task)->setFile(move(file));
+        }
     }
 
     return Menu::proceed;
@@ -68,7 +76,7 @@ Menu::result change_dsp_status(Menu::eventMask e) {
 
 Menu::result on_menu_event(Menu::eventMask e) {
 
-    ReplayTask *task = ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY]);
+    auto task = (ReplayTask *)(dsp_task.get());
     io::path start_path;
     FRESULT fres;
 
@@ -76,8 +84,8 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
         case Menu::selBlurEvent:
             // If the task is finished, reset it
-            if (task->status.stop_ms) {
-                task->status.stop_ms = 0;
+            if (task->info.stop_ms) {
+                task->info.stop_ms = 0;
             }
             break;
 
@@ -114,8 +122,8 @@ Menu::result on_menu_event(Menu::eventMask e) {
                 view_manager::mainView.add_child(&replay_w);
                 replay_w.set_visible(true);
                 replay_w.set_z_index(100);
-                replay_w.setProcessorStatus(&((DspReplayProcessor *)dsp::processors[dsp::DSP_PROCESSOR_REPLAY])->status);
-                replay_w.setTaskStatus(&((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->status);
+                replay_w.setProcessorStatus(&task->get_processor()->info);
+                replay_w.setTaskStatus(&task->info);
             }
 
             dsp_set_real_time(true);
@@ -125,7 +133,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
         case Menu::exitEvent:
 
-            if (task->status.status == DSP_STATUS_STOPPED) {
+            if (task->info.status == DSP_STATUS_STOPPED) {
 
                 radio::freq_signal.remove(signal_token);
 
@@ -159,9 +167,9 @@ result change_gain(eventMask) {
     return proceed;
 }
 
-TOGGLE(command, replayToggle, "Command: ", change_dsp_status, anyEvent, noStyle //,doExit,enterEvent,noStyle
+TOGGLE(stopped, replayToggle, "Command: ", change_dsp_status, anyEvent, noStyle //,doExit,enterEvent,noStyle
        ,
-       VALUE("Stop", DSP_COMMAND_STOP, change_dsp_status, anyEvent), VALUE("Start", DSP_COMMAND_START, change_dsp_status, anyEvent))
+       VALUE("Stop", true, change_dsp_status, anyEvent), VALUE("Start", false, change_dsp_status, anyEvent))
 
 TOGGLE(loop, loopToggle, "Loop: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
@@ -202,7 +210,7 @@ Menu::result on_filepicker(eventMask e) {
 
     // Check file format. Files are not deeply analyzed to determine their type. It is inferred from the extension
 
-    std::unique_ptr<File> file = FileFactory::getFile(path);
+    file = FileFactory::getFile(path);
 
     FRESULT fres = FR_INVALID_NAME;
     if (file.get()) {
@@ -226,7 +234,7 @@ Menu::result on_filepicker(eventMask e) {
         filePicker.enable_deletion();
 
         if (e == updateEvent) {
-            ((ReplayTask *)dsp::tasks[dsp::DSP_TASK_REPLAY])->setFile(move(file));
+
             replayToggle.enable();
             freqEdit.enable();
 

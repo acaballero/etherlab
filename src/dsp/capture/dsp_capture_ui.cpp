@@ -19,7 +19,7 @@
 #include "ui/lcd.h"
 #include "ui/menu_frequency.h"
 #include "capture_task.h"
-#include "dsp/dsp_processors.h"
+#include "dsp/dsp_tasks.h"
 #include "dsp_capture_processor.h"
 #include "capture_widget.h"
 #include "fatfs/fatfs.h"
@@ -32,7 +32,7 @@
 namespace dspCaptureUI {
 
 FileType ftype = FTYPE_WAV;
-int command = DSP_COMMAND_START;
+
 io::path fname;
 char fname_buff[PATH_SIZE];
 bool filename_is_edited = false;
@@ -40,7 +40,7 @@ CaptureWidget capture_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 10, DISPLAY_X_PIXE
 MODE previous_mode;
 Menu::result on_freq_updated(Menu::eventMask e); // Forward declaration
 io::path get_file_name();                        // Forward declaration
-
+bool stopped = true;
 menu_frequency::FreqEditField freqEdit((Menu::callback)on_freq_updated);
 
 Menu::result on_freq_updated(Menu::eventMask e) {
@@ -53,7 +53,7 @@ Menu::result on_freq_updated(Menu::eventMask e) {
 
 Menu::result on_file_updated(Menu::eventMask) {
     fname = fname_buff;
-    ((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->setFile(FileFactory::getFile(ftype, fname));
+
     filename_is_edited = true;
     return Menu::proceed;
 }
@@ -91,13 +91,12 @@ io::path get_file_name() {
 
 Menu::result on_menu_event(Menu::eventMask e) {
 
-    CaptureTask *task = ((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE]);
-
+    auto task = (CaptureTask *)(dsp_task.get());
     switch (e) {
         case Menu::enterEvent:
 
-            capture_w.setProcessorStatus(&((DspCaptureProcessor *)dsp::processors[dsp::DSP_PROCESSOR_CAPTURE])->status);
-            capture_w.setTaskStatus(&((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->status);
+            capture_w.setProcessorStatus(&task->get_processor()->info);
+            capture_w.setTaskStatus(&task->info);
 
             captureMenu[captureMenu.sz() - 1].disable();
             dsp_set_real_time(true);
@@ -119,7 +118,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             break;
         case Menu::exitEvent:
 
-            if (task->status.status == DSP_STATUS_STOPPED) {
+            if (task->info.status == DSP_STATUS_STOPPED) {
 
                 // Remove fft update priority
                 fft::fft_task.set_high_priority(true);
@@ -151,19 +150,19 @@ void on_event(st_dsp_params *status) {
     switch (status->status) {
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
-            command = DSP_COMMAND_STOP;
+            stopped = false;
             captureMenu[captureMenu.sz() - 2].disable();
             captureMenu[captureMenu.sz() - 1].disable();
             break;
         case DSP_STATUS_STOPPED:
-            command = DSP_COMMAND_START;
+            stopped = true;
             captureMenu[captureMenu.sz() - 2].enable();
             captureMenu[captureMenu.sz() - 1].enable();
 
             // Set the previous mode
             // os::task_manager.set_timeout(1, []() {
             // if (previous_mode == DIGITAL_RX) {
-            //     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_PROCESSOR_RECEIVE}, nullptr);
+            //     dsp_command({(DSP_COMMAND)DSP_COMMAND_START, dsp::DSP_TASK_RECEIVE}, nullptr);
             // }
             //    main_board::set_mode(previous_mode);
             //});
@@ -179,15 +178,18 @@ void on_event(st_dsp_params *status) {
 Menu::result change_dsp_status(Menu::eventMask e) {
     if (e == Menu::activateEvent) {
 
-        DSP_COMMAND nextCommand = command == DSP_COMMAND_START ? DSP_COMMAND_STOP : DSP_COMMAND_START;
+        Task *task = dsp_task.get();
+        bool start = task && task->info.id == dsp::DSP_TASK_CAPTURE && task->info.status != DSP_STATUS_RUNNING;
 
-        if (nextCommand == DSP_COMMAND_START) {
+        if (start) {
             view_manager::mainView.add_child(&capture_w);
             capture_w.set_visible(true);
             menu_size(DISPLAY_X_PIXELS / 2, INFO_HEIGHT);
+            dsp_start(dsp::DSP_TASK_CAPTURE, on_event);
+            ((CaptureTask *)dsp_task.get())->setFile(FileFactory::getFile(ftype, fname));
+        } else {
+            dsp_stop();
         }
-
-        dsp_command({(DSP_COMMAND)nextCommand, dsp::DSP_TASK_CAPTURE}, on_event);
     }
     return Menu::proceed;
 }
@@ -202,7 +204,7 @@ result set_sampling_params(eventMask) {
 
 result change_file_type(eventMask) {
     fname = get_file_name();
-    ((CaptureTask *)dsp::tasks[dsp::DSP_TASK_CAPTURE])->setFile(FileFactory::getFile(ftype, fname));
+
     return proceed;
 }
 
@@ -231,8 +233,8 @@ Menu::select<FileType> &fTypeMenu =
 
 #endif
 
-TOGGLE(command, captureToggle, "Command: ", change_dsp_status, Menu::anyEvent, Menu::noStyle,
-       VALUE("Stop", DSP_COMMAND_STOP, change_dsp_status, Menu::anyEvent), VALUE("Start", DSP_COMMAND_START, change_dsp_status, Menu::anyEvent))
+TOGGLE(stopped, captureToggle, "Command: ", change_dsp_status, Menu::anyEvent, Menu::noStyle, VALUE("Stop", true, change_dsp_status, Menu::anyEvent),
+       VALUE("Start", false, change_dsp_status, Menu::anyEvent))
 
 MENU(captureMenu, "Capture", on_menu_event, (Menu::eventMask)(Menu::enterEvent | Menu::exitEvent), Menu::noStyle, SUBMENU(captureToggle),
      EDIT("File:", fname_buff, Menu::alphaNumMask, on_file_updated, Menu::updateEvent, Menu::noStyle), OBJ(freqEdit),

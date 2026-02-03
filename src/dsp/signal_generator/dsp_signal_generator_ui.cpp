@@ -4,6 +4,7 @@
 
 #include <io/file_factory.h>
 #include <sys/_stdint.h>
+#include "class/audio/audio.h"
 #include "dsp/blocks/signal_generator.h"
 #include "dsp/fft/fft_types.h"
 #include "dsp_signal_generator_ui.h"
@@ -22,13 +23,12 @@
 #include "radio.h"
 #include "status.h"
 #include "dsp/signal_generator/dsp_signal_generator_processor.h"
-#include "dsp/dsp_processors.h"
 #include "dsp/capture/capture_task.h"
 
 namespace dspSignalGeneratorUI {
 
 RF_DIRECTION mode = RF_DIRECTION_TX;
-int command = DSP_COMMAND_START;
+bool stopped = true;
 SignalToken signal_token;
 
 // Pre-declare
@@ -47,10 +47,10 @@ void on_event(st_dsp_params *status) {
 
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
-
+            stopped = false;
             break;
         case DSP_STATUS_STOPPED:
-
+            stopped = true;
             break;
     }
 }
@@ -62,7 +62,8 @@ Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::dsp_
                                          0, 100, 1, 10);
 
 void set_signal_params() {
-    DspSignalGeneratorProcessor *processor = ((DspSignalGeneratorProcessor *)dsp::processors[dsp::DSP_TASK_SIGNAL_GENERATOR]);
+    auto task = (SignalGeneratorTask *)(dsp_task.get());
+    auto *processor = (DspSignalGeneratorProcessor *)task->get_processor();
 
     if (dsp::dsp_config.test_signal.shape == SIGNAL_SHAPE_PULSE) {
         processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
@@ -74,7 +75,7 @@ void set_signal_params() {
         pulseDutyMenu.disable();
     }
     // Tasks parameters. Essentially, the IF direction
-    SignalGeneratorTask *task = ((SignalGeneratorTask *)dsp::tasks[dsp::DSP_TASK_SIGNAL_GENERATOR]);
+
     task->mode = mode;
 }
 
@@ -82,24 +83,27 @@ Menu::result change_dsp_status(Menu::eventMask e) {
 
     if (e == Menu::activateEvent) {
 
-        dsp_command({(DSP_COMMAND)command == DSP_COMMAND_STOP ? DSP_COMMAND_START : DSP_COMMAND_STOP, dsp::DSP_TASK_SIGNAL_GENERATOR}, on_event);
-        dsp::set_gain_db(dsp::dsp_config.gain);
+        if (!stopped) {
+            dsp_stop();
+        } else {
+            dsp_start(dsp::DSP_TASK_SIGNAL_GENERATOR, on_event);
+            dsp::set_gain_db(dsp::dsp_config.gain);
 
-        set_signal_params();
+            set_signal_params();
+        }
     }
 
     return Menu::proceed;
 }
 
 Menu::result on_menu_event(Menu::eventMask e) {
-    SignalGeneratorTask *task = ((SignalGeneratorTask *)dsp::tasks[dsp::DSP_TASK_SIGNAL_GENERATOR]);
+    auto *task = (SignalGeneratorTask *)dsp_task.get();
 
     switch (e) {
-
         case Menu::selBlurEvent:
             // If the task is finished, reset it
-            if (task->status.stop_ms) {
-                task->status.stop_ms = 0;
+            if (task->info.stop_ms) {
+                task->info.stop_ms = 0;
             }
             break;
 
@@ -110,7 +114,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             break;
 
         case Menu::exitEvent:
-            if (task->status.status == DSP_STATUS_STOPPED) {
+            if (task->info.status == DSP_STATUS_STOPPED) {
                 radio::freq_signal.remove(signal_token);
                 dsp_set_real_time(false);
             } else {
@@ -130,9 +134,9 @@ result set_sampling_params(eventMask e) {
     return proceed;
 }
 
-TOGGLE(command, signalGeneratorToggle, "Command: ", change_dsp_status, anyEvent,
+TOGGLE(stopped, signalGeneratorToggle, "Command: ", change_dsp_status, anyEvent,
        noStyle, //,doExit,enterEvent,noStyle       ,
-       VALUE("Stop", DSP_COMMAND_STOP, change_dsp_status, anyEvent), VALUE("Start", DSP_COMMAND_START, change_dsp_status, anyEvent))
+       VALUE("Stop", true, change_dsp_status, anyEvent), VALUE("Start", false, change_dsp_status, anyEvent))
 
 TOGGLE(mode, modeToggle, "Mode: ", doNothing, anyEvent,
        noStyle, //,doExit,enterEvent,noStyle       ,

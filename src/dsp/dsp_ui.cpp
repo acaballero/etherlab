@@ -64,9 +64,8 @@ result apply_dsp_changes(eventMask) {
         compressorThresholdMenu.disable();
     }
 
-    if (!ISANALOG) {
-        dsp_restart();
-    }
+    dsp_restart();
+
     return proceed;
 }
 

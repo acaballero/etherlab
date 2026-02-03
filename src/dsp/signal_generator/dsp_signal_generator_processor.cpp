@@ -8,7 +8,7 @@
 #include "types.h"
 
 void DspSignalGeneratorProcessor::work(const buffer_t<adc_type> *buffer) {
-    this->status.processed_blocks++;
+    this->info.processed_blocks++;
     buffer_t<complex_t> wrapped_buffer{(complex_t *)buffer->p, buffer->count / 2};
     modulator.get_block(wrapped_buffer);
 

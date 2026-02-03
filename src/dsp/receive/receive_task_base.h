@@ -12,6 +12,7 @@
 #include "dsp/decimation/dsp_iir_decimator.h"
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
+#include "dsp/receive/dsp_receive_processor.h"
 #include "dsp/task.h"
 #include "radio.h"
 #include "types.h"
@@ -47,7 +48,7 @@ class ReceiveTaskBase : public Task {
 
     void work() override;
 
-    bool start() override;
+    bool start_impl() override;
 
     void stop() override;
 
@@ -60,6 +61,10 @@ class ReceiveTaskBase : public Task {
     }
 
   protected:
+    std::unique_ptr<DspProcessor> create_processor() override {
+        return std::make_unique<DspReceiveProcessor>();
+    }
+
     // Cascaded decimators
     std::unique_ptr<DspDecimator<float32_t>>
         decimators[max_decimators - 1]; // DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS, complex_t_f32> decimators[max_decimators - 1];

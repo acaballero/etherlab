@@ -13,7 +13,7 @@ class DspReceiveProcessor : public DspProcessor {
   public:
     DspReceiveProcessor() {
         // This processor takes samples from the ACD and puts samples in the DAC and the other way around (so DSP_DIRECTION_INOUT)
-        this->status.direction = DSP_DIRECTION_INOUT;
+        this->info.direction = DSP_DIRECTION_INOUT;
     }
 
     void work(const buffer_t<adc_type> *buffer) override;

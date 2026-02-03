@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_REPLAY_TASK_H
 
 #include <memory>
+#include "dsp/replay/dsp_replay_processor.h"
 #include "dsp/task.h"
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
@@ -17,7 +18,7 @@ class ReplayTask : public Task {
 
     void work() override;
 
-    bool start() override;
+    bool start_impl() override;
 
     void stop() override;
 
@@ -26,6 +27,11 @@ class ReplayTask : public Task {
     bool getLoop() const;
 
     void setLoop(bool loop);
+
+  protected:
+    std::unique_ptr<DspProcessor> create_processor() override {
+        return std::make_unique<DspReplayProcessor>();
+    }
 
   private:
     bool loop;

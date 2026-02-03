@@ -14,8 +14,8 @@ class DspCaptureProcessor : public DspProcessor {
   public:
     DspCaptureProcessor() {
 
-        this->status.direction = DSP_DIRECTION_IN;
-        this->status.n_channels = 2;
+        this->info.direction = DSP_DIRECTION_IN;
+        this->info.n_channels = 2;
     }
 
     bool start() override;

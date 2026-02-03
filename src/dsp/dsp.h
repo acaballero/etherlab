@@ -11,25 +11,24 @@
 #include "dsp_common.h"
 #include "os/periodic_task.h"
 #include "task.h"
+#include "dsp_tasks.h"
 #include "types.h"
+#include <memory>
 
 namespace dsp {
-
-struct st_dsp_command {
-    DSP_COMMAND command;
-    uint8_t id = 0;
-    Task *task = nullptr;
-    bool operator==(const st_dsp_command &st) const {
-        return command == st.command && id == st.id;
-    }
-};
 
 extern os::periodic_task task;
 extern bool adc_overload;
 bool apply_audio_bpf();
 bool apply_deemph(MODULATION_MODE mod);
 bool apply_compression(MODULATION_MODE mod);
+
 } // namespace dsp
+
+extern std::unique_ptr<Task> dsp_task;
+
+Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *)> cb);
+Task *dsp_start(dsp::DSP_TASK_ID id, std::function<void(st_dsp_params *)> cb);
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,7 +36,8 @@ extern "C" {
 
 void dsp_init(dsp::st_dsp_config &);
 void dsp_set_real_time(bool);
-uint8_t dsp_command(dsp::st_dsp_command command, std::function<void(st_dsp_params *)> cb);
+
+void dsp_stop();
 bool dsp_restart();
 inline void dsp_work();
 

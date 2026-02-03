@@ -23,7 +23,7 @@ namespace dsp {
 
 void AFSKTXTask::work() {
 
-    if (status.status != DSP_STATUS_RUNNING || packet.size() == 0) {
+    if (info.status != DSP_STATUS_RUNNING || packet.size() == 0) {
         return;
     }
 
@@ -34,12 +34,12 @@ void AFSKTXTask::work() {
     // Let's process multiple blocks per iteration
     int nb = 2;
 
-    if (free >= status.block_size_bytes * nb) {
+    if (free >= info.block_size_bytes * nb) {
 
         uint16_t cur_word;
 
         for (int b = 0; b < nb; b++) {
-            this->status.processed_blocks++;
+            this->info.processed_blocks++;
             for (int i = DSP_BLOCK * b; i < DSP_BLOCK * (b + 1); i++) {
 
                 if (fill_bits) {
@@ -126,9 +126,9 @@ void AFSKTXTask::work() {
 
             // LOG_RAW("\n");
 
-            output_stream.feed(status.block_size_bytes);
+            output_stream.feed(info.block_size_bytes);
 
-            if (status.processed_blocks == 1 && on_first_block) {
+            if (info.processed_blocks == 1 && on_first_block) {
                 on_first_block();
             }
         }
@@ -156,7 +156,7 @@ void AFSKTXTask::configure(uint32_t phase_inc_mark, uint32_t phase_inc_space, ui
     LOG("AFSK TX config: samples/bit: %d, symbol count: %d, ", afsk_samples_per_bit, symbol_count);
     LOG_RAW("delay: %d, tail: %d, mark: %d, space: %d\n", delay_front_ms, delay_tail_ms, phase_inc_mark, phase_inc_space);
 
-    status.reset();
+    info.reset();
     output_stream.reset();
 }
 
@@ -179,23 +179,23 @@ void AFSKTXTask::set_data(uint16_t *data) {
     cur_bit = 0;
 }
 
-bool AFSKTXTask::start() {
+bool AFSKTXTask::start_impl() {
 
     LOG("___ [START] AFSKTX task ___\n");
 
-    status.reset();
-    status.direction = DSP_DIRECTION_OUT;
-    status.sample_rate = config.fft.sample_rate;
-    status.decimation_factor = 1;
+    info.reset();
+    info.direction = DSP_DIRECTION_OUT;
+    info.sample_rate = config.fft.sample_rate;
+    info.decimation_factor = 1;
 
-    status.block_size_bytes = DSP_BLOCK * 2 * 2;
-    status.n_channels = 2;
-    status.bandwidth = fft::fft_params.span;
-    status.bits_per_sample = 16;
-    status.decimated_block_size = DSP_BLOCK * 2 / status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
-    status.decimated_block_size_bytes = this->status.block_size_bytes / status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    info.block_size_bytes = DSP_BLOCK * 2 * 2;
+    info.n_channels = 2;
+    info.bandwidth = fft::fft_params.span;
+    info.bits_per_sample = 16;
+    info.decimated_block_size = DSP_BLOCK * 2 / info.decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
+    info.decimated_block_size_bytes = this->info.block_size_bytes / info.decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
 
-    bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
+    bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = info.sample_rate, .freq = 0, .mode = DSP});
 
     if (!ret) {
         halt(DSP_ERR);
@@ -209,7 +209,7 @@ bool AFSKTXTask::start() {
     // Start task processing timer
     // TODO: This should be done by the caller of this method and be generic for all tasks
     HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
-    status.status = DSP_STATUS_RUNNING;
+    info.status = DSP_STATUS_RUNNING;
     update_timer(TASKS_TIMER_TYPEDEF, 10, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
 
     return true;
@@ -218,11 +218,11 @@ bool AFSKTXTask::start() {
 void AFSKTXTask::stop() {
 
     LOG("___ [STOP] AFSKTX task ___\n");
-    if (this->status.status != DSP_STATUS_STOPPED) {
+    if (this->info.status != DSP_STATUS_STOPPED) {
 
         output_stream.close();
 
-        this->status.status = DSP_STATUS_STOPPED;
+        this->info.status = DSP_STATUS_STOPPED;
 
         // Stop media read processing timer
         HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);

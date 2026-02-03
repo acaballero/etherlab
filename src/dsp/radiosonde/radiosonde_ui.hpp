@@ -30,7 +30,6 @@ class RadiosondeView : public View {
   private:
     static constexpr int line_height = 14;
     static constexpr int c_width = 7;
-    dsp::RadiosondeTask radiosonde_task{dspSuccess, dspError};
 
     std::unique_ptr<LogFile> logger;
 

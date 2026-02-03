@@ -23,21 +23,21 @@ void SignalGeneratorTask::work() {
     // TODO: Use the FIFO as a buffer for the generated signal.
 }
 
-bool SignalGeneratorTask::start() {
+bool SignalGeneratorTask::start_impl() {
 
-    status.direction = DSP_DIRECTION_OUT;
-    status.bandwidth = fft::fft_params.span;
-    status.sample_rate = fft::fft_params.sample_freq;
-    status.decimation_factor = fft::fft_params.decimation_factor;
-    status.bits_per_sample = 16;
-    status.n_channels = 2;
-    status.block_size_bytes = DSP_BLOCK * 2 * 2;
-    status.decimated_block_size = DSP_BLOCK * 2 / fft::fft_params.decimation_factor / (status.n_channels == 1 ? 2 : 1);
-    status.decimated_block_size_bytes = status.block_size_bytes / fft::fft_params.decimation_factor / (status.n_channels == 1 ? 2 : 1);
+    info.direction = DSP_DIRECTION_OUT;
+    info.bandwidth = fft::fft_params.span;
+    info.sample_rate = fft::fft_params.sample_freq;
+    info.decimation_factor = fft::fft_params.decimation_factor;
+    info.bits_per_sample = 16;
+    info.n_channels = 2;
+    info.block_size_bytes = DSP_BLOCK * 2 * 2;
+    info.decimated_block_size = DSP_BLOCK * 2 / fft::fft_params.decimation_factor / (info.n_channels == 1 ? 2 : 1);
+    info.decimated_block_size_bytes = info.block_size_bytes / fft::fft_params.decimation_factor / (info.n_channels == 1 ? 2 : 1);
 
-    bool ret = radio_config({.direction = mode, .sample_freq = status.sample_rate / 4, .freq = 0, .mode = DSP});
+    bool ret = radio_config({.direction = mode, .sample_freq = info.sample_rate / 4, .freq = 0, .mode = DSP});
 
-    status.status = DSP_STATUS_RUNNING;
+    info.status = DSP_STATUS_RUNNING;
 
     if (!ret) {
         halt(DSP_ERR);
@@ -48,13 +48,13 @@ bool SignalGeneratorTask::start() {
 }
 
 void SignalGeneratorTask::stop() {
-    if (status.status != DSP_STATUS_STOPPED) {
+    if (info.status != DSP_STATUS_STOPPED) {
 
-        status.status = DSP_STATUS_STOPPED;
+        info.status = DSP_STATUS_STOPPED;
 
         Task::stop(); // Let the base class finish
 
         // TODO: Centralize returning to previous mode
-        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
+        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = info.sample_rate, .freq = 0, .mode = DSP});
     }
 }

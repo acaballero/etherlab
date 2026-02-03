@@ -28,8 +28,6 @@ Signal dsp_common_params_signal;
 
 const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILEWRITE", "FILEREAD", "DMAOVERRUN", "FIFOOVERRUN", "FIFOUNDERRUN"};
 
-const char *commandNames[] = {"NONE", "STOP", "START"};
-
 st_dsp_params *dsp_params;
 
 st_dsp_config dsp_config;

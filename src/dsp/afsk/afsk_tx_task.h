@@ -5,6 +5,7 @@
 #ifndef __AFSK_TX_TASK_H__
 #define __AFSK_TX_TASK_H__
 
+#include "dsp/replay/dsp_replay_processor.h"
 #include "dsp/task.h"
 #include <stdint.h>
 #include <vector>
@@ -25,9 +26,14 @@ class AFSKTXTask : public Task {
 
     void work() override;
 
-    bool start() override;
+    bool start_impl() override;
 
     void stop() override;
+
+  protected:
+    std::unique_ptr<DspProcessor> create_processor() override {
+        return std::make_unique<DspReplayProcessor>();
+    }
 
   private:
     uint32_t afsk_samples_per_bit{0};

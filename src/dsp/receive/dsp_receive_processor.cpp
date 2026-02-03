@@ -19,7 +19,7 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
     // TODO: Find some other way of making this processor know whether is reading or writing
     if (buffer->p == adc_buffer_1.p || buffer->p == adc_buffer_2.p) {
 
-        if (status.status != DSP_STATUS_RUNNING) {
+        if (info.status != DSP_STATUS_RUNNING) {
             return;
         }
 
@@ -29,14 +29,14 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
         uint32_t free = input_stream.free((char **)&p);
 
         if (free >= block_size_bytes) {
-            status.processed_blocks++;
+            info.processed_blocks++;
             input_stream.write_block((char *)buffer->p, buffer->size_bytes);
         } else {
-            status.fifo_overruns++;
+            info.fifo_overruns++;
         }
         // GPIOD->BSRR |= GPIO_PIN_9 << 16;
     } else {
-        if (status.status != DSP_STATUS_RUNNING) {
+        if (info.status != DSP_STATUS_RUNNING) {
             memset((char *)buffer->p, 0, buffer->count << 1);
             return;
         }
@@ -59,14 +59,14 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
                 // Apply gain
 
                 // Note the buffer sample rate must be a divisor of the sample rate of the required for the USB so we can do fast interpolation
-                usb_audio_send(p, buffer->count / 2, status.sample_rate);
+                usb_audio_send(p, buffer->count / 2, info.sample_rate);
             }
 
             output_stream.consume(block_size_bytes, (char **)&p);
 
-        } else if (status.processed_blocks) {
+        } else if (info.processed_blocks) {
             // Underruns will surely happen at the start of the process
-            status.fifo_underruns++;
+            info.fifo_underruns++;
         }
         // GPIOD->BSRR |= GPIO_PIN_9 << 16;
     }

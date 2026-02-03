@@ -15,7 +15,7 @@ void DspTransmitProcessor::work(const buffer_t<adc_type> *buffer) {
 
     int16_t *p;
 
-    if (status.status != DSP_STATUS_RUNNING) {
+    if (info.status != DSP_STATUS_RUNNING) {
         memset((char *)buffer->p, 0, buffer->count << 1);
         return;
     }
@@ -38,9 +38,9 @@ void DspTransmitProcessor::work(const buffer_t<adc_type> *buffer) {
 
         output_stream.consume(block_size_bytes, (char **)&p);
 
-    } else if (status.processed_blocks) {
+    } else if (info.processed_blocks) {
         // Underruns will surely happen at the start of the process
-        status.fifo_underruns++;
+        info.fifo_underruns++;
     }
     // GPIOD->BSRR |= GPIO_PIN_9 << 16;
 }

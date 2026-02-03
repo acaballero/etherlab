@@ -21,7 +21,7 @@ File *CaptureTask::getFile() {
 void CaptureTask::work() {
     char *p;
 
-    if (status.status != DSP_STATUS_RUNNING) {
+    if (info.status != DSP_STATUS_RUNNING) {
         return;
     }
 
@@ -37,7 +37,7 @@ void CaptureTask::work() {
     // PROFILE_PUSH("work");
     if (av >= bytes_in) {
 
-        status.processed_blocks++;
+        info.processed_blocks++;
 
         FRESULT fres = FR_OK;
 
@@ -47,12 +47,12 @@ void CaptureTask::work() {
 
         input_stream.consume(bytes_in, &p);
 
-        if (status.status == DSP_STATUS_RUNNING) { // Maybe there was an error in the ADC thread while writing
+        if (info.status == DSP_STATUS_RUNNING) { // Maybe there was an error in the ADC thread while writing
             if (fres == FR_OK) {
                 if (FatFSFileHandle.fsize > DSP_MAX_CAPTURE_SIZE) {
                     stop();
                 }
-            } else if (fres != FR_DISK_ERR || status.status == DSP_STATUS_RUNNING) {
+            } else if (fres != FR_DISK_ERR || info.status == DSP_STATUS_RUNNING) {
                 // We check again for the status because the ADC interrupt could've stopped the capture before
 
                 halt(DSP_ERR_FILEWRITE);
@@ -71,7 +71,7 @@ void CaptureTask::init() {
     this->status.n_channels = 1; // Only one channel (I)
 #else
     // TODO: Select # of channels from the menu
-    this->status.n_channels = 2;
+    this->info.n_channels = 2;
 #endif
 
     /* Filter parameters
@@ -101,11 +101,11 @@ void CaptureTask::init() {
 
     // TODO: In reality, the maximum sample rate might be greater than this if we take into account the
     // decimation factor
-    uint32_t max_sample_rate = (uint32_t)(SD_CARD_WRITE_MAX_KBPS * 1000 * 0.5 / this->status.n_channels);
+    uint32_t max_sample_rate = (uint32_t)(SD_CARD_WRITE_MAX_KBPS * 1000 * 0.5 / this->info.n_channels);
     dsp::set_max_sample_freq(max_sample_rate);
 }
 
-bool CaptureTask::start() {
+bool CaptureTask::start_impl() {
 
 #ifdef LCD_DISABLE_ON_DSP
     lcd.setEnabled(false);
@@ -113,16 +113,16 @@ bool CaptureTask::start() {
     init();
 
     input_stream.reset();
-    status.reset();
+    info.reset();
 
-    this->status.direction = DSP_DIRECTION_IN;
-    this->status.bandwidth = fft::fft_params.bw;
-    this->status.sample_rate = config.fft.sample_rate;
-    this->status.decimation_factor = fft::fft_params.decimation_factor;
-    this->status.decimated_block_size = DSP_BLOCK / fft::fft_params.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
-    this->status.bits_per_sample = 16;
-    this->status.block_size_bytes = DSP_BLOCK * 2 * 2;
-    this->status.decimated_block_size_bytes = this->status.block_size_bytes / this->status.decimation_factor / (this->status.n_channels == 1 ? 2 : 1);
+    this->info.direction = DSP_DIRECTION_IN;
+    this->info.bandwidth = fft::fft_params.bw;
+    this->info.sample_rate = config.fft.sample_rate;
+    this->info.decimation_factor = fft::fft_params.decimation_factor;
+    this->info.decimated_block_size = DSP_BLOCK / fft::fft_params.decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
+    this->info.bits_per_sample = 16;
+    this->info.block_size_bytes = DSP_BLOCK * 2 * 2;
+    this->info.decimated_block_size_bytes = this->info.block_size_bytes / this->info.decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
 
     if (!lock_sd_card(5000)) {
         // prevent other tasks to use the sd_card
@@ -134,10 +134,10 @@ bool CaptureTask::start() {
 
     WaveInfo wi{FSTATUS_NONE,
                 radio::get_frequency(),
-                this->status.n_channels,
-                this->status.sample_rate / this->status.decimation_factor,
-                this->status.bits_per_sample,
-                (uint32_t)(this->status.n_channels * this->status.bandwidth * (this->status.bits_per_sample) / 8)};
+                this->info.n_channels,
+                this->info.sample_rate / this->info.decimation_factor,
+                this->info.bits_per_sample,
+                (uint32_t)(this->info.n_channels * this->info.bandwidth * (this->info.bits_per_sample) / 8)};
 
     fres = file->create(wi);
 
@@ -150,7 +150,7 @@ bool CaptureTask::start() {
         // Update FFT and sample rate parameters
         fft_config(config.fft.span);
 
-        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
+        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = info.sample_rate, .freq = 0, .mode = DSP});
 
         // Start media write processing timer
         HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
@@ -158,7 +158,7 @@ bool CaptureTask::start() {
         // Se the fifo consumer frequency
         update_timer(TASKS_TIMER_TYPEDEF, 2, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000); // /10000 = N*100 microseconds
 
-        status.status = DSP_STATUS_RUNNING;
+        info.status = DSP_STATUS_RUNNING;
     }
 
     return true;
@@ -168,7 +168,7 @@ void CaptureTask::stop() {
 
     // TODO: Flush the fifo if there are bytes left
 
-    if (this->status.status != DSP_STATUS_STOPPED) {
+    if (this->info.status != DSP_STATUS_STOPPED) {
 
         // Stop task work timer
         HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
@@ -177,8 +177,8 @@ void CaptureTask::stop() {
             FRESULT fres = file->close();
 
             if (fres != FR_OK) {
-                if (this->status.error == DSP_ERR_NONE) {
-                    this->status.error = DSP_ERR_FILECLOSE;
+                if (this->info.error == DSP_ERR_NONE) {
+                    this->info.error = DSP_ERR_FILECLOSE;
                 }
             }
         }

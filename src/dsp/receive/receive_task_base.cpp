@@ -40,7 +40,7 @@ extern TIM_HandleTypeDef TASKS_TIMER_HANDLE;
 
 HOT_FUNCTION
 void ReceiveTaskBase::work() {
-    if (status.status == DSP_STATUS_RUNNING) {
+    if (info.status == DSP_STATUS_RUNNING) {
 
         char *in_start;
         char *in_p;
@@ -50,9 +50,9 @@ void ReceiveTaskBase::work() {
         uint32_t av = input_stream.available(&in_p);
         uint32_t output_samples = 0;
 
-        if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
+        if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / info.decimation_factor)) {
 
-            status.processed_blocks++;
+            info.processed_blocks++;
             av = DSP_FIFO_BLOCK_BYTES;
             in_start = in_p;
 
@@ -143,7 +143,7 @@ void ReceiveTaskBase::work() {
                         }
                     }
 
-                    uint16_t block_size_out = samples_per_batch / (status.decimation_factor / curr_dec_factor); // account for the already decimated factor
+                    uint16_t block_size_out = samples_per_batch / (info.decimation_factor / curr_dec_factor); // account for the already decimated factor
                     out_accum_p += block_size_out;
                     output_samples += block_size_out;
 
@@ -152,7 +152,7 @@ void ReceiveTaskBase::work() {
                         out_accum_p = n_pre_decimators == n_decimators ? bi1_p : out_accum_buff_f32_p;
 
                         if (!baseband_echo) {
-                            buffer_t<float32_t> buff_out_f32 = {out_accum_p, (size_t)samples_per_batch, status.sample_rate, REAL};
+                            buffer_t<float32_t> buff_out_f32 = {out_accum_p, (size_t)samples_per_batch, info.sample_rate, REAL};
                             process_audio(buff_out_f32);
                         }
 
@@ -175,11 +175,11 @@ void ReceiveTaskBase::work() {
             input_stream.consume(processed, &in_start);
 
         } else {
-            if (free < (DSP_FIFO_BLOCK_BYTES / status.decimation_factor)) {
-                status.fifo_overruns++;
+            if (free < (DSP_FIFO_BLOCK_BYTES / info.decimation_factor)) {
+                info.fifo_overruns++;
             }
             if (av < DSP_FIFO_BLOCK_BYTES) {
-                status.fifo_underruns++;
+                info.fifo_underruns++;
             }
         }
     }
@@ -188,7 +188,7 @@ void ReceiveTaskBase::work() {
 bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
     // First staes are half-band filters (https://en.wikipedia.org/wiki/Half-band_filter)
     uint8_t factor;
-    uint8_t dec = status.decimation_factor;
+    uint8_t dec = info.decimation_factor;
 
     uint32_t stage_sr = config.fft.sample_rate;
     uint32_t next_stage_bandwidth = stage_sr;
@@ -206,7 +206,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
             // Final narrowband signal decimator
             factor = dec;
 
-            next_stage_bandwidth = status.bandwidth;
+            next_stage_bandwidth = info.bandwidth;
 
             switch (mod) {
                 case SSB_USB:
@@ -231,7 +231,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
 
         } else {
 
-            if (stage_sr >= modulation_bandwidth_hz * 4 && modulation_bandwidth_hz > status.bandwidth) {
+            if (stage_sr >= modulation_bandwidth_hz * 4 && modulation_bandwidth_hz > info.bandwidth) {
                 // When the demodulation bandwidth is higher than the target bandwidth and the current sample rate can be decimated
                 // before demodulation, we find the highest decimation factor we can apply before demodulating
                 factor = 1;
@@ -279,7 +279,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
 
     LOG("ReceiveTask::init_decimators -> n_decimators: %d\n", n_decimators);
     if (demodulation_sample_rate == 0) { // All decimation is done before demodulation
-        demodulation_sample_rate = status.sample_rate;
+        demodulation_sample_rate = info.sample_rate;
         n_pre_decimators = n_decimators;
     }
 
@@ -316,7 +316,7 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
     }
 }
 
-bool ReceiveTaskBase::start() {
+bool ReceiveTaskBase::start_impl() {
 
     LOG("___ [START] Receive task ___\n");
     auto current_mute = main_board::get_mute();
@@ -327,7 +327,7 @@ bool ReceiveTaskBase::start() {
 
     dsp_set_real_time(true);
 
-    status.sample_rate = fft::fft_params.sample_freq;
+    info.sample_rate = fft::fft_params.sample_freq;
 
     uint32_t dac_sample_rate = get_audio_sample_rate();
 
@@ -346,30 +346,30 @@ bool ReceiveTaskBase::start() {
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
     // (while using decimation factors of 2^n)
     int dec_factor = 1;
-    while (status.sample_rate > dac_sample_rate * 2 && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
+    while (info.sample_rate > dac_sample_rate * 2 && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
         dec_factor <<= 1;
-        status.sample_rate /= 2;
+        info.sample_rate /= 2;
     }
 
-    if (modulation_bandwidth_hz > status.sample_rate) {
+    if (modulation_bandwidth_hz > info.sample_rate) {
         // This may happen for example with broadband FW where the modulation bandwidth is higher that the demodulated audio bandwidth
         // In that case, we limit the bandwidth to a third of the sample rate.
         // However, this should't be allowed
-        status.bandwidth = status.sample_rate / 3;
+        info.bandwidth = info.sample_rate / 3;
     } else {
-        status.bandwidth = modulation_bandwidth_hz;
+        info.bandwidth = modulation_bandwidth_hz;
     }
 
-    status.direction = DSP_DIRECTION_INOUT;
+    info.direction = DSP_DIRECTION_INOUT;
 
-    status.decimation_factor = dec_factor;
-    status.bits_per_sample = sizeof(adc_type) * 8;
-    status.n_channels = 2;
-    status.block_size_bytes = DSP_BLOCK * sizeof(complex_t);
-    status.decimated_block_size = DSP_BLOCK / dec_factor;
-    status.decimated_block_size_bytes = status.decimated_block_size * sizeof(complex_t);
+    info.decimation_factor = dec_factor;
+    info.bits_per_sample = sizeof(adc_type) * 8;
+    info.n_channels = 2;
+    info.block_size_bytes = DSP_BLOCK * sizeof(complex_t);
+    info.decimated_block_size = DSP_BLOCK / dec_factor;
+    info.decimated_block_size_bytes = info.decimated_block_size * sizeof(complex_t);
 
-    LOG("Bandwidth: %d | Sample rate: %d | Modulation bandwidth: %d\n", status.bandwidth, status.sample_rate, modulation_bandwidth_hz);
+    LOG("Bandwidth: %d | Sample rate: %d | Modulation bandwidth: %d\n", info.bandwidth, info.sample_rate, modulation_bandwidth_hz);
 
     bool ret = init_decimators(mod);
 
@@ -388,7 +388,7 @@ bool ReceiveTaskBase::start() {
     ret = init();
 
     ret = ret && radio_config({.direction = RF_DIRECTION_RX,
-                               .sample_freq = status.sample_rate,
+                               .sample_freq = info.sample_rate,
                                .freq = 0,
                                .mode = DSP}); // Radio mode is DSP so the signal is routed to the audio amp
 
@@ -406,13 +406,13 @@ bool ReceiveTaskBase::start() {
 
     // Se the fifo processing frequency
     update_timer(TASKS_TIMER_TYPEDEF, 40, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
-    status.status = DSP_STATUS_RUNNING;
+    info.status = DSP_STATUS_RUNNING;
     return true;
 }
 
 void ReceiveTaskBase::stop() {
 
-    if (status.status != DSP_STATUS_STOPPED) {
+    if (info.status != DSP_STATUS_STOPPED) {
         // Stop task processing timer
         HAL_TIM_Base_Stop_IT(&TASKS_TIMER_HANDLE);
 
@@ -422,7 +422,7 @@ void ReceiveTaskBase::stop() {
         }
         signal_decimator.reset();
 
-        status.status = DSP_STATUS_STOPPED;
+        info.status = DSP_STATUS_STOPPED;
 
         dsp_set_real_time(false);
 

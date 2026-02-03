@@ -7,38 +7,91 @@
 #include "dsp_buffers.h"
 
 Task::Task(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
-    this->on_error = onError;
-    this->on_success = onSucess;
+    on_error = onError;
+    on_success = onSucess;
 }
 
 void Task::reset() {
-    status.reset();
+    info.reset();
 }
 
 void Task::halt(DSP_ERROR e) {
-    this->status.error = e;
-    this->stop();
+    info.error = e;
+    stop();
 }
 
+// Template method that orchestrates startup sequence
 bool Task::start() {
-    this->status.status = DSP_STATUS_RUNNING;
-    this->reset();
-    this->status.start_ms = HAL_GetTick();
+    // Task-specific initialization
+    if (!start_impl()) {
+        return false;
+    }
+
+    if (!start_processor()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool Task::start_impl() {
+    info.status = DSP_STATUS_RUNNING;
+    reset();
+    info.start_ms = HAL_GetTick();
+    return true;
+}
+
+// Common processor startup logic
+bool Task::start_processor() {
+
+    processor.reset();
+    processor = create_processor();
+
+    if (processor) {
+        processor.get()->reset();
+
+        // Setup deferred processor start for output paths to prevent underruns
+        if (processor->info.direction == DSP_DIRECTION_OUT) {
+            on_first_block = [this]() {
+                LOG("First block ready: starting processor\n");
+                processor->start();
+            };
+        }
+
+        // Sync params from task to processor
+        processor->info.block_size_bytes = info.block_size_bytes;
+        processor->info.bandwidth = info.bandwidth;
+        processor->info.sample_rate = info.sample_rate;
+        processor->info.decimation_factor = info.decimation_factor;
+        processor->info.decimated_block_size = info.decimated_block_size;
+        processor->info.decimated_block_size_bytes = info.decimated_block_size_bytes;
+        processor->info.n_channels = info.n_channels;
+
+        // Start processor immediately unless waiting for first block
+        if (processor->info.direction != DSP_DIRECTION_OUT) {
+            LOG("Starting processor\n");
+            if (!processor->start()) {
+                status::pop_alert(status::ERROR, "Error starting DSP processor");
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 
 void Task::stop() {
 
-    this->status.status = DSP_STATUS_STOPPED;
-    this->status.stop_ms = HAL_GetTick();
+    info.status = DSP_STATUS_STOPPED;
+    info.stop_ms = HAL_GetTick();
 
-    if (this->status.error) {
-        if (this->on_error) {
-            this->on_error(this->status.error);
+    if (info.error) {
+        if (on_error) {
+            on_error(info.error);
         }
     } else {
-        if (this->on_success) {
-            this->on_success();
+        if (on_success) {
+            on_success();
         }
     }
 }
