@@ -47,7 +47,7 @@ void hide_alert() {
 
 void pop_alert(Level code, const char *msg) {
 
-    LOG("%s: %s\n", code == WARN ? "WARNING" : ERROR ? "ERROR" : "INFO", msg) // Print to console, if enabled
+    LOG("%s: %s\n", code == WARN ? "WARNING" : (code == ERROR ? "ERROR" : "INFO"), msg) // Print to console, if enabled
 
     system_status.code = code;
     snprintf(system_status.msg, 40, "%s", msg);

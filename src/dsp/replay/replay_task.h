@@ -22,7 +22,7 @@ class ReplayTask : public Task {
 
     void stop() override;
 
-    void setFile(std::unique_ptr<File>);
+    void setFile(File *);
 
     bool getLoop() const;
 
@@ -35,7 +35,7 @@ class ReplayTask : public Task {
 
   private:
     bool loop;
-    std::unique_ptr<File> m_file;
+    File *m_file;
 };
 
 #endif // TRX_FRONTEND_REPLAY_TASK_H

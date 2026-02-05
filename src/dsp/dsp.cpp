@@ -89,21 +89,32 @@ std::function<void(st_dsp_params *)> on_event;
  * Task factory
  */
 static std::unique_ptr<Task> create_task(dsp::DSP_TASK_ID id) {
+
+    std::unique_ptr<Task> task;
+
     switch (id) {
         case dsp::DSP_TASK_CAPTURE:
-            return std::make_unique<CaptureTask>(dspSuccess, dspError);
+            task = std::make_unique<CaptureTask>(dsp_success, dsp_error);
+            break;
         case dsp::DSP_TASK_REPLAY:
-            return std::make_unique<ReplayTask>(dspSuccess, dspError);
+            task = std::make_unique<ReplayTask>(dsp_success, dsp_error);
+            break;
         case dsp::DSP_TASK_SIGNAL_GENERATOR:
-            return std::make_unique<SignalGeneratorTask>(dspSuccess, dspError);
+            task = std::make_unique<SignalGeneratorTask>(dsp_success, dsp_error);
+            break;
         case dsp::DSP_TASK_RECEIVE:
-            return std::make_unique<ReceiveTask>(dspSuccess, dspError);
+            task = std::make_unique<ReceiveTask>(dsp_success, dsp_error);
+            break;
         case dsp::DSP_TASK_TRANSMIT:
-            return std::make_unique<TransmitTask>(dspSuccess, dspError);
+            task = std::make_unique<TransmitTask>(dsp_success, dsp_error);
+            break;
         default:
             status::pop_alert(status::ERROR, "Unknown DSP task ID");
             return nullptr;
     }
+
+    task->info.id = id;
+    return task;
 }
 
 /** Sets or unsets the real-time DSP mode, for which only one slice of FFT can be used **/
@@ -159,12 +170,12 @@ Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *)>
 
     uint8_t id = task->info.id;
 
-    LOG_IND(2, "dsp_start: processor: %s\n", dsp::taskNames[id]);
+    LOG_IND(2, "dsp_start: Enqueuing next task start : %s\n", dsp::taskNames[id]);
 
     if (dsp_task && dsp_task->info.id == id) {
         DSP_STATUS s = dsp_task->info.status;
         if (s == DSP_STATUS_RUNNING || s == DSP_STATUS_PENDING) {
-            LOG_IND(-2, "WARN: Skipping start: current task status: %d\n", s);
+            LOG_IND(-2, "WARN: Skipping start: Already RUNNING or enqueued\n");
             return dsp_task.get();
         }
     }
@@ -179,8 +190,9 @@ Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *)>
     dsp_task->info.status = DSP_STATUS_PENDING;
     dsp_task->info.id = id;
 
-    // FIXME: Ugly
     dsp::dsp_params = dsp_task->get_info();
+
+    LOG_IND_RAW(-2, "");
 
     return dsp_task.get();
 }
@@ -218,10 +230,10 @@ void dsp_stop_usb_bridge() {
 
 void dsp_start_task() {
 
-    LOG_IND(2, "dsp_start_task:");
+    LOG_IND(2, "dsp_start_task: ");
     if (!dsp::dsp_params || dsp::dsp_params->status != DSP_STATUS_RUNNING) {
 
-        LOG_RAW("Starting new task. Processor %s\n", dsp::taskNames[dsp_task->info.id]);
+        LOG_RAW("starting new task %s\n", dsp::taskNames[dsp_task->info.id]);
 
         input_stream.reset();
         output_stream.reset();
@@ -230,8 +242,6 @@ void dsp_start_task() {
         // TODO: Not sure if its better to do decouple the DACs from the modulator and set the common mode in hardware. The drawback would be
         // not being able to fine-tune the offsets in software
         reset_dac_buffer(config.hw.dac_offset);
-
-        current_buffer->sample_rate = dsp_task->info.sample_rate;
 
         //  LOG("dsp_start_task: starting task\n");
         dsp_task->info.reset();
@@ -245,9 +255,14 @@ void dsp_start_task() {
 
         if (dsp_task->start()) {
 
+            current_buffer->sample_rate = dsp_task->info.sample_rate;
+
             if (dsp_task->info.id == dsp::DSP_TASK_TRANSMIT) {
                 dsp_start_usb_bridge();
             }
+
+            // Assign this again so the returned info depends on the already initialized task (FIXME)
+            dsp::dsp_params = dsp_task->get_info();
 
             if (on_event) {
                 on_event(dsp::dsp_params);
@@ -455,52 +470,49 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void) {
 
 void dsp_stop() {
 
-    if (dspstatus != DSP_STATUS_STOPPING) {
+    auto current_task_id = dsp_task ? dsp_task->info.id : -1;
+    if (dspstatus != DSP_STATUS_STOPPING && current_task_id >= 0) {
 
         dspstatus = DSP_STATUS_STOPPING;
 
-        auto current_task_id = dsp_task ? dsp_task->info.id : -1;
+        LOG_IND(2, "dsp_stop: Stopping task %s\n", dsp::taskNames[current_task_id]);
 
-        LOG_IND(2, "dsp_stop_task\n");
+        dsp_task->stop();
 
-        if (dsp_task) {
-            LOG("stopping task\n");
-            dsp_task->stop();
-            dsp_task.reset(); // Forces deallocation before new construct reclaim memory
-        }
-
-        LOG_IND_RAW(-2, "");
+        LOG_IND_RAW(-2, "dsp_stop: Finished stopping task\n");
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
         execute_task = false;
 #endif
 
         if (on_event) {
-            //  LOG("dspStop: onEvent\n");
+            LOG("dsp_stop: on_event\n");
             on_event(dsp::dsp_params);
         }
 
+        dsp_task.reset(); // Forces deallocation before new construct reclaim memory
+
         dsp::dsp_params = NULL;
 
-        dspstatus = DSP_STATUS_STOPPED;
-
-        if (!ISANALOG && current_task_id >= 0 && current_task_id != dsp::DSP_TASK_RECEIVE) {
+        if (!ISANALOG && current_task_id != dsp::DSP_TASK_RECEIVE) {
             // TODO: This prevents stopping all tasks in digital mode by  causing the receive task to be restarted. But its ugly
             dsp_start(dsp::DSP_TASK_RECEIVE, nullptr);
         }
+
+        dspstatus = DSP_STATUS_STOPPED;
 
         dsp_stop_usb_bridge();
     }
 }
 
-void dspSuccess() {
-    // LOG("dspSuccess\n");
+void dsp_success() {
+    // LOG("dsp_success\n");
     dsp_stop();
 }
 
-void dspError(DSP_ERROR err) {
+void dsp_error(DSP_ERROR err) {
 
-    // LOG("dspError\n");
+    // LOG("dsp_error\n");
     switch (err) {
 
         case DSP_ERR_FILEOPEN:

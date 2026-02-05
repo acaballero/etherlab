@@ -5,26 +5,34 @@
 #include "replay_widget.h"
 #include "../../../lib/utils/utils.hpp"
 #include "Display_afb.h"
+#include "dsp/dsp.h"
+#include "dsp/dsp_tasks.h"
 #include "ips_font.h"
 
 bool ReplayWidget::paint_callback() {
 
     char buff[40];
 
-    display->fillBuffer(C565_DARKEST);
+    display->fillBuffer(C565_BLACK);
+    display->writeRect({0, 0}, {2, area.box.height}, C565_DARKEST);
+
+    if (dsp_task && dsp_task->info.id == dsp::DSP_TASK_REPLAY) {
+        task_status = dsp_task->info;
+        processor_status = dsp_task->get_processor()->info;
+    }
 
     uint16_t c = C565_WHITE;
 
-    int elapsed_s = task_status->elapsed_ms() * 1000;
+    int elapsed_s = task_status.elapsed_ms() * 1000;
 
-    switch (task_status->status) {
+    switch (task_status.status) {
         case DSP_STATUS_RUNNING:
             c = C565_BLUE;
             sprintf(buff, "Running (%.1fs)\n", elapsed_s);
             break;
         case DSP_STATUS_STOPPED:
-            if (task_status->error == DSP_ERR_NONE) {
-                if (task_status->stop_ms) {
+            if (task_status.error == DSP_ERR_NONE) {
+                if (task_status.stop_ms) {
                     c = C565_GREEN;
                     sprintf(buff, "Finished (%.1fs)\n", elapsed_s);
                 } else {
@@ -61,7 +69,7 @@ bool ReplayWidget::paint_callback() {
 
     display->gotoCharXY(0, 1);
 
-    switch (wi.format) {
+    switch (wave_info.format) {
 
         case FSTATUS_NONE:
 
@@ -79,26 +87,26 @@ bool ReplayWidget::paint_callback() {
         case FSTATUS_OK:
             char units[5];
 
-            if (wi.sample_rate) {
-                format_eng(buff, wi.sample_rate, "Hz\n", units, 3, true);
+            if (wave_info.sample_rate) {
+                format_eng(buff, wave_info.sample_rate, "Hz\n", units, 3, true);
                 display->print("Rate: ", buff, units);
             }
 
-            if (wi.carrier_freq) {
-                format_eng(buff, wi.carrier_freq, "Hz\n", units, 3, true);
+            if (wave_info.carrier_freq) {
+                format_eng(buff, wave_info.carrier_freq, "Hz\n", units, 3, true);
                 display->print("Freq: ", buff, units);
             }
 
-            format_eng(buff, wi.file_size, "b\n", units);
+            format_eng(buff, wave_info.file_size, "b\n", units);
             display->print("Size: ", buff, units);
 
             break;
     }
 
-    if (wi.format == FSTATUS_OK && (task_status->status == DSP_STATUS_RUNNING || task_status->stop_ms)) { // If it's running or just finished
+    if (wave_info.format == FSTATUS_OK && (processor_status.status == DSP_STATUS_RUNNING || task_status.stop_ms)) { // If it's running or just finished
 
-        float bytes_processed = (processor_status->processed_blocks - processor_status->fifo_underruns) * processor_status->block_size_bytes;
-        float bytes_decimated = (processor_status->processed_blocks - processor_status->fifo_underruns) * processor_status->decimated_block_size_bytes;
+        float bytes_processed = (processor_status.processed_blocks - processor_status.fifo_underruns) * processor_status.block_size_bytes;
+        float bytes_decimated = (processor_status.processed_blocks - processor_status.fifo_underruns) * processor_status.decimated_block_size_bytes;
 
         char u1[5], u2[5];
         char v1[10], v2[10];
@@ -108,7 +116,7 @@ bool ReplayWidget::paint_callback() {
         format_eng(v2, bytes_processed, "b.", u2);
         sprintf(buff, "In/out: %s %s / %s %s\n", v1, u1, v2, u2);
         display->print(buff);
-        sprintf(buff, "%.1f", processor_status->drop_rate() * 100);
+        sprintf(buff, "%.1f", processor_status.drop_rate() * 100);
         display->print("Drop: ", buff, "%\n");
     }
 
@@ -122,15 +130,15 @@ void ReplayWidget::before_paint() {
     }
 }
 
-void ReplayWidget::setTaskStatus(st_dsp_params *status) {
-    ReplayWidget::task_status = status;
+void ReplayWidget::setTaskStatus(st_dsp_params &status) {
+    task_status = status;
 }
 
-void ReplayWidget::setProcessorStatus(st_dsp_params *status) {
-    ReplayWidget::processor_status = status;
+void ReplayWidget::setProcessorStatus(st_dsp_params &status) {
+    processor_status = status;
 }
 
 void ReplayWidget::setWaveInfo(WaveInfo wi) {
-    ReplayWidget::wi = wi;
+    wave_info = wi;
     set_dirty();
 }

@@ -23,13 +23,16 @@ class Task {
     virtual void work() = 0;
     virtual void reset();
     void halt(DSP_ERROR);
-    st_dsp_params info;
+    st_dsp_params info{};
 
-    // Get the status
+    // Get runtime info
     virtual st_dsp_params *get_info() {
-        // FIXME: The authoritative info is from the processor or the task depending on who carries the relevant information regarding overruns/underruns
-        // This is so ugly
-        return info.direction != DSP_DIRECTION_IN ? &processor->info : &info;
+        // FIXME: The authoritative info is from the processor or the task depending on who carries the relevant information
+        // regarding overruns/underruns. This is  ugly
+        if (!processor) {
+            processor = create_processor();
+        }
+        return info.direction != DSP_DIRECTION_IN && processor ? &processor->info : &info;
     }
 
     DspProcessor *get_processor() {
@@ -40,7 +43,7 @@ class Task {
     std::function<void()> on_first_block{};
 
   protected:
-    // Task-specific initialization. Subclasses override this
+    // Derived task-specific initialization
     // Called before processor startup
     virtual bool start_impl() = 0;
 
@@ -50,7 +53,7 @@ class Task {
     std::unique_ptr<DspProcessor> processor;
 
   private:
-    // Common processor startup logic
+    // Common processor startup logicd
     bool start_processor();
 
     // Creates the processor for this task (nullptr if task has no processor)

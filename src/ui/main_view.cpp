@@ -48,7 +48,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     info_w.set_z_index(10);
     info_w.set_show_fps(config.debug);
     menu_w.set_show_fps(config.debug);
-    menu_w.set_z_index(100);
+    menu_w.set_z_index(500);
     smeter_w.set_visible(false);
     powmeter_w.set_visible(false);
     optionButtonsView.set_visible(false);
@@ -92,7 +92,6 @@ void MainView::before_paint() {
         snr_w.set_visible(false);
         info_w.set_visible(false);
         menu_w.set_visible(true);
-        menu_w.set_focus(true);
     }
 }
 

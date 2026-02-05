@@ -197,10 +197,8 @@ bool ReplayTask::start_impl() {
         bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = this->info.sample_rate * this->info.decimation_factor});
 
         // TODO: Manage gain globally. Not that easy considering in receive we'd need to normalize it and that's not easy for all modulations
-        dsp::set_gain_db(0);
 
         this->info.status = DSP_STATUS_RUNNING;
-
         if (!ret) {
             this->halt(DSP_ERR);
             return false;
@@ -251,8 +249,8 @@ void ReplayTask::stop() {
     }
 }
 
-void ReplayTask::setFile(std::unique_ptr<File> file) {
-    m_file = move(file);
+void ReplayTask::setFile(File *file) {
+    m_file = file;
     m_file->close();
 }
 

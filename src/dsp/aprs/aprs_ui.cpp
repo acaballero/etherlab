@@ -160,7 +160,7 @@ void APRSView::toggle_beacon() {
 void APRSView::start_rx() {
     //  LOG("START RX\n");
 
-    dsp_start(std::make_unique<APRSTask>(dspSuccess, dspError), [this](st_dsp_params *status) {
+    dsp_start(std::make_unique<APRSTask>(dsp_success, dsp_error), [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();
@@ -319,7 +319,7 @@ void APRSView::send_packet(std::string info) {
 
     LOG_IND(2, "Sending APRS packet: Address: %s | path: %s | payload: %s\n", config.callsign, aprs_settings.path, info.c_str());
 
-    auto aprs_tx_task = std::make_unique<AFSKTXTask>(dspSuccess, dspError);
+    auto aprs_tx_task = std::make_unique<AFSKTXTask>(dsp_success, dsp_error);
 
     aprs_tx_task->configure(1200, 2200, 1, 8, aprs_settings.deviation, 300, 300); // Set a deviation for around 10k bandwidth
     aprs_tx_task->set_data(buffer);

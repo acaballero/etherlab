@@ -90,13 +90,9 @@ io::path get_file_name() {
 }
 
 Menu::result on_menu_event(Menu::eventMask e) {
-
-    auto task = (CaptureTask *)(dsp_task.get());
+    auto task = dsp_task.get();
     switch (e) {
         case Menu::enterEvent:
-
-            capture_w.setProcessorStatus(&task->get_processor()->info);
-            capture_w.setTaskStatus(&task->info);
 
             captureMenu[captureMenu.sz() - 1].disable();
             dsp_set_real_time(true);
@@ -105,8 +101,6 @@ Menu::result on_menu_event(Menu::eventMask e) {
             fname = WAVEFILE_DEFAULT_FOLDER;
             io::check_and_create_folder(WAVEFILE_DEFAULT_FOLDER);
             fname += "/" + get_file_name();
-
-            task->setFile(FileFactory::getFile(ftype, fname));
 
             freqEdit.set_frequency(radio::get_frequency());
 
@@ -118,7 +112,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             break;
         case Menu::exitEvent:
 
-            if (task->info.status == DSP_STATUS_STOPPED) {
+            if (stopped) {
 
                 // Remove fft update priority
                 fft::fft_task.set_high_priority(true);
@@ -176,17 +170,18 @@ void on_event(st_dsp_params *status) {
 }
 
 Menu::result change_dsp_status(Menu::eventMask e) {
-    if (e == Menu::activateEvent) {
 
-        Task *task = dsp_task.get();
-        bool start = task && task->info.id == dsp::DSP_TASK_CAPTURE && task->info.status != DSP_STATUS_RUNNING;
+    if (e == Menu::enterEvent) {
 
-        if (start) {
+        if (stopped) {
             view_manager::mainView.add_child(&capture_w);
             capture_w.set_visible(true);
             menu_size(DISPLAY_X_PIXELS / 2, INFO_HEIGHT);
             dsp_start(dsp::DSP_TASK_CAPTURE, on_event);
-            ((CaptureTask *)dsp_task.get())->setFile(FileFactory::getFile(ftype, fname));
+            auto task = (CaptureTask *)(dsp_task.get());
+            task->setFile(FileFactory::getFile(ftype, fname));
+            capture_w.setProcessorStatus(&task->get_processor()->info);
+            capture_w.setTaskStatus(&task->info);
         } else {
             dsp_stop();
         }
@@ -233,12 +228,9 @@ Menu::select<FileType> &fTypeMenu =
 
 #endif
 
-TOGGLE(stopped, captureToggle, "Command: ", change_dsp_status, Menu::anyEvent, Menu::noStyle, VALUE("Stop", true, change_dsp_status, Menu::anyEvent),
-       VALUE("Start", false, change_dsp_status, Menu::anyEvent))
-
-MENU(captureMenu, "Capture", on_menu_event, (Menu::eventMask)(Menu::enterEvent | Menu::exitEvent), Menu::noStyle, SUBMENU(captureToggle),
-     EDIT("File:", fname_buff, Menu::alphaNumMask, on_file_updated, Menu::updateEvent, Menu::noStyle), OBJ(freqEdit),
-     FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu),
+MENU(captureMenu, "Capture", on_menu_event, (Menu::eventMask)(Menu::enterEvent | Menu::exitEvent), Menu::noStyle,
+     OP("Start / Stop", change_dsp_status, enterEvent), EDIT("File:", fname_buff, Menu::alphaNumMask, on_file_updated, Menu::updateEvent, Menu::noStyle),
+     OBJ(freqEdit), FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu),
      OP("Replay", replay, enterEvent))
 } // namespace dspCaptureUI
 

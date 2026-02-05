@@ -152,6 +152,7 @@ template <int order> bool DspIIRDecimator<order>::init() {
     }
 
     LOG_IND_RAW(-2, "");
+    LOG_RAW("\n");
 
 #if DSP_USE_IIR_Q15
     q15_t coeffs[12];

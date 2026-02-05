@@ -42,7 +42,7 @@ class DspProcessor {
         this->info.reset();
     }
 
-    st_dsp_params info;
+    st_dsp_params info{};
 
   private:
     virtual void work(){};

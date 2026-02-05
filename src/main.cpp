@@ -174,7 +174,7 @@ void test() {
     // Go to a  function to avoid having to use the menu again and again
     nav.doNav(Menu::navCmd(Menu::enterCmd));
     nav.doNav(Menu::navCmd(Menu::idxCmd, 1));
-    nav.doNav(Menu::navCmd(Menu::idxCmd, 0)); // 2: siggen, 3: aprs, 1: replay, 0: capture
+    nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // 2: siggen, 3: aprs, 1: replay, 0: capture
     //    input_controller::queue_input_event(INPUT_EVENT_TYPE_BUTTON_PRESS);
     // nav.doNav(Menu::navCmd(Menu::enterCmd));
     // nav.doNav(Menu::navCmd(Menu::idxCmd, 1)); // select file
@@ -239,7 +239,7 @@ int main() {
 #if DEBUG_SD_CARD
             test_sd_card();
 #endif
-            //   test();
+            test();
 
             // HAL_Delay(1000);
 

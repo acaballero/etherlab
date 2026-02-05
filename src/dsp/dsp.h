@@ -51,8 +51,8 @@ void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac);
 // void TIM1_BRK_TIM15_IRQHandler(void);
 void TIM8_TRG_COM_TIM14_IRQHandler(void);
 
-void dspSuccess();
-void dspError(DSP_ERROR);
+void dsp_success();
+void dsp_error(DSP_ERROR);
 
 #ifdef __cplusplus
 }

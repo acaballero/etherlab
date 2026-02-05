@@ -322,6 +322,7 @@ bool _set_mode(MODE mode, bool force) {
         if (TXMODE(mode)) {
             if (!radio::tx_enabled()) {
                 status::pop_alert(status::WARN, "TX disabled for current band");
+                setting_mode = false;
                 return false;
             }
 

@@ -54,20 +54,23 @@ void on_event(st_dsp_params *status) {
             filePicker.enable();
             break;
     }
+
+    auto task = dsp_task.get();
+    replay_w.setProcessorStatus(task->get_processor()->info);
+    replay_w.setTaskStatus(task->info);
 }
 
 Menu::result change_dsp_status(Menu::eventMask e) {
 
-    Task *task = dsp_task.get();
-    bool start = task && task->info.id == dsp::DSP_TASK_REPLAY && task->info.status != DSP_STATUS_RUNNING;
+    if (e == Menu::enterEvent) {
 
-    if (e == Menu::activateEvent) {
-
-        if (start) {
+        if (!stopped) {
             dsp_stop();
         } else {
-            dsp_start(dsp::DSP_TASK_REPLAY, on_event);
-            ((ReplayTask *)task)->setFile(move(file));
+            auto task = dsp_start(dsp::DSP_TASK_REPLAY, on_event);
+            ((ReplayTask *)task)->setFile(file.get());
+            replay_w.setProcessorStatus(task->get_processor()->info);
+            replay_w.setTaskStatus(task->info);
         }
     }
 
@@ -76,7 +79,7 @@ Menu::result change_dsp_status(Menu::eventMask e) {
 
 Menu::result on_menu_event(Menu::eventMask e) {
 
-    auto task = (ReplayTask *)(dsp_task.get());
+    auto task = dsp_task.get();
     io::path start_path;
     FRESULT fres;
 
@@ -122,8 +125,6 @@ Menu::result on_menu_event(Menu::eventMask e) {
                 view_manager::mainView.add_child(&replay_w);
                 replay_w.set_visible(true);
                 replay_w.set_z_index(100);
-                replay_w.setProcessorStatus(&task->get_processor()->info);
-                replay_w.setTaskStatus(&task->info);
             }
 
             dsp_set_real_time(true);
@@ -133,7 +134,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
         case Menu::exitEvent:
 
-            if (task->info.status == DSP_STATUS_STOPPED) {
+            if (stopped) {
 
                 radio::freq_signal.remove(signal_token);
 
@@ -167,10 +168,6 @@ result change_gain(eventMask) {
     return proceed;
 }
 
-TOGGLE(stopped, replayToggle, "Command: ", change_dsp_status, anyEvent, noStyle //,doExit,enterEvent,noStyle
-       ,
-       VALUE("Stop", true, change_dsp_status, anyEvent), VALUE("Start", false, change_dsp_status, anyEvent))
-
 TOGGLE(loop, loopToggle, "Loop: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
        ,
        VALUE("Yes", true, doNothing, noEvent), VALUE("No", false, doNothing, noEvent))
@@ -186,12 +183,12 @@ Menu::result on_freq_updated() {
 
 MENU(replayMenu, "Replay", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle,
 
-     SUBMENU(replayToggle), SUBMENU(filePicker), SUBMENU(loopToggle),
+     OP("Start / Stop", change_dsp_status, enterEvent), SUBMENU(filePicker), SUBMENU(loopToggle),
      FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle),
      FIELD(gain, "Gain:", " dB", DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 0, change_gain, exitEvent, noStyle),
-     // FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle),
+
      OBJ(freqEdit)
-     // EDIT("Frequency (khz)", tempFreqBuf, digitMask, changeFreq, updateEvent, noStyle),
+
 )
 
 Menu::result on_filepicker(eventMask e) {
@@ -225,7 +222,7 @@ Menu::result on_filepicker(eventMask e) {
         if (e != updateEvent) {
             filePicker.enable_deletion();
         } else {
-            replayToggle.disable();
+            replayMenu[0].disable();
             freqEdit.disable();
         }
     } else if (fres == FR_OK) {
@@ -235,7 +232,7 @@ Menu::result on_filepicker(eventMask e) {
 
         if (e == updateEvent) {
 
-            replayToggle.enable();
+            replayMenu[0].enable();
             freqEdit.enable();
 
             if (wi.carrier_freq) {
@@ -253,7 +250,7 @@ Menu::result on_filepicker(eventMask e) {
         replay_w.setWaveInfo({FSTATUS_ERROR});
         filePicker.disable_selection();
         filePicker.disable_deletion();
-        replayToggle.disable();
+        replayMenu[0].disable();
         freqEdit.disable();
     }
 

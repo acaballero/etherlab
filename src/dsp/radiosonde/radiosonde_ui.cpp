@@ -105,7 +105,7 @@ void RadiosondeView::before_paint() {
 
 void RadiosondeView::start_rx() {
     //  LOG("START RX\n");
-    dsp_start(std::make_unique<dsp::RadiosondeTask>(dspSuccess, dspError), [this](st_dsp_params *status) {
+    dsp_start(std::make_unique<dsp::RadiosondeTask>(dsp_success, dsp_error), [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
                 exit();

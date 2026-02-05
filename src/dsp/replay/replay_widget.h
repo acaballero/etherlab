@@ -18,9 +18,9 @@ class ReplayWidget : public Widget {
 
     void setWaveInfo(WaveInfo wi);
 
-    void setProcessorStatus(st_dsp_params *status);
+    void setProcessorStatus(st_dsp_params &status);
 
-    void setTaskStatus(st_dsp_params *status);
+    void setTaskStatus(st_dsp_params &status);
 
     void setShowActions(bool b) {
         show_actions = b;
@@ -33,10 +33,10 @@ class ReplayWidget : public Widget {
   protected:
     void before_paint() override;
 
-    bool show_actions = false;
-    st_dsp_params *processor_status;
-    st_dsp_params *task_status;
-    WaveInfo wi;
+    bool show_actions{false};
+    st_dsp_params processor_status{};
+    st_dsp_params task_status{};
+    WaveInfo wave_info;
 };
 
 #endif // TRX_FRONTEND_REPLAY_WIDGET_H
