@@ -319,6 +319,9 @@ std::unique_ptr<dsp::demodulator> ReceiveTaskBase::get_modulator() {
 bool ReceiveTaskBase::start_impl() {
 
     LOG("___ [START] Receive task ___\n");
+
+    main_board::set_mode(DIGITAL_RX);
+
     auto current_mute = main_board::get_mute();
     main_board::set_mute(GPIO_PIN_SET);
 
@@ -399,10 +402,6 @@ bool ReceiveTaskBase::start_impl() {
     }
 
     main_board::set_mute(current_mute);
-
-    // Start task processing timer
-    // TODO: This should be done by the caller of this method and be generic for all tasks
-    HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
 
     // Se the fifo processing frequency
     update_timer(TASKS_TIMER_TYPEDEF, 40, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);

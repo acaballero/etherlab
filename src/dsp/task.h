@@ -36,6 +36,9 @@ class Task {
     }
 
     DspProcessor *get_processor() {
+        if (!processor) {
+            processor = create_processor();
+        }
         return processor.get();
     }
 

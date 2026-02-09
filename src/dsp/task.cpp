@@ -44,36 +44,34 @@ bool Task::start_impl() {
 // Common processor startup logic
 bool Task::start_processor() {
 
-    processor.reset();
-    processor = create_processor();
+    if (!processor) {
+        processor = create_processor();
+    }
 
-    if (processor) {
-        processor.get()->reset();
+    processor.get()->reset();
 
-        // Setup deferred processor start for output paths to prevent underruns
-        if (processor->info.direction == DSP_DIRECTION_OUT) {
-            on_first_block = [this]() {
-                LOG("First block ready: starting processor\n");
-                processor->start();
-            };
-        }
+    // Sync params from task to processor
+    processor->info.block_size_bytes = info.block_size_bytes;
+    processor->info.bandwidth = info.bandwidth;
+    processor->info.sample_rate = info.sample_rate;
+    processor->info.decimation_factor = info.decimation_factor;
+    processor->info.decimated_block_size = info.decimated_block_size;
+    processor->info.decimated_block_size_bytes = info.decimated_block_size_bytes;
+    processor->info.n_channels = info.n_channels;
 
-        // Sync params from task to processor
-        processor->info.block_size_bytes = info.block_size_bytes;
-        processor->info.bandwidth = info.bandwidth;
-        processor->info.sample_rate = info.sample_rate;
-        processor->info.decimation_factor = info.decimation_factor;
-        processor->info.decimated_block_size = info.decimated_block_size;
-        processor->info.decimated_block_size_bytes = info.decimated_block_size_bytes;
-        processor->info.n_channels = info.n_channels;
-
+    // Setup deferred processor start for output paths to prevent underruns
+    if (processor->wait_first_block()) {
+        on_first_block = [this]() {
+            LOG("First block ready: starting processor\n");
+            processor->start();
+        };
+    } else {
         // Start processor immediately unless waiting for first block
-        if (processor->info.direction != DSP_DIRECTION_OUT) {
-            LOG("Starting processor\n");
-            if (!processor->start()) {
-                status::pop_alert(status::ERROR, "Error starting DSP processor");
-                return false;
-            }
+
+        LOG("Starting processor\n");
+        if (!processor->start()) {
+            status::pop_alert(status::ERROR, "Error starting DSP processor");
+            return false;
         }
     }
 
@@ -84,6 +82,10 @@ void Task::stop() {
 
     info.status = DSP_STATUS_STOPPED;
     info.stop_ms = HAL_GetTick();
+
+    if (processor) {
+        processor->stop();
+    }
 
     if (info.error) {
         if (on_error) {

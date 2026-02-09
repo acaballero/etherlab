@@ -152,9 +152,6 @@ bool CaptureTask::start_impl() {
 
         radio_config({.direction = RF_DIRECTION_RX, .sample_freq = info.sample_rate, .freq = 0, .mode = DSP});
 
-        // Start media write processing timer
-        HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
-
         // Se the fifo consumer frequency
         update_timer(TASKS_TIMER_TYPEDEF, 2, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000); // /10000 = N*100 microseconds
 

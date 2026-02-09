@@ -196,7 +196,9 @@ class SDMenuT : public Menu::menuNode {
                         }
                     }
                     if (&item == this) {
-                        Menu::navigation_signal.emit(&menu_actions);
+                        auto menu = (MenuWidget *)view_manager::mainView.Menu();
+                        menu->set_quick_actions(&menu_actions);
+                        Menu::navigation_signal.emit(menu);
                     }
                 }
 
@@ -255,7 +257,9 @@ class SDMenuT : public Menu::menuNode {
 
         menu_actions.dirty = true;
         if (nav.node().target == this) {
-            Menu::navigation_signal.emit(&menu_actions);
+            auto menu = (MenuWidget *)view_manager::mainView.Menu();
+            menu->set_quick_actions(&menu_actions);
+            Menu::navigation_signal.emit(menu);
         }
     }
 

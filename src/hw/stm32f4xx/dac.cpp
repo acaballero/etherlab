@@ -63,10 +63,10 @@ void MX_DAC_Init(void) {
     }
 
     // Add this after initialization to verify
-    LOG("DAC_CR = 0x%08X\n", DAC->CR);
-    LOG("CH1 enabled: %d, buffer: %d\n", (DAC->CR & DAC_CR_EN1) ? 1 : 0,
-        (DAC->CR & DAC_CR_BOFF1) ? 0 : 1); // BOFF=0 means buffer enabled
-    LOG("CH2 enabled: %d, buffer: %d\n", (DAC->CR & DAC_CR_EN2) ? 1 : 0, (DAC->CR & DAC_CR_BOFF2) ? 0 : 1);
+    // LOG("DAC_CR = 0x%08X\n", DAC->CR);
+    // LOG("CH1 enabled: %d, buffer: %d\n", (DAC->CR & DAC_CR_EN1) ? 1 : 0,
+    //    (DAC->CR & DAC_CR_BOFF1) ? 0 : 1); // BOFF=0 means buffer enabled
+    // LOG("CH2 enabled: %d, buffer: %d\n", (DAC->CR & DAC_CR_EN2) ? 1 : 0, (DAC->CR & DAC_CR_BOFF2) ? 0 : 1);
     /* USER CODE BEGIN DAC_Init 2 */
 
     /* USER CODE END DAC_Init 2 */

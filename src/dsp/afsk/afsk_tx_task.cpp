@@ -204,11 +204,6 @@ bool AFSKTXTask::start_impl() {
 
     main_board::set_mute(GPIO_PIN_RESET);
 
-    // Se the fifo processing frequency
-    //   LOG("-- [END] AFSKTX ST --\n");
-    // Start task processing timer
-    // TODO: This should be done by the caller of this method and be generic for all tasks
-    HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
     info.status = DSP_STATUS_RUNNING;
     update_timer(TASKS_TIMER_TYPEDEF, 10, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
 
@@ -232,14 +227,8 @@ void AFSKTXTask::stop() {
             delay_us(100);
         }
 
-        //   GPIOD->BSRR |= GPIO_PIN_9;
-
-        Task::stop(); // Let the base class finish housekeeping stuff
-
-        // GPIOD->BSRR |= GPIO_PIN_9 << 16;
-
-        // Put the radio back in RX
-        // radio_config({.direction = RF_DIRECTION_RX, .sample_freq = status.sample_rate, .freq = 0, .mode = DSP});
+        Task::stop(); // Let the base class finish its things
+                      // TODO: Make the base stopping transparent
     }
     // LOG("------ [END] AFSKTX task STOP------\n");
 }

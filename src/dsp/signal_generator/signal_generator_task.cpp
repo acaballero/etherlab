@@ -53,8 +53,5 @@ void SignalGeneratorTask::stop() {
         info.status = DSP_STATUS_STOPPED;
 
         Task::stop(); // Let the base class finish
-
-        // TODO: Centralize returning to previous mode
-        radio_config({.direction = RF_DIRECTION_RX, .sample_freq = info.sample_rate, .freq = 0, .mode = DSP});
     }
 }

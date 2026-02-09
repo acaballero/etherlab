@@ -36,7 +36,9 @@ extern Signal aprs_signal;
 
 class APRSTask : public ReceiveTaskBase {
   public:
-    using ReceiveTaskBase::ReceiveTaskBase;
+    APRSTask(void (*on_success)(), void (*on_error)(DSP_ERROR)) : ReceiveTaskBase(on_success, on_error) {
+        info.id = 100; // TODO: This must be unique, but then daveloping new tasks is not truly decoupled from the DSP core
+    }
 
     ~APRSTask() override;
 

@@ -22,6 +22,7 @@ enum DSP_TASK_ID {
 
 extern const char *taskNames[];
 
+const char *get_task_name(uint8_t id);
 } // namespace dsp
 
 #endif // TRX_FRONTEND_DSP_TASKS_H

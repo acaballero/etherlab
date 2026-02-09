@@ -178,9 +178,6 @@ bool ReplayTask::start_impl() {
         this->info.decimated_block_size = DSP_BLOCK * 2 / decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
         this->info.decimated_block_size_bytes = this->info.block_size_bytes / decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
 
-        // Start media read processing timer
-        HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
-
         // Se the fifo producer frequency
         // TODO: Check proper values for this. The frequency should be just enough to prevent underruns in the fifo
         update_timer(TASKS_TIMER_TYPEDEF, 2, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 10000);

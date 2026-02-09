@@ -22,14 +22,6 @@ class ReplayWidget : public Widget {
 
     void setTaskStatus(st_dsp_params &status);
 
-    void setShowActions(bool b) {
-        show_actions = b;
-    }
-
-    bool getShowActions() {
-        return show_actions;
-    }
-
   protected:
     void before_paint() override;
 

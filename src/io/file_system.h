@@ -92,7 +92,7 @@ class FSO {
             }
 
             // Check if newer
-            if (finfo.fdate > newest_date || (finfo.fdate == newest_date && finfo.ftime > newest_time)) {
+            if (finfo.fdate > newest_date || (finfo.fdate == newest_date && finfo.ftime >= newest_time)) {
                 newest_date = finfo.fdate;
                 newest_time = finfo.ftime;
                 newest_index = current_index;

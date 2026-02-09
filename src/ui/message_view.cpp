@@ -95,6 +95,9 @@ void MessageView::show_msg(const char *header, const char *str) {
     Size dim = display->get_text_size(message_wrapped);
     int text_margin = 10;
 
+    // Also add it to the console
+    add_log(header, str);
+
     text_w.set_parent_rect({(max2(0, w - dim.width()) / 2), padding + title_height + text_margin, dim.width() + font->width, dim.height()});
     set_height(text_w.parent_rect().bottom() + text_margin);
 

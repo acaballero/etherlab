@@ -33,7 +33,7 @@ void CCMMemoryAllocator::init() {
     total_allocated = 0;
     initialized = true;
 
-    printf_("Allocator initialized: %lu KB in CMM RAM\n", sizeof(ccm_memory_pool) / 1024);
+    LOG("Allocator initialized: %lu KB in CCM RAM\n", sizeof(ccm_memory_pool) / 1024);
 }
 
 void *CCMMemoryAllocator::alloc(size_t size, size_t alignment) {

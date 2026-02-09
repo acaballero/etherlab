@@ -160,6 +160,7 @@ void APRSView::toggle_beacon() {
 void APRSView::start_rx() {
     //  LOG("START RX\n");
 
+    dsp_stop(); // Not this class responsibility, but we need to free some memory (can't allocate two receiver tasks)
     dsp_start(std::make_unique<APRSTask>(dsp_success, dsp_error), [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
             if (status->error != DSP_ERR_NONE) {
@@ -168,8 +169,6 @@ void APRSView::start_rx() {
             }
         }
     });
-    // To execute a tas k other than DSP_TASK_RECEIVE, set_mode has to be called
-    main_board::set_mode(DIGITAL_RX);
 
     set_agc_enabled(false); // Prevent sudden changes in gain from the digital AGC. TODO: Whether digital AGC is enabled or not should be a property of the
                             // modulation mode (create one for digital modes)
@@ -329,13 +328,11 @@ void APRSView::send_packet(std::string info) {
             if (status->fifo_underruns) {
                 status::pop_alert(status::ERROR, "FIFO underruns");
             }
+
             LOG_IND(-2, "Finished sending APRS packet\n");
             start_rx();
         }
     });
-
-    // To execute a task other than DSP_TASK_REPLAY, setMode has to be called so
-    main_board::set_mode(DIGITAL_TX);
 }
 
 void APRSView::on_packet(APRSPacket *packet) {

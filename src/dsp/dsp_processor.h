@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_DSP_TASK_H
 
 #include "buffer.hpp"
+#include "dsp/dsp_common.h"
 #include "status.h"
 
 class DspProcessor {
@@ -20,6 +21,13 @@ class DspProcessor {
     virtual const char *get_name() {
         return "-";
     };
+
+    /*
+     * @return whether this processor must wait the first available data block before start
+     */
+    virtual bool wait_first_block() {
+        return info.direction == DSP_DIRECTION_OUT;
+    }
 
     virtual bool start() {
         LOG("Starting %s processor\n", get_name());

@@ -48,6 +48,7 @@ void on_event(st_dsp_params *status) {
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
             stopped = false;
+            set_signal_params();
             break;
         case DSP_STATUS_STOPPED:
             stopped = true;
@@ -61,6 +62,13 @@ Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::dsp_
                                          },
                                          0, 100, 1, 10);
 
+void update_menu() {
+    if (dsp::dsp_config.test_signal.shape == SIGNAL_SHAPE_PULSE) {
+        pulseDutyMenu.enable();
+    } else {
+        pulseDutyMenu.disable();
+    }
+}
 void set_signal_params() {
     auto task = (SignalGeneratorTask *)(dsp_task.get());
     auto *processor = (DspSignalGeneratorProcessor *)task->get_processor();
@@ -68,27 +76,25 @@ void set_signal_params() {
     if (dsp::dsp_config.test_signal.shape == SIGNAL_SHAPE_PULSE) {
         processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
                               dsp::dsp_config.test_signal.pulse_duty, config.fft.sample_rate);
-        pulseDutyMenu.enable();
+
     } else {
         processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
                               (SIGNAL_SHAPE)dsp::dsp_config.test_signal.shape, config.fft.sample_rate);
-        pulseDutyMenu.disable();
     }
-    // Tasks parameters. Essentially, the IF direction
+
+    update_menu();
 
     task->mode = mode;
 }
 
 Menu::result change_dsp_status(Menu::eventMask e) {
 
-    if (e == Menu::activateEvent) {
+    if (e == Menu::enterEvent) {
 
         if (!stopped) {
             dsp_stop();
         } else {
             dsp_start(dsp::DSP_TASK_SIGNAL_GENERATOR, on_event);
-            dsp::set_gain_db(dsp::dsp_config.gain);
-
             set_signal_params();
         }
     }
@@ -110,11 +116,11 @@ Menu::result on_menu_event(Menu::eventMask e) {
         case Menu::enterEvent:
             signal_token = radio::freq_signal.add(NULL, on_freq_signal);
             dsp_set_real_time(true);
-            set_signal_params();
+            update_menu();
             break;
 
         case Menu::exitEvent:
-            if (task->info.status == DSP_STATUS_STOPPED) {
+            if (stopped) {
                 radio::freq_signal.remove(signal_token);
                 dsp_set_real_time(false);
             } else {
@@ -133,10 +139,6 @@ result set_sampling_params(eventMask e) {
     fft_config(config.fft.span);
     return proceed;
 }
-
-TOGGLE(stopped, signalGeneratorToggle, "Command: ", change_dsp_status, anyEvent,
-       noStyle, //,doExit,enterEvent,noStyle       ,
-       VALUE("Stop", true, change_dsp_status, anyEvent), VALUE("Start", false, change_dsp_status, anyEvent))
 
 TOGGLE(mode, modeToggle, "Mode: ", doNothing, anyEvent,
        noStyle, //,doExit,enterEvent,noStyle       ,
@@ -186,8 +188,9 @@ Menu::numberPrompt<float> dacAmpBalanceMenu((const char *)"DAC amplitude balance
                                             },
                                             0.5, 1.5, 0.01, 0.1);
 
-MENU(signalGeneratorMenu, "Signal generator", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle, SUBMENU(signalGeneratorToggle),
-     SUBMENU(modeToggle), FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 3000, 1, 0, doNothing, noEvent, noStyle),
+MENU(signalGeneratorMenu, "Signal generator", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle,
+     OP("Start / Stop", change_dsp_status, enterEvent), SUBMENU(modeToggle),
+     FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 3000, 1, 0, doNothing, noEvent, noStyle),
      FIELD(config.hw.dac_off_balance, "DAC offset  balance:", "", -1000, 1000, 1, 0, doNothing, noEvent, noStyle), OBJ(dacAmpBalanceMenu),
      OBJ(basebandFrequencyMenu), OBJ(modulationFrequencyMenu), OBJ(shapeMenu), OBJ(pulseDutyMenu), OBJ(gainMenu), OBJ(freqEdit))
 } // namespace dspSignalGeneratorUI

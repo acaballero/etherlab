@@ -23,6 +23,10 @@ class DspSignalGeneratorProcessor : public DspProcessor {
     void set_config(uint32_t baseband_f, uint32_t mod_f, SIGNAL_SHAPE shape, uint32_t sample_rate);
     void work(const buffer_t<adc_type> *buffer) override;
 
+    bool wait_first_block() override {
+        return false;
+    }
+
   protected:
     SignalGenerator baseband;
     SignalGenerator signal;

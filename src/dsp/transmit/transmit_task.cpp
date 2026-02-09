@@ -306,10 +306,6 @@ bool TransmitTask::start_impl() {
         return false;
     }
 
-    // Start task processing timer
-    // TODO: This should be done by the caller of this method and be generic for all tasks
-    HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
-
     // Set the fifo processing frequency
     update_timer(TASKS_TIMER_TYPEDEF, 40, TASKS_TIMER_TYPEDEF_CLOCK_HZ / 100000);
     info.status = DSP_STATUS_RUNNING;

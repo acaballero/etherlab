@@ -136,17 +136,22 @@ void dsp_set_real_time(bool real_time) {
 void restart_callback(void *, const void *) {
 
     if (ISANALOG && dsp_task && dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING) {
+
         LOG("restart_callback: ANALOG mode ON: issuing stop command\n");
         dsp_stop();
+
     } else if (config.mode == DIGITAL_RX && (!dsp_task || (dsp_task->info.id == dsp::DSP_TASK_TRANSMIT))) {
+
         LOG("restart_callback: Start DSP task RX\n");
-
         dsp_start(dsp::DSP_TASK_RECEIVE, nullptr);
-    } else if (config.mode == DIGITAL_TX && (!dsp_task || (dsp_task->info.id == dsp::DSP_TASK_RECEIVE))) {
-        LOG("restart_callback: Start DSP task TX\n");
 
+    } else if (config.mode == DIGITAL_TX && (!dsp_task || (dsp_task->info.id == dsp::DSP_TASK_RECEIVE))) {
+
+        LOG("restart_callback: Start DSP task TX\n");
         dsp_start(dsp::DSP_TASK_TRANSMIT, nullptr);
+
     } else {
+
         LOG("restart_callback:dsp_restart\n");
         dsp_restart();
     }
@@ -170,12 +175,13 @@ Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *)>
 
     uint8_t id = task->info.id;
 
-    LOG_IND(2, "dsp_start: Enqueuing next task start : %s\n", dsp::taskNames[id]);
+    LOG_IND(2, "dsp_start: Enqueuing next task start : %s\n", dsp::get_task_name(id));
 
     if (dsp_task && dsp_task->info.id == id) {
         DSP_STATUS s = dsp_task->info.status;
         if (s == DSP_STATUS_RUNNING || s == DSP_STATUS_PENDING) {
-            LOG_IND(-2, "WARN: Skipping start: Already RUNNING or enqueued\n");
+            LOG("WARN: Skipping start: Already RUNNING or enqueued\n");
+            LOG_IND_RAW(-2, "");
             return dsp_task.get();
         }
     }
@@ -233,7 +239,7 @@ void dsp_start_task() {
     LOG_IND(2, "dsp_start_task: ");
     if (!dsp::dsp_params || dsp::dsp_params->status != DSP_STATUS_RUNNING) {
 
-        LOG_RAW("starting new task %s\n", dsp::taskNames[dsp_task->info.id]);
+        LOG_RAW("starting new task %s\n", dsp::get_task_name(dsp_task->info.id));
 
         input_stream.reset();
         output_stream.reset();
@@ -246,13 +252,6 @@ void dsp_start_task() {
         //  LOG("dsp_start_task: starting task\n");
         dsp_task->info.reset();
 
-        // TODO: Do this elsewhere. Also, read the analog volume pot or use a rotary encoder to set the gain
-        if (dsp_task->info.id == dsp::DSP_TASK_RECEIVE) {
-            dsp::set_gain_db(0);
-        } else {
-            dsp::set_gain_db(dsp::dsp_config.gain);
-        }
-
         if (dsp_task->start()) {
 
             current_buffer->sample_rate = dsp_task->info.sample_rate;
@@ -264,9 +263,19 @@ void dsp_start_task() {
             // Assign this again so the returned info depends on the already initialized task (FIXME)
             dsp::dsp_params = dsp_task->get_info();
 
-            if (on_event) {
-                on_event(dsp::dsp_params);
+            // TODO: Do this elsewhere. Also, read the analog volume pot or use a rotary encoder to set the gain
+            if (dsp_task->info.id == dsp::DSP_TASK_RECEIVE) {
+                dsp::set_gain_db(0);
+            } else {
+                dsp::set_gain_db(dsp::dsp_config.gain);
             }
+
+            if (on_event) {
+                on_event(&dsp_task->info);
+            }
+
+            HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
+
         } else {
             status::pop_alert(status::ERROR, "Error starting DSP task");
         }
@@ -475,7 +484,7 @@ void dsp_stop() {
 
         dspstatus = DSP_STATUS_STOPPING;
 
-        LOG_IND(2, "dsp_stop: Stopping task %s\n", dsp::taskNames[current_task_id]);
+        LOG_IND(2, "dsp_stop: Stopping task %s\n", dsp::get_task_name(current_task_id));
 
         dsp_task->stop();
 

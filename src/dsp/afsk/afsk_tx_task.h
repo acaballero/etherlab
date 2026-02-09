@@ -18,7 +18,9 @@ namespace dsp {
 
 class AFSKTXTask : public Task {
   public:
-    using Task::Task;
+    AFSKTXTask(void (*on_success)(), void (*on_error)(DSP_ERROR)) : Task(on_success, on_error) {
+        info.id = 200; // TODO: This must be unique, but then daveloping new tasks is not truly decoupled from the DSP core
+    }
     void configure(uint32_t phase_inc_mark, uint32_t phase_inc_space, uint8_t repeat, uint8_t symbol_count, uint32_t bandwidth = 10000, uint16_t delay_ms = 0,
                    uint16_t tail_ms = 0);
 

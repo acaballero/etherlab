@@ -138,13 +138,10 @@ bool st_fft_params::valid() {
 
 st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
 
-    // In DIGITAL_TX mode, the fft sample rate must be a multiple of DSP_AUDIO_SAMPLE_RATE so we can interpolate/decimate by integer factors
-    if (!freq_mult) {
-        if (config.mode == DIGITAL_TX) {
-            freq_mult = DSP_TX_AUDIO_SAMPLE_RATE;
-        } else {
-            freq_mult = 0;
-        }
+    // In DIGITAL_TX mode, the fft sample rate must be a multiple of DSP_AUDIO_SAMPLE_RATE so we can interpolate/decimate by integer factors when the USB output
+    // is enabled (requires 48Khz. In fact could be any, but that's the standard and the rate some PC apps expect)
+    if (!freq_mult && config.mode == DIGITAL_TX) {
+        freq_mult = DSP_TX_AUDIO_SAMPLE_RATE;
     }
 
     // Create cache key with current parameters
