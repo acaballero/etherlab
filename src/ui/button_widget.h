@@ -68,6 +68,8 @@ class Button : public Widget {
 
     void set_text_bg(uint16_t bg);
 
+    void set_padding(uint16_t x, uint16_t y);
+
     uint16_t get_shadow() const;
 
     void set_shadow(uint16_t shadow);
@@ -121,6 +123,8 @@ class Button : public Widget {
     uint16_t lw;
     uint16_t vw;
     uint16_t uw;
+    uint16_t padding_x;
+    uint16_t padding_y;
 
     void before_paint() override;
 

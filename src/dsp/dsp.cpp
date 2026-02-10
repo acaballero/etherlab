@@ -152,11 +152,11 @@ void restart_callback(void *, const void *) {
 
     } else {
 
-        LOG("restart_callback:dsp_restart\n");
         dsp_restart();
     }
 
     if (dsp::get_agc_enabled()) {
+        LOG("restart_callback: Resetting AGC\n");
         agc::reset();
     }
 }
@@ -290,6 +290,9 @@ void dsp_start_task() {
 bool dsp_restart() {
     // LOG("dsp_restart");
     if (!ISANALOG && dsp_task && dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING) {
+
+        LOG("dsp_restart: Restarting running task\n");
+
         dsp_task->info.status = DSP_STATUS_PENDING;
         auto proc = dsp_task->get_processor();
         if (proc) {
@@ -486,9 +489,13 @@ void dsp_stop() {
 
         LOG_IND(2, "dsp_stop: Stopping task %s\n", dsp::get_task_name(current_task_id));
 
-        dsp_task->stop();
-
-        LOG_IND_RAW(-2, "dsp_stop: Finished stopping task\n");
+        if (dsp_task->info.status != DSP_STATUS_STOPPED) {
+            dsp_task->stop();
+        }
+        st_dsp_params params = *dsp::dsp_params; // Copy final task status
+        dsp_task.reset();                        // Forces deallocation before new construct reclaim memory
+        dsp::dsp_params = nullptr;
+        LOG_IND_RAW(-2, "dsp_stop: Task stopped and deleted\n");
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
         execute_task = false;
@@ -496,17 +503,15 @@ void dsp_stop() {
 
         if (on_event) {
             LOG("dsp_stop: on_event\n");
-            on_event(dsp::dsp_params);
+            on_event(&params);
         }
 
-        dsp_task.reset(); // Forces deallocation before new construct reclaim memory
+        // Some tasks, when stopped, do not cause the start of the previous running task.
+        // In some cases, the on_event callback (set by whoever issued the start command) takes care of that.
+        // If this is the case dsp_task may have be assigned within the on_event callback.
+        // In DSP mode, there should always one running task, so a restart is made if no task is enqueued at this point
 
-        dsp::dsp_params = NULL;
-
-        if (!ISANALOG && current_task_id != dsp::DSP_TASK_RECEIVE) {
-            // TODO: This prevents stopping all tasks in digital mode by  causing the receive task to be restarted. But its ugly
-            dsp_start(dsp::DSP_TASK_RECEIVE, nullptr);
-        }
+        restart_callback(nullptr, nullptr);
 
         dspstatus = DSP_STATUS_STOPPED;
 

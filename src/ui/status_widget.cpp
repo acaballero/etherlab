@@ -238,7 +238,7 @@ void StatusWidget::before_paint() {
 
         display->setFont((FontDef *)&Font_Tiny8x8);
         display->setVerticalLineSpacing(6);
-        display->set_padding(4, 4);
+
         display->gotoCharXY(0, 0);
 
         const char *modulation_str = modulation();
@@ -255,6 +255,7 @@ void StatusWidget::before_paint() {
             btn.set_bg(bg_color);
             btn.set_aling(ALIGN_CENTER);
             btn.set_dirty();
+            btn.set_padding(4, 4);
         }
     }
 }

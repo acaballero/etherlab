@@ -400,6 +400,7 @@ void if_setup() {
 
 bool radio_config(st_radio_config radioConfig) {
 
+    bool ret = true;
     LOG_IND(2, "radio_config | direction: %s | mode: %s | sample rate: %d\n", radio::rf_path_names[radioConfig.direction],
             radioConfig.mode == ANALOG ? "Analog" : "DSP", radioConfig.sample_freq);
 
@@ -412,32 +413,33 @@ bool radio_config(st_radio_config radioConfig) {
 
     if (radioConfig.direction == RF_DIRECTION_TX) {
 
-        bool ret = main_board::set_mode(DIGITAL_TX);
+        ret = main_board::set_mode(DIGITAL_TX);
 
-        if (!ret) {
-            return false;
+        if (ret) {
+
+            // Stop DMA, set quadrature IF
+            ADC_DMA_Stop(&hadc1);
+
+            // We need to set the frequency for the IF value to be calculated
+            radio::update_freq();
+
+            // One clock must be stopped before setting the other. If they are on CLK6 & CLK7, they can't be simultaneously
+            // set to a fractional divider
+            if_freq(RF_DIRECTION_RX, 0);
+            if_freq(RF_DIRECTION_TX, radio::f_dsp_if);
+
+            // Enable DAC for IF modulation
+            MX_DAC_Init();
+
+            set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq, MAX_DSP_DECIMATION_FACTOR);
+            DAC_DMA_Start(&hdac1);
+
+            // Starting the DAC causes a DC transient. Wait for it to stop
+
+            if_direction(RF_DIRECTION_TX);
+        } else {
+            ret = false;
         }
-
-        // Stop DMA, set quadrature IF
-        ADC_DMA_Stop(&hadc1);
-
-        // We need to set the frequency for the IF value to be calculated
-        radio::update_freq();
-
-        // One clock must be stopped before setting the other. If they are on CLK6 & CLK7, they can't be simultaneously
-        // set to a fractional divider
-        if_freq(RF_DIRECTION_RX, 0);
-        if_freq(RF_DIRECTION_TX, radio::f_dsp_if);
-
-        // Enable DAC for IF modulation
-        MX_DAC_Init();
-
-        set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq, MAX_DSP_DECIMATION_FACTOR);
-        DAC_DMA_Start(&hdac1);
-
-        // Starting the DAC causes a DC transient. Wait for it to stop
-
-        if_direction(RF_DIRECTION_TX);
 
     } else if (radioConfig.direction == RF_DIRECTION_RX) {
 
@@ -478,7 +480,7 @@ bool radio_config(st_radio_config radioConfig) {
             if (fft::fft_params.sample_freq % radioConfig.sample_freq != 0) {
                 LOG("Error setting DAC_TIMER for DIGITAL_RX: The ADC/DAC sample rates (%d/%d) is not integer. Their phases will slide!\n",
                     fft::fft_params.sample_freq, radioConfig.sample_freq);
-                return false;
+                ret = false;
             } else {
                 int ratio = ((float32_t)fft::fft_params.sample_freq / radioConfig.sample_freq) * ((float)ADC_DMA_TIMER_CLOCK_HZ / (float)DAC_TIMER_CLOCK_HZ);
                 uint32_t adc_timer_real_freq = get_adc_timer_frequency();
@@ -491,11 +493,14 @@ bool radio_config(st_radio_config radioConfig) {
                 DAC_DMA_Start(&hdac1);
             }
         }
-        ADC_DMA_Start(&hadc1);
+
+        if (ret) {
+            ADC_DMA_Start(&hadc1);
+        }
     }
 
     LOG_IND(-2, "radio_config: Finished\n");
-    return true;
+    return ret;
 }
 
 void setup_board_peripherals() {

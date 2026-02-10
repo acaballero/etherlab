@@ -325,12 +325,9 @@ void APRSView::send_packet(std::string info) {
 
     dsp_start(move(aprs_tx_task), [this](st_dsp_params *status) {
         if (status->status == DSP_STATUS_STOPPED) {
-            if (status->fifo_underruns) {
-                status::pop_alert(status::ERROR, "FIFO underruns");
-            }
 
-            LOG_IND(-2, "Finished sending APRS packet\n");
             start_rx();
+            LOG_IND(-2, "Finished sending APRS packet\n");
         }
     });
 }

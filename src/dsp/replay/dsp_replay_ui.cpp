@@ -55,9 +55,11 @@ void on_event(st_dsp_params *status) {
             break;
     }
 
-    auto task = dsp_task.get();
-    replay_w.setProcessorStatus(task->get_processor()->info);
-    replay_w.setTaskStatus(task->info);
+    if (dsp_task) {
+        auto task = dsp_task.get();
+        replay_w.setProcessorStatus(task->get_processor()->info);
+        replay_w.setTaskStatus(task->info);
+    }
 }
 
 Menu::result change_dsp_status(Menu::eventMask e) {
@@ -69,6 +71,7 @@ Menu::result change_dsp_status(Menu::eventMask e) {
         } else {
             auto task = dsp_start(dsp::DSP_TASK_REPLAY, on_event);
             ((ReplayTask *)task)->setFile(file.get());
+            ((ReplayTask *)task)->setLoop(loop);
             replay_w.setProcessorStatus(task->get_processor()->info);
             replay_w.setTaskStatus(task->info);
         }

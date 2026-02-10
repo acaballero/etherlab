@@ -57,10 +57,10 @@ void Button::set_width() {
     if (two_lines) {
         uint16_t line1w = lw;
         uint16_t line2w = (vw + uw);
-        r.set_width(max2(line1w, line2w) + (2 * display->get_padding_x()));
+        r.set_width(max2(line1w, line2w) + (2 * padding_x));
     } else {
         uint16_t w = (lw + vw + uw);
-        r.set_width(w + (2 * display->get_padding_x()));
+        r.set_width(w + (2 * padding_x));
     }
 
     set_parent_rect(r);
@@ -92,7 +92,7 @@ bool Button::paint_callback() {
 
     if (fn_writer) {
         draw_box(box_width, bg);
-        display->gotoXY(display->get_padding_x(), (parent_rect().height() - text_height) / 2);
+        display->gotoXY(padding_x, (parent_rect().height() - text_height) / 2);
         fn_writer();
     } else {
 
@@ -102,7 +102,7 @@ bool Button::paint_callback() {
 
             uint16_t xlabel = (box_width - lw) >> 1;
             uint16_t xval = (box_width - line2w) >> 1;
-            uint16_t ylabel = (parent_rect().height() - ((font->height + 1) << 1)) >> 1;
+            uint16_t ylabel = ((parent_rect().height() - ((font->height + 1) << 1)) >> 1);
             uint16_t yval = ylabel + font->height + 3;
 
             draw_box(box_width, bg);
@@ -123,9 +123,9 @@ bool Button::paint_callback() {
             if (align == ALIGN_CENTER) {
                 x = (box_width - w + 1) >> 1;
             } else if (align == ALIGN_RIGHT) {
-                x = box_width - w - display->get_padding_x();
+                x = box_width - w - padding_x;
             } else {
-                x = display->get_padding_x();
+                x = padding_x;
             }
 
             draw_box(box_width, bg);
@@ -235,6 +235,11 @@ void Button::set_text_bg(uint16_t c) {
 
 void Button::set_bg(uint16_t bg) {
     Button::bg_color = bg;
+}
+
+void Button::set_padding(uint16_t x, uint16_t y) {
+    padding_x = x;
+    padding_y = y;
 }
 
 uint16_t Button::get_shadow() const {

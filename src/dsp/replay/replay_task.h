@@ -34,7 +34,7 @@ class ReplayTask : public Task {
     }
 
   private:
-    bool loop;
+    bool loop{0};
     File *m_file;
 };
 

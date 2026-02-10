@@ -1,4 +1,6 @@
+#include "menuBase.h"
 #include "menuDefs.h"
+#include "menuIo.h"
 
 using namespace Menu;
 
@@ -399,13 +401,13 @@ Used menuOut::printMenu(navNode &nav, idx_t panelNr) {
                 fmtStart(*nav.target, fmtTitle, nav, -1);
 #endif
                 if (!asPad) {
-                    setColor(titleColor, false);
-                    clearLine(0, panelNr, titleColor);
-                    setColor(titleColor, true);
 
-                    setCursor(0, 0, panelNr);
-                    // print('[');
+                    rect(0, 0, 0, pan.w, 1, bgColor, true, enabledStatus, true);
+                    setColor(titleColor, true);
+                    setCursor(0, 0, panelNr); // print('[');
+                    setFont(titleColor);
                     nav.target->printTo(*nav.root, true, *this, -1, pan.w - (asPad ? 1 : 2), panelNr);
+                    setFont(fgColor);
                 }
                 ///<----- titleEnd
 #ifdef MENU_FMT_WRAPS

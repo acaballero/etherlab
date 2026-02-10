@@ -10,6 +10,7 @@ ILI9431 (with partial (multiple callbacks to draw a panel) DMA drawing)
 #include "../../lib/ST77XX-STM32/st7789_fb.h"
 #include "../../lib/Menu/src/menuDefs.h"
 #include "dsp/dsp_buffers.h"
+#include "ips_font.h"
 
 namespace Menu {
 
@@ -20,8 +21,8 @@ class menuILI9431Out : public gfxOut {
     Display &gfx;
     const colorDef<uint16_t> (&colors)[nColors];
 
-    menuILI9431Out(Display &gfx, const colorDef<uint16_t> (&c)[nColors], idx_t *t, panelsList &p, idx_t resX = 6, idx_t resY = 9)
-        : gfxOut(resX, resY, t, p, (menuOut::styles)(menuOut::redraw | menuOut::rasterDraw), 2), gfx(gfx), colors(c) {
+    menuILI9431Out(Display &gfx, const colorDef<uint16_t> (&c)[nColors], idx_t *t, panelsList &p, idx_t resX = 6, idx_t resY = 10, idx_t fontMargin = 3)
+        : gfxOut(resX, resY, t, p, (menuOut::styles)(menuOut::redraw | menuOut::rasterDraw), fontMargin), gfx(gfx), colors(c) {
     }
     //: gfxOut(gfx.width()/resX,gfx.height()/resY,resX,resY,false),colors(c),gfx(gfx) {}
 
@@ -90,11 +91,14 @@ class menuILI9431Out : public gfxOut {
         gfx.fill((x)*resX, (y)*resY, (x + w) * resX, (y + h) * resY - 1, getColor(c, selected, stat, edit));
     }
 
+    void setFont(colorDefs c) override {
+        gfx.setFont(c == titleColor ? (FontDef *)&Font_Tiny8x8 : (FontDef *)&Font_7x10);
+    }
+
     void clear(idx_t panelNr) override {
 
         // TODO: To use panels, we need to call st77XX_afb::setZone(...)
         // const panel p = panels[panelNr];
-
         // gfx.fillRect(p.x * resX, p.y * resY, p.w * resX, p.h * resY, getColor(bgColor, false, enabledStatus, false));
         //      gfx.fillBuffer(getColor(bgColor, false, enabledStatus, false));
 
@@ -107,7 +111,7 @@ class menuILI9431Out : public gfxOut {
         // gfx.gotoXY((p.x + x) * resX, (p.y + y) * resY + fontMarginY);
 
         // The ILI9431 driver we are using (descendant of ss77XX_afb) draws pixels starting at the current zone x and y, so no need to add p.x, p.y
-        gfx.gotoXY((x)*resX, ((y)*resY) + fontMarginY);
+        gfx.gotoXY(gfx.get_padding_x() + (x)*resX, ((y)*resY) + fontMarginY);
     }
 
     void drawCursor(idx_t ln, bool selected, status stat, bool edit = false, idx_t panelNr = 0) override {

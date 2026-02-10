@@ -22,6 +22,8 @@ bool MenuWidget::paint_callback() {
 
     display->setFont((FontDef *)&Font_7x10);
 
+    display->set_padding(4, 0);
+
     nav.doOutput();
 
     return true;

@@ -315,7 +315,7 @@ const colorDef<uint16_t> menuColors[8] MEMMODE = {
     {{C565_GREY_LIGHT, C565_GREY_LIGHT}, {C565_CYAN_DARK, C565_CYAN_DARK, C565_RED}},         // valColor
     {{C565_GREY_LIGHT, C565_GREY_LIGHT}, {C565_WHITE, C565_YELLOW, C565_YELLOW}},             // unitColor
     {{C565_TRANSPARENT, C565_BLACK}, {C565_TRANSPARENT, C565_GREY_DARK, C565_WHITE}},         // cursorColor
-    {{C565_BLACK, C565_YELLOW}, {C565_BLUE, C565_RED, C565_RED}},                             // titleColor
+    {{C565_BLACK, C565_YELLOW}, {C565_BLUE, C565_BLACK, C565_BLACK}},                         // titleColor
     {{C565_BLACK, C565_YELLOW}, {C565_BLUE, C565_GREY_DARK, C565_BLUE}},                      // editBgColor
     {{C565_TRANSPARENT, C565_GREY_DARKER}, {C565_TRANSPARENT, C565_GREY_DARKER, C565_BLUE}}   // selectColor
 };
@@ -324,13 +324,13 @@ const colorDef<uint16_t> menuColors[8] MEMMODE = {
 
 Menu::idx_t tops[MAX_DEPTH];
 
-uint16_t fontW = 7, fontH = 10;
-short dispX = DISPLAY_X_PIXELS / fontW, dispY = INFO_HEIGHT / (fontH + 2);
+uint16_t fontW = 7, fontH = 8, fontMargin = 2;
+short dispX = DISPLAY_X_PIXELS / fontW, dispY = INFO_HEIGHT / (fontH + fontMargin * 2);
 panel panels[] MEMMODE = {{0, 0, dispX, dispY}};
 navNode *panel_nodes[sizeof(panels) / sizeof(panel)];
 panelsList panel_list(panels, panel_nodes, sizeof(panels) / sizeof(panel));
 
-Menu::menuILI9431Out ili9431Out(lcd, menuColors, tops, panel_list, fontW, fontH + 2);
+Menu::menuILI9431Out ili9431Out(lcd, menuColors, tops, panel_list, fontW, fontH + fontMargin * 2, fontMargin);
 Menu::menuOut *const outs[] = {&ili9431Out};                // list of output devices
 Menu::outputsList outList(const_cast<menuOut **>(outs), 1); // outputs list controller
 
@@ -432,7 +432,7 @@ void menu_setup() {
 
 void menu_size(int w, int h) {
 
-    dispX = w / fontW, dispY = h / (fontH + 2);
+    dispX = w / fontW, dispY = h / (fontH + fontMargin * 2);
     nav.out.outs[0]->panels.panels[0].h = dispY;
     nav.out.outs[0]->panels.panels[0].w = dispX;
     ((MenuWidget *)view_manager::mainView.Menu())->set_parent_rect({0, DISPLAY_Y_PIXELS - STATUS_HEIGHT - h, w, h});
