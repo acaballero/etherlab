@@ -65,10 +65,10 @@ namespace status {
 extern Signal status_signal;
 
 enum Level { ERROR, WARN, INFO, OK };
-
+static constexpr uint8_t status_max_length = 30;
 typedef struct status_t {
     Level code = OK;
-    char msg[30];
+    char msg[status_max_length];
 } Status;
 
 // Status bar info

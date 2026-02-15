@@ -3,7 +3,7 @@
 //
 
 #include "modulator.h"
-
+namespace dsp {
 void Modulator::get_block(buffer_t<complex_t> &buffer) {
 
     complex_t sample;
@@ -30,7 +30,11 @@ void Modulator::get_complex_sample(complex_t &sample) {
 
     complex_t sample_base;
     adc_type sample_mod;
-    modulation->get_sample(sample_mod);
+    if (modulation->get_frequency()) {
+        modulation->get_sample(sample_mod);
+    } else {
+        sample_mod = 0x7FF + modulation_offset;
+    }
     baseband->get_complex_sample(sample_base);
 
     sample_mod += modulation_offset;
@@ -38,3 +42,4 @@ void Modulator::get_complex_sample(complex_t &sample) {
     sample.r = (((float)sample_mod / (0x7FF + modulation_offset)) * sample_base.r);
     sample.i = (((float)sample_mod / (0x7FF + modulation_offset)) * sample_base.i);
 }
+} // namespace dsp

@@ -431,7 +431,7 @@ bool radio_config(st_radio_config radioConfig) {
             // Enable DAC for IF modulation
             MX_DAC_Init();
 
-            set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq, MAX_DSP_DECIMATION_FACTOR);
+            set_timer_sample_rate(DAC_TIMER, DAC_TIMER_CLOCK_HZ, radioConfig.sample_freq, dsp::get_max_decimation());
             DAC_DMA_Start(&hdac1);
 
             // Starting the DAC causes a DC transient. Wait for it to stop
@@ -478,7 +478,7 @@ bool radio_config(st_radio_config radioConfig) {
             // NOTE: Have in mind that, when dual interleaved DAC is used, the nyquist frequency is HALF the sample frequency that we set here
 
             if (fft::fft_params.sample_freq % radioConfig.sample_freq != 0) {
-                LOG("Error setting DAC_TIMER for DIGITAL_RX: The ADC/DAC sample rates (%d/%d) is not integer. Their phases will slide!\n",
+                LOG("Error setting DAC_TIMER for DIGITAL_RX: The ADC/DAC sample rates (%d/%llu) is not integer. Their phases will slide!\n",
                     fft::fft_params.sample_freq, radioConfig.sample_freq);
                 ret = false;
             } else {

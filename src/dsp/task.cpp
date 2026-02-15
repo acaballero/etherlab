@@ -6,16 +6,11 @@
 #include "task.h"
 #include "dsp_buffers.h"
 
-Task::Task(void (*onSucess)(), void (*onError)(DSP_ERROR)) {
-    on_error = onError;
-    on_success = onSucess;
-}
-
 void Task::reset() {
     info.reset();
 }
 
-void Task::halt(DSP_ERROR e) {
+void Task::abort(DSP_ERROR e) {
     info.error = e;
     stop();
 }
@@ -31,6 +26,8 @@ bool Task::start() {
         return false;
     }
 
+    on_event.emit(&info);
+
     return true;
 }
 
@@ -38,6 +35,7 @@ bool Task::start_impl() {
     info.status = DSP_STATUS_RUNNING;
     reset();
     info.start_ms = HAL_GetTick();
+
     return true;
 }
 
@@ -87,13 +85,5 @@ void Task::stop() {
         processor->stop();
     }
 
-    if (info.error) {
-        if (on_error) {
-            on_error(info.error);
-        }
-    } else {
-        if (on_success) {
-            on_success();
-        }
-    }
+    on_event.emit(&info);
 }

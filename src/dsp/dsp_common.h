@@ -140,6 +140,7 @@ enum DSP_ERROR {
 #define DSP_MAX_CAPTURE_SIZE 50000000
 #define FIR_DECIMATOR_1ST_HALFBAND_TAPS 19
 #define FIR_DECIMATOR_SIGNAL_TAPS 41
+#define FIR_INTERPOLATOR_BASEBAND_TAPS 32
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
 // A LCD SPI DMA transfer and cause problems
@@ -225,7 +226,7 @@ namespace dsp {
 struct st_test_signal_params {
     int8_t pulse_duty = 10;
     uint32_t baseband_frequency = 4000;
-    uint32_t modulation_frequency = 10;
+    uint32_t modulation_frequency = 0;
     uint8_t shape = 0;
 };
 
@@ -263,8 +264,18 @@ extern uint32_t dsp_max_sample_rate;
 extern uint32_t dsp_min_sample_rate;
 extern const char *dsp_error_names[];
 
+/* Enable/disable forcing sample rates to be multiples of DSP_TX_AUDIO_SAMPLE_RATE   */
+void enable_freq_mult(bool b);
+bool freq_mult_enabled();
+
+void set_max_decimation(uint8_t n);
+uint8_t get_max_decimation();
+
 /* Sets the min and max sample frequency depending on whether we're doing real-time DSP or not and the source of the samples */
 void set_sample_freq_limits(bool dsp);
+
+/* Set a specific minimum for the sample rate */
+void set_min_sample_freq(uint32_t rate);
 
 /* Set a specific maximum for the sample rate */
 void set_max_sample_freq(uint32_t rate);
@@ -273,6 +284,8 @@ int32_t get_frequency_shift(uint32_t sample_rate = 0);
 
 /* Sets the digital domain TX direction gain */
 void set_gain_db(int8_t gain_db);
+
+int8_t get_gain_db();
 
 void s16_to_q15(const adc_type *src, q15_t *dst, size_t size);
 void s16_to_f32(const adc_type *src, float32_t *dst, size_t size);
@@ -286,9 +299,9 @@ void zip_c16(const adc_type *__restrict src_i, const adc_type *__restrict src_q,
 void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples);
 void zip_f32(const float32_t *src_i, const float32_t *src_q, float32_t *dst, size_t n_samples);
 
-void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples);
+void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples, bool down = false);
 // void rotate_fs8_q15(const q15_t *src, q15_t *dst, size_t n_samples);
-void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples);
+void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples, bool down = false);
 
 void set_config(st_dsp_config &);
 st_dsp_config get_config();

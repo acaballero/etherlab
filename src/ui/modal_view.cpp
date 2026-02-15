@@ -19,16 +19,15 @@ ModalView::ModalView(
     set_bg(C565_DARKEST);
 
     int x = 20;
-
-    std::string message_wrapped = display->fit_text(message, DISPLAY_X_PIXELS - x * 2, 40);
-    Size dim = display->get_text_size(message_wrapped);
-
     int w = DISPLAY_X_PIXELS - x * 2;
+    display->setFont((FontDef *)&Font_7x10);
+    std::string message_wrapped = display->fit_text(message, w, 40);
+    Size dim = display->get_text_size(message_wrapped);
 
     int button_width = w / 4;
     int button_height = 36;
 
-    int title_height = 30;
+    int title_height = 22;
     int vert_padding = 20;
     int text_top = title_height + vert_padding;
     int btn_top_margin = 30;
@@ -100,9 +99,12 @@ ModalView::ModalView(
     title_w.set_aling(Align::ALIGN_CENTER);
     title_w.set_label(title.c_str());
     add_child(&title_w);
+
+    set_focusable(true);
 }
 
 void ModalView::before_paint() {
+    display->set_trim_enabled(true);
 }
 
 void ModalView::on_focus() {

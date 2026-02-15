@@ -367,6 +367,14 @@ void apply_fft_params(st_fft_params params) {
     if (current_sample_rate != fft_params.sample_freq || current_bw != fft_params.bw ||
         !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
 
+        if (current_sample_rate != fft_params.sample_freq) {
+            LOG("apply_fft_params: Changing sample rate: %lu\n", fft_params.sample_freq);
+        }
+
+        if (current_bw != fft_params.bw) {
+            LOG("apply_fft_params: Changing bandwidth: %d\n", fft_params.bw);
+        }
+
         bool b = decimator_i.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
         decimator_q.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
 
@@ -375,15 +383,7 @@ void apply_fft_params(st_fft_params params) {
             status::pop_alert(status::ERROR, "apply_fft_params: Error initializing FFT decimator");
         }
 
-        if (current_sample_rate != fft_params.sample_freq) {
-            LOG("apply_fft_params: Changed sample rate: %lu\n", fft_params.sample_freq);
-        }
-
-        if (current_bw != fft_params.bw) {
-            LOG("apply_fft_params: Changed bandwidth: %d\n", fft_params.bw);
-        }
-
-        set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, fft_params.sample_freq, MAX_DSP_DECIMATION_FACTOR);
+        set_timer_sample_rate(ADC_DMA_TIMER, ADC_DMA_TIMER_CLOCK_HZ, fft_params.sample_freq, dsp::get_max_decimation());
 
         // Since the timer cannot be set to match exact frequencies, we store the actual ADC frequency
         uint32_t actual_timer_freq = get_adc_timer_frequency();
@@ -534,6 +534,11 @@ void reset_iq_balancer() {
     fft_iq_balancer.reset();
 }
 
+// Sets the desired sample rate for the FFT, adjusting the span acordingly
+bool fft_set_rate(uint32_t rate) {
+    return fft_config(rate * USABLE_BW_FACTOR);
+}
+
 /* Finds the optimal FFT parameters based on the current selected span
  *
  * Calculates:
@@ -550,7 +555,6 @@ void reset_iq_balancer() {
  */
 bool fft_config(uint32_t span) {
 
-    //  LOG("fft_config | span: %d\n", span);
     st_fft_params best = st_fft_params::find(span);
 
     apply_fft_params(best);
@@ -654,10 +658,10 @@ void calculate_noise_floor() {
 
         if (ISTX) {
 
-            config.fft.min_db = -110;
+            config.fft.min_db = -120;
 
             // Set max db as the next multiple of 10 that is FFT_HEADROOM db higher
-            config.fft.max_db = ceil_multiple(fft_max_db + 30, 30);
+            config.fft.max_db = ceil_multiple(fft_max_db + 30, 10);
 
         } else {
             int noise_floor_bottom_margin = 5;
@@ -1018,57 +1022,15 @@ void fft_work() {
     }
 }
 
-/*
- * Performance with -Og optimizations for FFT_N=128: 15ms * number slices + 19ms for the rendering in a 240*80 display buffer at 18Mhz SPI
- */
-void update_fft() {
-
-    uint64_t m;
-    uint8_t slices;
-    unsigned long first_slice_center_f;
-
-    // Calculate the resolution bandwith (hz per bin) required to have a bin per pixel
-    uint64_t last_start_freq = fft::fft_params.span_f_start;
-    fft_config(fft::fft_params.span);
-
-    if (last_start_freq != fft::fft_params.span_f_start) {
-        // If the span has changed, cancel the smooth factor for a frame so the current values are preserved
-        first_frame = true;
-    } else {
-        first_frame = false;
-    }
-
-    if (config.fft.view_mode == FFT_VIEW_TIME_DOMAIN) {
-        slices = 1;
-    } else {
-        slices = fft::fft_params.n_slices;
-    }
-
-    first_slice_center_f = fft::fft_params.span_if_start + fft::fft_params.bw;
-
-    fft_peak_v = FFT_MIN_DB;
-    fft_peak = FFT_MIN_DB;
-    fft_peak_bin = 0;
-
-    m = HAL_GetTick();
-
-    if (config.fft.iq_balance_estimate_period_ms && iq_balance_enabled) {
-        if (m - last_iqbalance_estimate_ms > config.fft.iq_balance_estimate_period_ms) {
-            last_iqbalance_estimate_ms = m;
-            fft_estimate_iq_balance = true;
-        } else {
-            fft_estimate_iq_balance = false;
-        }
-    }
-
+void fft_work_slices(uint8_t n_slices) {
     unsigned long f;
+    uint64_t first_slice_center_f = fft::fft_params.span_if_start + fft::fft_params.bw;
 
     // NOTE: When the AGC is NOT active, if the gain is too high, some slices with strong signals may saturate the
     // digital path, causing attenuation that appears as abrupt changes in FFT power
-    for (fft_slice_n = 0; fft_slice_n < slices; fft_slice_n++) {
+    for (fft_slice_n = 0; fft_slice_n < n_slices; fft_slice_n++) {
 
-        f = first_slice_center_f +
-            ((uint32_t)fft_params.bw << 1U) * (int32_t)fft_slice_n; // move to the next bandwidth of interest (set by the LPF before de ADC)
+        f = first_slice_center_f + ((uint32_t)fft_params.bw << 1U) * (int32_t)fft_slice_n; // move to the next bandwidth slice
 
         if (radio::f_iq != f) { // slice change
 
@@ -1091,12 +1053,48 @@ void update_fft() {
 
         fft_work();
     }
+}
+/*
+ * Performance with -Og optimizations for FFT_N=128: 15ms * number slices + 19ms for the rendering in a 240*80 display buffer at 18Mhz SPI
+ */
+void update_fft() {
 
-    view_manager::mainView.Spectrum()->set_dirty();
+    uint64_t m;
+    uint8_t slices;
+
+    uint64_t last_start_freq = fft::fft_params.span_f_start;
+
+    fft_config(fft::fft_params.span);
+
+    // If the span has changed, cancel the smooth factor for a frame so the persistence won't linger
+    first_frame = last_start_freq != fft::fft_params.span_f_start;
+
+    slices = config.fft.view_mode == FFT_VIEW_TIME_DOMAIN ? 1 : slices = fft::fft_params.n_slices;
+
+    fft_peak_v = FFT_MIN_DB;
+    fft_peak = FFT_MIN_DB;
+    fft_peak_bin = 0;
+
+    m = HAL_GetTick();
+
+    if ((config.fft.iq_balance_estimate_period_ms && iq_balance_enabled) && (m - last_iqbalance_estimate_ms > config.fft.iq_balance_estimate_period_ms)) {
+        last_iqbalance_estimate_ms = m;
+        fft_estimate_iq_balance = true;
+    } else {
+        fft_estimate_iq_balance = false;
+    }
+
+    if (slices > 1) {
+        fft_work_slices(slices);
+    } else {
+        fft_work();
+    }
 }
 
 void fft_loop() {
     update_fft();
+
+    view_manager::mainView.Spectrum()->set_dirty();
     view_manager::mainView.paint();
 
     snr_task.run();

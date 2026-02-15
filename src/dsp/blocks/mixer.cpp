@@ -3,7 +3,7 @@
 //
 
 #include "mixer.h"
-
+namespace dsp {
 void Mixer::get_block(buffer_t<complex_t> &buffer) {
 
     complex_t sample;
@@ -23,6 +23,7 @@ void Mixer::get_complex_sample(complex_t &sample) {
     lo->get_complex_sample(sample_lo);
     rf->get_complex_sample(sample_rf);
 
-    sample.r = sample_lo.r>0 ? sample_rf.r : -sample_rf.r;
-    sample.i = sample_lo.i>0 ? sample_rf.i : -sample_rf.i;
+    sample.r = sample_lo.r > 0 ? sample_rf.r : -sample_rf.r;
+    sample.i = sample_lo.i > 0 ? sample_rf.i : -sample_rf.i;
 }
+} // namespace dsp

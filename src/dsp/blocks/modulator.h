@@ -9,15 +9,16 @@
 #include "output.h"
 #include <sys/_stdint.h>
 
+namespace dsp {
 class Modulator : public Output<complex_t> {
 
   public:
-    Modulator(Output *mod, Output *base) : modulation{mod}, baseband{base} {};
+    Modulator(Signal<> *mod, Signal<> *base) : modulation{mod}, baseband{base} {};
 
-    void set_modulation(Output *m) {
+    void set_modulation(Signal<> *m) {
         modulation = m;
     };
-    void set_baseband(Output *m) {
+    void set_baseband(Signal<> *m) {
         baseband = m;
     };
 
@@ -30,9 +31,14 @@ class Modulator : public Output<complex_t> {
     void get_complex_sample(complex_t &sample) override;
 
   protected:
-    Output *modulation;
-    Output *baseband;
+    Signal<> *modulation;
+    Signal<> *baseband;
+
+    // Common mode of the modulation signal
+    // The signals are expected to be of 12-bit precission. With 0 common mode, that is for -0x800 to 0x7FF
+    // If the signal is unsinged (0 to 0xFFF), use a modulation offset of 0x7FF
     int16_t modulation_offset = 0;
 };
 
 #endif // TRX_FRONTEND_OOK_MODULATOR_H
+}

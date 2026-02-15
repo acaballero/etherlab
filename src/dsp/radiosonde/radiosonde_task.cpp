@@ -2,9 +2,9 @@
 #include "radiosonde_task.hpp"
 #include "agc.h"
 
-namespace dsp {
-
 Signal radiosonde_signal;
+
+namespace dsp {
 
 RadiosondeTask::~RadiosondeTask() {
     // if (squelch_signal_token) {

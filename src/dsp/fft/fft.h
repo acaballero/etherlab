@@ -66,6 +66,7 @@ extern Signal signal;
 complex_t_f32 complex_mult(complex_t_f32 a, complex_t_f32 b);
 void process_fft(float32_t *v);
 bool fft_config(uint32_t span);
+bool fft_set_rate(uint32_t rate);
 void fft_init();
 void reset_iq_balancer();
 uint32_t get_peak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v);

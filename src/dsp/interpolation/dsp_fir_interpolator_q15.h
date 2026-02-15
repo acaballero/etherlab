@@ -21,7 +21,6 @@ template <int TAPS, typename T> class DspFIRInterpolatorQ15Base : public DspInte
         init();
     };
 
-    virtual bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor);
     virtual void clear_state();
     bool get_initialized() const;
     void set_factor(uint16_t factor);
@@ -38,30 +37,24 @@ template <int TAPS, typename T> class DspFIRInterpolatorQ15Base : public DspInte
 
     arm_fir_interpolate_instance_q15 dsp_fir_interpolate_instance = {(uint8_t)1, TAPS, coeffs, state};
 };
-template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = complex_t> class DspFIRInterpolatorQ15 : public DspFIRInterpolatorQ15Base<TAPS, T> {
-
-  public:
-    void interpolate(buffer_t<T> &src, buffer_t<T> &dst) override;
-    // Specialization for interpolating interleaved buffers
-    void interpolate(buffer_t<T> &src, buffer_t<T> &dst, uint8_t start, uint8_t n_channels);
-};
 
 /**
  * Specialization for complex Q15 buffers
  */
-template <int TAPS> class DspFIRInterpolatorQ15<TAPS, complex_t> : public DspFIRInterpolatorQ15Base<TAPS, complex_t> {
+template <int TAPS> class DspFIRInterpolatorQ15 : public DspFIRInterpolatorQ15Base<TAPS, adc_type> {
   public:
-    void interpolate(buffer_t<complex_t> &src, buffer_t<complex_t> &dst) override;
+    void interpolate(buffer_t<adc_type> &src, buffer_t<adc_type> &dst) override;
     void interpolate(buffer_t<complex_t> &src, adc_type *dst_i, adc_type *dst_q);
-    void interpolate(adc_type *src_i, adc_type *src_q, adc_type *dst_i, adc_type *dst_q, size_t n_samples);
+    void interpolate(buffer_t<adc_type> &src, buffer_t<adc_type> &dst, uint8_t start, uint8_t n_channels, int start_dst = -1);
+    void interpolate(adc_type *src_i, adc_type *src_q, adc_type *dst_i, adc_type *dst_q, size_t n_samples) override;
     void interpolate(adc_type *src_i, adc_type *src_q, buffer_t<complex_t> &dst, size_t n_samples);
     void clear_state() override;
 
   protected:
-    using DspFIRInterpolatorQ15Base<TAPS, complex_t>::state;
-    using DspFIRInterpolatorQ15Base<TAPS, complex_t>::tmp_buff_in;
-    using DspFIRInterpolatorQ15Base<TAPS, complex_t>::tmp_buff_out;
-    using DspFIRInterpolatorQ15Base<TAPS, complex_t>::dsp_fir_interpolate_instance;
+    using DspFIRInterpolatorQ15Base<TAPS, adc_type>::state;
+    using DspFIRInterpolatorQ15Base<TAPS, adc_type>::tmp_buff_in;
+    using DspFIRInterpolatorQ15Base<TAPS, adc_type>::tmp_buff_out;
+    using DspFIRInterpolatorQ15Base<TAPS, adc_type>::dsp_fir_interpolate_instance;
 
     bool init() override;
 

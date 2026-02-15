@@ -5,6 +5,7 @@
 #include "nco.h"
 #include "arm_math.h"
 
+namespace dsp {
 void NCO::get_block(buffer_t<complex_t_f32> &buffer) {
     complex_t_f32 sample;
 
@@ -22,3 +23,4 @@ void NCO::get_complex_sample(complex_t_f32 &sample) {
 void NCO::get_sample(float32_t &) {
     // TODO: Does this make sense?
 }
+} // namespace dsp

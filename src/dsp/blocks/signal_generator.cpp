@@ -18,6 +18,7 @@ const int8_t sine_table_i8[LUT_SIZE] = {
     -118, -117, -116, -114, -113, -111, -110, -108, -106, -105, -103, -101, -99,  -97,  -95,  -93,  -91,  -88,  -86,  -84,  -81,  -79,  -76,  -74,  -71,  -68,
     -66,  -63,  -60,  -58,  -55,  -52,  -49,  -46,  -43,  -40,  -37,  -34,  -31,  -28,  -25,  -22,  -19,  -16,  -13,  -9,   -6,   -3};
 
+namespace dsp {
 void SignalGenerator::init() {
     tone_delta = (uint32_t)(((float)(LUT_SIZE * frequency) / (float)sample_rate) * (1 << 24));
 }
@@ -53,7 +54,7 @@ adc_type SignalGenerator::get_sample(uint32_t phase) {
     switch (tone_shape) {
         case SIGNAL_SHAPE_SIN: {
 
-            // Using interpolation with adjacent samples to get 16-bit precission from the 8-bit LUT
+            // Using interpolation with adjacent samples to get 12-bit precission from the 8-bit LUT
             uint8_t index = (phase >> 24);
             uint8_t frac = (phase >> 16) & 0xFF;
 
@@ -62,7 +63,7 @@ adc_type SignalGenerator::get_sample(uint32_t phase) {
 
             int16_t delta = y1 - y0;
             sample = y0 + ((delta * frac) >> 8);
-            sample = sample << 4; // Scale -128..127 to -2048..2032 (12-bit range)
+            sample = sample << 4; // Scale -128..127 to -2048..2032 (12-bit range) 0x800 to 0x7FF
             break;
         }
 
@@ -86,12 +87,12 @@ adc_type SignalGenerator::get_sample(uint32_t phase) {
         }
 
         case SIGNAL_SHAPE_SAW_UP: {
-            sample = ((int16_t)(phase >> 20)); // 12-bit: 0 to 0xFFF-1
+            sample = ((int16_t)(phase >> 20)); // 12-bit: 0 to 0xFFF
             break;
         }
 
         case SIGNAL_SHAPE_SAW_DOWN: {
-            sample = ((int16_t)((phase >> 20) ^ 0xFFF)); // 12-bit: 0 to 0xFFF-1
+            sample = ((int16_t)((phase >> 20) ^ 0xFFF)); // 12-bit: 0 to 0xFFF
             break;
         }
 
@@ -144,3 +145,4 @@ void SignalGenerator::set_config(uint32_t f, uint32_t sr) {
     sample_rate = sr;
     init();
 }
+} // namespace dsp

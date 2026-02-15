@@ -6,7 +6,7 @@
 #define TRX_FRONTEND_DSP_MIXER_H
 
 #include "signal_generator.h"
-
+namespace dsp {
 class Mixer : Output<complex_t> {
 
   public:
@@ -19,5 +19,5 @@ class Mixer : Output<complex_t> {
     Output *lo;
     Output *rf;
 };
-
+} // namespace dsp
 #endif // TRX_FRONTEND_DSP_MIXER_H

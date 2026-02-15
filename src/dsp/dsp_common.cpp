@@ -9,6 +9,7 @@
 #include "config.h"
 #include "arm_math.h"
 #include "status.h"
+#include "types.h"
 #include <cstddef>
 
 namespace dsp {
@@ -16,7 +17,14 @@ namespace dsp {
 // Gain
 int8_t dsp_gain_factor = 0;
 
+// Enable frequency shift (for DC common-mode avoidance)
 bool freq_shift_enabled = true;
+
+// Sample rate min factor
+bool sample_rate_freq_mult_enabled = true;
+
+// Current DSP max decimation factor
+uint8_t dsp_max_decimation_factor = MAX_DSP_DECIMATION_FACTOR;
 
 // Current maximum sample frequency. It depends on whether we're doing more or less real time processing to the ADC buffer
 uint32_t dsp_max_sample_rate = config.fft.max_sample_rate;
@@ -31,9 +39,21 @@ const char *dsp_error_names[] = {"NONE", "ERROR", "FILEOPEN", "FILECLOSE", "FILE
 st_dsp_params *dsp_params;
 
 st_dsp_config dsp_config;
+
+void enable_freq_mult(bool b) {
+    LOG("Setting forzed frequency multiplier: %d\n", b);
+    sample_rate_freq_mult_enabled = b;
+    fft_config(fft::fft_params.span);
+}
+
+bool freq_mult_enabled() {
+    return sample_rate_freq_mult_enabled;
+}
+
 void set_config(dsp::st_dsp_config &c) {
     dsp_config = c;
 }
+
 void set_min_sample_freq(uint32_t rate) {
     dsp_min_sample_rate = rate;
     fft_config(fft::fft_params.span);
@@ -42,6 +62,14 @@ void set_min_sample_freq(uint32_t rate) {
 void set_max_sample_freq(uint32_t rate) {
     dsp_max_sample_rate = min2(config.fft.dsp_max_sample_rate, rate);
     fft_config(fft::fft_params.span);
+}
+
+void set_max_decimation(uint8_t n) {
+    dsp_max_decimation_factor = n;
+}
+
+uint8_t get_max_decimation() {
+    return dsp_max_decimation_factor;
 }
 
 void set_sample_freq_limits(bool dsp) {
@@ -69,6 +97,10 @@ void set_gain_db(int8_t gain_db) {
     dsp_common_params_signal.emit(&dsp_params);
 }
 
+int8_t get_gain_db() {
+    return 20.0f * log10(dsp_params->gain_factor);
+}
+
 void enable_frequency_shift(bool b) {
     freq_shift_enabled = b;
 }
@@ -76,7 +108,7 @@ void enable_frequency_shift(bool b) {
 bool get_freq_shift_allowed() {
     // The frequency shift to prevent DC issues sacrifices some fft bandwidth so it is not applied if not absolutely necessary.
 
-    return fft::fft_params.n_slices == 1 && freq_shift_enabled && !ISTX; // && (!ISANALOG || ISTX);
+    return fft::fft_params.n_slices == 1 && freq_shift_enabled && (!ISTX);
 }
 
 void set_agc_enabled(bool v) {
@@ -311,7 +343,7 @@ void zip_f32(const float32_t *src_i, const float32_t *src_q, float32_t *dst, siz
  * Expects complex interleaved buffer (
  */
 
-void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
+void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples, bool down) {
     const uint32_t *src32 = (const uint32_t *)src;
     uint32_t *dst32 = (uint32_t *)dst;
 
@@ -332,16 +364,16 @@ void rotate_fs4_q15(const q15_t *src, q15_t *dst, size_t n_samples) {
                 q_rot = q_val;
                 break;
             case 1: // z * j => -Q + jI
-                i_rot = -q_val;
-                q_rot = i_val;
+                i_rot = down ? q_val : -q_val;
+                q_rot = down ? -i_val : i_val;
                 break;
             case 2: // z * -1
                 i_rot = -i_val;
                 q_rot = -q_val;
                 break;
             case 3: // z * -j => Q - jI
-                i_rot = q_val;
-                q_rot = -i_val;
+                i_rot = down ? -q_val : q_val;
+                q_rot = down ? i_val : -i_val;
                 break;
         }
 
@@ -425,7 +457,7 @@ for (size_t i = 0; i < n_samples; ++i) {
 }
 */
 
-void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples) {
+void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples, bool down) {
 
     // Rotation state 0,1,2,3 pattern
     uint32_t rot = 0;
@@ -442,16 +474,16 @@ void rotate_fs4_f32(const float32_t *src, float32_t *dst, size_t n_samples) {
                 q_rot = q_val;
                 break;
             case 1: // z * j => -Q + jI
-                i_rot = -q_val;
-                q_rot = i_val;
+                i_rot = down ? q_val : -q_val;
+                q_rot = down ? -i_val : i_val;
                 break;
             case 2: // z * -1
                 i_rot = -i_val;
                 q_rot = -q_val;
                 break;
             case 3: // z * -j => Q - jI
-                i_rot = q_val;
-                q_rot = -i_val;
+                i_rot = down ? -q_val : q_val;
+                q_rot = down ? i_val : -i_val;
                 break;
         }
 

@@ -31,19 +31,24 @@ RF_DIRECTION mode = RF_DIRECTION_TX;
 bool stopped = true;
 SignalToken signal_token;
 
-// Pre-declare
 void set_signal_params();
+Menu::result on_freq_updated(); // Forward declaration
+menu_frequency::FreqEditField freqEdit((Menu::callback)on_freq_updated);
 
 void on_freq_signal(void *thisptr, const void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
     if (event.event == radio::AFTER_UPDATE) {
-        // TODO: Update signal
+        freqEdit.set_frequency(event.frequency);
     }
 }
 
-void on_event(st_dsp_params *status) {
+void on_event(st_dsp_params *, st_dsp_params *task_info) {
 
-    switch (status->status) {
+    if (task_info->id != dsp::DSP_TASK_SIGNAL_GENERATOR) {
+        return;
+    }
+
+    switch (task_info->status) {
 
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
@@ -51,6 +56,7 @@ void on_event(st_dsp_params *status) {
             set_signal_params();
             break;
         case DSP_STATUS_STOPPED:
+        case DSP_STATUS_STOPPING:
             stopped = true;
             break;
     }
@@ -63,26 +69,30 @@ Menu::numberPrompt<int8_t> pulseDutyMenu((const char *)"Pulse duty:", &dsp::dsp_
                                          0, 100, 1, 10);
 
 void update_menu() {
-    if (dsp::dsp_config.test_signal.shape == SIGNAL_SHAPE_PULSE) {
+    if (dsp::dsp_config.test_signal.shape == dsp::SIGNAL_SHAPE_PULSE) {
         pulseDutyMenu.enable();
     } else {
         pulseDutyMenu.disable();
     }
 }
 void set_signal_params() {
+
+    update_menu();
+    if (stopped) {
+        return;
+    }
+
     auto task = (SignalGeneratorTask *)(dsp_task.get());
     auto *processor = (DspSignalGeneratorProcessor *)task->get_processor();
 
-    if (dsp::dsp_config.test_signal.shape == SIGNAL_SHAPE_PULSE) {
+    if (dsp::dsp_config.test_signal.shape == dsp::SIGNAL_SHAPE_PULSE) {
         processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
-                              dsp::dsp_config.test_signal.pulse_duty, config.fft.sample_rate);
+                              dsp::dsp_config.test_signal.pulse_duty, task->info.sample_rate);
 
     } else {
         processor->set_config(dsp::dsp_config.test_signal.baseband_frequency, dsp::dsp_config.test_signal.modulation_frequency,
-                              (SIGNAL_SHAPE)dsp::dsp_config.test_signal.shape, config.fft.sample_rate);
+                              (dsp::SIGNAL_SHAPE)dsp::dsp_config.test_signal.shape, task->info.sample_rate);
     }
-
-    update_menu();
 
     task->mode = mode;
 }
@@ -115,6 +125,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
         case Menu::enterEvent:
             signal_token = radio::freq_signal.add(NULL, on_freq_signal);
+            freqEdit.set_frequency(radio::get_frequency());
             dsp_set_real_time(true);
             update_menu();
             break;
@@ -144,20 +155,16 @@ TOGGLE(mode, modeToggle, "Mode: ", doNothing, anyEvent,
        noStyle, //,doExit,enterEvent,noStyle       ,
        VALUE("RX", RF_DIRECTION_RX, doNothing, anyEvent), VALUE("TX", RF_DIRECTION_TX, doNothing, anyEvent))
 
-Menu::result on_freq_updated(); // Forward declaration
-
-menu_frequency::FreqEditField freqEdit((Menu::callback)on_freq_updated);
-
 Menu::result on_freq_updated() {
     radio::set_frequency(freqEdit.get_frequency());
     return Menu::proceed;
 }
 
-Menu::menu_option_st<uint8_t> shape_options[] = {{"Sine", SIGNAL_SHAPE_SIN},
-                                                 {"Saw down", SIGNAL_SHAPE_SAW_DOWN},
-                                                 {"Saw up", SIGNAL_SHAPE_SAW_UP},
-                                                 {"Triangle", SIGNAL_SHAPE_TRI},
-                                                 {"Pulse", SIGNAL_SHAPE_PULSE}};
+Menu::menu_option_st<uint8_t> shape_options[] = {{"Sin", dsp::SIGNAL_SHAPE_SIN},
+                                                 {"Saw down", dsp::SIGNAL_SHAPE_SAW_DOWN},
+                                                 {"Saw up", dsp::SIGNAL_SHAPE_SAW_UP},
+                                                 {"Triangle", dsp::SIGNAL_SHAPE_TRI},
+                                                 {"Pulse", dsp::SIGNAL_SHAPE_PULSE}};
 
 Menu::numberPrompt<int8_t> gainMenu((const char *)"Gain", &dsp::dsp_config.gain, 0, ' ', '.', "dB",
                                     [](int8_t v) {
@@ -175,7 +182,7 @@ Menu::numberPrompt<uint32_t> modulationFrequencyMenu((const char *)"Modulation f
                                                      [](uint32_t) {
                                                          set_signal_params();
                                                      },
-                                                     1, DSP_BANDWIDTH, 1, 10);
+                                                     0, DSP_BANDWIDTH, 1, 10);
 
 Menu::optionsPrompt<uint8_t> shapeMenu((const char *)"Shape", shape_options, dsp::dsp_config.test_signal.shape,
                                        sizeof(shape_options) / sizeof(shape_options[0]), [](uint8_t) {

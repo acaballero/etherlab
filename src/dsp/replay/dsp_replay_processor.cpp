@@ -8,11 +8,13 @@
 #include "dsp/dsp_common.h"
 #include "config.h"
 #include "FIFO.h"
+#include "dsp/fft/fft_params.h"
+#include "stm32f4xx_hal.h"
 
-#if DSP_REPLAY_DEBUG
-#include "dsp/signal_generator.h"
-SignalGenerator sig_gen(1000, 346666);
-#endif
+//#if DSP_REPLAY_DEBUG
+#include "dsp/blocks/signal_generator.h"
+
+//#endif
 
 void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
@@ -21,19 +23,9 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
         return;
     }
 
-    // The samples are stored in a particular sample rate but, if we are processing
-    // them in a wider bandwidth FFT, or our output sample rate to the DAC or transceiver
-    // is higher, we will need to interpolate/oversample.
-    // If we only need to interpolate for the FFT, it doesn't need to be done in real-time but,
-    // if we need to output the result to a DAC, we will need to make it here
-    // TODO: Use better interpolation, at least in the FFT code. Otherwise, the spectrum will show harmonics at the saved sample rate
-
-    this->info.processed_blocks++;
-
     char *p;
 
-    // e.g. if interpolation/decimation factor is 4, we read 4 times fewer bytes that the DAC block size
-    volatile uint16_t bytesToRead = this->info.decimated_block_size_bytes;
+    volatile uint16_t bytesToRead = this->info.block_size_bytes;
 
     uint32_t av = output_stream.available(&p);
 
@@ -41,45 +33,35 @@ void DspReplayProcessor::work(const buffer_t<adc_type> *buffer) {
 
         adc_type *out_p = (adc_type *)buffer->p;
 
-        // Naive interpolation
-        // Output channel number is always 2
-        // Expects buffer to be complex interleaved
-        for (size_t i = 0, j = 0; i < buffer->count; i += 2) {
+        //  GPIOD->BSRR = GPIO_PIN_9;
+        for (size_t i = 0; i < buffer->count; i += 2) {
 
-            if ((i >> 1) & (this->info.decimation_factor - 1)) {
-                // if (d > 0) {
-                out_p[i] = out_p[i - 2];
-                //  if (this->status.n_channels==2) {
-                out_p[i + 1] = out_p[i - 1];
-                //  }
-                // d--;
+            out_p[i] = ((adc_type *)p)[i];
 
+            if (this->info.n_channels == 2) {
+                out_p[i + 1] = ((adc_type *)p)[i + 1];
             } else {
-                out_p[i] = ((adc_type *)p)[j];
-                //           LOG("%d,", out_p[i]);
-
-                if (this->info.n_channels == 2) {
-                    out_p[i + 1] = ((adc_type *)p)[j + 1];
-                    j++;
-                } else {
-                    out_p[i + 1] = 0;
-                }
-                j++;
-                //   d = this->status.decimation_factor-1;
+                out_p[i + 1] = 0;
             }
         }
+        //  GPIOD->BSRR = GPIO_PIN_9 << 16;
+        // auto t = HAL_GetTick();
+        // static int last_t;
+        // if (t - last_t > 100) {
+        //     last_t = t;
+        //     LOG_RAW("I:");
+        //     for (size_t i = 0; i < buffer->count; i += 2) {
+        //         LOG_RAW("%d,", out_p[i]);
+        //     }
+        //     LOG_RAW("\nQ:");
+        //     for (size_t i = 1; i < buffer->count; i += 2) {
+        //         LOG_RAW("%d,", out_p[i]);
+        //     }
+        //     LOG_RAW("\n", 0);
+        // }
 
         output_stream.consume(bytesToRead, &p);
-
-        // LOG_RAW("I:");
-        // for (size_t i = 0; i < buffer->count; i += 2) {
-        //     LOG_RAW("%d,", out_p[i]);
-        // }
-        // LOG_RAW("\nQ:");
-        // for (size_t i = 1; i < buffer->count; i += 2) {
-        //     LOG_RAW("%d,", ((adc_type *)p)[i]);
-        // }
-        // LOG_RAW("\n", 0);
+        this->info.processed_blocks++;
 
     } else {
         if (!output_stream.is_closed()) {

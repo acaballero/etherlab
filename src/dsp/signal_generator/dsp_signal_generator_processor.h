@@ -20,7 +20,7 @@ class DspSignalGeneratorProcessor : public DspProcessor {
     }
 
     void set_config(uint32_t baseband_f, uint32_t mod_f, uint8_t mod_duty, uint32_t sample_rate);
-    void set_config(uint32_t baseband_f, uint32_t mod_f, SIGNAL_SHAPE shape, uint32_t sample_rate);
+    void set_config(uint32_t baseband_f, uint32_t mod_f, dsp::SIGNAL_SHAPE shape, uint32_t sample_rate);
     void work(const buffer_t<adc_type> *buffer) override;
 
     bool wait_first_block() override {
@@ -28,10 +28,10 @@ class DspSignalGeneratorProcessor : public DspProcessor {
     }
 
   protected:
-    SignalGenerator baseband;
-    SignalGenerator signal;
-    PulseGenerator pulse;
+    dsp::SignalGenerator baseband;
+    dsp::SignalGenerator signal;
+    dsp::PulseGenerator pulse;
 
-    Modulator modulator;
+    dsp::Modulator modulator;
 };
 #endif // TRX_FRONTEND_DSP_SIGNAL_GENERATOR_PROCESSOR_H

@@ -25,7 +25,7 @@
 class TransmitTask : public Task {
 
   public:
-    TransmitTask(void (*on_success)(), void (*on_error)(DSP_ERROR)) : Task(on_success, on_error) {
+    TransmitTask() : Task() {
         // Allocate memory
         tmp_buff_data = (float32_t *)CCMMemoryAllocator::alloc(samples_per_batch * 2 * sizeof(float32_t));
 
@@ -72,7 +72,7 @@ class TransmitTask : public Task {
     float32_t *out_accum_p;
 
     std::unique_ptr<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>> decimator;
-    std::unique_ptr<DspFIRInterpolatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>> interpolator;
+    std::unique_ptr<DspFIRInterpolatorFloat<FIR_INTERPOLATOR_BASEBAND_TAPS>> interpolator;
     std::unique_ptr<dsp::modulator> modulator;
 
     std::unique_ptr<dsp::modulator> get_modulator();

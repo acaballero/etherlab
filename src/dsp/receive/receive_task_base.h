@@ -28,7 +28,7 @@
 class ReceiveTaskBase : public Task {
 
   public:
-    ReceiveTaskBase(void (*on_success)(), void (*on_error)(DSP_ERROR)) : Task(on_success, on_error) {
+    ReceiveTaskBase() : Task() {
         // Allocate memory
         tmp_buff_data = (float32_t *)CCMMemoryAllocator::alloc(samples_per_batch * 8 * sizeof(float32_t));
 

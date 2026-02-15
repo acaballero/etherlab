@@ -6,6 +6,7 @@
 #include "config.h"
 #include "blocks_common.h"
 
+namespace dsp {
 void PulseGenerator::init() {
     tone_delta = (uint32_t)(((float)(LUT_SIZE * frequency) / (float)sample_rate) * (1 << 24));
     crossover_phase = (uint8_t)((float)(LUT_SIZE - 1) * (float)duty / 100.0f);
@@ -58,3 +59,4 @@ void PulseGenerator::set_config(uint32_t f, uint32_t sr) {
     sample_rate = sr;
     init();
 }
+} // namespace dsp

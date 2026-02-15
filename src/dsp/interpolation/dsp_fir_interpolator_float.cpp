@@ -13,11 +13,9 @@
 #include <exception>
 #include "memory_allocator.h"
 
-template class DspFIRInterpolatorFloatBase<FFT_LPF_FIR_FILTER_NTAPS, float32_t>;
-template class DspFIRInterpolatorFloat<FFT_LPF_FIR_FILTER_NTAPS>;
+template class DspFIRInterpolatorFloatBase<FIR_INTERPOLATOR_BASEBAND_TAPS, float32_t>;
 
-template class DspFIRInterpolatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS>;
-template class DspFIRInterpolatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>;
+template class DspFIRInterpolatorFloat<FIR_INTERPOLATOR_BASEBAND_TAPS>;
 
 /*
  * Interpolate a sample buffer (I/Q are interleaved)
@@ -122,11 +120,10 @@ template <int TAPS, typename T> bool DspFIRInterpolatorFloatBase<TAPS, T>::init(
         b = generate_fir_filter_taps(type, coeffs, TAPS, this->input_rate * this->factor, this->bandwidth, 0);
     }
 
-    // Taps are generated in reverse order
     if (b) {
         arm_status status = arm_fir_interpolate_init_f32(&dsp_fir_interpolate_instance, this->factor, TAPS, coeffs, state, DSP_BLOCK);
         if (status != ARM_MATH_SUCCESS) {
-            status::pop_alert(status::ERROR, "Error initializing FIR interpolator");
+            status::pop_alert(status::ERROR, "Error initializing FIR interpolator. TAPS % factor != 0");
             return false;
         }
     }

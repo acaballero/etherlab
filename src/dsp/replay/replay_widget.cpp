@@ -17,22 +17,22 @@ bool ReplayWidget::paint_callback() {
     display->writeRect({0, 0}, {2, area.box.height}, C565_DARKEST);
 
     if (dsp_task && dsp_task->info.id == dsp::DSP_TASK_REPLAY) {
-        task_status = dsp_task->info;
+        task_info = dsp_task->info;
         processor_status = dsp_task->get_processor()->info;
     }
 
     uint16_t c = C565_WHITE;
 
-    int elapsed_s = task_status.elapsed_ms() * 1000;
+    float32_t elapsed_s = (float32_t)task_info.elapsed_ms() / 1000;
 
-    switch (task_status.status) {
+    switch (task_info.status) {
         case DSP_STATUS_RUNNING:
             c = C565_BLUE;
             sprintf(buff, "Running (%.1fs)\n", elapsed_s);
             break;
         case DSP_STATUS_STOPPED:
-            if (task_status.error == DSP_ERR_NONE) {
-                if (task_status.stop_ms) {
+            if (task_info.error == DSP_ERR_NONE) {
+                if (task_info.stop_ms) {
                     c = C565_GREEN;
                     sprintf(buff, "Finished (%.1fs)\n", elapsed_s);
                 } else {
@@ -103,7 +103,7 @@ bool ReplayWidget::paint_callback() {
             break;
     }
 
-    if (wave_info.format == FSTATUS_OK && (processor_status.status == DSP_STATUS_RUNNING || task_status.stop_ms)) { // If it's running or just finished
+    if (wave_info.format == FSTATUS_OK && (processor_status.status == DSP_STATUS_RUNNING || task_info.stop_ms)) { // If it's running or just finished
 
         float bytes_processed = (processor_status.processed_blocks - processor_status.fifo_underruns) * processor_status.block_size_bytes;
         float bytes_decimated = (processor_status.processed_blocks - processor_status.fifo_underruns) * processor_status.decimated_block_size_bytes;
@@ -116,8 +116,8 @@ bool ReplayWidget::paint_callback() {
         format_eng(v2, bytes_processed, "b.", u2);
         sprintf(buff, "In/out: %s %s / %s %s\n", v1, u1, v2, u2);
         display->print(buff);
-        sprintf(buff, "%.1f", processor_status.drop_rate() * 100);
-        display->print("Drop: ", buff, "%\n");
+        sprintf(buff, "%.1f", processor_status.starve_rate() * 100);
+        display->print("Starve: ", buff, "%\n");
     }
 
     return true;
@@ -131,7 +131,7 @@ void ReplayWidget::before_paint() {
 }
 
 void ReplayWidget::setTaskStatus(st_dsp_params &status) {
-    task_status = status;
+    task_info = status;
 }
 
 void ReplayWidget::setProcessorStatus(st_dsp_params &status) {

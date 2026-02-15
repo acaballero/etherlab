@@ -11,14 +11,13 @@
 #include "output.h"
 #include "blocks_common.h"
 
-class PulseGenerator : public Output<complex_t> {
+namespace dsp {
+class PulseGenerator : public Signal<complex_t> {
 
   public:
-    PulseGenerator() {
-        PulseGenerator(1000, 1000);
-    };
+    PulseGenerator() : PulseGenerator(1000, 1000){};
 
-    PulseGenerator(uint32_t f, uint32_t sr) : frequency{f}, sample_rate(sr) {
+    PulseGenerator(uint32_t f, uint32_t sr) : Signal(f, sr) {
         init();
     };
 
@@ -44,8 +43,6 @@ class PulseGenerator : public Output<complex_t> {
     // uint32_t sample_count{0};
     // bool auto_off{};
 
-    uint32_t frequency{0};
-    uint32_t sample_rate{0};
     uint32_t tone_phase{0};
 
     uint8_t duty{50};
@@ -54,5 +51,6 @@ class PulseGenerator : public Output<complex_t> {
     // uint32_t delta{0};
     // uint32_t sphase{0};
 };
+} // namespace dsp
 
 #endif // TRX_FRONTEND_PULSE_GENERATOR_H

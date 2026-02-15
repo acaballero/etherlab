@@ -1156,7 +1156,8 @@ void Display::set_wrap_text(bool wrap_text) {
 }
 
 std::string Display::fit_text(const std::string &text, int max_width, int max_height) {
-    int max_chars_per_line = (max_width < 0 ? curr_area->box.width : max_width) / font->width;
+    int mw = (max_width < 0 ? curr_area->box.width : max_width);
+    int max_chars_per_line = mw / font->width;
     int max_lines = (max_height < 0 ? curr_area->box.height : max_height) / font->height;
     const char *ellipsis{" <...> "};
     int ellipsis_length = strlen(ellipsis);
@@ -1178,7 +1179,7 @@ std::string Display::fit_text(const std::string &text, int max_width, int max_he
         std::string line = text.substr(start, end - start);
 
         // Truncate line if too long
-        if (line.length() > max_chars_per_line) {
+        if (get_text_size(line).width() > mw) {
             int truncate_at = (max_chars_per_line - ellipsis_length) / 2;
             if (truncate_at > 0) {
                 line = line.substr(0, truncate_at) + ellipsis + line.substr(line.length() - truncate_at);

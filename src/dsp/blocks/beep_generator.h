@@ -9,7 +9,7 @@
 #include "output.h"
 #include "dsp/buffer.hpp"
 #include "dsp/dsp_common.h"
-
+namespace dsp {
 enum BEEP_TYPE {
     BEEP_SINGLE,
     BEEP_DOUBLE,
@@ -81,5 +81,5 @@ class BeepGenerator : public Output<complex_t> {
     // Get predefined configuration (useful for customization)
     static beep_params_st get_beep_config(BEEP_TYPE type);
 };
-
+} // namespace dsp
 #endif // BEEP_GENERATOR_H

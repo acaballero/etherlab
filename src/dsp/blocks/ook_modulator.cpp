@@ -3,7 +3,7 @@
 //
 
 #include "ook_modulator.h"
-
+namespace dsp {
 void OOKModulator::get_block(buffer_t<complex_t> &buffer) {
 
     complex_t sample;
@@ -34,3 +34,4 @@ void OOKModulator::get_complex_sample(complex_t &sample) {
     sample.r = (sample_mod > 0 ? sample_base.r : 0);
     sample.i = (sample_mod > 0 ? sample_base.i : 0);
 }
+} // namespace dsp

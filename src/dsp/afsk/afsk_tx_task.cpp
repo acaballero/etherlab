@@ -198,7 +198,7 @@ bool AFSKTXTask::start_impl() {
     bool ret = radio_config({.direction = RF_DIRECTION_TX, .sample_freq = info.sample_rate, .freq = 0, .mode = DSP});
 
     if (!ret) {
-        halt(DSP_ERR);
+        abort(DSP_ERR);
         return false;
     }
 

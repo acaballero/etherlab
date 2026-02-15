@@ -13,7 +13,11 @@ struct Signal {
 
     std::string name;
 
-    Signal(){};
+    Signal() {
+        for (int i = 0; i < MAX_LISTENERS; i++) {
+            listeners[i].token = 0;
+        }
+    };
     Signal(std::string name) {
         this->name = name;
     }
@@ -77,7 +81,7 @@ struct Signal {
     struct CallbackEntry {
         void *caller;
         Callback callback;
-        SignalToken token;
+        SignalToken token{0};
     };
 
     CallbackEntry listeners[MAX_LISTENERS];

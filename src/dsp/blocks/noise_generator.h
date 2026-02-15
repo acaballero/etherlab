@@ -10,6 +10,7 @@
 #include "dsp/buffer.hpp"
 #include "output.h"
 
+namespace dsp {
 class NoiseGenerator : public Output<complex_t> {
 
   public:
@@ -29,5 +30,6 @@ class NoiseGenerator : public Output<complex_t> {
     // uint32_t sample_count{0};
     // bool auto_off{};
 };
+} // namespace dsp
 
 #endif // TRX_FRONTEND_NOISE_GENERATOR_H

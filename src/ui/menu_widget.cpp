@@ -101,7 +101,7 @@ bool MenuWidget::on_input(const st_inputEvent e) {
 
         case INPUT_EVENT_TYPE_ENCODER:
 
-            if (Menu::menuStatus == ACTIVE) {
+            if (is_focused() && Menu::menuStatus == ACTIVE) {
                 strIn.write(e.value > 0 ? '+' : '-');
                 if (!e.value) {
                     strIn.write(' ');

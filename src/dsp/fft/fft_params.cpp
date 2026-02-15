@@ -62,8 +62,8 @@ void st_fft_params::calc(uint32_t visible_span) {
         // Ceil to multiple of freq_mult
         sample_freq = ((sample_freq + freq_mult - 1) / freq_mult) * freq_mult;
 
-        // Find nearest achievable frequency with the timer
-        sample_freq = get_timer_exact_freq(MAX_DSP_DECIMATION_FACTOR, false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
+        // Find nearest achievable frequency with the timer for current decimation factor
+        sample_freq = get_timer_exact_freq(dsp::get_max_decimation(), false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
 
         timer_freq_error = sample_freq % freq_mult;
         if (timer_freq_error != 0) {
@@ -79,7 +79,7 @@ void st_fft_params::calc(uint32_t visible_span) {
 
     } else {
         // Set the real exact achievable frequency in the timer
-        sample_freq = get_timer_exact_freq(MAX_DSP_DECIMATION_FACTOR, false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
+        sample_freq = get_timer_exact_freq(dsp::get_max_decimation(), false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
     }
 
     // Resolution bandwidth (per FFT bin)
@@ -140,7 +140,7 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
 
     // In DIGITAL_TX mode, the fft sample rate must be a multiple of DSP_AUDIO_SAMPLE_RATE so we can interpolate/decimate by integer factors when the USB output
     // is enabled (requires 48Khz. In fact could be any, but that's the standard and the rate some PC apps expect)
-    if (!freq_mult && config.mode == DIGITAL_TX) {
+    if (!freq_mult && config.mode == DIGITAL_TX && dsp::freq_mult_enabled()) {
         freq_mult = DSP_TX_AUDIO_SAMPLE_RATE;
     }
 
@@ -156,6 +156,9 @@ st_fft_params st_fft_params::find(uint32_t span, uint32_t freq_mult) {
     if (current_dependencies == fft_params_dependencies) {
         return cached_result;
     }
+
+    LOG("st_fft_params::find | Calculating FFT params | span: %d | freq_mult: %d | max_dec: %d", span, freq_mult, config.fft.max_decimation_factor);
+    LOG_RAW(" | max_slices: %d | rate: (%d,%d)\n", current_dependencies.max_slices, dsp::dsp_min_sample_rate, dsp::dsp_max_sample_rate);
 
     // Cache miss - need to recalculate
     fft_params_dependencies = current_dependencies;

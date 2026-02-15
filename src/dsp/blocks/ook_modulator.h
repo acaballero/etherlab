@@ -8,6 +8,7 @@
 #include "dsp/dsp_common.h"
 #include "output.h"
 
+namespace dsp {
 class OOKModulator : public Output<complex_t> {
 
   public:
@@ -21,5 +22,6 @@ class OOKModulator : public Output<complex_t> {
     Output *modulation;
     Output *baseband;
 };
+} // namespace dsp
 
 #endif // TRX_FRONTEND_OOK_MODULATOR_H

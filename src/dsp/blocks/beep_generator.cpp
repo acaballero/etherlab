@@ -6,7 +6,7 @@
 #include "dsp/dsp_common.h"
 #include "status.h"
 #include "utils.hpp"
-
+namespace dsp {
 // Predefined pleasant beep configurations
 const beep_params_st BeepGenerator::BEEP_CONFIGS[BEEP_TYPE_COUNT] = {
     // BEEP_SINGLE - gentle single beep
@@ -184,3 +184,4 @@ void BeepGenerator::stop() {
 void BeepGenerator::restart() {
     init(params);
 }
+} // namespace dsp

@@ -3,6 +3,7 @@
 //
 
 #include <io/file_factory.h>
+#include "Display_afb.h"
 #include "dsp_replay_ui.h"
 #include "../dsp_common.h"
 #include "../dsp_tasks.h"
@@ -10,6 +11,7 @@
 #include "../dsp.h"
 #include "io/fatfs_file.h"
 #include "io/file_types.h"
+#include "ui/gain_info.h"
 #include "ui/main_view.h"
 #include "ui/sd_filepicker_menu.h"
 #include "replay_widget.h"
@@ -24,15 +26,17 @@
 
 namespace dspReplayUI {
 
-int8_t gain;
+int8_t gain = 0;
+int8_t prev_gain_db = 0;
 bool stopped = true;
 bool loop = false;
 SignalToken signal_token;
 WaveInfo wi;
 ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y - 35, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 6 + 35}, &lcd, "replay"};
+// GainInfoWidget gain_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y - 35, DISPLAY_X_PIXELS / 2, 20}, &lcd};
 std::unique_ptr<File> file;
 
-void on_freq_signal(void *thisptr, const void *args) {
+void on_freq_signal(void *, const void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
     if (event.event == radio::AFTER_UPDATE) {
         wi.carrier_freq = event.frequency;
@@ -40,26 +44,27 @@ void on_freq_signal(void *thisptr, const void *args) {
     }
 }
 
-void on_event(st_dsp_params *status) {
+void on_event(st_dsp_params *status, st_dsp_params *task_info) {
 
-    switch (status->status) {
+    switch (task_info->status) {
 
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
             stopped = false;
             filePicker.disable();
+            dsp::set_gain_db(gain);
             break;
         case DSP_STATUS_STOPPED:
+        case DSP_STATUS_STOPPING:
             stopped = true;
             filePicker.enable();
+            dsp::set_gain_db(prev_gain_db);
+
             break;
     }
 
-    if (dsp_task) {
-        auto task = dsp_task.get();
-        replay_w.setProcessorStatus(task->get_processor()->info);
-        replay_w.setTaskStatus(task->info);
-    }
+    replay_w.setProcessorStatus(*status);
+    replay_w.setTaskStatus(*task_info);
 }
 
 Menu::result change_dsp_status(Menu::eventMask e) {
@@ -126,11 +131,16 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
                 menu_size(DISPLAY_X_PIXELS / 2, INFO_HEIGHT + 35);
                 view_manager::mainView.add_child(&replay_w);
+                // if (config.debug) {
+                //     view_manager::mainView.add_child(&gain_w);
+                //     gain_w.set_z_index(200);
+                // }
+
                 replay_w.set_visible(true);
                 replay_w.set_z_index(100);
             }
 
-            dsp_set_real_time(true);
+            prev_gain_db = dsp::get_gain_db();
 
             break;
         }
@@ -140,11 +150,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             if (stopped) {
 
                 radio::freq_signal.remove(signal_token);
-
-                dsp_set_real_time(!ISANALOG);
-
                 filePicker.end(); // Important to call begin/end as we need to lock the SD card while exploring
-
                 menu_size(DISPLAY_X_PIXELS, INFO_HEIGHT);
                 view_manager::mainView.remove_child(&replay_w);
             } else {
@@ -166,7 +172,6 @@ result set_sampling_params(eventMask) {
 }
 
 result change_gain(eventMask) {
-
     dsp::set_gain_db(gain);
     return proceed;
 }
@@ -187,7 +192,7 @@ Menu::result on_freq_updated() {
 MENU(replayMenu, "Replay", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle,
 
      OP("Start / Stop", change_dsp_status, enterEvent), SUBMENU(filePicker), SUBMENU(loopToggle),
-     FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 2000, 1, 0, doNothing, noEvent, noStyle),
+     FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 3000, 1, 0, doNothing, noEvent, noStyle),
      FIELD(gain, "Gain:", " dB", DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 0, change_gain, exitEvent, noStyle),
 
      OBJ(freqEdit)

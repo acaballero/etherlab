@@ -11,7 +11,7 @@
 namespace dspSignalGeneratorUI {
 extern Menu::menu signalGeneratorMenu;
 
-void on_event(st_dsp_params *status);
+void on_event(st_dsp_params *status, st_dsp_params *);
 Menu::result change_dsp_status(Menu::eventMask e);
 Menu::result on_menu_event(Menu::eventMask e);
 

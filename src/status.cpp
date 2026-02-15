@@ -50,7 +50,7 @@ void pop_alert(Level code, const char *msg) {
     LOG("%s: %s\n", code == WARN ? "WARNING" : (code == ERROR ? "ERROR" : "INFO"), msg) // Print to console, if enabled
 
     system_status.code = code;
-    snprintf(system_status.msg, 40, "%s", msg);
+    snprintf(system_status.msg, status_max_length, "%s", msg);
 
     status_signal.emit(&system_status);
 }

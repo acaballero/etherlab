@@ -77,7 +77,7 @@ void TitleBarWidget::before_paint() {
                 error = false;
             }
 
-            dsp::dsp_params->reset();
+            // dsp::dsp_params->reset(); // Commented-out because it was resetting the in/out bytes counter in some DSP tasks. TODO: refactor
             char buf[20];
             MODULATION_MODE mod = main_board::get_modulation_mode();
             bool space = dsp::apply_compression(mod) || dsp::apply_deemph(mod) || dsp::apply_audio_bpf() || dsp::dsp_config.baseband_echo;

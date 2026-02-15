@@ -27,7 +27,7 @@ class ReplayWidget : public Widget {
 
     bool show_actions{false};
     st_dsp_params processor_status{};
-    st_dsp_params task_status{};
+    st_dsp_params task_info{};
     WaveInfo wave_info;
 };
 

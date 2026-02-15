@@ -11,6 +11,7 @@
 #include "output.h"
 #include "blocks_common.h"
 
+namespace dsp {
 class NCO : public Output<complex_t_f32> {
 
   public:
@@ -47,3 +48,4 @@ class NCO : public Output<complex_t_f32> {
 };
 
 #endif
+}

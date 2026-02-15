@@ -349,7 +349,7 @@ bool ReceiveTaskBase::start_impl() {
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
     // (while using decimation factors of 2^n)
     int dec_factor = 1;
-    while (info.sample_rate > dac_sample_rate * 2 && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
+    while (info.sample_rate > dac_sample_rate * 2 && dec_factor < dsp::get_max_decimation()) {
         dec_factor <<= 1;
         info.sample_rate /= 2;
     }
@@ -378,7 +378,7 @@ bool ReceiveTaskBase::start_impl() {
 
     if (!ret) {
         main_board::set_mute(current_mute);
-        halt(DSP_ERR);
+        abort(DSP_ERR);
         return false;
     }
 
@@ -397,7 +397,7 @@ bool ReceiveTaskBase::start_impl() {
 
     if (!ret) {
         main_board::set_mute(current_mute);
-        halt(DSP_ERR);
+        abort(DSP_ERR);
         return false;
     }
 

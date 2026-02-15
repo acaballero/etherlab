@@ -75,8 +75,8 @@
 #define RSSI_PITCH_WEIGHT (float(BEEP_MAX_FREQ - BEEP_BASE_FREQ) / RSSI_CEILING)
 #define DEFAULT_AUDIO_SAMPLE_RATE 24000
 
-namespace dsp {
 extern Signal radiosonde_signal;
+namespace dsp {
 
 class RadiosondeTask : public ReceiveTaskBase {
   public:

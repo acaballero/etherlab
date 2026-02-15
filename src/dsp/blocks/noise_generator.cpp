@@ -5,6 +5,7 @@
 #include "noise_generator.h"
 #include "config.h"
 
+namespace dsp {
 adc_type NoiseGenerator::get_sample() {
 
     int8_t sample;
@@ -43,3 +44,4 @@ void NoiseGenerator::get_block(buffer_t<complex_t> &buffer) {
         buffer.p[i].r = sample.r;
     }
 }
+} // namespace dsp

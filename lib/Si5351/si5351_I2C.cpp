@@ -378,7 +378,7 @@ HAL_StatusTypeDef Si5351::set_freq(uint64_t freq, enum si5351_clock clk) {
             if (clk_freq[6] != 0) {
                 if (pllb_freq % freq == 0) {
                     if ((pllb_freq / freq) % 2 != 0) {
-                        // Not an even divide ratio, no bueno
+                        // Not an even divide ratio
                         return HAL_ERROR;
                     } else {
                         // Set the freq in memory

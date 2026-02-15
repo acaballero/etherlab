@@ -13,7 +13,7 @@ class Task {
 
   public:
     Task(){};
-    Task(void (*onSucess)(), void (*onError)(DSP_ERROR));
+
     virtual ~Task() = default;
     virtual const char *get_name() {
         return "-";
@@ -22,7 +22,7 @@ class Task {
     virtual void stop();
     virtual void work() = 0;
     virtual void reset();
-    void halt(DSP_ERROR);
+    void abort(DSP_ERROR);
     st_dsp_params info{};
 
     // Get runtime info
@@ -45,13 +45,11 @@ class Task {
     // Callback for the first processed block
     std::function<void()> on_first_block{};
 
-  protected:
-    // Derived task-specific initialization
-    // Called before processor startup
-    virtual bool start_impl() = 0;
+    Signal on_event;
 
-    void (*on_success)();
-    void (*on_error)(DSP_ERROR);
+  protected:
+    // Derived task-specific initialization. Called before processor startup
+    virtual bool start_impl() = 0;
 
     std::unique_ptr<DspProcessor> processor;
 

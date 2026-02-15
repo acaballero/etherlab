@@ -14,6 +14,7 @@
 #include "dsp/receive/receive_task_base.h"
 #include "dsp/audio/fm_squelch.h"
 
+extern Signal aprs_signal;
 namespace dsp {
 
 static uint16_t crc_ccitt_tab[256] = {
@@ -32,11 +33,9 @@ static uint16_t crc_ccitt_tab[256] = {
     0xa12a, 0xb0a3, 0x8238, 0x93b1, 0x6b46, 0x7acf, 0x4854, 0x59dd, 0x2d62, 0x3ceb, 0x0e70, 0x1ff9, 0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9,
     0x8330, 0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78};
 
-extern Signal aprs_signal;
-
 class APRSTask : public ReceiveTaskBase {
   public:
-    APRSTask(void (*on_success)(), void (*on_error)(DSP_ERROR)) : ReceiveTaskBase(on_success, on_error) {
+    APRSTask() : ReceiveTaskBase() {
         info.id = 100; // TODO: This must be unique, but then daveloping new tasks is not truly decoupled from the DSP core
     }
 

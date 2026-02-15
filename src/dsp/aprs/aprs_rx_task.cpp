@@ -12,9 +12,8 @@
 #include "stm32f4xx_hal.h"
 #include "s_strength.h"
 
-namespace dsp {
-
 Signal aprs_signal;
+namespace dsp {
 
 MODULATION_MODE APRSTask::get_modulation_mode() const {
     return FM;

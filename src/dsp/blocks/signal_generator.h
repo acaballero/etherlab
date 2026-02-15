@@ -5,45 +5,31 @@
 #ifndef TRX_FRONTEND_SIGNAL_GENERATOR_H
 #define TRX_FRONTEND_SIGNAL_GENERATOR_H
 
+#include "Signal.h"
 #include "stdio.h"
 #include "dsp/buffer.hpp"
 #include "output.h"
 #include "blocks_common.h"
 
+namespace dsp {
 enum SIGNAL_SHAPE { SIGNAL_SHAPE_SIN, SIGNAL_SHAPE_SAW_UP, SIGNAL_SHAPE_SAW_DOWN, SIGNAL_SHAPE_TRI, SIGNAL_SHAPE_PULSE };
 
-class SignalGenerator : public Output<complex_t> {
+class SignalGenerator : public Signal<complex_t> {
 
   public:
+    using Signal::Signal;
+
     void init();
 
-    SignalGenerator() {
-        SignalGenerator(1000, 1000, SIGNAL_SHAPE_SIN);
-    };
+    SignalGenerator() : SignalGenerator(1000, 1000, SIGNAL_SHAPE_SIN){};
 
-    SignalGenerator(uint32_t f, uint32_t sr, SIGNAL_SHAPE shape) : tone_shape{shape}, frequency{f}, sample_rate(sr) {
+    SignalGenerator(uint32_t f, uint32_t sr, SIGNAL_SHAPE shape) : Signal(f, sr), tone_shape{shape} {
         init();
     };
 
     void set_config(uint32_t frequency, uint32_t sample_rate);
 
     void set_shape(SIGNAL_SHAPE shape);
-
-    uint32_t get_sample_rate() {
-        return sample_rate;
-    };
-
-    uint32_t get_frequency() {
-        return frequency;
-    };
-
-    void set_sample_rate(uint32_t v) {
-        sample_rate = v;
-    };
-
-    void set_frequency(uint32_t v) {
-        frequency = v;
-    };
 
     void get_block(buffer_t<complex_t> &buff) override;
 
@@ -64,11 +50,10 @@ class SignalGenerator : public Output<complex_t> {
     // uint32_t sample_count{0};
     // bool auto_off{};
 
-    uint32_t frequency{0};
-    uint32_t sample_rate{0};
     uint32_t tone_phase{0};
 };
 
+} // namespace dsp
 extern const int8_t sine_table_i8[LUT_SIZE];
 
 #endif // TRX_FRONTEND_SIGNAL_GENERATOR_H

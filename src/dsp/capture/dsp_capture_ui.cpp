@@ -139,9 +139,9 @@ Menu::result on_menu_event(Menu::eventMask e) {
     return Menu::proceed;
 }
 
-void on_event(st_dsp_params *status) {
+void on_event(st_dsp_params *, st_dsp_params *task_info) {
 
-    switch (status->status) {
+    switch (task_info->status) {
         case DSP_STATUS_RUNNING:
         case DSP_STATUS_PENDING:
             stopped = false;

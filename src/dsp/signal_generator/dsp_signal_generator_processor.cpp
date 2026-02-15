@@ -26,10 +26,10 @@ void DspSignalGeneratorProcessor::set_config(uint32_t baseband_f, uint32_t mod_f
     modulator.set_modulation_offset(0x7FF);
 }
 
-void DspSignalGeneratorProcessor::set_config(uint32_t baseband_f, uint32_t mod_f, SIGNAL_SHAPE shape, uint32_t sample_rate) {
+void DspSignalGeneratorProcessor::set_config(uint32_t baseband_f, uint32_t mod_f, dsp::SIGNAL_SHAPE shape, uint32_t sample_rate) {
     baseband.set_config(baseband_f, sample_rate);
     signal.set_config(mod_f, sample_rate);
     signal.set_shape(shape);
     modulator.set_modulation(&signal);
-    modulator.set_modulation_offset(shape == SIGNAL_SHAPE_SIN ? 0 : 0x7FF);
+    modulator.set_modulation_offset(shape == dsp::SIGNAL_SHAPE_SIN ? 0 : 0x7FF);
 }

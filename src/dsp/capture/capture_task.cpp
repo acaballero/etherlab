@@ -55,7 +55,7 @@ void CaptureTask::work() {
             } else if (fres != FR_DISK_ERR || info.status == DSP_STATUS_RUNNING) {
                 // We check again for the status because the ADC interrupt could've stopped the capture before
 
-                halt(DSP_ERR_FILEWRITE);
+                abort(DSP_ERR_FILEWRITE);
             }
         }
     }
@@ -126,7 +126,7 @@ bool CaptureTask::start_impl() {
 
     if (!lock_sd_card(5000)) {
         // prevent other tasks to use the sd_card
-        this->halt(DSP_ERR);
+        this->abort(DSP_ERR);
         return false;
     }
 
@@ -142,7 +142,7 @@ bool CaptureTask::start_impl() {
     fres = file->create(wi);
 
     if (fres != FR_OK) {
-        this->halt(DSP_ERR_FILEOPEN);
+        this->abort(DSP_ERR_FILEOPEN);
         return false;
     } else {
         dsp::enable_frequency_shift(false);

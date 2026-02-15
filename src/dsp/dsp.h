@@ -27,8 +27,8 @@ bool apply_compression(MODULATION_MODE mod);
 
 extern std::unique_ptr<Task> dsp_task;
 
-Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *)> cb);
-Task *dsp_start(dsp::DSP_TASK_ID id, std::function<void(st_dsp_params *)> cb);
+Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *, st_dsp_params *)> cb);
+Task *dsp_start(dsp::DSP_TASK_ID id, std::function<void(st_dsp_params *, st_dsp_params *)> cb);
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,9 +50,6 @@ void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac);
 // SD CARD FIFO processing handler
 // void TIM1_BRK_TIM15_IRQHandler(void);
 void TIM8_TRG_COM_TIM14_IRQHandler(void);
-
-void dsp_success();
-void dsp_error(DSP_ERROR);
 
 #ifdef __cplusplus
 }

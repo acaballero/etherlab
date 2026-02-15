@@ -43,8 +43,8 @@ result changeCMX973Gain(eventMask e, navNode &nav, Menu::prompt &item) {
     }
 
     if (!dsp::dsp_config.agc_enabled) {
-
-        if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga, config.hw.cmx973_vgb); // Immediate if digital AGC is disable. Otherwise it is controlled in agc.cpp
+        if_gain(RF_DIRECTION_RX, config.hw.cmx973_vga,
+                config.hw.cmx973_vgb); // Apply immediately if digital AGC is disabled. Otherwise it is controlled in agc.cpp
     }
     return proceed;
 }

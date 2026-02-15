@@ -90,8 +90,8 @@ void TransmitTask::work() {
 
                 dsp::s16_to_f32_norm((const adc_type *)in_p, bi1_p, n_in, s16_scale);
 
-                buffer_t<float32_t> src = {bi1_p, n_in, REAL};
-                buffer_t<float32_t> dst = {out_accum_p, n_out, REAL};
+                buffer_t<float32_t> src = {bi1_p, n_in, 0, REAL};
+                buffer_t<float32_t> dst = {out_accum_p, n_out, 0, REAL};
 
                 if (interpolator) {
                     interpolator->interpolate(src, dst);
@@ -164,7 +164,7 @@ bool TransmitTask::init_resampler(MODULATION_MODE mod) {
                                 info.decimation_factor); // Here the bandwidth is halved for double sideband modulations
 
     } else {
-        interpolator = std::make_unique<DspFIRInterpolatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
+        interpolator = std::make_unique<DspFIRInterpolatorFloat<FIR_INTERPOLATOR_BASEBAND_TAPS>>();
         ret = interpolator->config(info.sample_rate / info.decimation_factor, info.bandwidth,
                                    info.decimation_factor); // Here the bandwidth is halved for double sideband modulations
     }
@@ -238,7 +238,8 @@ bool TransmitTask::start_impl() {
 
     dsp_set_real_time(true);
 
-    info.sample_rate = USB_AUDIO_SAMPLE_RATE; // Start at the USB audio rate. Will bring it down/up to the FFT sample rate
+    info.sample_rate = USB_AUDIO_SAMPLE_RATE; // Start at the USB audio rate. Will bring it down/up to the FFT sample rate (determined in main_board.cpp and
+                                              // depending on the mode being TX or RX)
 
     uint32_t dac_sample_rate = fft::fft_params.sample_freq;
 
@@ -255,13 +256,13 @@ bool TransmitTask::start_impl() {
     // Calculate decimation ratio to get as closest as possible to our target audio bandwidth
     // (while using decimation factors of 2^n)
     int dec_factor = 1;
-    while (info.sample_rate > dac_sample_rate && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
+    while (info.sample_rate > dac_sample_rate && dec_factor < dsp::get_max_decimation()) {
         dec_factor <<= 1;
         info.sample_rate /= 2;
     }
 
     // If target sample rate is higher: interpolate
-    while (info.sample_rate < dac_sample_rate && dec_factor < MAX_DSP_DECIMATION_FACTOR) {
+    while (info.sample_rate < dac_sample_rate && dec_factor < dsp::get_max_decimation()) {
         dec_factor <<= 1;
         info.sample_rate *= 2;
     }
@@ -285,7 +286,7 @@ bool TransmitTask::start_impl() {
 
     if (!ret) {
 
-        halt(DSP_ERR);
+        abort(DSP_ERR);
         return false;
     }
 
@@ -302,7 +303,7 @@ bool TransmitTask::start_impl() {
 
     if (!ret) {
 
-        halt(DSP_ERR);
+        abort(DSP_ERR);
         return false;
     }
 

@@ -139,7 +139,7 @@ class SDMenuT : public Menu::menuNode {
                 char fn[FN_SIZE];
                 fso->entry(sel_items[0], fn, sizeof(fn));
                 io::path file_path = focused_path.parent_path() / fn;
-                message_str = {"Delete " + file_path.native() + " file/s?"};
+                message_str = {"Delete " + file_path.native() + "?"};
             } else {
                 message_str = {"Delete " + std::to_string(sel_items.size()) + " files?"};
             }
@@ -153,6 +153,7 @@ class SDMenuT : public Menu::menuNode {
                         io::path file_path = focused_path.parent_path() / fn;
 
                         // LOG("Deleting file '%s'\n", file_path.c_str());
+                        f_close(fso->file);
                         FRESULT res = f_unlink(file_path.c_str());
 
                         if (res != FR_OK) {

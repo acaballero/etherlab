@@ -28,10 +28,6 @@ class ModalView : public View {
 
     void before_paint() override;
 
-    Menu::menu_actions_st *get_quick_actions() override {
-        return &quick_actions;
-    };
-
   private:
     const std::string message;
     const modal_t type;
@@ -60,6 +56,10 @@ class ModalView : public View {
     };
 
     Menu::menu_actions_st quick_actions = {Menu::get_navigation_actions().actions, 4};
+
+    Menu::menu_actions_st *get_quick_actions() override {
+        return &quick_actions;
+    };
 };
 
 #endif

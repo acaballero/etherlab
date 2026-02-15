@@ -55,6 +55,7 @@
 
 void dsp_loop();
 void dsp_stop();
+void on_task_event(void *, const void *info);
 
 namespace dsp {
 os::periodic_task task(50, dsp_loop, 0, 0);
@@ -83,7 +84,7 @@ volatile bool execute_task = false;
 DCBlock dc_block_i{0.987};
 DCBlock dc_block_q{0.987};
 
-std::function<void(st_dsp_params *)> on_event;
+std::function<void(st_dsp_params *dsp_params, st_dsp_params *task_params)> on_event;
 
 /*
  * Task factory
@@ -94,25 +95,26 @@ static std::unique_ptr<Task> create_task(dsp::DSP_TASK_ID id) {
 
     switch (id) {
         case dsp::DSP_TASK_CAPTURE:
-            task = std::make_unique<CaptureTask>(dsp_success, dsp_error);
+            task = std::make_unique<CaptureTask>();
             break;
         case dsp::DSP_TASK_REPLAY:
-            task = std::make_unique<ReplayTask>(dsp_success, dsp_error);
+            task = std::make_unique<ReplayTask>();
             break;
         case dsp::DSP_TASK_SIGNAL_GENERATOR:
-            task = std::make_unique<SignalGeneratorTask>(dsp_success, dsp_error);
+            task = std::make_unique<SignalGeneratorTask>();
             break;
         case dsp::DSP_TASK_RECEIVE:
-            task = std::make_unique<ReceiveTask>(dsp_success, dsp_error);
+            task = std::make_unique<ReceiveTask>();
             break;
         case dsp::DSP_TASK_TRANSMIT:
-            task = std::make_unique<TransmitTask>(dsp_success, dsp_error);
+            task = std::make_unique<TransmitTask>();
             break;
         default:
             status::pop_alert(status::ERROR, "Unknown DSP task ID");
             return nullptr;
     }
 
+    task->on_event.add(nullptr, on_task_event);
     task->info.id = id;
     return task;
 }
@@ -155,8 +157,8 @@ void restart_callback(void *, const void *) {
         dsp_restart();
     }
 
-    if (dsp::get_agc_enabled()) {
-        LOG("restart_callback: Resetting AGC\n");
+    if (dsp_task && dsp_task->info.status == DSP_STATUS_RUNNING && dsp::get_agc_enabled()) {
+        LOG("rdestart_callback: Resetting AGC\n");
         agc::reset();
     }
 }
@@ -171,7 +173,7 @@ void dsp_init(dsp::st_dsp_config &config) {
     restart_callback(nullptr, nullptr);                     // First time, in case we start in DSP mode and miss initial signals
 }
 
-Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *)> cb) {
+Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *, st_dsp_params *)> cb) {
 
     uint8_t id = task->info.id;
 
@@ -203,7 +205,10 @@ Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *)>
     return dsp_task.get();
 }
 
-Task *dsp_start(dsp::DSP_TASK_ID id, std::function<void(st_dsp_params *)> cb) {
+Task *dsp_start(dsp::DSP_TASK_ID id, std::function<void(st_dsp_params *, st_dsp_params *)> cb) {
+
+    dsp_stop(); // Have to stop first to free the current task memory, if any. They weight!
+
     return dsp_start(create_task(id), cb);
 }
 
@@ -271,7 +276,7 @@ void dsp_start_task() {
             }
 
             if (on_event) {
-                on_event(&dsp_task->info);
+                on_event(dsp::dsp_params, &dsp_task->info);
             }
 
             HAL_TIM_Base_Start_IT(&TASKS_TIMER_HANDLE);
@@ -289,7 +294,7 @@ void dsp_start_task() {
 
 bool dsp_restart() {
     // LOG("dsp_restart");
-    if (!ISANALOG && dsp_task && dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING) {
+    if (!ISANALOG && dsp_task && dsp_task->info.status == DSP_STATUS_RUNNING) {
 
         LOG("dsp_restart: Restarting running task\n");
 
@@ -367,6 +372,14 @@ inline void dac_work() {
         UNUSED(err);
     }
 
+    if (ISTX) {
+        // Currently the DSP TX path uses quedrature modulation producing some carrier leakage.
+        // To prevent the leakage from polluting signals near DC (particularly harmful for amplitude modulations), a frequency shift is applied
+        // to put some distance between the bandwidth of interest and the carrier. The mixer LO is also set at an opposite offset from the
+        // desired IF frequency
+        dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
+    }
+
     // Apply DAC pre-distortion
     auto offset_balance = config.hw.dac_offset + config.hw.dac_off_balance;
 
@@ -394,7 +407,7 @@ inline void adc_work() {
         // - FFT processing is not done in real-time so no need to do the work for it
         // - Receivers, for example, could remove DC just before demodulation, at a much lower sample rate but, in fact, after shifting, the DC spike is
         //   removed by the low pass filters
-        // The drawback is we have to rotate it there (fft module)too after DC removal
+        // The drawback is we'd have to rotate it there (fft module) too after DC removal
 
         if (config.fft.removeDC) {
             buffer_t<adc_type> bb = {(adc_type *)current_buffer->p, DSP_BLOCK * 2};
@@ -489,13 +502,14 @@ void dsp_stop() {
 
         LOG_IND(2, "dsp_stop: Stopping task %s\n", dsp::get_task_name(current_task_id));
 
-        if (dsp_task->info.status != DSP_STATUS_STOPPED) {
+        if (dsp_task->info.status == DSP_STATUS_RUNNING) {
             dsp_task->stop();
         }
-        st_dsp_params params = *dsp::dsp_params; // Copy final task status
-        dsp_task.reset();                        // Forces deallocation before new construct reclaim memory
+        st_dsp_params task_params = dsp_task->info; // Copy final task status
+        st_dsp_params dsp_params = *dsp::dsp_params;
+        dsp_task.reset(); // Forces deallocation before new construct reclaim memory
         dsp::dsp_params = nullptr;
-        LOG_IND_RAW(-2, "dsp_stop: Task stopped and deleted\n");
+        LOG_IND(-2, "dsp_stop: Task stopped and deleted\n");
 
 #if !EXECUTE_TASKS_ON_INTERRUPT
         execute_task = false;
@@ -503,7 +517,8 @@ void dsp_stop() {
 
         if (on_event) {
             LOG("dsp_stop: on_event\n");
-            on_event(&params);
+            on_event(&dsp_params, &task_params);
+            on_event = nullptr;
         }
 
         // Some tasks, when stopped, do not cause the start of the previous running task.
@@ -519,15 +534,11 @@ void dsp_stop() {
     }
 }
 
-void dsp_success() {
-    // LOG("dsp_success\n");
-    dsp_stop();
-}
+void on_task_event(void *, const void *info) {
 
-void dsp_error(DSP_ERROR err) {
+    st_dsp_params *task_info = (st_dsp_params *)info;
 
-    // LOG("dsp_error\n");
-    switch (err) {
+    switch (task_info->error) {
 
         case DSP_ERR_FILEOPEN:
             pop_alert(status::ERROR, "Wave file open error");
@@ -557,5 +568,7 @@ void dsp_error(DSP_ERROR err) {
             break;
     }
 
-    dsp_stop();
+    if (task_info->status == DSP_STATUS_STOPPED) {
+        dsp_stop();
+    }
 }
