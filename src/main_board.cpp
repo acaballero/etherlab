@@ -820,36 +820,24 @@ void set_if_filter(radio::IF_FILTER fil) {
 
         pin = radio::if_filters[radio::if_filter].pin;
 
-        if (radio::if_filters[radio::if_filter].analog_available) { // Digital filters don't have a GPIO pin
+        if (radio::if_filters[radio::if_filter].analog_available) { // Only analog filters need to be activated via GPIO pin
             setGPIOExpPin(&hmcp01, MCP23017_PORTA, pin, true, false);
         }
         commitGPIOExpPort(&hmcp01, MCP23017_PORTA);
 
-        // The 10Mhz mixer can be fed either by its 10Mhz TCXO or a synthesized Si5351 output. Currently, we use
-        // the Si5351 only when the selected IF filter is not at 10Mhz, so we're setting this GPIO pin here.
-        // TODO: If the Si5351 output is good enough for this (my concern is it may radiate and interfere since the IF mixer
-        // is far away and there's a long run of micro coax), the 10Mhz TCXO should remain unused even for the 10Mhz IF filter
         if ((config.modulation == SSB_LSB || config.modulation == SSB_USB) && config.mode != DIGITAL_TX) {
-
-            // if (radio::if_filter == radio::IF_FILTER_3KHZ) {
-            //     setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, true, false);
-            //     analog_if_freq(0);
-            // } else {
-            // setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, false, false);
 
             // Apply an offset to put the left sideband onto the filter passband
             int offset = (int)(radio::if_filters[radio::if_filter].bandwidth / 2) + 500; // +500 to account for the skirt
 
             lo_enable(2, 1);
             lo_freq(2, radio::if_filters[radio::if_filter].freq + offset);
-            //}
 
-            // commitGPIPExpPin(&hmcp02, MCP23017_PORTB);
         } else {
             lo_enable(2, 0);
-            // setGPIOExpPin(&hmcp02, MCP23017_PORTB, GPIOEXP_10MHHZ_MIXER, true, true);
         }
 
+        radio::update_freq(); // So intermediate frequencies are recalculate
         if_filter_signal.emit(nullptr);
     }
 }

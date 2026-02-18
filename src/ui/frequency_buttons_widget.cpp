@@ -121,19 +121,3 @@ void FrequencyButtonsWidget::before_paint() {
         this->set_dirty();
     }
 }
-
-bool FrequencyButtonsWidget::on_touch(const st_inputEvent e) {
-
-    if (e.ms > LONG_PRESS_MS) {
-        freq_memory::open_save_current();
-
-    } else {
-        Menu::open_keypad<uint64_t>(
-            radio::get_frequency(), "Hz", "Frequency", 6, true,
-            [](uint64_t v) {
-                radio::set_frequency((uint64_t)v);
-            },
-            0, 0);
-    }
-    return true;
-}

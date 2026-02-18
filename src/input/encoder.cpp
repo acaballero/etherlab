@@ -20,7 +20,7 @@ int rot_rate = 0;
 int direction;
 
 GPIOInputPin RotAInputPin(ROT_A_PIN, ROT_A_GPIO_PORT, PINMODE_IT, 0, doEncoderA); // No debounce needed with the decoupling cap added in this pin
-GPIOInputPin RotBtnInputPin(ROT_BTN_PIN, ROT_BTN_GPIO_PORT, PINMODE_IT, 0, doPushButton);
+GPIOInputPin RotBtnInputPin(ROT_BTN_PIN, ROT_BTN_GPIO_PORT, PINMODE_IT, 5, doPushButton);
 GPIOInputPin RotBInputPin(ROT_B_PIN, ROT_B_GPIO_PORT, PINMODE_POLL, 0, NULL);
 
 void doEncoderA() {

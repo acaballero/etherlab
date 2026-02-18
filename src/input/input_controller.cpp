@@ -128,6 +128,8 @@ void processEvent(st_inputEvent *e) {
         e->time_us = HAL_GetTick();
     }
 
+    // LOG("process event: %d \n", e->type);
+
     if (e->type == INPUT_EVENT_TYPE_BUTTON_PRESS && e->value == lastEvent.value) {
 
         if (e->time_us) {

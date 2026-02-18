@@ -28,7 +28,6 @@ class FrequencyButtonsWidget : public View {
     st_freqInfo status;
     void before_paint() override;
     void init();
-    bool on_touch(const st_inputEvent) override;
 
     Button btnScan{{0, MARGIN, LBLSCAN_WIDTH, area.box.height - MARGIN * 2}, display, ""};
     Button btnRpt{{LBLSCAN_WIDTH + MARGIN, MARGIN, LBLRPT_WIDTH, area.box.height - MARGIN * 2}, display, ""};

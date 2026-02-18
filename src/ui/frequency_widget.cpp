@@ -82,6 +82,11 @@ void FrequencyWidget::before_paint() {
 
 bool FrequencyWidget::on_input(st_inputEvent e) {
     bool consumed = false;
+
+    if (e.is_touch()) {
+        return on_touch(e);
+    }
+
     switch (e.type) {
 
         case INPUT_EVENT_TYPE_BUTTON_PRESS:
@@ -97,7 +102,6 @@ bool FrequencyWidget::on_input(st_inputEvent e) {
             if (changing_step) { // with push button low, change the step size instead of frequency
                 radio::change_step(-e.value);
             } else {
-
                 radio::change_frequency(e.value);
             }
             consumed = true;
@@ -108,4 +112,20 @@ bool FrequencyWidget::on_input(st_inputEvent e) {
     }
 
     return consumed;
+}
+
+bool FrequencyWidget::on_touch(const st_inputEvent e) {
+
+    if (e.ms > LONG_PRESS_MS) {
+        freq_memory::open_save_current();
+
+    } else {
+        Menu::open_keypad<uint64_t>(
+            radio::get_frequency(), "Hz", "Frequency", 6, true,
+            [](uint64_t v) {
+                radio::set_frequency((uint64_t)v);
+            },
+            0, 0);
+    }
+    return true;
 }

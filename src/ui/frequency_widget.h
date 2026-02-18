@@ -27,6 +27,7 @@ class FrequencyWidget : public Widget {
     st_freqInfo status;
     void before_paint() override;
     bool on_input(st_inputEvent e) override;
+    bool on_touch(const st_inputEvent e) override;
 };
 
 #endif // TRX_FRONTEND_FREQUENCY_WIDGET_H

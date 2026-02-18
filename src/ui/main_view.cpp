@@ -188,7 +188,10 @@ bool MainView::on_input(const st_inputEvent event) {
         consumed = menu_w.on_input(event); // Try to consume it by the menu
 
         if (consumed) {
-            menu_w.set_visible(true);
+            if (!menu_w.visible()) {
+                menu_w.set_visible(true);
+                menu_w.set_focus(true);
+            }
         }
     }
 

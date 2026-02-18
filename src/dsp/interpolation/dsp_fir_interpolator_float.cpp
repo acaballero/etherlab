@@ -135,6 +135,9 @@ template <int TAPS, typename T> bool DspFIRInterpolatorFloatBase<TAPS, T>::init(
 
 template <int TAPS> bool DspFIRInterpolatorFloat<TAPS>::init() {
 
+    LOG("Initializing interpolator | rate in: %d | rate out: %d | factor: %d", this->input_rate, this->input_rate * this->factor, this->factor);
+    LOG_RAW(" | taps: %d | bandwidth: %d\n", TAPS, this->bandwidth);
+
     if (state_q == nullptr) {
         state_q = (float32_t *)CCMMemoryAllocator::alloc(this->state_size);
     }

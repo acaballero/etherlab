@@ -148,8 +148,7 @@ void calculate_freqs() {
 
     st_band band = bands[find_band(carrier_freq)];
 
-    // The 1st IF is fixed and common to the two mixers
-
+    // In analog mode, set the 1st IF freq so, after the 2nd mixer, the baseband lies within the selected filter passband
     mixers[1].setIf(if_filters[if_filter].freq);
 
     // Here is where we apply RIT and analog frequency shifs so it doesn't change the displayed VFO frequency value
@@ -252,7 +251,7 @@ void change_step(int amount) {
 
     if ((most_significant_decimal(config.vfo[config.vfo_ix].step)) != 1) {
 
-        // changing step in tune mode should be in powers of 10
+        // changing step in tune mode should be in powers of 10d
         config.vfo[config.vfo_ix].step = 1000;
     } else {
 

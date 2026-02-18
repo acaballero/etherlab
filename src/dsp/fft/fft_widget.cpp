@@ -189,9 +189,9 @@ void FFTWidget::draw_h_labels() {
 
     for (int i = 0; i < n_divs - 1; i++) {
         float f_mhz = (float)f_khz / 1000.0f;
-        if (delta_khz > 200) {
+        if (delta_khz > 500) {
             sprintf(buf, "%.1f", f_mhz);
-        } else if (delta_khz > 10) {
+        } else if (delta_khz > 100) {
             sprintf(buf, "%.2f", f_mhz);
         } else {
             sprintf(buf, "%.3f", f_mhz);

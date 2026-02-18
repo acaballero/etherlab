@@ -11,6 +11,7 @@
 #include "io/file_types.h"
 #include "items.h"
 #include "menuBase.h"
+#include "radio.h"
 #include "ui/menu.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
@@ -41,21 +42,22 @@ MODE previous_mode;
 Menu::result on_freq_updated(Menu::eventMask e); // Forward declaration
 io::path get_file_name();                        // Forward declaration
 bool stopped = true;
-menu_frequency::FreqEditField freqEdit((Menu::callback)on_freq_updated);
-
-Menu::result on_freq_updated(Menu::eventMask e) {
-    radio::set_frequency(freqEdit.get_frequency());
-    if (e == Menu::exitEvent) {
-        fname = get_file_name();
-    }
-    return Menu::proceed;
-}
 
 Menu::result on_file_updated(Menu::eventMask) {
     fname = fname_buff;
 
     filename_is_edited = true;
     return Menu::proceed;
+}
+
+char tempFreqBuf[] = "00 000 000 000";
+
+void on_freq_updated(uint64_t v) {
+    radio::set_frequency(v);
+    char buf[16];
+    format_long(v, buf);
+    sprintf(tempFreqBuf, "%s", buf);
+    fname = get_file_name();
 }
 
 /**
@@ -90,10 +92,11 @@ io::path get_file_name() {
 }
 
 Menu::result on_menu_event(Menu::eventMask e) {
-    auto task = dsp_task.get();
+
     switch (e) {
         case Menu::enterEvent:
 
+            on_freq_updated(radio::get_frequency());
             captureMenu[captureMenu.sz() - 1].disable();
             dsp_set_real_time(true);
 
@@ -101,8 +104,6 @@ Menu::result on_menu_event(Menu::eventMask e) {
             fname = WAVEFILE_DEFAULT_FOLDER;
             io::check_and_create_folder(WAVEFILE_DEFAULT_FOLDER);
             fname += "/" + get_file_name();
-
-            freqEdit.set_frequency(radio::get_frequency());
 
             // Remove fft update priority
             fft::fft_task.set_high_priority(false);
@@ -228,9 +229,25 @@ Menu::select<FileType> &fTypeMenu =
 
 #endif
 
+result edit_freq(eventMask, navNode &) {
+    if (stopped) {
+        Menu::open_keypad<uint64_t>(
+            radio::get_frequency(), "Hz", "Frequency", 0, false,
+            [](uint64_t v) {
+                on_freq_updated(v);
+            },
+            radio::get_min_frequency(), radio::get_max_frequency());
+
+        return proceed;
+    }
+    return quit;
+}
+
+labelPrompt freqEditMenu((const char *)"Frequency", tempFreqBuf, edit_freq, enterEvent, noStyle);
+
 MENU(captureMenu, "Capture", on_menu_event, (Menu::eventMask)(Menu::enterEvent | Menu::exitEvent), Menu::noStyle,
      OP("Start / Stop", change_dsp_status, enterEvent), EDIT("File:", fname_buff, Menu::alphaNumMask, on_file_updated, Menu::updateEvent, Menu::noStyle),
-     OBJ(freqEdit), FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu),
+     OBJ(freqEditMenu), FIELD(config.fft.span, "Span", "Hz.", FFT_MIN_SPAN, FFT_MAX_SPAN, 10000, 0, set_sampling_params, anyEvent, noStyle), SUBMENU(fTypeMenu),
      OP("Replay", replay, enterEvent))
 } // namespace dspCaptureUI
 

@@ -108,7 +108,7 @@ void enable_frequency_shift(bool b) {
 bool get_freq_shift_allowed() {
     // The frequency shift to prevent DC issues sacrifices some fft bandwidth so it is not applied if not absolutely necessary.
 
-    return fft::fft_params.n_slices == 1 && freq_shift_enabled && (!ISTX);
+    return fft::fft_params.n_slices == 1 && freq_shift_enabled; // && (!ISTX);
 }
 
 void set_agc_enabled(bool v) {

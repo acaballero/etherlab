@@ -408,7 +408,7 @@ bool radio_config(st_radio_config radioConfig) {
     if_freq(RF_DIRECTION_TX, 0);
     if_freq(RF_DIRECTION_RX, 0);
     if_direction(RF_DIRECTION_OFF);
-    DAC_DMA_Stop(&hdac1);
+    //  DAC_DMA_Stop(&hdac1);
     ADC_DMA_Stop(&hadc1);
 
     if (radioConfig.direction == RF_DIRECTION_TX) {
@@ -445,10 +445,11 @@ bool radio_config(st_radio_config radioConfig) {
 
         // Disable DAC audio output
         if_freq(RF_DIRECTION_TX, 0);
-        DAC_DMA_Stop(&hdac1);
+        // DAC_DMA_Stop(&hdac1);
 
         if (radioConfig.mode == ANALOG) {
 
+            DAC_DMA_Stop(&hdac1);
             main_board::set_mode(ISTX ? ANALOG_TX : ANALOG_RX);
 
             // Stop TX quadrature clocks
@@ -468,8 +469,6 @@ bool radio_config(st_radio_config radioConfig) {
 
             // Enable DAC for audio output
             MX_DAC_Init();
-            //  HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
-            //  HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 
             // Instead of calculating the DAC timer period from the audio output sample rate, which would generate
             // a phase mismatch between them when not integer prescaler and period can be found for the target frequencies,

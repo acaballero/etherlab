@@ -223,4 +223,6 @@ struct Rect {
 
 Area to_area(Rect &r);
 
+int subtract_append(const Rect &a, const Rect &b, std::vector<Rect> &out);
+
 #endif // UI_TYPES_H

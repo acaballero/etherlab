@@ -23,6 +23,7 @@
 #include "radio.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_gpio.h"
 #include "tinyusb/usb_audio_dsp_bridge.h"
 #include "tinyusb/usb_composite_device.h"
 #include "types.h"
@@ -158,7 +159,7 @@ void restart_callback(void *, const void *) {
     }
 
     if (dsp_task && dsp_task->info.status == DSP_STATUS_RUNNING && dsp::get_agc_enabled()) {
-        LOG("rdestart_callback: Resetting AGC\n");
+        LOG("restart_callback: Resetting AGC\n");
         agc::reset();
     }
 }
@@ -304,8 +305,8 @@ bool dsp_restart() {
             proc->info.status = DSP_STATUS_PENDING;
         }
 
-        DAC_DMA_Stop(&hdac1);
-        ADC_DMA_Stop(&hadc1);
+        //  DAC_DMA_Stop(&hdac1);
+        //  ADC_DMA_Stop(&hadc1);
 
         dsp_start_task();
         return true;

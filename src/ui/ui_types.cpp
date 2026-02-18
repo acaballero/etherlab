@@ -63,6 +63,8 @@ Rect Rect::operator-(const Point &p) {
 
 std::vector<Rect> Rect::operator-(const Rect &r) {
 
+    // TODO: Reduce memory copy/allocations
+
     std::vector<Rect> result;
 
     //  No overlap
@@ -130,4 +132,59 @@ std::vector<Rect> merge_rectangles(std::vector<Rect> &parts) {
 
 Area to_area(Rect &r) {
     return {{(int16_t)r.left(), (int16_t)r.top(), (uint16_t)r.width(), (uint16_t)r.height()}, (uint16_t)(r.width() * r.height()), 0, 0};
+}
+
+// Appends up to 4 rectangles to the result (no allocations)
+// Returns number of rectangles appended.
+int subtract_append(const Rect &a, const Rect &b, std::vector<Rect> &out) {
+    // Compute intersection first (using the same convention as your Rect uses)
+    const Rect i = a.intersect(b);
+
+    // No overlap => keep original
+    if (i.is_empty()) {
+        out.push_back(a);
+        return 1;
+    }
+
+    // Full cover => nothing remains
+    if (b.contains(a) || i.contains(a)) { // i.contains(a) is enough if intersect is correct
+        return 0;
+    }
+
+    int before = (int)out.size();
+
+    // IMPORTANT:
+    // This assumes your Rect constructor is (x, y, w, h) and that
+    // left/top/right/bottom are INCLUSIVE bounds
+    // For safety, only push rectangles with w>0 && h>0 (or !is_empty()).
+
+    // Left strip: [a.left .. i.left-1]
+    if (a.left() < i.left()) {
+        Rect left{a.left(), a.top(), i.left() - a.left(), a.height()};
+        if (!left.is_empty())
+            out.push_back(left);
+    }
+
+    // Right strip: [i.right+1 .. a.right]
+    if (i.right() < a.right()) {
+        Rect right{i.right() + 1, a.top(), a.right() - i.right(), a.height()};
+        if (!right.is_empty())
+            out.push_back(right);
+    }
+
+    // Top strip: [a.top .. i.top-1] over intersection x-range
+    if (a.top() < i.top()) {
+        Rect top{i.left(), a.top(), i.width(), i.top() - a.top()};
+        if (!top.is_empty())
+            out.push_back(top);
+    }
+
+    // Bottom strip: [i.bottom+1 .. a.bottom] over intersection x-range
+    if (i.bottom() < a.bottom()) {
+        Rect bottom{i.left(), i.bottom() + 1, i.width(), a.bottom() - i.bottom()};
+        if (!bottom.is_empty())
+            out.push_back(bottom);
+    }
+
+    return (int)out.size() - before;
 }

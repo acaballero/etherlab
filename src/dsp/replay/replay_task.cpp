@@ -19,6 +19,7 @@
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
+#include <cstring>
 #include <memory>
 
 /* Should be defined in the HW abstraction layer */
@@ -116,7 +117,11 @@ void ReplayTask::produce() {
             buffer_t<float32_t> src = {f32_in, in_samples, 0, COMPLEX_INTERLEAVED};
             buffer_t<float32_t> dst = {f32_out, samples_per_batch, 0, COMPLEX_INTERLEAVED};
 
-            interpolator->interpolate(src, dst);
+            if (interpolator->get_factor() == 1) {
+                memcpy(out_p, in_p, bytes_per_batch);
+            } else {
+                interpolator->interpolate(src, dst);
+            }
 
             dsp::f32_to_s16(f32_out, (adc_type *)out_p, samples_per_batch << 1);
             GPIOD->BSRR = GPIO_PIN_9 << 16;
@@ -197,15 +202,16 @@ bool ReplayTask::start_impl() {
             // Update FFT  sample rate parameters to force match the recorded signal
 
             dsp::enable_freq_mult(false);
-            dsp::set_max_decimation(4);
-            fft::set_max_decimation(4);
+            uint8_t max_decimation_factor = 2;
+            dsp::set_max_decimation(max_decimation_factor);
+            fft::set_max_decimation(max_decimation_factor);
 
             fft_config(wi.sample_rate * USABLE_BW_FACTOR);
 
             uint32_t sf = fft::fft_params.sample_freq;
 
             // Note we don't consider stored signal sample rates higher than the FFT sample frequency
-            uint8_t max_decimation_factor = dsp::get_max_decimation();
+
             while (decimation_factor < max_decimation_factor && sf >= wi.sample_rate * 2) {
                 decimation_factor <<= 1;
                 sf >>= 1;
@@ -236,7 +242,7 @@ bool ReplayTask::start_impl() {
         this->info.decimated_block_size_bytes = this->info.block_size_bytes / decimation_factor / (this->info.n_channels == 1 ? 2 : 1);
 
         interpolator = std::make_unique<DspFIRInterpolatorFloat<FIR_INTERPOLATOR_BASEBAND_TAPS>>();
-        bool ret = interpolator->config(info.sample_rate, info.bandwidth / 2, decimation_factor);
+        bool ret = interpolator->config(wi.sample_rate, info.sample_rate / 4, decimation_factor);
 
         if (!ret) {
             this->abort(DSP_ERR);
@@ -270,7 +276,7 @@ bool ReplayTask::start_impl() {
         // - The ReplayProcessor is also used in other tasks (e.g. APRS trasnsmit) that do not accout for the shift
         // - Honestly I haven't take the time to think about why it would benefit from the shifting, but it is very likely
         //   required since the DC blocker is surely killing whatever is at DC (the carrier itself if any)
-        dsp::enable_frequency_shift(false);
+        // dsp::enable_frequency_shift(false);
     }
 
     return true;
@@ -300,7 +306,7 @@ void ReplayTask::stop() {
         dsp::set_max_decimation(MAX_DSP_DECIMATION_FACTOR);
         dsp::enable_freq_mult(true);
         dsp_set_real_time(false);
-        dsp::enable_frequency_shift(true);
+        // dsp::enable_frequency_shift(true);
 
         radio_config({.direction = RF_DIRECTION_RX, .sample_freq = 0, .freq = 0, .mode = DSP});
 

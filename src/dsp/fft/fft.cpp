@@ -966,8 +966,8 @@ void adquire_fft_async() {
         fft_dcremoval(fft_slice_buffer);
     }
 #else
-    if (config.fft.removeDC && !dsp::get_freq_shift_allowed()) {
-        // In digital mode, the DC is removed in the DSP processor in some cases
+    if (config.fft.removeDC && (!dsp::get_freq_shift_allowed() || ISTX)) {
+        // In DSP (RX) mode, the DC is removed in the DSP processor if not explicity disabled
 
         fft_dcremoval(fft_slice_buffer);
     }

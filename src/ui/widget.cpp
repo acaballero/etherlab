@@ -586,6 +586,12 @@ void Widget::set_z_index(uint16_t index) {
 
 Rect Widget::clip(const Rect &rect) {
 
+    const Rect r = screen_rect().intersect(rect);
+
+    if (r.is_empty()) {
+        return r;
+    }
+
     std::vector<Rect> parts = visible_rects;
     bool overlapped = false;
 
@@ -598,38 +604,34 @@ Rect Widget::clip(const Rect &rect) {
         // #endif
     }
 
-    const Rect r = screen_rect().intersect(rect);
-    if (!r.is_empty()) {
-
-        overlapped = true;
-        std::vector<Rect> new_visible_parts;
-        for (auto &part : parts) {
-            std::vector<Rect> subtracted = (part - rect);
-            new_visible_parts.insert(new_visible_parts.end(), subtracted.begin(), subtracted.end());
-        }
-        parts = new_visible_parts;
+    overlapped = true;
+    std::vector<Rect> new_visible_parts;
+    for (auto &part : parts) {
+        std::vector<Rect> subtracted = (part - rect);
+        new_visible_parts.insert(new_visible_parts.end(), subtracted.begin(), subtracted.end());
+    }
+    parts = new_visible_parts;
 
 #if DEBUG_MSGS
-        // if (STR_IN(get_name(), "powm", "brpt", "bscn", "fbut")) {
-        //     LOG("Clipping widget %s with rect %d,%d", get_name(), rect.left(), rect.top());
-        //     LOG_RAW(" %d x %d\n", rect.width(), rect.height());
-        //     LOG("Current parts (%d)\n", visible_rects.size());
-        //     if (visible_rects.size()) {
-        //         for (auto p : visible_rects) {
-        //             LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
-        //         }
-        //     } else {
-        //     }
+    // if (STR_IN(get_name(), "powm", "brpt", "bscn", "fbut")) {
+    //     LOG("Clipping widget %s with rect %d,%d", get_name(), rect.left(), rect.top());
+    //     LOG_RAW(" %d x %d\n", rect.width(), rect.height());
+    //     LOG("Current parts (%d)\n", visible_rects.size());
+    //     if (visible_rects.size()) {
+    //         for (auto p : visible_rects) {
+    //             LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
+    //         }
+    //     } else {
+    //     }
 
-        //     LOG("New parts (%d)\n", parts.size());
-        //     if (parts.size()) {
-        //         for (auto p : parts) {
-        //             LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
-        //         }
-        //     }
-        // }
+    //     LOG("New parts (%d)\n", parts.size());
+    //     if (parts.size()) {
+    //         for (auto p : parts) {
+    //             LOG("%d,%d %d x %d\n", p.left(), p.top(), p.width(), p.height());
+    //         }
+    //     }
+    // }
 #endif
-    }
 
     if (parts.size() == 0) { // Widget is now hidden
         hidden(true);

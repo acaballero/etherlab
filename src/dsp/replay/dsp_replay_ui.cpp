@@ -147,17 +147,20 @@ Menu::result on_menu_event(Menu::eventMask e) {
 
         case Menu::exitEvent:
 
-            if (stopped) {
+            //    if (stopped) {
 
-                radio::freq_signal.remove(signal_token);
-                filePicker.end(); // Important to call begin/end as we need to lock the SD card while exploring
-                menu_size(DISPLAY_X_PIXELS, INFO_HEIGHT);
-                view_manager::mainView.remove_child(&replay_w);
-            } else {
-
-                status::pop_alert(status::ERROR, "Replaying!");
-                return Menu::quit; // Cancel exit
+            if (!stopped) {
+                dsp_stop();
             }
+            radio::freq_signal.remove(signal_token);
+            filePicker.end(); // Important to call begin/end as we need to lock the SD card while exploring
+            menu_size(DISPLAY_X_PIXELS, INFO_HEIGHT);
+            view_manager::mainView.remove_child(&replay_w);
+            //   } else {
+
+            //       status::pop_alert(status::ERROR, "Replaying!");
+            //       return Menu::quit; // Cancel exit
+            //   }
             break;
     }
 

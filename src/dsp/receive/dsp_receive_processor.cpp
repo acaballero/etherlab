@@ -66,6 +66,7 @@ void DspReceiveProcessor::work(const buffer_t<adc_type> *buffer) {
 
         } else if (info.processed_blocks) {
             // Underruns will surely happen at the start of the process
+            memset((char *)buffer->p, 0, buffer->count << 1);
             info.fifo_underruns++;
         }
         // GPIOD->BSRR |= GPIO_PIN_9 << 16;
