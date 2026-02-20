@@ -6,7 +6,7 @@
 #include "menuBase.h"
 #include "ui/menuILI9431Out.h"
 #include "menu_options.h"
-#include "menu_prompts.h"
+#include "menu_prompts.hpp"
 
 Menu::result doAlert(Menu::eventMask e, Menu::prompt &item);
 void menu_setup();

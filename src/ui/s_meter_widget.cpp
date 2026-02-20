@@ -11,7 +11,7 @@
 #include "frequency_widget.h"
 #include "stm32f4xx_hal.h"
 #include "view_manager.h"
-#include "menu_prompts.h"
+#include "menu_prompts.hpp"
 #include "agc.h"
 
 bool SMeterWidget::paint_callback() {

@@ -15,7 +15,7 @@
 #include "ui/menu_frequency.h"
 #include "view_manager.h"
 #include "stdio.h"
-#include "menu_prompts.h"
+#include "menu_prompts.hpp"
 
 bool FrequencyWidget::paint_callback() {
 

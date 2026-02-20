@@ -98,8 +98,6 @@ class RadiosondeTask : public ReceiveTaskBase {
     }
 
   private:
-    static constexpr size_t baseband_fs = 2457600;
-
     // Taps for a matched filter. They also shift frequency
     // Rectangular window filter
     // sample=38.4k, deviation=2400, symbol=9600

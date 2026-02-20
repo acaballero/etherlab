@@ -27,7 +27,7 @@ bool apply_compression(MODULATION_MODE mod);
 
 extern std::unique_ptr<Task> dsp_task;
 
-Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *, st_dsp_params *)> cb);
+Task *dsp_start(std::function<std::unique_ptr<Task>()> factory, std::function<void(st_dsp_params *, st_dsp_params *)> cb);
 Task *dsp_start(dsp::DSP_TASK_ID id, std::function<void(st_dsp_params *, st_dsp_params *)> cb);
 
 #ifdef __cplusplus

@@ -160,15 +160,18 @@ void APRSView::toggle_beacon() {
 void APRSView::start_rx() {
     //  LOG("START RX\n");
 
-    dsp_stop(); // Not this class responsibility, but we need to free some memory (can't allocate two receiver tasks)
-    dsp_start(std::make_unique<APRSTask>(), [this](st_dsp_params *status, st_dsp_params *) {
-        if (status->status == DSP_STATUS_STOPPED) {
-            if (status->error != DSP_ERR_NONE) {
-                exit();
-                status::pop_alert(status::ERROR, "Error starting APRS task");
+    dsp_start(
+        []() {
+            return std::make_unique<APRSTask>();
+        },
+        [this](st_dsp_params *status, st_dsp_params *) {
+            if (status->status == DSP_STATUS_STOPPED) {
+                if (status->error != DSP_ERR_NONE) {
+                    exit();
+                    status::pop_alert(status::ERROR, "Error starting APRS task");
+                }
             }
-        }
-    });
+        });
 
     set_agc_enabled(false); // Prevent sudden changes in gain from the digital AGC. TODO: Whether digital AGC is enabled or not should be a property of the
                             // modulation mode (create one for digital modes)
@@ -318,18 +321,21 @@ void APRSView::send_packet(std::string info) {
 
     LOG_IND(2, "Sending APRS packet: Address: %s | path: %s | payload: %s\n", config.callsign, aprs_settings.path, info.c_str());
 
-    auto aprs_tx_task = std::make_unique<AFSKTXTask>();
+    auto deviation = aprs_settings.deviation;
+    dsp_start(
+        [&buffer, deviation]() {
+            auto aprs_tx_task = std::make_unique<AFSKTXTask>();
+            aprs_tx_task->configure(1200, 2200, 1, 8, deviation, 300, 300); // Set a deviation for around 10k bandwidth
+            aprs_tx_task->set_data(buffer);
+            return aprs_tx_task;
+        },
+        [this](st_dsp_params *status, st_dsp_params *) {
+            if (status->status == DSP_STATUS_STOPPED) {
 
-    aprs_tx_task->configure(1200, 2200, 1, 8, aprs_settings.deviation, 300, 300); // Set a deviation for around 10k bandwidth
-    aprs_tx_task->set_data(buffer);
-
-    dsp_start(move(aprs_tx_task), [this](st_dsp_params *status, st_dsp_params *) {
-        if (status->status == DSP_STATUS_STOPPED) {
-
-            start_rx();
-            LOG_IND(-2, "Finished sending APRS packet\n");
-        }
-    });
+                start_rx();
+                LOG_IND(-2, "Finished sending APRS packet\n");
+            }
+        });
 }
 
 void APRSView::on_packet(APRSPacket *packet) {

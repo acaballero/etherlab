@@ -206,11 +206,18 @@ Task *dsp_start(std::unique_ptr<Task> task, std::function<void(st_dsp_params *, 
     return dsp_task.get();
 }
 
+Task *dsp_start(std::function<std::unique_ptr<Task>()> factory, std::function<void(st_dsp_params *, st_dsp_params *)> cb) {
+    dsp_stop(); // Have to stop first to free the current task memory, if any. They weight!
+    return dsp_start(factory(), cb);
+}
+
 Task *dsp_start(dsp::DSP_TASK_ID id, std::function<void(st_dsp_params *, st_dsp_params *)> cb) {
 
-    dsp_stop(); // Have to stop first to free the current task memory, if any. They weight!
-
-    return dsp_start(create_task(id), cb);
+    return dsp_start(
+        [id]() {
+            return create_task(id);
+        },
+        cb);
 }
 
 /*

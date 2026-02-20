@@ -12,7 +12,7 @@
 #include "ui/main_view.h"
 #include "ui/menu_widget.h"
 #include "ui/menu.h"
-#include "ui/menu_prompts.h"
+#include "ui/menu_prompts.hpp"
 #include "ui/view_manager.h"
 
 using namespace Menu;

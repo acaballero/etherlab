@@ -41,6 +41,7 @@ void RadiosondeView::init() {
 
     actions.actions[0].enabled = enable_crc;
     actions.actions[1].enabled = enable_log;
+    actions.actions[2].enabled = false;
 
     // Get some current parameters so they can be restored on exit
     previous_mode = config.mode;
@@ -104,15 +105,19 @@ void RadiosondeView::before_paint() {
 }
 
 void RadiosondeView::start_rx() {
-    //  LOG("START RX\n");
-    dsp_start(std::make_unique<dsp::RadiosondeTask>(), [this](st_dsp_params *status, st_dsp_params *) {
-        if (status->status == DSP_STATUS_STOPPED) {
-            if (status->error != DSP_ERR_NONE) {
-                exit();
-                status::pop_alert(status::ERROR, "Error starting Radiosonde task");
+
+    dsp_start(
+        []() {
+            return std::make_unique<dsp::RadiosondeTask>();
+        },
+        [this](st_dsp_params *status, st_dsp_params *) {
+            if (status->status == DSP_STATUS_STOPPED) {
+                if (status->error != DSP_ERR_NONE) {
+                    exit();
+                    status::pop_alert(status::ERROR, "Error starting Radiosonde task");
+                }
             }
-        }
-    });
+        });
 
     // To execute a task other than DSP_TASK_RECEIVE, set_mode has to be called
     main_board::set_mode(DIGITAL_RX);
@@ -141,6 +146,11 @@ void RadiosondeView::on_packet(radiosonde::Packet *packet) {
     }
 
     curr_packet = std::make_unique<radiosonde::Packet>(*packet);
+
+    // Enable 'map' button
+    menu_actions[3].enabled = true;
+    actions.dirty = true;
+    Menu::navigation_signal.emit(this);
 
     lblType.set_value(packet->type_string().c_str());
 

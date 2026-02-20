@@ -82,31 +82,34 @@ void st_fft_params::calc(uint32_t visible_span) {
         sample_freq = get_timer_exact_freq(dsp::get_max_decimation(), false, ADC_DMA_TIMER_CLOCK_HZ, sample_freq);
     }
 
-    // Resolution bandwidth (per FFT bin)
-    rbw = sample_freq / size / decimation_factor;
+    // Resolution bandwidth (Hz per FFT bin)
+    rbw = (float32_t)sample_freq / size / decimation_factor;
 
+    float32_t nbins_f;
     if (visible_span && visible_span < span) {
         span = visible_span;
-        nbins = span / rbw / n_slices;
+        nbins_f = ((float32_t)span / rbw / n_slices);
     } else {
-        nbins = size * USABLE_BW_FACTOR;
+        nbins_f = size * USABLE_BW_FACTOR;
     }
+
+    nbins = nbins_f;
 
     // Bandwidth per slice
     bw = span / 2 / n_slices;
 
     // Total bins
-    total_bins = nbins * n_slices;
+    total_bins = nbins_f * n_slices;
 
     // Pixels per bin
-    bin_width_px = (float)total_bins / (float)DISPLAY_X_PIXELS;
+    bin_width_px = (float32_t)(nbins_f * n_slices) / (float32_t)DISPLAY_X_PIXELS;
 
     display_rbw = rbw * bin_width_px;
 
-    slice_w_px = nbins / bin_width_px;
+    slice_w_px = nbins_f / bin_width_px;
 
     // first bin to show in each slice
-    start_bin = (uint8_t)((float)(size - nbins) / 2.0);
+    start_bin = (uint8_t)(((float32_t)size - nbins_f) / 2.0f);
 
     span_if_start = radio::f_dsp_if - (span >> 1U);
     span_f_start = config.vfo[config.vfo_ix].freq - (span >> 1U);

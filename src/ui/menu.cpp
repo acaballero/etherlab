@@ -37,7 +37,7 @@
 #include <stm32f4xx.h>
 #include "settings.h"
 #include "menu_options.h"
-#include "menu_prompts.h"
+#include "menu_prompts.hpp"
 #include "standby.h"
 #include "ui/lock_view.h"
 

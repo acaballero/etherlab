@@ -64,6 +64,7 @@ class RadiosondeView : public View {
                                              [this]() {
                                                  enable_crc = !enable_crc;
                                                  menu_actions[0].enabled = enable_crc;
+                                                 actions.dirty = true;
                                                  Menu::navigation_signal.emit(this);
                                              }},
                                             {"Log",
@@ -71,6 +72,7 @@ class RadiosondeView : public View {
                                              [this]() {
                                                  enable_log = !enable_log;
                                                  menu_actions[1].enabled = enable_log;
+                                                 actions.dirty = true;
                                                  Menu::navigation_signal.emit(this);
                                              }},
                                             {"Map",

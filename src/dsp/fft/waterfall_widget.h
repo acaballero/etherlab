@@ -52,10 +52,25 @@ class WaterfallWidget : public Widget {
     // const uint32_t waterfall_palette_rgb256_debug[FFT_WATERFALL_NCOLORS] = {0x000000, 0xffffff, 0x0000c8, 0x4B00e3, 0x7000f1, 0xa71ad4, 0xb935aa, 0xca507f,
     //                                                                       0xdc6a55, 0xed852a, 0xffa000, 0xffbf55, 0xffcf7f, 0xffdfaa, 0xffefd4, 0xffffff};
 
-    const uint32_t waterfall_palette_rgb256_dx[FFT_WATERFALL_NCOLORS] = {0x000010, 0x000040, 0x000070, 0x100090, 0x3000b0, 0x6000d0, 0x8000f0, 0xa000d0,
-                                                                         0xc000b0, 0xe00090, 0xff0060, 0xff0030, 0xff0000, 0xd00000, 0xa00000, 0x600000};
+    const uint32_t waterfall_palette_rgb256_dx[FFT_WATERFALL_NCOLORS] = {
+        0x000008, // 0  very deep blue-black
+        0x000020, // 1  dark blue
+        0x000060, // 2  brighter blue (big jump)
+        0x1000A0, // 3  indigo
+        0x4000D0, // 4  violet
+        0x7000E0, // 5  purple-magenta
+        0xA000C0, // 6  magenta
+        0xD00090, // 7  pink-red
+        0xF00060, // 8  red
+        0xFF3030, // 9  red-orange
+        0xFF6000, // 10 orange
+        0xFF9000, // 11 bright orange
+        0xFFB000, // 12 yellow-orange
+        0xFFD000, // 13 yellow
+        0xFFE080, // 14 pale yellow
+        0xFFFFFF  // 15 white (compressed highlight)};
+    };            // Buffer to convert the waterfall palette from RGB888 to RGB565
 
-    // Buffer to convert the waterfall palette from RGB888 to RGB565
     // TODO: Just create a RGB565 palette
     uint16_t waterfall_palette_rgb565[FFT_WATERFALL_NCOLORS];
 
@@ -67,6 +82,8 @@ class WaterfallWidget : public Widget {
     int16_t bins_db[width];
 
     WATERFALL_MODE mode{MAX_HOLD};
+
+    bool dither = false;
 
     uint16_t scroll_period;
 
@@ -80,6 +97,9 @@ class WaterfallWidget : public Widget {
     bool on_touch(const st_inputEvent e) override;
 
     uint8_t step;
+
+    // Top line in the buffer
+    uint16_t top_y{0};
 };
 
 #endif // TRX_FRONTEND_WATERFALL_WIDGET_H

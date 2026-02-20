@@ -154,7 +154,7 @@ void check_agc() {
         const int excess_db = power_dbm - target_level;
 
         // Reduce gain by at least the excess amount (in 3dB steps)
-        const int steps_needed = (excess_db + 2) / 6; // Round up
+        const int steps_needed = (excess_db + 2) / 3;
 
         IF_GAIN vga = vga_gain, vgb = vgb_gain;
         for (int i = 0; i < steps_needed && (vga < MIN_VGA_GAIN || vgb < MIN_VGB_GAIN); i++) {

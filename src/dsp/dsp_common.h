@@ -133,7 +133,7 @@ enum DSP_ERROR {
 #define DSP_BANDWIDTH 250000
 // The usable percentage of the DSP bandwidth. We discard frequencies on the
 // transition band of the low pass filter
-#define USABLE_BW_FACTOR 0.80
+#define USABLE_BW_FACTOR 0.80f
 #define MAX_DECIMATION_FACTOR 4 // Mostly limited by memory
 #define MAX_DSP_DECIMATION_FACTOR 32
 

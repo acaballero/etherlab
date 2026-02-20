@@ -300,6 +300,7 @@ bool initialized = false;
 void fft_loop();
 
 namespace fft {
+Signal db_range_signal;
 os::periodic_task snr_task(FFT_SNR_REFRESH_PERIOD_MS, calc_snr);
 os::periodic_task fft_task(config.fft.refresh_period_ms, fft_loop);
 os::periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
@@ -653,6 +654,8 @@ void calculate_noise_floor() {
     fft_noise_floor_db = (fft_noise_floor_db - (alpha_noise * (fft_noise_floor_db - median)));
     fft_max_db = (fft_max_db - (alpha_max_db * (fft_max_db - max)));
 
+    auto min_db = config.fft.min_db;
+    auto max_db = config.fft.max_db;
     if (config.fft.min_db_auto) {
         // Set the dB scale automatically
 
@@ -673,6 +676,10 @@ void calculate_noise_floor() {
         }
 
         config.fft.min_db = constrain(config.fft.min_db, FFT_MIN_DB, config.fft.max_db);
+    }
+
+    if (config.fft.min_db != min_db || config.fft.max_db != max_db) {
+        db_range_signal.emit(nullptr);
     }
 }
 

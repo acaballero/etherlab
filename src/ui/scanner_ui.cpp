@@ -16,7 +16,7 @@
 #include "status.h"
 #include "scanner.h"
 #include "menu_frequency.h"
-#include "menu_prompts.h"
+#include "menu_prompts.hpp"
 
 namespace scanner_ui {
 

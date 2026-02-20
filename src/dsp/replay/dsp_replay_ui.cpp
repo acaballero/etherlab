@@ -30,11 +30,20 @@ int8_t gain = 0;
 int8_t prev_gain_db = 0;
 bool stopped = true;
 bool loop = false;
-SignalToken signal_token;
+
 WaveInfo wi;
 ReplayWidget replay_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y - 35, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 6 + 35}, &lcd, "replay"};
 // GainInfoWidget gain_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y - 35, DISPLAY_X_PIXELS / 2, 20}, &lcd};
 std::unique_ptr<File> file;
+
+char tempFreqBuf[] = "00 000 000 000";
+
+void on_freq_updated(uint64_t v) {
+    radio::set_frequency(v);
+    char buf[16];
+    format_long(v, buf);
+    sprintf(tempFreqBuf, "%s", buf);
+}
 
 void on_freq_signal(void *, const void *args) {
     radio::st_freq_event event = *((radio::st_freq_event *)args);
@@ -101,8 +110,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             break;
 
         case Menu::enterEvent: {
-            signal_token = radio::freq_signal.add(NULL, on_freq_signal);
-
+            on_freq_updated(radio::get_frequency());
             // Select the last saved file as default
             io::path base_path = io::path{WAVEFILE_DEFAULT_FOLDER} + "/";
             FSO fso{base_path};
@@ -152,7 +160,7 @@ Menu::result on_menu_event(Menu::eventMask e) {
             if (!stopped) {
                 dsp_stop();
             }
-            radio::freq_signal.remove(signal_token);
+
             filePicker.end(); // Important to call begin/end as we need to lock the SD card while exploring
             menu_size(DISPLAY_X_PIXELS, INFO_HEIGHT);
             view_manager::mainView.remove_child(&replay_w);
@@ -179,26 +187,31 @@ result change_gain(eventMask) {
     return proceed;
 }
 
-TOGGLE(loop, loopToggle, "Loop: ", doNothing, noEvent, noStyle //,doExit,enterEvent,noStyle
-       ,
-       VALUE("Yes", true, doNothing, noEvent), VALUE("No", false, doNothing, noEvent))
+TOGGLE(loop, loopToggle, "Loop: ", doNothing, noEvent, noStyle, VALUE("Yes", true, doNothing, noEvent), VALUE("No", false, doNothing, noEvent))
 
-Menu::result on_freq_updated(); // Forward declaration
+result edit_freq(eventMask, navNode &) {
+    if (stopped) {
+        radio::set_band(radio::BAND_AUTO); // In case there's a band selected we need to be able to select any frequency
+        Menu::open_keypad<uint64_t>(
+            radio::get_frequency(), "Hz", "Frequency", 0, false,
+            [](uint64_t v) {
+                on_freq_updated(v);
+            },
+            radio::get_min_frequency(), radio::get_max_frequency());
 
-menu_frequency::FreqEditField freqEdit((Menu::callback)on_freq_updated);
-
-Menu::result on_freq_updated() {
-    radio::set_frequency(freqEdit.get_frequency());
-    return Menu::proceed;
+        return proceed;
+    }
+    return quit;
 }
 
+labelPrompt freqEditMenu((const char *)"Frequency", tempFreqBuf, edit_freq, enterEvent, noStyle);
 MENU(replayMenu, "Replay", on_menu_event, (eventMask)(enterEvent | exitEvent | selBlurEvent), noStyle,
 
      OP("Start / Stop", change_dsp_status, enterEvent), SUBMENU(filePicker), SUBMENU(loopToggle),
      FIELD(config.hw.dac_offset, "DAC offset:", "", 0, 3000, 1, 0, doNothing, noEvent, noStyle),
      FIELD(gain, "Gain:", " dB", DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB, 1, 0, change_gain, exitEvent, noStyle),
 
-     OBJ(freqEdit)
+     OBJ(freqEditMenu)
 
 )
 
@@ -232,7 +245,7 @@ Menu::result on_filepicker(eventMask e) {
             filePicker.enable_deletion();
         } else {
             replayMenu[0].disable();
-            freqEdit.disable();
+            freqEditMenu.disable();
         }
     } else if (fres == FR_OK) {
 
@@ -242,15 +255,13 @@ Menu::result on_filepicker(eventMask e) {
         if (e == updateEvent) {
 
             replayMenu[0].enable();
-            freqEdit.enable();
+            freqEditMenu.enable();
 
             if (wi.carrier_freq) {
-                freqEdit.set_frequency(wi.carrier_freq);
+                on_freq_updated(wi.carrier_freq);
             } else {
-                freqEdit.set_frequency(radio::get_frequency());
+                on_freq_updated(radio::get_frequency());
             }
-
-            on_freq_updated();
         }
 
         replay_w.setWaveInfo(wi);
@@ -260,7 +271,7 @@ Menu::result on_filepicker(eventMask e) {
         filePicker.disable_selection();
         filePicker.disable_deletion();
         replayMenu[0].disable();
-        freqEdit.disable();
+        freqEditMenu.disable();
     }
 
     return proceed;

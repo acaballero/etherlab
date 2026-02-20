@@ -12,7 +12,7 @@
 #include "main_board.h"
 #include "menuIo.h"
 #include "menuDefs.h"
-#include "ui/menu_prompts.h"
+#include "ui/menu_prompts.hpp"
 #include "stdio.h"
 #include "dsp.h"
 

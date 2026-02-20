@@ -8,7 +8,7 @@
 #include "../agc.h"
 #include "Display_afb.h"
 #include "input/inputEvent.h"
-#include "menu_prompts.h"
+#include "menu_prompts.hpp"
 #include "radio.h"
 #include "printf.h"
 #include "dsp/fft/fft.h"

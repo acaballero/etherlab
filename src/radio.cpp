@@ -114,7 +114,7 @@ const st_filter if_filters[8] = {
 
 };
 const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "10 m",  "11 m", "12 m", "15 m",
-                           "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "None"};
+                           "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "All",  "None"};
 const char *modulation_names[] = {"LSB", "USB", "FM", "WFM", "AM", "CW", "NONE"};
 const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 150000, 6000, 0};
 const char *IFFilterNames[] = {"300 Hz", "3 k", "6 k", "7.5 k", "9 k", "15 k", "150 k", "180 k", "Auto"};
