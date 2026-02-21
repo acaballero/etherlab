@@ -32,14 +32,13 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     pow_metrics_w.set_name("powm");
     pow_metrics_w.set_z_index(200);
 
-    fft_w.set_z_index(150);
-
     iqbal_w.set_name("iqbal");
     status_w.set_name("status");
     header_w.set_name("head");
 
     fft_w.set_show_fps(true);
     fft_w.set_z_index(20);
+    fft_x.set_z_index(20);
     dbscale_w.set_z_index(10);
     // waterfall_w.set_show_fps(true);
     tune_w.set_visible(config.debug);
@@ -61,7 +60,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     children_.reserve(40);
 
     add_children({&menu_w, &header_w, &pow_metrics_w, &tune_w, &smeter_w, &snr_w, &radio_w, &powmeter_w, &info_w, &status_w, &dbscale_w, &frequency_buttons_w,
-                  &frequency_w, &iqbal_w, &waterfall_w, &fft_w, &optionButtonsView});
+                  &frequency_w, &iqbal_w, &waterfall_w, &fft_w, &fft_x, &optionButtonsView});
 }
 
 void MainView::before_paint() {

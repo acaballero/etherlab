@@ -123,6 +123,8 @@ class Display {
 
     virtual void reset() = 0;
 
+    virtual void scroll(int step){};
+
     bool draw_area(Area *area, Painter *painter);
 
     bool draw_area(Area *, Painter *, bool pad_display);
@@ -141,9 +143,9 @@ class Display {
 
     void writeLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color, uint8_t width);
 
-    void writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+    void writeRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 
-    void writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
+    void writeRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
 
     void writeRect(DisplayPoint p, DisplaySize s, Color c);
 

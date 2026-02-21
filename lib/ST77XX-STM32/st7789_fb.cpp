@@ -214,3 +214,20 @@ HAL_StatusTypeDef ST7789::setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1
 
     return ret;
 }
+
+HAL_StatusTypeDef ST7789::setVerticalScrollDefinition(uint16_t topFixed, uint16_t scrollArea, uint16_t bottomFixed) {
+    HAL_StatusTypeDef ret = writeCommand(ST77XX_VSCRDEF);
+    uint8_t data[6] = {(uint8_t)(topFixed >> 8),     (uint8_t)(topFixed & 0xFF),  (uint8_t)(scrollArea >> 8),
+                       (uint8_t)(scrollArea & 0xFF), (uint8_t)(bottomFixed >> 8), (uint8_t)(bottomFixed & 0xFF)};
+    return (ret == HAL_OK) ? writeData(data, sizeof(data)) : ret;
+}
+
+HAL_StatusTypeDef ST7789::setVerticalScrollStart(uint16_t startLine) {
+    HAL_StatusTypeDef ret = writeCommand(ST77XX_VSCRSADD);
+    uint8_t data[2] = {(uint8_t)(startLine >> 8), (uint8_t)(startLine & 0xFF)};
+    return (ret == HAL_OK) ? writeData(data, sizeof(data)) : ret;
+}
+
+void ST7789::scroll(int step) {
+    setVerticalScrollStart(step);
+}

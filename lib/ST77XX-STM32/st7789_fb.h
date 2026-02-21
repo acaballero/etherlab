@@ -128,6 +128,9 @@
 #define ST7789_CS_Clr() HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_RESET)
 #define ST7789_CS_Set() HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_SET)
 
+#define ST77XX_VSCRDEF 0x33
+#define ST77XX_VSCRSADD 0x37
+
 class ST7789 : public Display {
 
   public:
@@ -145,6 +148,8 @@ class ST7789 : public Display {
 
     int16_t backlight(bool b) override;
 
+    void scroll(int step) override;
+
   private:
     HAL_StatusTypeDef writeCommand(uint8_t data) override;
 
@@ -155,6 +160,10 @@ class ST7789 : public Display {
     HAL_StatusTypeDef InitDisplayDataTransfer() override;
 
     HAL_StatusTypeDef EndDisplayDataTransfer() override;
+
+    HAL_StatusTypeDef setVerticalScrollDefinition(uint16_t topFixed, uint16_t scrollArea, uint16_t bottomFixed);
+
+    HAL_StatusTypeDef setVerticalScrollStart(uint16_t startLine);
 };
 
 #endif

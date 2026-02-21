@@ -12,8 +12,7 @@
 #include <vector>
 
 #define FFT_HEIGHT 70
-#define FFT_X_AXIS_HEIGHT 12
-#define FFT_WIDGET_HEIGHT (FFT_HEIGHT + FFT_X_AXIS_HEIGHT)
+#define FFT_WIDGET_HEIGHT FFT_HEIGHT
 #define FFT_ZONE_WIDTH (DISPLAY_X_PIXELS - DBSCALE_WIDTH)
 
 class FFTWidget : public Widget {
@@ -31,7 +30,7 @@ class FFTWidget : public Widget {
     void draw_peak();
     void draw_noise_floor();
     void draw_spectrum();
-    void draw_h_labels();
+
     void fetch_stations_in_range();
 
     bool on_touch(const st_inputEvent) override;
@@ -50,7 +49,11 @@ class FFTWidget : public Widget {
 
     std::pair<int, int> bw_bins;
 
-    bool refresh_x_axis;
+    bool refresh_all{true};
+
+    int16_t min_dirty_y{0};
+    int16_t min_box_y{0};
+    int16_t fft_height{0};
 };
 
 #endif // TRX_FRONTEND_FFT_WIDGET_H

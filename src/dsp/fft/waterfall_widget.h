@@ -83,7 +83,7 @@ class WaterfallWidget : public Widget {
 
     WATERFALL_MODE mode{MAX_HOLD};
 
-    bool dither = false;
+    bool dither = true;
 
     uint16_t scroll_period;
 

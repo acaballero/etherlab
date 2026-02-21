@@ -34,6 +34,8 @@ FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYL
             task_id = os::task_manager.set_timeout(500, [this]() { // Debounce
                 fetch_stations_in_range();
             });
+
+            refresh_all = true;
         }
     });
 }
@@ -52,11 +54,11 @@ void FFTWidget::draw_bandwidth() {
 
     for (uint16_t i = bm_s; i <= bm_e; i++) {
         if (i != bm_m) {
-            display->writeVertLine(i, 0, FFT_HEIGHT - 1, SWAP_BYTES(RGB888_TO_RGB565(0x111133)));
+            display->writeVertLine(i, 0, fft_height - 1, SWAP_BYTES(RGB888_TO_RGB565(0x111133)));
         }
     }
 
-    display->writeVertLine(bm_m, 0, FFT_HEIGHT - 1, C565_GREY_DARKER);
+    display->writeVertLine(bm_m, 0, fft_height - 1, C565_GREY_DARKER);
 }
 
 void FFTWidget::fetch_stations_in_range() {
@@ -78,7 +80,7 @@ void FFTWidget::draw_freq_marks() {
     FontDef *font = (FontDef *)&Font_Fixed5x7;
     display->setFont(font);
     uint32_t height = font->height + padding_v * 2 - 1;
-    uint32_t margin_top = 1;
+    int32_t margin_top = 1 - min_box_y;
     Color bg = C565_DARKEST;
 
     // Closest to center are drawn later so the last one is not overlapped
@@ -102,10 +104,10 @@ void FFTWidget::draw_freq_marks() {
         if (x0 >= 0 && x1 < FFT_ZONE_WIDTH) {
 
             // The drawing zone is slightly smaller than the spectrum width to have space for the DB scale widget
-            display->writeVertLine(x, margin_top + height, FFT_HEIGHT, C565_GREY_DARKER);
+            display->writeVertLine(x, margin_top + height, fft_height, C565_GREY_DARKER);
 
             display->setBgColor(bg);
-            display->fill({(uint32_t)x0, margin_top}, {ts.width() + padding * 2, height}, bg);
+            display->fill({(uint32_t)x0, static_cast<uint32_t>(margin_top)}, {ts.width() + padding * 2, height}, bg);
             display->writeRect(x0, margin_top - 1, x0 + ts.width() + padding * 2, margin_top + height - 1, C565_BLACK);
 
             display->gotoXY(x - (ts.width() / 2), margin_top + padding_v);
@@ -147,7 +149,7 @@ void FFTWidget::draw_span_marks() {
         display->print(buf);
     }
 
-    uint8_t y0 = 2;
+    int16_t y0 = 2 - min_box_y;
     uint16_t x2 = FFT_ZONE_WIDTH - 40;
     uint16_t span = fft::fft_params.span / 1000 / 2;
 
@@ -164,43 +166,6 @@ void FFTWidget::draw_span_marks() {
     sprintf(buf, "+%3dk", span);
     display->print(buf);
     display->setFont((FontDef *)&Font_7x10);
-}
-
-void FFTWidget::draw_h_labels() {
-
-    char buf[8];
-    int max_label_width = 5 * 5;
-    int n_divs = DISPLAY_X_PIXELS / (max_label_width << 1);
-    // Must be even to have one tick at the center
-    if (n_divs % 2 == 1) {
-        n_divs--;
-    }
-
-    uint32_t delta_khz = fft::fft_params.span / n_divs / 1000;
-    uint16_t delta_x = DISPLAY_X_PIXELS / n_divs;
-
-    display->setFont((FontDef *)&Font_Fixed5x7);
-    display->setColor(C565_GREY_LIGHT);
-    display->setBgColor(C565_TRANSPARENT);
-
-    // Start
-    float f_khz = (config.vfo[config.vfo_ix].freq / 1000) - (((n_divs - 1) >> 1) * delta_khz);
-    uint16_t x = (DISPLAY_X_PIXELS >> 1) - (((n_divs >> 1) - 1) * delta_x);
-
-    for (int i = 0; i < n_divs - 1; i++) {
-        float f_mhz = (float)f_khz / 1000.0f;
-        if (delta_khz > 500) {
-            sprintf(buf, "%.1f", f_mhz);
-        } else if (delta_khz > 100) {
-            sprintf(buf, "%.2f", f_mhz);
-        } else {
-            sprintf(buf, "%.3f", f_mhz);
-        }
-        display->gotoXY(x - (((int)strlen(buf)) * 2), FFT_HEIGHT + 3);
-        display->print(buf);
-        f_khz += delta_khz;
-        x += delta_x;
-    }
 }
 
 void FFTWidget::draw_peak() {
@@ -226,7 +191,7 @@ void FFTWidget::draw_peak() {
 void FFTWidget::draw_noise_floor() {
     if (fft_calc_noise_floor_period_ms > 0) {
         uint16_t py =
-            FFT_HEIGHT - (uint8_t)(((float)(fft::fft_noise_floor_db - config.fft.min_db) / (float)(config.fft.max_db - config.fft.min_db)) * (float)FFT_HEIGHT);
+            fft_height - (uint8_t)(((float)(fft::fft_noise_floor_db - config.fft.min_db) / (float)(config.fft.max_db - config.fft.min_db)) * (float)FFT_HEIGHT);
         display->writeLine(0, py, FFT_ZONE_WIDTH - 1, py, C565_PINK);
     }
 }
@@ -234,8 +199,8 @@ void FFTWidget::draw_noise_floor() {
 void FFTWidget::draw_spectrum_fill() {
     for (uint16_t i = 0; i < FFT_ZONE_WIDTH; i++) {
         // Although the fft_display array is wider, we will only draw the zone width to allow for the Db scale to be drawn next to it
-        if (fft_display[i] < FFT_HEIGHT) {
-            display->writeVertLine(i, fft_display[i], FFT_HEIGHT, spectrum_fill_color);
+        if (fft_display[i] - min_box_y < fft_height) {
+            display->writeVertLine(i, fft_display[i] - min_box_y, fft_height, spectrum_fill_color);
         }
     }
 }
@@ -243,10 +208,12 @@ void FFTWidget::draw_spectrum_fill() {
 void FFTWidget::draw_spectrum_line() {
 
     int y1, y2;
+
     for (uint16_t i = 0; i < FFT_ZONE_WIDTH - 1; i++) {
         // Although the fft_display array is wider, we will only draw the zone width to allow for the Db scale to be drawn next to it
-        y1 = fft_display[i];
-        y2 = fft_display[i + 1];
+
+        y1 = fft_display[i] - min_box_y;
+        y2 = fft_display[i + 1] - min_box_y;
 
         display->writeLine(i, y1, i + 1, y2, spectrum_line_color);
     }
@@ -296,15 +263,11 @@ bool FFTWidget::paint_callback() {
 
     draw_spectrum();
 
-    draw_peak();
+    // draw_peak();
 
     draw_noise_floor();
 
     draw_span_marks();
-
-    if (refresh_x_axis) {
-        draw_h_labels();
-    }
 
     return true;
 }
@@ -312,8 +275,45 @@ bool FFTWidget::paint_callback() {
 void FFTWidget::before_paint() {
 
     if (this->dirty()) {
-        refresh_x_axis = f_start != fft::fft_params.span_f_start || fft_span != fft::fft_params.span;
+
+        // This is a real clunky hack to gain some fps by painting just the updated area.
+        // However, the whole area is refreshed in all these cases.
+        // Specifically,checking if there are a number of visible parts is to detect
+        // when the widget is being painted in overlapped mode (don't want to mess with this now)
+        // How much is gained? 1-4 fps (not much) depending not only on the reduced area size but also on the scheduler load (if other tasks take time, this
+        // will refresh at lower rates anyway)
+        refresh_all = refresh_all || dsp::adc_overload || agc::is_overload() || config.debug || !visible_rects.empty(); //:: f_start !=
+        // fft::fft_params.span_f_start || fft_span != fft::fft_params.span;
         bw_bins = fft::get_bandwidth_pixel_range();
+
+        if (refresh_all) {
+            min_dirty_y = 0;
+            min_box_y = 0;
+            fft_height = FFT_HEIGHT;
+            refresh_all = false;
+            set_area();
+        } else {
+
+            auto last_dirty_y = min_dirty_y;
+            min_dirty_y = FFT_HEIGHT;
+            for (uint16_t i = 0; i < FFT_ZONE_WIDTH - 1; i++) {
+                // Although the fft_display array is wider, we will only draw the zone width to allow for the Db scale to be drawn next to it
+
+                if (fft_display[i] < min_dirty_y) {
+                    min_dirty_y = fft_display[i];
+                }
+            }
+
+            if (min_dirty_y > FFT_HEIGHT - DISPLAY_SLICE_HEIGHT) { // Paint at least one slice
+                min_dirty_y = FFT_HEIGHT - DISPLAY_SLICE_HEIGHT;
+            }
+
+            min_box_y = min2(last_dirty_y, min_dirty_y);
+
+            area.box.y = _parent_rect.top() + min_box_y;
+            area.box.height = FFT_HEIGHT - min_box_y;
+            fft_height = area.box.height;
+        }
     }
 }
 

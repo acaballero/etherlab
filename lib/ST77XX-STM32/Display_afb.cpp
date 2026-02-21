@@ -226,7 +226,7 @@ bool Display::draw_area(Area *area, Painter *painter, bool pad_display) {
 #if DEBUG_LCD
             if (area->show_fps) {
                 writeString(0, curr_area->box.height - 11 - oy, str, (FontDef *)&Font_7x10, C565_BLACK, C565_WHITE);
-                writeLine(0, curr_area->box.height - 12 - oy, 21, curr_area->box.height - 12, C565_WHITE);
+                writeLine(0, curr_area->box.height - 12 - oy, 24, curr_area->box.height - 12, C565_WHITE);
             }
 #endif
             busy = false;
@@ -715,12 +715,12 @@ void Display::writeRect(DisplayPoint p, DisplaySize s, Color c) {
     writeRect(p.x, p.y, p.x + s.w, p.y + s.h, c);
 }
 
-void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+void Display::writeRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
     // select();
     writeRect(x1, y1, x2, y2, C565_WHITE);
 }
 
-void Display::writeRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color) {
+void Display::writeRect(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color) {
     // select();
     writeLine(x1, y1, x2, y1, color);
     writeLine(x1, y1, x1, y2, color);

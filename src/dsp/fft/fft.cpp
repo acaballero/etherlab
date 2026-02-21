@@ -1081,6 +1081,7 @@ void update_fft() {
     fft_peak_v = FFT_MIN_DB;
     fft_peak = FFT_MIN_DB;
     fft_peak_bin = 0;
+    fft_slice_n = 0;
 
     m = HAL_GetTick();
 

@@ -31,6 +31,10 @@ struct Box {
 
     int16_t x{0}, y{0};
     uint16_t width{0}, height{0};
+
+    constexpr bool operator==(const Box &other) const {
+        return x == other.x && y == other.y && width == other.width && height == other.height;
+    }
 };
 
 struct Area {
