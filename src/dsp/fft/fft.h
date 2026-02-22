@@ -59,6 +59,7 @@ std::pair<int, int> get_bandwidth_pixel_range();
 void set_waterfall_speed(uint16_t);
 void apply_fft_params(st_fft_params);
 void enable_iq_balance(bool v);
+
 extern Signal signal;
 extern Signal db_range_signal;
 

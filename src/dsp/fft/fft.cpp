@@ -104,7 +104,7 @@ uint64_t fft_peak_f = 0;
 
 uint32_t overlap_factor = 2;
 
-bool first_frame = true;
+uint64_t fft_freq = 0;
 // TODO: Move to storable properties
 
 bool fft_estimate_iq_balance = false;
@@ -172,78 +172,7 @@ std::pair<int, int> get_bandwidth_pixel_range() {
 
     return std::pair<int, int>{bm_s, bm_e};
 }
-/*
-void calc_snr_2() {
-const std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
-const int bin_start = bin_limits.first;
-const int bin_end = bin_limits.second;
-const int start_bin =fft::fft_params.start_bin;
-const int end_bin = start_bin +fft::fft_params.nbins;
 
-float sigplusnoise = 0.0f;
-float total_signal = 0.0f;
-
-const float inv_ten = 0.1f;
-const float *fft_ptr = &fft_display_db[start_bin];
-
-// Process 4 elements at a time for better instruction pipeline usage
-int i = start_bin;
-const int unroll_end = end_bin - 3;
-
-for (; i < unroll_end; i += 4) {
-    // Calculate 4 power values
-    const float p0 = powf(10.0f, fft_ptr[0] * inv_ten);
-    const float p1 = powf(10.0f, fft_ptr[1] * inv_ten);
-    const float p2 = powf(10.0f, fft_ptr[2] * inv_ten);
-    const float p3 = powf(10.0f, fft_ptr[3] * inv_ten);
-
-    // Accumulate signal+noise conditionally
-    if (i >= bin_start && i <= bin_end) {
-        sigplusnoise += p0;
-    }
-    if ((i + 1) >= bin_start && (i + 1) <= bin_end) {
-        sigplusnoise += p1;
-    }
-    if ((i + 2) >= bin_start && (i + 2) <= bin_end) {
-        sigplusnoise += p2;
-    }
-    if ((i + 3) >= bin_start && (i + 3) <= bin_end) {
-        sigplusnoise += p3;
-    }
-
-    // Accumulate total signal
-    total_signal += p0 + p1 + p2 + p3;
-
-    fft_ptr += 4;
-}
-
-// Handle remaining elements
-for (; i < end_bin; i++) {
-    const float p = powf(10.0f, (*fft_ptr) * inv_ten);
-    if (i >= bin_start && i <= bin_end) {
-        sigplusnoise += p;
-    }
-    total_signal += p;
-    fft_ptr++;
-}
-
-// Rest of calculation identical to original
-const float noise_floor_mag = powf(10.0f, fft_noise_floor_db * inv_ten);
-const float noise = noise_floor_mag * (float)(bin_end - bin_start + 1);
-const float signal = max2(sigplusnoise - noise, 1e-14f);
-const float curr_snr = 10.0f * fasterlog(signal / noise);
-
-snr = snr - 0.3f * (snr - curr_snr);
-
-dbm_instant = 10.0f * fasterlog(sigplusnoise);
-const float total_dbm_instant = 10.0f * fasterlog(total_signal);
-dbm = dbm - 0.3f * (dbm - dbm_instant);
-
-const float bandwidth_ratio = (float)radio::get_bandwidth_hz() /fft::fft_params.span;
-const float papr_db = 3.0f + 10.0f * bandwidth_ratio;
-dbm_peak = total_dbm_instant + papr_db;
-}
-*/
 void calc_snr() {
 
     std::pair<int, int> bin_limits = get_bandwidth_pixel_range();
@@ -479,6 +408,55 @@ void generate_smoothing_gain_lut() {
     }
 }
 
+void offset_buffer(fft_type *buffer, size_t count, int offset, fft_type value) {
+    void *orig = offset > 0 ? buffer : buffer - offset;
+    void *dest = offset > 0 ? buffer + offset : buffer;
+
+    memmove(dest, orig, (count - offset) * sizeof(fft_type));
+
+    // Clear the start or end of the buffer
+    uint16_t xs = offset > 0 ? 0 : count + offset;
+    uint16_t xe = xs + abs(offset);
+
+    while (xs < xe) {
+        buffer[xs] = value;
+        xs++;
+    }
+}
+
+void fft_frequency_signal_callback(void *, const void *args) {
+
+    radio::st_freq_event event = *((radio::st_freq_event *)args);
+
+    switch (event.event) {
+
+        case radio::BEFORE_UPDATE:
+
+            break;
+        case radio::AFTER_UPDATE:
+
+            // Displace the buffers and reset the FIFO
+
+            if (fft_freq == 0) {
+                fft_freq = radio::get_frequency(); // initialize it
+            } else {
+                int32_t current_freq = (int32_t)radio::get_frequency();
+                int32_t f_offset = (int32_t)fft_freq - current_freq;
+
+                // Calculate the equivalent width in display pixels
+                int32_t offset_px = round((float32_t)f_offset / fft::fft_params.display_rbw);
+                if (offset_px != 0) {
+                    offset_px = constrain(offset_px, -DISPLAY_X_PIXELS, DISPLAY_X_PIXELS);
+                    offset_buffer(fft_display_db, DISPLAY_X_PIXELS, offset_px, FFT_MIN_DB);
+                    offset_buffer(fft_display, DISPLAY_X_PIXELS, offset_px, FFT_HEIGHT);
+                    fft_fifo.reset();
+                    fft_freq = current_freq;
+                }
+            }
+            break;
+    }
+}
+
 void fft_init() {
 
     LOG("FFT init\n");
@@ -529,6 +507,8 @@ void fft_init() {
         // The IQ balancer is disabled when the signal comes from the DSP DACs
         enable_iq_balance(config.mode != DIGITAL_TX);
     });
+
+    radio::freq_signal.add(NULL, fft_frequency_signal_callback);
 }
 
 void reset_iq_balancer() {
@@ -782,7 +762,7 @@ void process_fft(float32_t *v) {
             if (bin_ix != last_bin_ix) {
                 db = fft_output_db(fft_output[bin_ix]);
                 fft_output[bin_ix] = db;
-                gain = first_frame ? 0.4 : get_smooth_gain(db);
+                gain = get_smooth_gain(db);
                 last_bin_ix = bin_ix;
             }
 
@@ -830,7 +810,7 @@ void process_fft(float32_t *v) {
 
             if (nix == next_display_ix) { // store the accumulated value of the display
 
-                gain = first_frame ? 1 : get_smooth_gain(db);
+                gain = get_smooth_gain(db);
 
                 db_constrained = constrain(db, config.fft.min_db, config.fft.max_db);
 
@@ -1069,12 +1049,7 @@ void update_fft() {
     uint64_t m;
     uint8_t slices;
 
-    uint64_t last_start_freq = fft::fft_params.span_f_start;
-
     fft_config(fft::fft_params.span);
-
-    // If the span has changed, cancel the smooth factor for a frame so the persistence won't linger
-    first_frame = last_start_freq != fft::fft_params.span_f_start;
 
     slices = config.fft.view_mode == FFT_VIEW_TIME_DOMAIN ? 1 : slices = fft::fft_params.n_slices;
 

@@ -40,9 +40,9 @@ bool View::paint_callback() {
     }
 
     // To prevent flickr we have to paint all the children in the callback loop.
-    // Otherwise the area will be drawn black then the widgets will be drawn
+    // Otherwise the area will be drawn black then the widgets on top
 
-    // However, if the View does not draw anything by itself (the widgets inside it do)
+    // However, if the View does not draw anything by itself (only the widgets inside it do)
     // and just clears the background (like this base class does),
     // we can spare from calling children's callback if we draw the background just once (don't set dirty every before_paint)
     // There will be one flickr, but that's all

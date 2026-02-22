@@ -39,6 +39,8 @@ class FFTWidget : public Widget {
     void draw_spectrum_fill();
     void draw_spectrum_line();
 
+    void reset_bounds();
+
     uint64_t f_start;
     uint32_t fft_span;
     FFT_SPECTRUM_STYLE style = FFT_SPECTRUM_STYLE_LINE;

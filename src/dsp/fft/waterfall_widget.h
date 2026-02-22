@@ -26,9 +26,14 @@ class WaterfallWidget : public Widget {
 
     void center();
 
-    void move(int16_t);
+    /*
+     * Moves the waterfall buffer by a number of pixels
+     */
+    void move(int16_t offset_px);
 
-    // Set the scrolled pixels per frame
+    /*
+     * Set the scrolled pixels per frame
+     */
     void set_step(uint8_t);
 
     void work();
@@ -77,7 +82,7 @@ class WaterfallWidget : public Widget {
     /* When the center frequency of the FFT changes, we need to scroll the waterfall accordingly. But the waterfall will scroll in
      * multiples of 2 frequency bins (for optimization) and if the frequency change is less than that, it won't move. Therefore,
      * we need to store the frequency of the waterfall to know when it's difference with the center frequency it's enough to scroll it */
-    unsigned long waterfallFreq;
+    uint32_t waterfall_freq;
 
     int16_t bins_db[width];
 
@@ -93,6 +98,11 @@ class WaterfallWidget : public Widget {
 
     /* Integrate the current spectrum values */
     void integrate();
+
+    /*
+     * Shifts the buffer one pixel to the left or right
+     */
+    void shift_nibbles(int8_t direction);
 
     bool on_touch(const st_inputEvent e) override;
 

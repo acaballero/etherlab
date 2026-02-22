@@ -165,6 +165,7 @@ void frequency_signal_callback(void *, const void *args) {
                 main_board::set_if_filter(config.if_filter);
             }
             view_manager::mainView.Waterfall()->center();
+
             break;
     }
 }
@@ -199,9 +200,10 @@ bool dsptested = false;
 
 int main() {
 
+    radio::freq_signal.add(NULL, frequency_signal_callback);
+
     setup();
 
-    radio::freq_signal.add(NULL, frequency_signal_callback);
     standby::signal.add(NULL, standby_signal_callback);
 
     // Update every mode update event

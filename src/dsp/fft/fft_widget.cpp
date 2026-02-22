@@ -255,6 +255,10 @@ void FFTWidget::draw_spectrum() {
 
 bool FFTWidget::paint_callback() {
 
+    if (display->get_offset().y) {
+        reset_bounds();
+    }
+
     display->clear();
 
     draw_bandwidth();
@@ -272,6 +276,14 @@ bool FFTWidget::paint_callback() {
     return true;
 }
 
+void FFTWidget::reset_bounds() {
+    min_dirty_y = 0;
+    min_box_y = 0;
+    fft_height = FFT_HEIGHT;
+    refresh_all = false;
+    set_area();
+}
+
 void FFTWidget::before_paint() {
 
     if (this->dirty()) {
@@ -282,16 +294,11 @@ void FFTWidget::before_paint() {
         // when the widget is being painted in overlapped mode (don't want to mess with this now)
         // How much is gained? 1-4 fps (not much) depending not only on the reduced area size but also on the scheduler load (if other tasks take time, this
         // will refresh at lower rates anyway)
-        refresh_all = refresh_all || dsp::adc_overload || agc::is_overload() || config.debug || !visible_rects.empty(); //:: f_start !=
-        // fft::fft_params.span_f_start || fft_span != fft::fft_params.span;
+        refresh_all = refresh_all || dsp::adc_overload || agc::is_overload() || config.debug || !visible_rects.empty();
         bw_bins = fft::get_bandwidth_pixel_range();
 
         if (refresh_all) {
-            min_dirty_y = 0;
-            min_box_y = 0;
-            fft_height = FFT_HEIGHT;
-            refresh_all = false;
-            set_area();
+            reset_bounds();
         } else {
 
             auto last_dirty_y = min_dirty_y;
