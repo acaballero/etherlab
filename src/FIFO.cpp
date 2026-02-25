@@ -64,10 +64,10 @@ FIFO_ERROR FIFO::write(char *origin, uint32_t n) {
  */
 FIFO_ERROR FIFO::write_block(char *origin, uint32_t n) {
 
-    char *p = this->data + this->write_ix;
     uint32_t free = FREE();
 
     if (free >= n) {
+        char *p = this->data + this->write_ix;
         memcpy(p, origin, n);
         this->feed_unsafe(n);
         return FIFO_ERROR_NONE;

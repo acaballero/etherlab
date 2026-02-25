@@ -109,7 +109,7 @@ void WaterfallWidget::move(int16_t offset_px) {
         void *orig = offset_bytes > 0 ? waterfallBuffer : waterfallBuffer - offset_bytes;
         void *dest = offset_bytes > 0 ? waterfallBuffer + offset_bytes : waterfallBuffer;
 
-        memmove(dest, orig, (width * (FFT_WATERFALL_HEIGHT / PIXELS_BYTE)) - offset_bytes);
+        memmove(dest, orig, (width * (FFT_WATERFALL_HEIGHT / PIXELS_BYTE)) - abs(offset_bytes));
 
         // Clear the start or end of the buffer
         uint16_t xs = offset_bytes > 0 ? 0 : (width / PIXELS_BYTE) + offset_bytes;

@@ -426,6 +426,55 @@ float format_eng(char *dest, float value, const char *units, char *new_units, ui
     return tval;
 }
 
+uint8_t safe_atohex(const char *s) {
+    uint8_t result = 0;
+    for (int i = 0; i < 2; i++) {
+        char c = s[i];
+        uint8_t nibble;
+        if (c >= '0' && c <= '9')
+            nibble = c - '0';
+        else if (c >= 'a' && c <= 'f')
+            nibble = c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F')
+            nibble = c - 'A' + 10;
+        else
+            break;
+        result = (result << 4) | nibble;
+    }
+    return result;
+}
+
+int64_t safe_atoi64(const char *s) {
+    while (*s == ' ' || *s == '\t')
+        s++;
+    int64_t sign = 1;
+    if (*s == '-') {
+        sign = -1;
+        s++;
+    } else if (*s == '+') {
+        s++;
+    }
+    int64_t result = 0;
+    while (*s >= '0' && *s <= '9') {
+        result = result * 10 + (*s - '0');
+        s++;
+    }
+    return sign * result;
+}
+
+uint64_t safe_atou64(const char *s) {
+    while (*s == ' ' || *s == '\t')
+        s++;
+    if (*s == '+')
+        s++;
+    uint64_t result = 0;
+    while (*s >= '0' && *s <= '9') {
+        result = result * 10 + (*s - '0');
+        s++;
+    }
+    return result;
+}
+
 char *format_long(int64_t n, char *out) {
     format_long(n, out, 0);
     return out;

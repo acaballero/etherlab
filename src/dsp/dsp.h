@@ -47,8 +47,8 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc);
 void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac);
 void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac);
 
-// SD CARD FIFO processing handler
-// void TIM1_BRK_TIM15_IRQHandler(void);
+// Tals processing handler
+
 void TIM8_TRG_COM_TIM14_IRQHandler(void);
 
 #ifdef __cplusplus

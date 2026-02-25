@@ -17,7 +17,7 @@ enum WATERFALL_MODE { AVERAGE, MAX_HOLD };
 #define FFT_IQBALANCE_REFRESH_PERIOD_MS 1000
 #define FFT_SNR_REFRESH_PERIOD_MS 150
 #define FFT_WATERFALL_NCOLORS 16
-#define FFT_WATERFALL_MIN_REFRESH_PERIOD_MS 75
+#define FFT_WATERFALL_MIN_REFRESH_PERIOD_MS 75 // Setting lower value than achievable causes the waterfall not to increase speed (not step size increase)
 #define FFT_WATERFALL_DEFAULT_PPS (1000 / (FFT_WATERFALL_MIN_REFRESH_PERIOD_MS + 10));
 #define FFT_WATERFALL_MAX_PIXELS_PER_FRAME 4 // max scrolled pixels per frame
 
@@ -59,8 +59,12 @@ enum WATERFALL_MODE { AVERAGE, MAX_HOLD };
 
 #define FFT_TYPE FFT_TYPE_FLOAT
 
-#define FFT_FIFO_SIZE (((FFT_N + FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) * MAX_DECIMATION_FACTOR))
-#define FFT_FIFO_SIZE_LOG2 ((size_t)ceil(log(FFT_FIFO_SIZE)))
+//#define FFT_FIFO_SIZE (((FFT_N + FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) * MAX_DECIMATION_FACTOR))
+//#define FFT_FIFO_SIZE_LOG2 ((size_t)ceil(log(FFT_FIFO_SIZE)))
+
+#define FFT_RAW_FIFO_N_BLOCKS 4
+#define FFT_FIFO_SIZE (FFT_RAW_FIFO_N_BLOCKS * DSP_BLOCK)
+#define FFT_DECIMATED_FIFO_SIZE FFT_N
 
 enum FFT_WINDOW_TYPES { FFT_WINDOW_NONE, FFT_WINDOW_HAMMING };
 
@@ -116,7 +120,7 @@ typedef struct {
     uint32_t max_sample_rate = ADC_MAX_SAMPLE_RATE;
 
     // Max sample frequency in DSP mode. When doing DSP, we spent more time
-    // processing the ADC buffer in real time, so the sample frequency is even
+    // processing the ADC buffer in real time, so the sample frequency is evegn
     // more constrained. If we'd have enough processing power, ideally,
     // dsp_max_sample_rate and max_sample_rate would be the same. Currently, the FFT
     // has to be reconfigured when doing real time DSP (see

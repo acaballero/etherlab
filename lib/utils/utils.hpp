@@ -113,6 +113,9 @@ char *ftoa(char *dest, size_t size, double val, int dec);
 bool parse_int(const char *str, int &result);
 bool parse_long(const char *str, int64_t &result);
 
+int64_t safe_atoi64(const char *s);
+uint64_t safe_atou64(const char *s);
+uint8_t safe_atohex(const char *s);
 void int_to_binary(uint64_t num, char *binary, int bits);
 
 #if ENABLE_LOGGER

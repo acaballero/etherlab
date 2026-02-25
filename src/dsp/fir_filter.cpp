@@ -89,9 +89,9 @@ bool design_fir_kaiser_lpf(float *taps, double cutoffHz, double sampleRate, doub
         double x = n - M / 2.0;
         double win = besselI0(beta * sqrt(1 - pow(2.0 * x / M, 2))) / besselI0(beta);
         taps[n] = 2 * normCutoff * sinc(2 * normCutoff * x) * win;
-        //        printf_(",%f", taps[n]);
+        printf_(",%f", taps[n]);
     }
-    //  printf_("\n\n");
+    printf_("\n\n");
     return true;
 }
 

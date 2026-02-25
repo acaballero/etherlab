@@ -7,6 +7,7 @@
 #include "Display_afb.h"
 #include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
+#include "dsp/fft/fft_acquisition.h"
 #include "stm32f4xx_hal.h"
 #include "titlebar_widget.h"
 #include "config.h"
@@ -73,6 +74,8 @@ void TitleBarWidget::before_paint() {
                 color = C565_ORANGE;
             } else if (drop_rate * 100 > 0.5 || starve_rate * 100 > 0.5) {
                 color = C565_YELLOW;
+            } else if (fft_acquisition.overruns) {
+                color = C565_OLIVE;
             } else {
                 error = false;
             }

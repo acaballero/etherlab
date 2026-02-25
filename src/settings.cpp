@@ -16,6 +16,9 @@
 #include "ui/frequency_memory_ui.h"
 #include <cstring>
 
+// Try to read the config from the SD Card
+ConfigFile<> config_file;
+
 uint8_t settings_read(Config *settings) {
 
     // If the version of the settings stored is different from the version of the Config struct, we don't read them
@@ -25,9 +28,6 @@ uint8_t settings_read(Config *settings) {
 
 #if ENABLE_SD_CARD
     if (sdcard_info.status == sdcard_STATUS::Mounted) {
-
-        // Try to read the config from the SD Card
-        ConfigFile<> config_file;
 
         memcpy(version, settings->version, 3);
 

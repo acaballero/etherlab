@@ -18,6 +18,7 @@
 #include "dsp/replay/replay_task.h"
 #include "dsp/signal_generator/signal_generator_task.h"
 #include "dsp/transmit/transmit_task.h"
+#include "fft/fft_acquisition.h"
 #include "handlers.h"
 #include "hw/board/board_v2.h"
 #include "radio.h"
@@ -376,8 +377,7 @@ inline void dac_work() {
     if ((dsp::dsp_params && dsp::dsp_params->direction == DSP_DIRECTION_OUT) ||
         (proc && proc->info.direction == DSP_DIRECTION_INOUT && dsp_task && dsp_task->info.direction == DSP_DIRECTION_OUT)) {
 
-        FIFO_ERROR err = fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
-        UNUSED(err);
+        fft_acquisition.feed((complex_t *)current_buffer->p, current_buffer->size_bytes);
     }
 
     if (ISTX) {
@@ -437,7 +437,7 @@ inline void adc_work() {
         // Fill the FFT FIFO. Here we don't care if we overrun (returns error) as the FFT doesn't need to be processed in real-time
         // TODO: write to the FFT FIFO in a separate DspProcessor
 
-        fft_fifo.write_block((char *)current_buffer->p, current_buffer->size_bytes);
+        fft_acquisition.feed((complex_t *)current_buffer->p, current_buffer->size_bytes);
 
         // char *d;
         // static uint32_t last_t;
@@ -479,6 +479,11 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *) {
 
     current_buffer = &adc_buffer_1;
     adc_work(); // Process the 1st half of the buffer
+}
+
+extern "C" void TIM7_IRQHandler(void) {
+    fft_acquisition.process(fft::fft_params.decimation_factor);
+    HAL_TIM_IRQHandler(&htim7);
 }
 
 void TIM8_TRG_COM_TIM14_IRQHandler(void) {

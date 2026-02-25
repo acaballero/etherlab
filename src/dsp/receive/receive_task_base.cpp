@@ -232,6 +232,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
         } else {
 
             if (stage_sr >= modulation_bandwidth_hz * 4 && modulation_bandwidth_hz > info.bandwidth) {
+                // Special case when the modulation bandwidth is high compared with the current ADC bandwidth (e.g. WFM)
                 // When the demodulation bandwidth is higher than the target bandwidth and the current sample rate can be decimated
                 // before demodulation, we find the highest decimation factor we can apply before demodulating
                 factor = 1;

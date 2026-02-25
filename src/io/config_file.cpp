@@ -7,6 +7,7 @@
 #include "config.h"
 #include "ff.h"
 #include "printf.h"
+#include "stm32f4xx_hal.h"
 #include "types.h"
 #include <cstdio>
 #include <cstdlib>

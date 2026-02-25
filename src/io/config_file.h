@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "fatfs/fatfs.h"
+#include "status.h"
 #include <cstdio>
 #include <cstring>
 
@@ -24,7 +25,7 @@ template <typename T = st_config> class ConfigFile {
   protected:
     FIL *file = &FatFSFileHandle;
 
-    char buf[256];
+    alignas(4) char buf[256];
     bool read_int(const char *buf, int32_t *v);
     bool read_uint(const char *buf, uint32_t *v);
     bool read_int8(const char *buf, int8_t *v);
@@ -83,15 +84,13 @@ template <typename T> bool ConfigFile<T>::load(const char *filename, T *cfg, boo
 }
 
 template <typename T> bool ConfigFile<T>::read_line(const char *fmt) {
-    //  printf_("read_line: %s ", fmt);
     f_gets(buf, sizeof(buf), file);
-    // printf_(">> %s\n", buf);
     return (std::strncmp(buf, fmt, strlen(fmt)) == 0);
 }
 
 template <typename T> bool ConfigFile<T>::read_int64(const char *fmt, int64_t *v) {
     if (read_line(fmt)) {
-        *v = strtoll(buf + strlen(fmt), nullptr, 10);
+        *v = safe_atoi64(buf + strlen(fmt));
         return true;
     } else {
         return false;
@@ -100,7 +99,7 @@ template <typename T> bool ConfigFile<T>::read_int64(const char *fmt, int64_t *v
 
 template <typename T> bool ConfigFile<T>::read_uint64(const char *fmt, uint64_t *v) {
     if (read_line(fmt)) {
-        *v = strtoull(buf + strlen(fmt), nullptr, 10);
+        *v = safe_atou64(buf + strlen(fmt));
         return true;
     } else {
         return false;
@@ -109,7 +108,7 @@ template <typename T> bool ConfigFile<T>::read_uint64(const char *fmt, uint64_t 
 
 template <typename T> bool ConfigFile<T>::read_int16(const char *fmt, int16_t *v) {
     if (read_line(fmt)) {
-        *v = (int16_t)atoi(buf + strlen(fmt));
+        *v = (int16_t)safe_atoi64(buf + strlen(fmt));
         return true;
     } else {
         return false;
@@ -118,7 +117,7 @@ template <typename T> bool ConfigFile<T>::read_int16(const char *fmt, int16_t *v
 
 template <typename T> bool ConfigFile<T>::read_uint16(const char *fmt, uint16_t *v) {
     if (read_line(fmt)) {
-        *v = (uint16_t)atoi(buf + strlen(fmt));
+        *v = (uint16_t)safe_atou64(buf + strlen(fmt));
         return true;
     } else {
         return false;
@@ -127,7 +126,7 @@ template <typename T> bool ConfigFile<T>::read_uint16(const char *fmt, uint16_t 
 
 template <typename T> bool ConfigFile<T>::read_int8(const char *fmt, int8_t *v) {
     if (read_line(fmt)) {
-        *v = (int8_t)atoi(buf + strlen(fmt));
+        *v = (int8_t)safe_atoi64(buf + strlen(fmt));
         return true;
     } else {
         return false;
@@ -136,7 +135,7 @@ template <typename T> bool ConfigFile<T>::read_int8(const char *fmt, int8_t *v) 
 
 template <typename T> bool ConfigFile<T>::read_uint8(const char *fmt, uint8_t *v) {
     if (read_line(fmt)) {
-        *v = (uint8_t)atoi(buf + strlen(fmt));
+        *v = (uint8_t)safe_atou64(buf + strlen(fmt));
         return true;
     } else {
         return false;
@@ -144,21 +143,21 @@ template <typename T> bool ConfigFile<T>::read_uint8(const char *fmt, uint8_t *v
 }
 
 template <typename T> bool ConfigFile<T>::read_int(const char *fmt, int32_t *v) {
-    int64_t tmp;
-    if (read_int64(fmt, &tmp)) {
-        *v = (int32_t)tmp;
+    if (read_line(fmt)) {
+        *v = (int32_t)safe_atoi64(buf + strlen(fmt));
         return true;
+    } else {
+        return false;
     }
-    return false;
 }
 
 template <typename T> bool ConfigFile<T>::read_uint(const char *fmt, uint32_t *v) {
-    uint64_t tmp;
-    if (read_uint64(fmt, &tmp)) {
-        *v = (uint32_t)tmp;
+    if (read_line(fmt)) {
+        *v = (uint32_t)safe_atou64(buf + strlen(fmt));
         return true;
+    } else {
+        return false;
     }
-    return false;
 }
 
 template <typename T> bool ConfigFile<T>::read_float(const char *fmt, float *v) {
@@ -222,7 +221,7 @@ template <typename T> bool ConfigFile<T>::read_bin(const char *fmt, uint8_t *dat
         res = f_read(file, buf, 2, &br);
         if (res == FR_OK && buf[0] != '\n' and buf[1] != '\n') {
             char byte_str[3] = {buf[0], buf[1], '\0'};
-            data[i] = static_cast<uint8_t>(strtol(byte_str, nullptr, 16)); // Convert hex pair to byte
+            data[i] = safe_atohex(byte_str); // Convert hex pair to byte
         } else {
             return false;
         }

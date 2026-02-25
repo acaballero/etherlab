@@ -71,7 +71,7 @@ struct Signal {
     void emit(const void *args) {
 
         int i = 0;
-        while (listeners[i].token > 0) {
+        while (i < MAX_LISTENERS && listeners[i].token > 0 && listeners[i].callback) {
             listeners[i].callback(listeners[i].caller, args);
             i++;
         }
@@ -80,7 +80,7 @@ struct Signal {
   private:
     struct CallbackEntry {
         void *caller;
-        Callback callback;
+        Callback callback{nullptr};
         SignalToken token{0};
     };
 

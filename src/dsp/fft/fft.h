@@ -88,9 +88,8 @@ extern uint16_t fft_calc_noise_floor_period_ms;
 extern volatile FFT_STATUS fft_status;
 extern fft_type fft_peak_v;
 
-extern FIFO fft_fifo;
-extern fft_type fft_display[FFT_DISPLAY_WIDTH];
-extern fft_type fft_display_db[FFT_DISPLAY_WIDTH];
+extern fft_type fft_display[DISPLAY_X_PIXELS];
+extern fft_type fft_display_db[DISPLAY_X_PIXELS];
 extern complex_t_f32 fft_slice_buff[FFT_N];
 extern float window[FFT_N];
 

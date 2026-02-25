@@ -15,6 +15,7 @@ extern TIM_HandleTypeDef htim3;  // blink led
 extern TIM_HandleTypeDef htim2;  // DMA for ADC trigger
 extern TIM_HandleTypeDef htim5;  // DMA for DAC trigger
 extern TIM_HandleTypeDef htim6;  // USB task
+extern TIM_HandleTypeDef htim7;  // FFT Acquisition
 extern TIM_HandleTypeDef htim13; // Debouncer
 extern TIM_HandleTypeDef htim14; // DSP tasks
 void HAL_TIM_OC_MspInit(TIM_HandleTypeDef *htim_oc);
@@ -26,6 +27,7 @@ void MX_TIM3_Init(void);
 void MX_TIM2_Init(void);
 void MX_TIM5_Init(void);
 void MX_TIM6_Init(void);
+void MX_TIM7_Init(void);
 void MX_TIM13_Init(void);
 void MX_TIM14_Init(void);
 

@@ -16,6 +16,7 @@
 #include "dsp/dsp_buffers.h"
 #include "dsp/dsp_common.h"
 #include "dsp/fft/fft.h"
+#include "dsp/fft/fft_acquisition.h"
 #include "dsp/fft/fft_params.h"
 #include "dsp/fft/fft_types.h"
 #include "hw/stm32f4xx/adc.h"
@@ -48,8 +49,8 @@ CCM_SECTION fft_type fft_display[DISPLAY_X_PIXELS];
 CCM_SECTION fft_type fft_display_db[DISPLAY_X_PIXELS];
 
 // FFT FIFO
-CCM_SECTION complex_t fft_fifo_buff[FFT_FIFO_SIZE];
-FIFO fft_fifo((char *)fft_fifo_buff, FFT_FIFO_SIZE * sizeof(complex_t));
+// CCM_SECTION complex_t fft_fifo_buff[FFT_FIFO_SIZE];
+// FIFO fft_fifo((char *)fft_fifo_buff, FFT_FIFO_SIZE * sizeof(complex_t));
 
 // We need a decimator for each chanel
 CCM_SECTION DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_i{};
@@ -289,9 +290,9 @@ void apply_fft_params(st_fft_params params) {
     if (current_dec_factor != fft::fft_params.decimation_factor) {
         // If decimation factor has changed, reset the fifo and make sure its size is a multiple
         // of the chunk size. This changes if we are decimating, since in that case, we store some filter delay blocks
-        fft_fifo.set_size((FFT_N + (fft::fft_params.decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) * MAX_DECIMATION_FACTOR *
-                          sizeof(complex_t));
-        fft_fifo.reset();
+        //  fft_fifo.set_size((FFT_N + (fft::fft_params.decimation_factor > 1 ? (FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK) : 0)) * MAX_DECIMATION_FACTOR *
+        //                    sizeof(complex_t));
+        //  fft_fifo.reset();
     }
 
     if (current_sample_rate != fft_params.sample_freq || current_bw != fft_params.bw ||
@@ -412,7 +413,7 @@ void offset_buffer(fft_type *buffer, size_t count, int offset, fft_type value) {
     void *orig = offset > 0 ? buffer : buffer - offset;
     void *dest = offset > 0 ? buffer + offset : buffer;
 
-    memmove(dest, orig, (count - offset) * sizeof(fft_type));
+    memmove(dest, orig, (count - abs(offset)) * sizeof(fft_type));
 
     // Clear the start or end of the buffer
     uint16_t xs = offset > 0 ? 0 : count + offset;
@@ -449,7 +450,7 @@ void fft_frequency_signal_callback(void *, const void *args) {
                     offset_px = constrain(offset_px, -DISPLAY_X_PIXELS, DISPLAY_X_PIXELS);
                     offset_buffer(fft_display_db, DISPLAY_X_PIXELS, offset_px, FFT_MIN_DB);
                     offset_buffer(fft_display, DISPLAY_X_PIXELS, offset_px, FFT_HEIGHT);
-                    fft_fifo.reset();
+                    fft_acquisition.reset();
                     fft_freq = current_freq;
                 }
             }
@@ -460,6 +461,8 @@ void fft_frequency_signal_callback(void *, const void *args) {
 void fft_init() {
 
     LOG("FFT init\n");
+
+    fft_acquisition.init(decimator_i, decimator_q);
 
     float32_t minPrecZ, maxPrecZ;
 
@@ -499,16 +502,24 @@ void fft_init() {
 
     // When the gain changes, the FIFO is reset so the new gain gets reflected immediatelly. Otherwise the AGC itself, which relies in the FFT DB values, gets
     // laggy.
-    agc::signal_gain.add(nullptr, [](void *, const void *) {
-        fft_fifo.reset();
+    static SignalToken signal_gain_token;
+    agc::signal_gain.remove(signal_gain_token);
+    signal_gain_token = agc::signal_gain.add(nullptr, [](void *, const void *) {
+        fft_acquisition.reset();
     });
 
-    main_board::mode_signal.add(nullptr, [](void *, const void *) {
+    static SignalToken signal_mode_token;
+    main_board::mode_signal.remove(signal_mode_token);
+    signal_mode_token = main_board::mode_signal.add(nullptr, [](void *, const void *) {
         // The IQ balancer is disabled when the signal comes from the DSP DACs
         enable_iq_balance(config.mode != DIGITAL_TX);
     });
 
-    radio::freq_signal.add(NULL, fft_frequency_signal_callback);
+    static SignalToken signal_freq_token;
+    radio::freq_signal.remove(signal_freq_token);
+    signal_freq_token = radio::freq_signal.add(NULL, fft_frequency_signal_callback);
+
+    HAL_TIM_Base_Start_IT(&htim7);
 }
 
 void reset_iq_balancer() {
@@ -857,95 +868,18 @@ void process_fft(float32_t *v) {
 #endif
 }
 
-/* Decimate a complex_t buffer into the fft_slice_buff buffer */
-void decimate_complex_fft_buffer(complex_t *f_buff, size_t size) {
-
-    uint16_t decimated_block_size = DSP_BLOCK / fft::fft_params.decimation_factor;
-
-    // We decimate in DSP_BLOCK block sizes to save memory, at the expense of speed, since we need two buffers
-    // to process the signal (one of DSP_BLOCK length and one of DSP_BLOCK / fft_decimation_factor length)
-    float32_t signal[DSP_BLOCK << 1];
-    buffer_t<float32_t> src(signal, DSP_BLOCK * 2);
-    uint16_t ix = 0;
-    uint16_t ixOut = 0;
-
-    while (ix < size) {
-
-        // Transform to float
-        dsp::s16_to_f32((adc_type *)(f_buff + ix), signal, DSP_BLOCK << 1);
-
-        buffer_t<float32_t> dst((float32_t *)(fft_slice_buff + ixOut), decimated_block_size);
-        dst.decimated_size_bytes = decimated_block_size;
-
-        decimator_i.decimate(src, dst, 0, 2, 1); // Invert I/Q
-        decimator_q.decimate(src, dst, 1, 2, 0);
-
-        // Skip the first blocks to account for the delay group of the filter
-        if (ix >= FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft::fft_params.decimation_factor) {
-            ixOut += decimated_block_size;
-        }
-
-        ix += DSP_BLOCK;
-    }
-}
-
 // ADC Acquisition
-// OFFLINE. It needs FFN*decimation_factor ADC buffer length
 void adquire_fft_async() {
 
-    /* The FIR filter has a delay of (FFT_LPF_FIR_FILTER_NTAPS-1)/2 samples, so we
-     * discard the first ((FFT_LPF_FIR_FILTER_NTAPS-1)/2)/DSP_BLOCK blocks
-     * TODO: TO BE IMPLEMENTED. In order to discard blocks, we have to do different from the way it is done
-     * in real-time filtering (discarding the first blocks as we are processing them) because
-     * here we are filtering AFTER the whole set of blocks is acquired, and so, we have to acquire
-     * 'discard_n_blocks' in excess BEFORE we start the filtering and, after that, discard them */
-    // uint8_t discard_n_blocks = (uint8_t) (((FFT_LPF_FIR_FILTER_NTAPS - 1) / 2) / DSP_BLOCK) + 1;
-    uint16_t fft_buff_size = fft::fft_params.size * fft::fft_params.decimation_factor;
-
-    if (fft::fft_params.decimation_factor > 1) {
-        // If we are decimating (using FIR filtering), we have to discard the FIR filter group delay samples
-        fft_buff_size += FFT_LPF_FIR_FILTER_DELAY_BLOCKS * DSP_BLOCK * fft::fft_params.decimation_factor;
-    }
-
-    union {
-        char *c;
-        complex_t *f;
-    } data;
-
-    uint16_t chunk_size = fft_buff_size * sizeof(complex_t);
-    uint64_t timeout = HAL_GetTick() + 100;
-
     // Wait for ADC data
-    while (fft_fifo.available(&data.c) < chunk_size && HAL_GetTick() < timeout) {
-    }
+    bool ok = fft_acquisition.consume(fft_slice_buff, FFT_N, fft::fft_params.decimation_factor);
 
-    // if (config.fft.removeDC) {
-    //     uint32_t size = fft_buff_size << 1;
-    //     buffer_t<adc_type> buff = {(adc_type *const)(data.c), size};
-    //     fft_dcremoval(buff);
+    // while (fft_fifo.available(&data.c) < chunk_size && HAL_GetTick() < timeout) {
     // }
 
-    // if (dsp::get_freq_shift_enabled()) {
-    //     dsp::rotate_fs4_q15((adc_type *)data.c, (adc_type *)data.c, fft_buff_size);
-    // }
-
-    if (true) { // av >= chunk_size) {
-
-        if (fft::fft_params.decimation_factor > 1) {
-
-            // Decimate the complex buffer (I and Q channels interleaved, so odd and even indexes) into fft_slice_buff
-            decimate_complex_fft_buffer((complex_t *)data.c, fft_buff_size);
-        } else {
-            // Transform to float
-            //  dsp::s16_to_f32((adc_type *)data.f, (float32_t *)fft_slice_buff, fft_buff_size << 1);
-
-            for (int i = 0; i < fft_buff_size; i++) {
-                fft_slice_buff[i].r = data.f[i].r;
-                fft_slice_buff[i].i = data.f[i].i;
-            }
-        }
-
-        fft_fifo.consume(chunk_size, &data.c);
+    if (!ok) {
+        // FFT FIFO has not enough data
+        return;
     }
 
 #if !DSP_FS4_SHIFT
@@ -1032,7 +966,7 @@ void fft_work_slices(uint8_t n_slices) {
             }
 
             // Clear the FIFO since it will likely contain samples of the previous slice
-            fft_fifo.reset();
+            fft_acquisition.reset();
 
             // TODO: Check if a delay for fequency settling is needed or not
             HAL_Delay(0);
@@ -1051,7 +985,7 @@ void update_fft() {
 
     fft_config(fft::fft_params.span);
 
-    slices = config.fft.view_mode == FFT_VIEW_TIME_DOMAIN ? 1 : slices = fft::fft_params.n_slices;
+    slices = config.fft.view_mode == FFT_VIEW_TIME_DOMAIN ? 1 : fft::fft_params.n_slices;
 
     fft_peak_v = FFT_MIN_DB;
     fft_peak = FFT_MIN_DB;
