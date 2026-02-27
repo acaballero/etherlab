@@ -43,7 +43,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRD
   protected:
     static constexpr int state_size = (TAPS + DSP_BLOCK - 1) * sizeof(float32_t);
 
-    virtual bool init();
+    virtual bool init(uint16_t block_size = DSP_BLOCK);
 
     bool initialized = false;
 
@@ -73,7 +73,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloat : publ
     void decimate(buffer_t<complex_t_f32> &src, float *dst_i, float *dst_q);
     void decimate(float *src_i, float *src_q, buffer_t<float32_t> &dst, size_t n_samples);
 
-    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0) override;
+    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0, uint16_t block_size = DSP_BLOCK) override;
     void clear_state() override;
 
   protected:
@@ -82,7 +82,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloat : publ
     using DspFIRDecimatorFloatBase<TAPS, float32_t>::tmp_buff;
     using DspFIRDecimatorFloatBase<TAPS, float32_t>::dsp_fir_decimate_instance;
 
-    bool init() override;
+    bool init(uint16_t block_size = DSP_BLOCK) override;
 
     float32_t *state_q = nullptr;    //[TAPS + DSP_BLOCK - 1];
     float32_t *tmp_buff_q = nullptr; // DSP_BLOCK

@@ -125,14 +125,14 @@ template <int TAPS> void DspFIRDecimatorFloat<TAPS>::decimate(float32_t *src_i, 
     dsp::zip_f32(tmp_buff, tmp_buff_q, (float32_t *)dst.p, decimated_block_size);
 }
 
-template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
+template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init(uint16_t block_size) {
 
     bool b = false;
 
     if (coeffs == nullptr) {
         coeffs = (float32_t *)CCMMemoryAllocator::alloc(TAPS * sizeof(float32_t));
         state = (float32_t *)CCMMemoryAllocator::alloc(state_size);
-        tmp_buff = (float32_t *)CCMMemoryAllocator::alloc(DSP_BLOCK * sizeof(float32_t));
+        tmp_buff = (float32_t *)CCMMemoryAllocator::alloc(block_size * sizeof(float32_t));
     }
 
     if (type == BPF) {
@@ -145,7 +145,7 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
     // Taps must be reversed to use cmsis decimators
     std::reverse(coeffs, coeffs + TAPS);
 
-    arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance, TAPS, this->factor, coeffs, state, DSP_BLOCK);
+    arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance, TAPS, this->factor, coeffs, state, block_size);
 
     b = b && status == arm_status::ARM_MATH_SUCCESS;
 
@@ -154,23 +154,25 @@ template <int TAPS, typename T> bool DspFIRDecimatorFloatBase<TAPS, T>::init() {
     return initialized;
 }
 
-template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::init() {
+template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::init(uint16_t block_size) {
 
-    bool ret = DspFIRDecimatorFloatBase<TAPS, float32_t>::init();
+    bool ret = DspFIRDecimatorFloatBase<TAPS, float32_t>::init(block_size);
 
     if (state_q == nullptr) {
         state_q = (float32_t *)CCMMemoryAllocator::alloc(state_size);
-        tmp_buff_q = (float32_t *)CCMMemoryAllocator::alloc(DSP_BLOCK * sizeof(float32_t));
+        tmp_buff_q = (float32_t *)CCMMemoryAllocator::alloc(block_size * sizeof(float32_t));
     }
 
-    arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance_q, TAPS, this->factor, this->coeffs, state_q, DSP_BLOCK);
+    arm_status status = arm_fir_decimate_init_f32(&dsp_fir_decimate_instance_q, TAPS, this->factor, this->coeffs, state_q, block_size);
 
     ret = ret && status == arm_status::ARM_MATH_SUCCESS;
     return ret;
 }
 
-template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq) {
+template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq, uint16_t block_size) {
 
+    LOG("DspFIRDecimatorFloat config | input_rate: %ul | bandwidth: %d", input_rate, bandwidth);
+    LOG_RAW(" | factor: %d | block_size: %d\n", f, block_size);
     this->input_rate = input_rate;
     this->bandwidth = bandwidth;
     this->factor = f;
@@ -183,7 +185,7 @@ template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::config(uint32_t input_rate,
         this->start_frequency = 0;
     }
 
-    return this->init();
+    return this->init(block_size);
 }
 
 template <int TAPS> void DspFIRDecimatorFloat<TAPS>::clear_state() {

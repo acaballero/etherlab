@@ -216,8 +216,7 @@ bool generate_fir_filter_taps_q15(filter_type filt_t, q15_t *m_taps, int m_num_t
     float f_taps[m_num_taps];
     bool b = generate_fir_filter_taps(filt_t, f_taps, m_num_taps, fs, fx, fu);
     arm_float_to_q15(f_taps, m_taps, m_num_taps);
-    // Taps must be reversed to use cmsis decimators
-    std::reverse(m_taps, m_taps + m_num_taps);
+
     return b;
 }
 

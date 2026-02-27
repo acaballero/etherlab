@@ -316,6 +316,29 @@ void unzip_f32(const float32_t *src, float32_t *dst_i, float32_t *dst_q, size_t 
         *dst_q++ = *src++;
     }
 }
+
+void s16_unzip_f32(const int16_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples) {
+    const int16_t *src_end = src + (2 * n_samples);
+
+    // Unroll by 4 complex samples (8 int16)
+    while (src + 8 <= src_end) {
+        *dst_i++ = (float32_t) * (src++); // I0
+        *dst_q++ = (float32_t)*src++;     // Q0
+        *dst_i++ = (float32_t)*src++;     // I1
+        *dst_q++ = (float32_t)*src++;     // Q1
+        *dst_i++ = (float32_t)*src++;     // I2
+        *dst_q++ = (float32_t)*src++;     // Q2
+        *dst_i++ = (float32_t)*src++;     // I3
+        *dst_q++ = (float32_t)*src++;     // Q3
+    }
+
+    // Handle remainder
+    while (src < src_end) {
+        *dst_i++ = (float32_t)*src++;
+        *dst_q++ = (float32_t)*src++;
+    }
+}
+
 void zip_f32(const float32_t *src_i, const float32_t *src_q, float32_t *dst, size_t n_samples) {
     const float32_t *si_end = src_i + n_samples;
 

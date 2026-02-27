@@ -21,7 +21,7 @@ template <int order = 2> class DspIIRDecimator : public DspDecimator<int16_t> {
     DspIIRDecimator(uint32_t input_rate, uint32_t output_rate, uint16_t factor) : DspDecimator<int16_t>(input_rate, output_rate, factor), type{LPF} {
         this->init();
     };
-    bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_f = 0) override {
+    bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_f = 0, uint16_t block_size = DSP_BLOCK) override {
         start_frequency = start_f;
         return config(input_rate, bandwidth, factor, start_f ? BPF : LPF);
     }

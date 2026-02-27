@@ -20,7 +20,7 @@ template <typename T> class DspDecimator {
 
     virtual ~DspDecimator() = default;
 
-    virtual bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_frequency = 0) = 0;
+    virtual bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_frequency = 0, uint16_t block_size = DSP_BLOCK) = 0;
     virtual void decimate(T *src_i, T *src_q, T *dst_i, T *dst_q, size_t n_samples) = 0;
     virtual void decimate(buffer_t<T> &src, buffer_t<T> &dst) = 0;
 

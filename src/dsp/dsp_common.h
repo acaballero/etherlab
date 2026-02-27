@@ -134,7 +134,7 @@ enum DSP_ERROR {
 // The usable percentage of the DSP bandwidth. We discard frequencies on the
 // transition band of the low pass filter
 #define USABLE_BW_FACTOR 0.80f
-#define MAX_DECIMATION_FACTOR 16 
+#define MAX_DECIMATION_FACTOR 16
 #define MAX_DSP_DECIMATION_FACTOR 32
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
@@ -289,6 +289,7 @@ int8_t get_gain_db();
 
 void s16_to_q15(const adc_type *src, q15_t *dst, size_t size);
 void s16_to_f32(const adc_type *src, float32_t *dst, size_t size);
+void s16_unzip_f32(const int16_t *src, float32_t *dst_i, float32_t *dst_q, size_t n_samples);
 void s16_to_f32_norm(const adc_type *src, float32_t *dst, size_t size, float32_t scale);
 adc_type s16_to_f32_and_max_s16(const adc_type *src, float32_t *dst, size_t size);
 void q15_to_s16(const q15_t *src, adc_type *dst, size_t size);

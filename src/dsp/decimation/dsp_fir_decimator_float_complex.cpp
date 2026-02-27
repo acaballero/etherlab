@@ -82,7 +82,7 @@ template <int TAPS> void DspFIRDecimatorFloatComplex<TAPS>::decimate(float32_t *
     }
 }
 
-template <int TAPS> bool DspFIRDecimatorFloatComplex<TAPS>::init() {
+template <int TAPS> bool DspFIRDecimatorFloatComplex<TAPS>::init(uint16_t block_size) {
 
     bool b = false;
 
@@ -96,8 +96,8 @@ template <int TAPS> bool DspFIRDecimatorFloatComplex<TAPS>::init() {
         state_xq_hq = (float32_t *)CCMMemoryAllocator::alloc(state_size);
         state_xi_hq = (float32_t *)CCMMemoryAllocator::alloc(state_size);
         state_xq_hi = (float32_t *)CCMMemoryAllocator::alloc(state_size);
-        tmp_buff_i = (float32_t *)CCMMemoryAllocator::alloc(DSP_BLOCK * sizeof(float32_t));
-        tmp_buff_q = (float32_t *)CCMMemoryAllocator::alloc(DSP_BLOCK * sizeof(float32_t));
+        tmp_buff_i = (float32_t *)CCMMemoryAllocator::alloc(block_size * sizeof(float32_t));
+        tmp_buff_q = (float32_t *)CCMMemoryAllocator::alloc(block_size * sizeof(float32_t));
     }
 
     // This generates a complex vector with TAPS*2 length
@@ -113,10 +113,10 @@ template <int TAPS> bool DspFIRDecimatorFloatComplex<TAPS>::init() {
     std::reverse(coeffs_i, coeffs_i + TAPS);
     std::reverse(coeffs_q, coeffs_q + TAPS);
 
-    arm_status status = arm_fir_decimate_init_f32(&fir_xi_hi, TAPS, this->factor, coeffs_i, state_xi_hi, DSP_BLOCK);
-    arm_fir_decimate_init_f32(&fir_xq_hq, TAPS, this->factor, coeffs_q, state_xq_hq, DSP_BLOCK);
-    arm_fir_decimate_init_f32(&fir_xq_hi, TAPS, this->factor, coeffs_q, state_xq_hi, DSP_BLOCK);
-    arm_fir_decimate_init_f32(&fir_xi_hq, TAPS, this->factor, coeffs_i, state_xi_hq, DSP_BLOCK);
+    arm_status status = arm_fir_decimate_init_f32(&fir_xi_hi, TAPS, this->factor, coeffs_i, state_xi_hi, block_size);
+    arm_fir_decimate_init_f32(&fir_xq_hq, TAPS, this->factor, coeffs_q, state_xq_hq, block_size);
+    arm_fir_decimate_init_f32(&fir_xq_hi, TAPS, this->factor, coeffs_q, state_xq_hi, block_size);
+    arm_fir_decimate_init_f32(&fir_xi_hq, TAPS, this->factor, coeffs_i, state_xi_hq, block_size);
 
     b = b && status == arm_status::ARM_MATH_SUCCESS;
 
@@ -125,14 +125,15 @@ template <int TAPS> bool DspFIRDecimatorFloatComplex<TAPS>::init() {
     return initialized;
 }
 
-template <int TAPS> bool DspFIRDecimatorFloatComplex<TAPS>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq) {
+template <int TAPS>
+bool DspFIRDecimatorFloatComplex<TAPS>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq, uint16_t block_size) {
 
     this->input_rate = input_rate;
     this->bandwidth = bandwidth;
     this->factor = f;
     this->start_frequency = start_freq;
 
-    return init();
+    return init(block_size);
 }
 
 template <int TAPS> void DspFIRDecimatorFloatComplex<TAPS>::clear_state() {

@@ -20,7 +20,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloatComplex
 
     DspFIRDecimatorFloatComplex(uint32_t input_rate, uint32_t start_freq, uint32_t end_freq, uint16_t factor)
         : DspDecimator<float32_t>(input_rate, end_freq, factor), start_frequency{start_freq} {
-        this->init();
+        this->init(DSP_BLOCK);
     };
 
     virtual ~DspFIRDecimatorFloatComplex() {
@@ -39,7 +39,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloatComplex
     void decimate(buffer_t<float32_t> &src, buffer_t<float32_t> &dst) override;
     void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples) override;
     void decimate(float32_t *src, float32_t *dst, size_t n_samples);
-    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0) override;
+    bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0, uint16_t block_size = DSP_BLOCK) override;
     virtual void clear_state();
     bool get_initialized() const;
 
@@ -48,7 +48,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloatComplex
   protected:
     static constexpr int state_size = (TAPS + DSP_BLOCK - 1) * sizeof(float32_t);
 
-    virtual bool init();
+    virtual bool init(uint16_t block_size);
     bool initialized = false;
 
     uint32_t start_frequency; // Start frequency for the band-pass case

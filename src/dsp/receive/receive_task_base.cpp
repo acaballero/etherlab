@@ -64,15 +64,7 @@ void ReceiveTaskBase::work() {
                 int factor = 0;
                 uint16_t block_size_in = samples_per_batch;
 
-                dsp::s16_to_f32((const adc_type *)in_p, bi2_p, block_size_in << 1);
-
-                // buffer_t<float32_t> bb = {(float32_t *)bi2_p, DSP_BLOCK * 2};
-                // dc_block_i.filter(bb, 2, 0);
-                // dc_block_q.filter(bb, 2, 1);
-
-                // dsp::rotate_fs4_f32((const float32_t *)bi2_p, (float32_t *)bi2_p, DSP_BLOCK);
-
-                dsp::unzip_f32((const float32_t *)bi2_p, bi1_p, bq1_p, block_size_in);
+                dsp::s16_unzip_f32((const adc_type *)in_p, bi1_p, bq1_p, block_size_in);
 
                 // Pre-demodulation decimation: decimate as much as the demoulation bandwidth allows
                 while (dec_phase < n_pre_decimators) {
@@ -195,7 +187,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
     n_decimators = 0;
     n_pre_decimators = 0;
     demodulation_sample_rate = 0;
-
+    uint8_t block_size = DSP_BLOCK;
     bool ret;
     while (dec > 1) {
 
@@ -213,16 +205,17 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
                 case SSB_LSB:
 
                     signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
-                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor);
+                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor, 0, block_size);
                     break;
                 case CW:
                     signal_decimator = std::make_unique<DspFIRDecimatorFloatComplex<FIR_DECIMATOR_SIGNAL_TAPS>>();
                     // TODO: Select pitch (offset center freq)
-                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor, max2(CW_PITCH_HZ - (next_stage_bandwidth / 2), 0));
+                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor, max2(CW_PITCH_HZ - (next_stage_bandwidth / 2), 0), block_size);
                     break;
                 default:
                     signal_decimator = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_SIGNAL_TAPS>>();
-                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor); // Here the bandwidth is halved for double sideband modulations
+                    ret = signal_decimator->config(stage_sr, next_stage_bandwidth, factor, 0,
+                                                   block_size); // Here the bandwidth is halved for double sideband modulations
 
                     break;
             }
@@ -234,7 +227,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
             if (stage_sr >= modulation_bandwidth_hz * 4 && modulation_bandwidth_hz > info.bandwidth) {
                 // Special case when the modulation bandwidth is high compared with the current ADC bandwidth (e.g. WFM)
                 // When the demodulation bandwidth is higher than the target bandwidth and the current sample rate can be decimated
-                // before demodulation, we find the highest decimation factor we can apply before demodulating
+                // before demodulation, find the highest decimation factor we can apply in one phase before demodulating
                 factor = 1;
                 uint32_t next_stage_fs = stage_sr;
                 while (next_stage_fs >= modulation_bandwidth_hz * 4) {
@@ -261,7 +254,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
             }
 
             auto volatile dec = (DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS> *)(decimators[n_decimators].get());
-            ret = decimators[n_decimators]->config(stage_sr, next_stage_bandwidth, factor);
+            ret = decimators[n_decimators]->config(stage_sr, next_stage_bandwidth, factor, 0, block_size);
             auto f = dec->get_factor();
             LOG("Decimation step %d configured | factor: %u => \n", n_decimators, f);
         }
@@ -276,6 +269,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
         n_decimators++;
         dec /= factor;
         stage_sr = stage_sr / factor;
+        block_size /= factor;
     }
 
     LOG("ReceiveTask::init_decimators -> n_decimators: %d\n", n_decimators);
