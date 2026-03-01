@@ -258,6 +258,43 @@ void printLog(logevent_st_t *logEventsClone) {
 
 #endif
 
+/************************ STACK TROUBLESHOOT *******************************/
+
+extern uint32_t _lstack; // low address of stack region (defined in linker script)
+extern uint32_t _estack; // high address (initial SP)
+
+#define STACK_PATTERN 0xA5A5A5A5u
+
+/*
+ * Paints the stack with a known patter to troubleshoot stack overflows
+ */
+void stack_paint(void) {
+    uint32_t *p = &_lstack;
+    volatile uint32_t *end = &_estack;
+
+    while (p < end) {
+        *p++ = STACK_PATTERN;
+    }
+}
+
+size_t stack_high_water_bytes(void) {
+    uint32_t *p = &_lstack;
+    uint32_t *end = &_estack;
+
+    while (p < end && *p == STACK_PATTERN) {
+        p++;
+    }
+
+    // bytes that were untouched (free at worst case) is from __StackLimit to p
+    return (size_t)((uintptr_t)p - (uintptr_t)&_lstack);
+}
+
+size_t stack_used_bytes_worst_case(void) {
+    size_t free_bytes = stack_high_water_bytes();
+    size_t total_bytes = (size_t)((uintptr_t)&_estack - (uintptr_t)&_lstack);
+    return total_bytes - free_bytes;
+}
+
 int endsWith(const char *str, const char *suffix) {
     if (!str || !suffix) {
         return 0;
@@ -269,6 +306,8 @@ int endsWith(const char *str, const char *suffix) {
     }
     return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
 }
+
+/******************************************/
 
 void print_vector_f32(float32_t *v, uint16_t len) {
 

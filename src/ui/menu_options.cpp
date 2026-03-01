@@ -25,9 +25,9 @@ menu_option_st<radio::IF_FILTER> if_filter_options[] = {
     {radio::IFFilterNames[radio::IF_FILTER_7_5KHZ], radio::IF_FILTER_7_5KHZ}, {radio::IFFilterNames[radio::IF_FILTER_9KHZ], radio::IF_FILTER_9KHZ},
     {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::IF_FILTER_15KHZ},   {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::IF_FILTER_150KHZ},
     {radio::IFFilterNames[radio::IF_FILTER_180KHZ], radio::IF_FILTER_180KHZ}};
-const char *colorNames[] = {"Black",        "Grey darker", "Grey dark", "Grey ligh", "White",  "Navy",     "Green dark", "Cyan dark",
-                            "Maroon",       "Olive",       "Blue",      "Green",     "Red",    "Magenta",  "Yellow",     "Orange",
-                            "Green-yellow", "Pink",        "Brown",     "Gold",      "Silver", "Sky blue", "Violet"};
+const char *colorNames[] = {"Black",        "Grey darker", "Grey dark", "Grey ligh", "White",   "Navy",     "Green dark",  "Cyan dark",    "Maroon",
+                            "Olive",        "Blue",        "Green",     "Red",       "Magenta", "Yellow",   "Yellow dark", "Yellow light", "Orange",
+                            "Green-yellow", "Pink",        "Brown",     "Gold",      "Silver",  "Sky blue", "Violet"};
 
 menu_option_st<uint16_t> color_options[] = {
     {"   ", C565_BLACK, C565_BLACK, C565_BLACK},
@@ -45,6 +45,8 @@ menu_option_st<uint16_t> color_options[] = {
     {"   ", C565_RED, C565_RED, C565_RED},
     {"   ", C565_MAGENTA, C565_MAGENTA, C565_MAGENTA},
     {"   ", C565_YELLOW, C565_YELLOW, C565_YELLOW},
+    {"   ", C565_YELLOW_DARK, C565_YELLOW_DARK, C565_YELLOW_DARK},
+    {"   ", C565_YELLOW_LIGHT, C565_YELLOW_LIGHT, C565_YELLOW_LIGHT},
     {"   ", C565_ORANGE, C565_ORANGE, C565_ORANGE},
     {"   ", C565_GREENYELLOW, C565_GREENYELLOW, C565_GREENYELLOW},
     {"   ", C565_PINK, C565_PINK, C565_PINK},

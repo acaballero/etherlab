@@ -29,6 +29,7 @@
 #include "ui/menu.h"
 #include "ui/view_manager.h"
 
+#include <cstdint>
 #include <memory>
 #include <sys/unistd.h>
 
@@ -200,6 +201,9 @@ bool dsptested = false;
 
 int main() {
 
+    // DEBUG stack issues
+    stack_paint();
+
     radio::freq_signal.add(NULL, frequency_signal_callback);
 
     setup();
@@ -234,6 +238,7 @@ int main() {
 
         os::task_manager.run();
 
+        //  LOG("S:%d\n", stack_used_bytes_worst_case());
         // watchdog();
 
         if (!dsptested) {

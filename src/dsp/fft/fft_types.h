@@ -38,7 +38,7 @@ enum WATERFALL_MODE { AVERAGE, MAX_HOLD };
 #define FFT_MAX_SLICES 4
 
 // Number of taps of the low pass filter for decimation
-#define FFT_LPF_FIR_FILTER_NTAPS 37
+#define FFT_LPF_FIR_FILTER_NTAPS 51
 
 // Group delay (in number of blocks) of the FIR filter
 #define FFT_LPF_FIR_FILTER_DELAY_BLOCKS 1

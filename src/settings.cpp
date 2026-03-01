@@ -18,6 +18,8 @@
 
 // Try to read the config from the SD Card
 ConfigFile<> config_file;
+// This is stored in flash (so no worry for BSS)
+static const Config default_cfg{};
 
 uint8_t settings_read(Config *settings) {
 
@@ -42,7 +44,7 @@ uint8_t settings_read(Config *settings) {
 
         // Read config from flash
 
-        *settings = Config();
+        *settings = default_cfg;
 
         uint8_t status = flash_read((uint16_t *)version, 2);
 

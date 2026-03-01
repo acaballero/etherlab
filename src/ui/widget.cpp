@@ -452,6 +452,8 @@ void Widget::paint(Area *area) {
             area = &this->area;
         }
 
+        //  LOG("S:%d\n", stack_used_bytes_worst_case());
+
         bool apply_pad = this->parent_rect().width() <= DISPLAY_X_PIXELS;
 
         // LOG("Drawing widget %s\n", get_name());
@@ -650,7 +652,7 @@ Rect Widget::clip(const Rect &rect) {
 }
 
 void Widget::set_name(const char *str) {
-    snprintf(name, sizeof(name), str);
+    snprintf(name, sizeof(name), "%s", str);
 }
 
 bool Widget::active() {

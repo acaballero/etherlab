@@ -64,6 +64,12 @@ unsigned long micros();
 // static double PRECISION = 0.00000000000001;
 // static int MAX_NUMBER_STRING_SIZE = 32;
 
+/*** Stack issues troubleshooting helpers ***/
+void stack_paint(void);
+size_t stack_high_water_bytes(void);
+size_t stack_used_bytes_worst_case(void);
+/*******/
+
 typedef float float32_t;
 
 void enableTimers();

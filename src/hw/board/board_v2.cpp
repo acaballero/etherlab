@@ -505,6 +505,7 @@ bool radio_config(st_radio_config radioConfig) {
 void setup_board_peripherals() {
 
     lo_setup();
+
     if_setup(); // IF mod/demod setup
 }
 

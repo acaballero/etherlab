@@ -67,6 +67,7 @@ template <typename T> bool ConfigFile<T>::save(const char *filename, const T *cf
 }
 
 template <typename T> bool ConfigFile<T>::load(const char *filename, T *cfg, bool create_if_not_exists) {
+
     if (!lock_sd_card()) {
         return false;
     }

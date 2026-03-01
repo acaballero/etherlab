@@ -52,10 +52,6 @@ CCM_SECTION fft_type fft_display_db[DISPLAY_X_PIXELS];
 // CCM_SECTION complex_t fft_fifo_buff[FFT_FIFO_SIZE];
 // FIFO fft_fifo((char *)fft_fifo_buff, FFT_FIFO_SIZE * sizeof(complex_t));
 
-// We need a decimator for each chanel
-CCM_SECTION DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_i{};
-CCM_SECTION DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS> decimator_q{};
-
 buffer_t<float32_t> fft_slice_buffer = {(float32_t *const)(fft_slice_buff), FFT_N * 2};
 
 #if FFT_N == 64
@@ -296,7 +292,7 @@ void apply_fft_params(st_fft_params params) {
     }
 
     if (current_sample_rate != fft_params.sample_freq || current_bw != fft_params.bw ||
-        !decimator_i.get_initialized()) { // sample frequency changed not yet initialized
+        !fft_acquisition.decimators[0]) { // sample frequency changed not yet initialized
 
         if (current_sample_rate != fft_params.sample_freq) {
             LOG("apply_fft_params: Changing sample rate: %lu\n", fft_params.sample_freq);
@@ -306,8 +302,7 @@ void apply_fft_params(st_fft_params params) {
             LOG("apply_fft_params: Changing bandwidth: %d\n", fft_params.bw);
         }
 
-        bool b = decimator_i.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
-        decimator_q.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
+        bool b = fft_acquisition.config(config.fft.sample_rate, fft::fft_params.bw, fft::fft_params.decimation_factor);
 
         if (!b) {
             // Failed decimator initialization. Should't happen, but we could've mess with the fft params calculation
@@ -327,9 +322,6 @@ void apply_fft_params(st_fft_params params) {
         memset(fft_display, FFT_HEIGHT, sizeof(fft_display));
 
         signal.emit(nullptr);
-    } else {
-        decimator_i.set_factor(fft::fft_params.decimation_factor);
-        decimator_q.set_factor(fft::fft_params.decimation_factor);
     }
 }
 
@@ -461,8 +453,6 @@ void fft_frequency_signal_callback(void *, const void *args) {
 void fft_init() {
 
     LOG("FFT init\n");
-
-    fft_acquisition.init(decimator_i, decimator_q);
 
     float32_t minPrecZ, maxPrecZ;
 
@@ -871,11 +861,8 @@ void process_fft(float32_t *v) {
 // ADC Acquisition
 void adquire_fft_async() {
 
-    // Wait for ADC data
+    // Consume for ADC data
     bool ok = fft_acquisition.consume(fft_slice_buff, FFT_N, fft::fft_params.decimation_factor);
-
-    // while (fft_fifo.available(&data.c) < chunk_size && HAL_GetTick() < timeout) {
-    // }
 
     if (!ok) {
         // FFT FIFO has not enough data
@@ -1009,6 +996,7 @@ void update_fft() {
 }
 
 void fft_loop() {
+
     update_fft();
 
     view_manager::mainView.Spectrum()->set_dirty();

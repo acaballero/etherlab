@@ -74,8 +74,8 @@ void TitleBarWidget::before_paint() {
                 color = C565_ORANGE;
             } else if (drop_rate * 100 > 0.5 || starve_rate * 100 > 0.5) {
                 color = C565_YELLOW;
-            } else if (fft_acquisition.overruns) {
-                color = C565_OLIVE;
+            } else if (fft_acquisition.overruns_min) {
+                color = C565_CYAN;
             } else {
                 error = false;
             }
