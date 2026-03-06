@@ -28,7 +28,7 @@ struct FFTAcquisition {
     std::unique_ptr<DspDecimator<float32_t>> decimators[MAX_DECIMATORS];
 
     uint8_t n_decimators = 0;
-    uint8_t decimation_factor = 1;
+    uint8_t decimation_factor = 0;
 
     uint32_t raw_blocks_processed = 0;
 
@@ -62,7 +62,7 @@ struct FFTAcquisition {
         raw_blocks_processed = 0;
         for (uint8_t i = 0; i < n_decimators; i++) {
             if (decimators[i]) {
-                // (DspFIRDecimatorFloat<>)decimators[i]->clear_state();
+                decimators[i]->reset();
             }
         }
     }

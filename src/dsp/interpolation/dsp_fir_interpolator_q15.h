@@ -21,7 +21,7 @@ template <int TAPS, typename T> class DspFIRInterpolatorQ15Base : public DspInte
         init();
     };
 
-    virtual void clear_state();
+    void reset() override;
     bool get_initialized() const;
     void set_factor(uint16_t factor);
 
@@ -48,7 +48,7 @@ template <int TAPS> class DspFIRInterpolatorQ15 : public DspFIRInterpolatorQ15Ba
     void interpolate(buffer_t<adc_type> &src, buffer_t<adc_type> &dst, uint8_t start, uint8_t n_channels, int start_dst = -1);
     void interpolate(adc_type *src_i, adc_type *src_q, adc_type *dst_i, adc_type *dst_q, size_t n_samples) override;
     void interpolate(adc_type *src_i, adc_type *src_q, buffer_t<complex_t> &dst, size_t n_samples);
-    void clear_state() override;
+    void reset() override;
 
   protected:
     using DspFIRInterpolatorQ15Base<TAPS, adc_type>::state;

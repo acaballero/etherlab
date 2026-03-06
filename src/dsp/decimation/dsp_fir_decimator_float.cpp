@@ -171,7 +171,7 @@ template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::init(uint16_t block_size) {
 
 template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::config(uint32_t input_rate, uint32_t bandwidth, uint16_t f, uint32_t start_freq, uint16_t block_size) {
 
-    LOG("DspFIRDecimatorFloat config | input_rate: %ul | bandwidth: %d", input_rate, bandwidth);
+    LOG("DspFIRDecimatorFloat config | input_rate: %u | bandwidth: %d", input_rate, bandwidth);
     LOG_RAW(" | factor: %d | block_size: %d\n", f, block_size);
     this->input_rate = input_rate;
     this->bandwidth = bandwidth;
@@ -188,12 +188,12 @@ template <int TAPS> bool DspFIRDecimatorFloat<TAPS>::config(uint32_t input_rate,
     return this->init(block_size);
 }
 
-template <int TAPS> void DspFIRDecimatorFloat<TAPS>::clear_state() {
+template <int TAPS> void DspFIRDecimatorFloat<TAPS>::reset() {
     memset(dsp_fir_decimate_instance.pState, 0, sizeof(state_size));
     memset(dsp_fir_decimate_instance_q.pState, 0, sizeof(state_size));
 }
 
-template <int TAPS, typename T> void DspFIRDecimatorFloatBase<TAPS, T>::clear_state() {
+template <int TAPS, typename T> void DspFIRDecimatorFloatBase<TAPS, T>::reset() {
     memset(dsp_fir_decimate_instance.pState, 0, sizeof(state_size));
 }
 

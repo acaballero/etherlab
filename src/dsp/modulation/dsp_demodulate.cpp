@@ -13,15 +13,6 @@
 
 namespace dsp {
 
-static inline float angle_approx_0deg27(const complex_t t) {
-    if (t.r) {
-        const auto x = static_cast<float>(t.i) / static_cast<float>(t.r); // Fixed: was t.i / t.i
-        return x / (1.0f + 0.28086f * x * x);
-    } else {
-        return (t.i < 0) ? -1.5707963268f : 1.5707963268f;
-    }
-}
-
 static inline float angle_precise(const complex_t_f32 t) {
     return atan2f(t.i, t.r);
 }

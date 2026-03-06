@@ -136,7 +136,7 @@ bool DspFIRDecimatorFloatComplex<TAPS>::config(uint32_t input_rate, uint32_t ban
     return init(block_size);
 }
 
-template <int TAPS> void DspFIRDecimatorFloatComplex<TAPS>::clear_state() {
+template <int TAPS> void DspFIRDecimatorFloatComplex<TAPS>::reset() {
     memset(fir_xi_hi.pState, 0, sizeof(state_xi_hi));
     memset(fir_xq_hq.pState, 0, sizeof(state_xq_hq));
     memset(fir_xq_hi.pState, 0, sizeof(state_xq_hi));

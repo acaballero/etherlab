@@ -23,7 +23,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = complex_t> class Dsp
     };
 
     virtual bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor);
-    virtual void clear_state();
+    void reset() override;
     bool get_initialized() const;
     void set_factor(uint16_t factor);
 
@@ -55,7 +55,7 @@ template <int TAPS> class DspFIRDecimatorQ15<TAPS, complex_t> : public DspFIRDec
     void decimate(buffer_t<complex_t> &src, adc_type *dst_i, adc_type *dst_q);
     void decimate(adc_type *src_i, adc_type *src_q, adc_type *dst_i, adc_type *dst_q, size_t n_samples);
     void decimate(adc_type *src_i, adc_type *src_q, buffer_t<complex_t> &dst, size_t n_samples);
-    void clear_state() override;
+    void reset() override;
 
   protected:
     using DspFIRDecimatorQ15Base<TAPS, complex_t>::state;

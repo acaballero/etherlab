@@ -38,6 +38,7 @@ struct st_radio_config {
 
 extern adf4350_init_param adf4350Params;
 extern IF_GAIN vga_gain, vgb_gain;
+extern Signal if_gain_signal;
 
 void lo_strength(uint8_t stage, LO_POWER strength);
 void lo_setup();
@@ -47,7 +48,7 @@ void lo_setup();
  * @param freq
  */
 void lo_enable(uint8_t stage, bool enabled);
-bool if_freq(RF_DIRECTION direction, uint64_t freq);
+bool if_freq(RF_DIRECTION direction, uint64_t freq, bool log = true);
 void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb);
 void if_direction(RF_DIRECTION direction);
 bool lo_freq(uint8_t stage, uint64_t freq);
@@ -55,10 +56,11 @@ void setup_board_peripherals();
 void calibrate_freq();
 int power_down_lo_clocks();
 int power_up_lo_clocks();
-int board_gain();
+int get_board_gain();
+int get_if_gain();
 int get_max_input_dbm();
-/**
- * Configures the digital radio
+/*
+ * Configures the DSP hardware radio
  */
 bool radio_config(st_radio_config);
 

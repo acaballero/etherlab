@@ -138,8 +138,10 @@ enum DSP_ERROR {
 #define MAX_DSP_DECIMATION_FACTOR 32
 
 #define DSP_MAX_CAPTURE_SIZE 50000000
-#define FIR_DECIMATOR_1ST_HALFBAND_TAPS 19
-#define FIR_DECIMATOR_SIGNAL_TAPS 41
+#define FIR_DECIMATOR_1ST_HALFBAND_TAPS                                                                                                                        \
+    24 // keep those as multiple of decimation factors. I think cmsis library 0-pads if the don't but just to be safe (I haven't observed filtering issues with
+       // odd taps anyway)
+#define FIR_DECIMATOR_SIGNAL_TAPS 48
 #define FIR_INTERPOLATOR_BASEBAND_TAPS 32
 
 // IF LCD and SD CARD share the same SPI bus, we need to disable the LCD when capturing o replaying to prevent the ADC DMA to interrupt
@@ -165,11 +167,11 @@ enum DSP_DIRECTION {
 struct st_dsp_params {
 
     uint8_t id;
-    volatile DSP_STATUS status = DSP_STATUS_STOPPED;
-    volatile DSP_ERROR error = DSP_ERR_NONE;
+    DSP_STATUS status = DSP_STATUS_STOPPED;
+    DSP_ERROR error = DSP_ERR_NONE;
     DSP_DIRECTION direction = DSP_DIRECTION_IN;
 
-    volatile float gain_factor{1.0}; // This is the gain factor. Not in DB
+    float gain_factor{1.0}; // This is the gain factor. Not in DB
 
     uint32_t bandwidth;
     uint32_t sample_rate;
@@ -179,10 +181,10 @@ struct st_dsp_params {
     uint16_t bits_per_sample;
     uint8_t n_channels;
 
-    volatile uint32_t block_size_bytes; // Size of each processed block, in bytes
-    volatile uint64_t processed_blocks;
-    volatile uint32_t fifo_underruns;
-    volatile uint32_t fifo_overruns;
+    uint32_t block_size_bytes; // Size of each processed block, in bytes
+    uint64_t processed_blocks;
+    uint32_t fifo_underruns;
+    uint32_t fifo_overruns;
 
     uint64_t start_ms;
     uint64_t stop_ms;
@@ -202,14 +204,14 @@ struct st_dsp_params {
         return processed_blocks ? (((float)(fifo_overruns) / (float)processed_blocks)) : 0;
     }
     float drop_freq() {
-        volatile uint32_t elapsed = elapsed_ms();
+        uint32_t elapsed = elapsed_ms();
         return ((float)(fifo_overruns)) / ((float)elapsed / 1000.0f);
     }
     float starve_rate() {
         return processed_blocks ? (((float)(fifo_underruns) / (float)processed_blocks)) : 0;
     }
     float starve_freq() {
-        volatile uint32_t elapsed = elapsed_ms();
+        uint32_t elapsed = elapsed_ms();
         return ((float)(fifo_underruns)) / ((float)elapsed / 1000.0f);
     }
     void reset() {
@@ -239,7 +241,7 @@ struct st_dsp_config {
     st_test_signal_params test_signal;
 
     // The following attributes are NOT SAVED
-    uint32_t wideband_fm_max_deviation = 90000;
+    uint32_t wideband_fm_max_deviation = 75000;
     uint32_t fm_max_deviation = 3500;
     // Digital AGC enabled (controlling demodulator gain)
     bool agc_enabled = true;

@@ -177,12 +177,12 @@ template <int TAPS> void DspFIRInterpolatorFloat<TAPS>::set_factor(uint16_t f) {
     dsp_fir_interpolate_instance_q.L = f;
 }
 
-template <int TAPS, typename T> void DspFIRInterpolatorFloatBase<TAPS, T>::clear_state() {
+template <int TAPS, typename T> void DspFIRInterpolatorFloatBase<TAPS, T>::reset() {
     memset(state, 0, state_size);
 }
 
-template <int TAPS> void DspFIRInterpolatorFloat<TAPS>::clear_state() {
-    DspFIRInterpolatorFloatBase<TAPS, float32_t>::clear_state();
+template <int TAPS> void DspFIRInterpolatorFloat<TAPS>::reset() {
+    DspFIRInterpolatorFloatBase<TAPS, float32_t>::reset();
     memset(state_q, 0, this->state_size);
 }
 

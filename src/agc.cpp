@@ -213,7 +213,7 @@ void check_agc() {
  * @return
  */
 int get_gain() {
-    int gain = board_gain();
+    int gain = get_board_gain();
     return gain + get_analog_gain();
 }
 

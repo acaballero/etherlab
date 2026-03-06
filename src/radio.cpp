@@ -270,6 +270,7 @@ void change_step(int amount) {
 }
 
 uint8_t toggle_vfo() {
+    // TODO: If a band is selected the frequency won't go past its bounds even if the new VFO frequency is out.
     set_vfo(get_vfo() == 0 ? 1 : 0);
     return get_vfo();
 }

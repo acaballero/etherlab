@@ -292,7 +292,7 @@ void apply_fft_params(st_fft_params params) {
     }
 
     if (current_sample_rate != fft_params.sample_freq || current_bw != fft_params.bw ||
-        !fft_acquisition.decimators[0]) { // sample frequency changed not yet initialized
+        !fft_acquisition.decimation_factor) { // sample frequency changed not yet initialized
 
         if (current_sample_rate != fft_params.sample_freq) {
             LOG("apply_fft_params: Changing sample rate: %lu\n", fft_params.sample_freq);
@@ -946,7 +946,7 @@ void fft_work_slices(uint8_t n_slices) {
 
             // TODO: update_freq() takes 4ms with a 400khz I2C, way too much. Should try to improve it's performance
             // TODO: Changing the frequency of PLLB (Quadrature mixer clock) causes a glich also in PLLA (2nd IF clock) which makes it into the passband
-            bool b = if_freq(RF_DIRECTION_RX, f);
+            bool b = if_freq(RF_DIRECTION_RX, f, false);
 
             if (!b) {
                 status::pop_alert(status::ERROR, "updateFFT: Error setting IF freq");

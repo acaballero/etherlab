@@ -7,20 +7,30 @@
 #include "Display_afb.h"
 #include "dsp/dsp.h"
 #include "dsp/dsp_common.h"
+#include "dsp/dsp_ui.h"
 #include "dsp/fft/fft_acquisition.h"
+#include "input/inputEvent.h"
 #include "stm32f4xx_hal.h"
 #include "titlebar_widget.h"
 #include "config.h"
 #include "main_board.h"
 #include "types.h"
+#include "ui/menu.h"
+#include "ui/menu_prompts.hpp"
 #include "utils.hpp"
 #include "os/task_manager.h"
 
 void TitleBarWidget::init() {
 
-    btnDSP.action = [this](Button &, st_inputEvent) {
-        main_board::toggle_dsp();
-        set_dirty();
+    btnDSP.action = [this](Button &, st_inputEvent e) {
+        if (e.ms > LONG_PRESS_MS && !ISANALOG) {
+            // DSP menu
+            Menu::open();
+            nav.useMenu(dsp_ui::menuDSP);
+        } else {
+            main_board::toggle_dsp();
+            set_dirty();
+        }
     };
 
     add_children({&btnDSP});

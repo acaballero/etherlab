@@ -49,7 +49,7 @@ Menu::numberPrompt<uint32_t> dspWFMMaxDev((const char *)"WFM max. deviation", &c
                                           [](uint32_t) {
                                               dsp_restart();
                                           },
-                                          10000, 100000, 5000, 10000);
+                                          10000, 150000, 5000, 10000);
 
 Menu::numberPrompt<uint32_t> dspFMMaxDev((const char *)"FM max. deviation", &config.dsp.fm_max_deviation, 0, ' ', '.', "Hz",
                                          [](uint32_t) {

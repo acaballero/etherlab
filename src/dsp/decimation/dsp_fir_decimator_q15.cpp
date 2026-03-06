@@ -112,12 +112,12 @@ template <int TAPS, typename T> bool DspFIRDecimatorQ15Base<TAPS, T>::config(uin
     return this->init();
 }
 
-template <int TAPS> void DspFIRDecimatorQ15<TAPS, complex_t>::clear_state() {
+template <int TAPS> void DspFIRDecimatorQ15<TAPS, complex_t>::reset() {
     memset(dsp_fir_decimate_instance.pState, 0, sizeof(state));
     memset(dsp_fir_decimate_instance_q.pState, 0, sizeof(state_q));
 }
 
-template <int TAPS, typename T> void DspFIRDecimatorQ15Base<TAPS, T>::clear_state() {
+template <int TAPS, typename T> void DspFIRDecimatorQ15Base<TAPS, T>::reset() {
     memset(dsp_fir_decimate_instance.pState, 0, sizeof(state));
 }
 

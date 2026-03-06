@@ -14,9 +14,6 @@
 
 namespace dsp {
 
-// Gain
-int8_t dsp_gain_factor = 0;
-
 // Enable frequency shift (for DC common-mode avoidance)
 bool freq_shift_enabled = true;
 
@@ -92,8 +89,9 @@ void set_sample_freq_limits(bool dsp) {
 }
 
 void set_gain_db(int8_t gain_db) {
-    dsp_gain_factor = constrain(gain_db, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB);
-    dsp_params->gain_factor = pow(10.0, (float)dsp_gain_factor / 20.0);
+    LOG("Set DSP audio gain: %d dB\n", gain_db);
+    auto db = constrain(gain_db, DSP_MIN_TX_GAIN_DB, DSP_MAX_TX_GAIN_DB);
+    dsp_params->gain_factor = pow(10.0, (float)db / 20.0);
     dsp_common_params_signal.emit(&dsp_params);
 }
 

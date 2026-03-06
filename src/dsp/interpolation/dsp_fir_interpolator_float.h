@@ -37,7 +37,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS, typename T = float> class DspFIRI
 
     void set_factor(uint16_t factor) override;
 
-    virtual void clear_state();
+    void reset() override;
 
   protected:
     static constexpr int state_size = (TAPS + DSP_BLOCK - 1) * sizeof(float32_t);
@@ -73,7 +73,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRInterpolatorFloat : p
 
     bool config(uint32_t input_rate, uint32_t bandwidth, uint16_t factor, uint32_t start_frequency = 0) override;
 
-    void clear_state() override;
+    void reset() override;
 
   protected:
     using DspFIRInterpolatorFloatBase<TAPS, float32_t>::state;

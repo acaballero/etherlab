@@ -183,7 +183,9 @@ void open_app(std::unique_ptr<View> view) {
     auto *view_ptr = app_view_p.get();
     app_view_p->on_hide_fn = [view_ptr]() {
         view_manager::mainView.remove_child(view_ptr);
-        app_view_p.reset();
+        if (app_view_p.get() == view_ptr) {
+            app_view_p.reset();
+        }
         Menu::close();
     };
 
@@ -201,7 +203,9 @@ void open(std::unique_ptr<View> v) {
     auto *view_ptr = view_p.get();
     view_p->on_hide_fn = [view_ptr]() {
         view_manager::mainView.remove_child(view_ptr);
-        view_p.reset();
+        if (view_p.get() == view_ptr) {
+            view_p.reset();
+        }
     };
 
     view_manager::mainView.add_child(view_ptr);

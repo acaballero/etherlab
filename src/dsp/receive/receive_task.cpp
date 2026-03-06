@@ -17,6 +17,7 @@
 #include "dsp/fir_filter.h"
 #include "dsp/dsp_common.h"
 #include "dsp/modulation/dsp_demodulate.h"
+#include "hw/board/board_v2.h"
 #include "main_board.h"
 #include "radio.h"
 #include "status.h"
@@ -137,6 +138,28 @@ bool ReceiveTask::init() {
         squelch_signal_token = sstrength::squelch_signal.add(NULL, [this](void *, const void *) {
             if (info.status == DSP_STATUS_RUNNING) {
                 set_squelch();
+            }
+        });
+    }
+
+    if (!if_gain_signal_token) {
+        if_gain_signal_token = if_gain_signal.add(NULL, [this](void *, const void *) {
+            MODULATION_MODE mod = main_board::get_modulation_mode();
+
+            switch (mod) {
+                case AM:
+                case SSB_LSB:
+                case SSB_USB: {
+                    // When the IF gain is changed, amplitude modulated signals demodulated audio needs to be compensated
+                    // This is done with respect to a reference IF gain of 0, for which a starting base_db  gain is applied
+                    int base_db = -12;
+                    auto delta_gain = -get_if_gain() + base_db;
+                    dsp::set_gain_db(delta_gain);
+
+                    break;
+                }
+                default:
+                    break;
             }
         });
     }

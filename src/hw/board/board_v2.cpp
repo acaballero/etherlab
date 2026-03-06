@@ -37,6 +37,7 @@ void loop() {
         change_calibration = false;
     }
 }
+
 os::periodic_task task(100, loop);
 
 int16_t if_gain_to_db(IF_GAIN if_gain) {
@@ -62,6 +63,7 @@ int16_t if_gain_to_db(IF_GAIN if_gain) {
 } // namespace board
 
 Si5351 si5351;
+Signal if_gain_signal;
 
 adf4350_init_param adf4350Params = {
 
@@ -143,7 +145,7 @@ void lo_strength(uint8_t stage, LO_POWER power) {
     radio::update_freq();
 }
 
-bool if_freq(RF_DIRECTION direction, uint64_t freq) {
+bool if_freq(RF_DIRECTION direction, uint64_t freq, bool log) {
 
     si5351_clock clk = (direction == RF_DIRECTION_TX) ? SI5351_TX_CLK : SI5351_RX_CLK;
     uint8_t div = (direction == RF_DIRECTION_TX) ? cmx973State.lo_tx_div : cmx973State.lo_rx_div;
@@ -160,7 +162,7 @@ bool if_freq(RF_DIRECTION direction, uint64_t freq) {
         uint64_t f = freq * SI5351_FREQ_MULT * (div ? 2 : 4);
 
 #if DEBUG_MSGS
-        if (si5351.get_freq(clk) != f) {
+        if (si5351.get_freq(clk) != f && log) {
             LOG("Setting DSP IF %s frequency: %llu (%d shift)\n", clk == SI5351_TX_CLK ? "TX" : "RX", freq, radio::get_dsp_frequency_shift());
         }
 #endif
@@ -201,6 +203,8 @@ void if_gain(RF_DIRECTION direction, IF_GAIN vga, IF_GAIN vgb) {
 
         cmx973_input_ip3 = calc_max_input_dbm();
 
+        if_gain_signal.emit(nullptr);
+
     } else {
         status::pop_alert(status::ERROR, "The IF gain can't be changed in TX direction");
     }
@@ -211,12 +215,17 @@ int get_max_input_dbm() {
 }
 
 /**
- * Returns the overall gain
- * @return
+ * Returns the IF gain
  */
-int board_gain() {
-    return board::if_gain_to_db(vga_gain) + board::if_gain_to_db(vgb_gain) +
-           59; // 60 is the total approximate gain of the CMX937 given current settings, minus 1 to account for the filter loss
+int get_if_gain() {
+    return board::if_gain_to_db(vga_gain) + board::if_gain_to_db(vgb_gain);
+}
+
+/**
+ * Returns the overall gain
+ */
+int get_board_gain() {
+    return get_if_gain() + 59; // 60 is the total approximate gain of the CMX937 given current settings, minus 1 to account for the filter loss
 }
 
 void lo_enable(uint8_t stage, bool enabled) {

@@ -24,6 +24,9 @@ template <typename T> class DspInterpolator {
     virtual void interpolate(T *src_i, T *src_q, T *dst_i, T *dst_q, size_t n_samples) = 0;
     virtual void interpolate(buffer_t<T> &src, buffer_t<T> &dst) = 0;
 
+    virtual void reset() {
+    }
+
     uint16_t get_factor() const {
         return factor;
     };

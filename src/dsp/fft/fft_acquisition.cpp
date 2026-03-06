@@ -17,6 +17,8 @@ bool FFTAcquisition::config(uint32_t input_rate, uint32_t bw, uint8_t factor) {
     decimation_factor = factor;
     n_decimators = 0;
 
+    LOG("FFT acquisition config | input_rate: %d | bandwidth: %d | decimation factor: %d\n", input_rate, bw, factor);
+
     bool ok = true;
 
     if (factor <= 1) {
@@ -41,7 +43,7 @@ bool FFTAcquisition::config(uint32_t input_rate, uint32_t bw, uint8_t factor) {
         uint8_t stage1_factor = factor / MAX_STAGE1_FACTOR;
 
         if (!decimators[0]) {
-            decimators[0] = std::make_unique<DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS>>();
+            decimators[0] = std::make_unique<DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS>>();
         }
         if (!decimators[1]) {
             decimators[1] = std::make_unique<DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS>>();
@@ -85,16 +87,17 @@ void FFTAcquisition::process(uint8_t decimation_factor) {
 
         complex_t_f32 *out = (complex_t_f32 *)dec_p;
 
+        dsp::s16_unzip_f32((const adc_type *)raw_p, src_q, src_i,
+                           DSP_BLOCK); // Note: Invert I/Q here (somehow they come inverted stil don't know why, but guess is the board paths or the ADC
+                                       // channels that are swapped)
+
         if (n_decimators == 0) {
-            // No decimation: convert s16 interleaved IQ directly to float, no unzip needed
-            dsp::s16_to_f32((const adc_type *)raw_p, (float32_t *)out, DSP_BLOCK * 2);
+            // No decimation: convert s16 interleaved IQ to float
+            // Unzipping is required to to invert the samples
+            dsp::zip_f32(src_i, src_q, (float32_t *)out, DSP_BLOCK);
             decimated.feed(out_bytes);
 
         } else {
-
-            dsp::s16_unzip_f32((const adc_type *)raw_p, src_q, src_i,
-                               DSP_BLOCK); // Note: Invert I/Q here (somehow they come inverted stil don't know why, but guess is the board paths or the ADC
-                                           // channels that are swapped)
 
             float32_t *res_i, *res_q;
 
@@ -128,8 +131,9 @@ bool FFTAcquisition::consume(complex_t_f32 *dst, uint16_t n, uint8_t decimation_
     const uint64_t deadline = HAL_GetTick() + timeout_ms;
     char *data;
     while (decimated.available(&data) < needed_bytes) { // Note this should't be required and may hide the real-time processing not being fired
-
+        __disable_irq();                                // Prevents race-conditions with ISR handlers
         process(decimation_factor);
+        __enable_irq();
         if (HAL_GetTick() > deadline) {
             return false;
         }

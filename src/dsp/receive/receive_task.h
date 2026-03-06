@@ -25,7 +25,8 @@
 class ReceiveTask : public ReceiveTaskBase {
 
   public:
-    using ReceiveTaskBase::ReceiveTaskBase;
+    ReceiveTask() : ReceiveTaskBase() {
+    }
 
     ~ReceiveTask() override;
 
@@ -44,6 +45,7 @@ class ReceiveTask : public ReceiveTaskBase {
     bool squelch_enabled = false;
 
     SignalToken squelch_signal_token{0};
+    SignalToken if_gain_signal_token{0};
 
     void set_squelch();
     bool init() override;

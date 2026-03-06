@@ -40,7 +40,7 @@ template <int TAPS = FFT_LPF_FIR_FILTER_NTAPS> class DspFIRDecimatorFloatComplex
     void decimate(float *src_i, float *src_q, float *dst_i, float *dst_q, size_t n_samples) override;
     void decimate(float32_t *src, float32_t *dst, size_t n_samples);
     bool config(uint32_t input_rate, uint32_t output_rate, uint16_t factor, uint32_t start_frequency = 0, uint16_t block_size = DSP_BLOCK) override;
-    virtual void clear_state();
+    void reset() override;
     bool get_initialized() const;
 
     void set_factor(uint16_t factor) override;

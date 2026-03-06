@@ -139,10 +139,15 @@ void dsp_set_real_time(bool real_time) {
 
 void restart_callback(void *, const void *) {
 
-    if (ISANALOG && dsp_task && dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING) {
+    if (ISANALOG) {
+        if (dsp_task && dsp::dsp_params && dsp::dsp_params->status == DSP_STATUS_RUNNING) {
 
-        LOG("restart_callback: ANALOG mode ON: issuing stop command\n");
-        dsp_stop();
+            LOG("restart_callback: ANALOG mode ON: issuing stop command\n");
+            dsp_stop();
+        } else {
+            // Analog mode and no task -> set board DSP radio config accordingly
+            radio_config({RF_DIRECTION_RX, 0});
+        }
 
     } else if (config.mode == DIGITAL_RX && (!dsp_task || (dsp_task->info.id == dsp::DSP_TASK_TRANSMIT))) {
 
@@ -423,13 +428,10 @@ inline void adc_work() {
             dc_block_q.filter(bb, 2, 1);
         }
 
-        if (fft::fft_params.decimation_factor > 1) {
-            // TODO: Decimate here vs in both FFT and current DSP task?
-        }
-
         dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
     }
-
+#endif
+  
     if (!dsp::dsp_params || dsp::dsp_params->direction == DSP_DIRECTION_IN || dsp::dsp_params->direction == DSP_DIRECTION_INOUT) {
 
         // If the direction is input or bidirectional...
@@ -449,8 +451,6 @@ inline void adc_work() {
         //     last_t = t;
         // }
     }
-
-#endif
 
     auto proc = dsp_task ? dsp_task->get_processor() : nullptr;
     if (proc && (proc->info.direction == DSP_DIRECTION_IN || proc->info.direction == DSP_DIRECTION_INOUT)) {
