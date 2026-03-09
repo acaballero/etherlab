@@ -50,7 +50,7 @@ void ReceiveTaskBase::work() {
         uint32_t av = input_stream.available(&in_p);
         uint32_t output_samples = 0;
 
-        if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / info.decimation_factor)) {
+        if (av >= DSP_FIFO_BLOCK_BYTES && free >= (DSP_FIFO_BLOCK_BYTES / info.decimation_factor / 2)) { // /2 since the output is real-valued
 
             info.processed_blocks++;
             av = DSP_FIFO_BLOCK_BYTES;
@@ -235,7 +235,7 @@ bool ReceiveTaskBase::init_decimators(MODULATION_MODE mod) {
                     next_stage_fs >>= 1;
                 }
 
-                // assign the output sample rate of this decimator as the demodulation sample rate so we configure the demodulator accordingly
+                // assign the output sample rate of this decimator to the demodulation sample rate so we configure the demodulator accordingly
                 demodulation_sample_rate = next_stage_fs;
                 next_stage_bandwidth = modulation_bandwidth_hz; // Filter just the signal bandwidth to demodulate
                 n_pre_decimators++;

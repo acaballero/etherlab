@@ -313,4 +313,27 @@ static inline void profile_stack_pop(void) {
 
 void DWT_Init(void);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void vlog_f32(const float32_t *pSrc, float32_t *pDst, uint32_t blockSize);
+
+/**
+@brief       Arc Tangent of y/x using sign of y and x to get right quadrant
+@param[in]   y  y coordinate
+@param[in]   x  x coordinate
+@param[out]  result  Result
+@return  error status.
+
+@par         Compute the Arc tangent of y/x:
+                 The sign of y and x are used to determine the right quadrant
+                 and compute the right angle.
+*/
+bool atan2_f32(float32_t y, float32_t x, float32_t *result);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // UTILS_H

@@ -2,6 +2,7 @@
 // Created by Angel Dust on 16/04/2021.
 //
 #include "aprs/aprs_ui.h"
+#include "ook/dsp_ook_ui.h"
 #include "config.h"
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_tasks.h"
@@ -95,8 +96,8 @@ result open_radiosonde(eventMask) {
 
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
-     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), OP("Radiosonde", open_radiosonde, enterEvent), SUBMENU(toggleDSP),
-     SUBMENU(toggleAGC), SUBMENU(toggleBasebandEcho), SUBMENU(toggleAudioBPF), SUBMENU(toggleFMDeemph), SUBMENU(toggleDSPCompressor),
-     OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu), OBJ(dspWFMMaxDev), OBJ(dspFMMaxDev));
+     SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), OP("Radiosonde", open_radiosonde, enterEvent),
+     SUBMENU(dspOOKUI::ookMenu), SUBMENU(toggleDSP), SUBMENU(toggleAGC), SUBMENU(toggleBasebandEcho), SUBMENU(toggleAudioBPF), SUBMENU(toggleFMDeemph),
+     SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu), OBJ(dspWFMMaxDev), OBJ(dspFMMaxDev));
 
 } // namespace dsp_ui

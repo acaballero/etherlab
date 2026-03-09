@@ -112,7 +112,7 @@ bool ReceiveTask::init() {
     MODULATION_MODE mod = main_board::get_modulation_mode();
 
     if (dsp::apply_audio_bpf()) {
-        audio_bpf.config(info.sample_rate, get_audio_bw_hz(), 1, mod == WFM ? 30 : 300);
+        audio_bpf.config(info.sample_rate, get_audio_bw_hz(), 1, mod == WFM ? 100 : 300);
         audio_bpf_enabled = true;
     } else {
         audio_bpf_enabled = false;

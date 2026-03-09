@@ -7,12 +7,20 @@
 #include "arm_math.h"
 #include "dsp/dsp_common.h"
 #include "dsp/fft/fft_types.h"
-#include "dsp_hilbert.h"
+#include "dsp_hilbert.hpp"
 #include "status.h"
 #include "stm32f4xx_hal_tim.h"
-#include "utils.hpp"
 
 namespace dsp {
+
+static inline float angle_approx_0deg27(const complex_t t) {
+    if (t.r) {
+        const auto x = static_cast<float>(t.i) / static_cast<float>(t.r); // Fixed: was t.i / t.i
+        return x / (1.0f + 0.28086f * x * x);
+    } else {
+        return (t.i < 0) ? -1.5707963268f : 1.5707963268f;
+    }
+}
 
 static inline float angle_precise(const complex_t_f32 t) {
     return atan2f(t.i, t.r);
@@ -211,7 +219,7 @@ void ssb_fm_demodulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
     const auto src_end = &src.p[src.count];
     float mag_sq_lpf_norm;
 
-    status::pop_alert(status::ERROR, "Not implemented: SOS filters still not implemented");
+    status::handleError(status::ST_ERROR, "Not implemented: SOS filters still not implemented");
 
     while (src_p < src_end) {
         // FM APT audio tone demod: real part (USB-differentiator)  and AM tone demodulation + lpf (to remove the subcarrier.)
@@ -230,15 +238,15 @@ void ssb_fm_demodulator::work(buffer_t<complex_t> &src, adc_type *dst_p) {
 }
 
 void ssb_fm_demodulator::work(buffer_t<complex_t_f32> &, float32_t *) {
-    status::pop_alert(status::ERROR, "Not implemented: SOS filters still not implemented");
+    status::handleError(status::ST_ERROR, "Not implemented: SOS filters still not implemented");
 }
 
 void ssb_fm_demodulator::work(const float32_t *, const float32_t *, float32_t *, size_t) {
-    status::pop_alert(status::ERROR, "Not implemented");
+    status::handleError(status::ST_ERROR, "Not implemented");
 }
 
 void ssb_fm_demodulator::work_real(const float32_t *, const float32_t *, float32_t *, size_t) {
-    status::pop_alert(status::ERROR, "Not implemented");
+    status::handleError(status::ST_ERROR, "Not implemented");
 }
 
 // ============================================================================
@@ -279,7 +287,7 @@ void fm_demodulator::work(buffer_t<complex_t_f32> &src, float32_t *dst_p) {
 
         // kf is an improvement for scaling (might be omitted)
         // the angle_precise is slow but necessary for wideband FM. For narrowband, a good aproximation is: Phase difference ~ (i0*q1 - q0*i1) / (i0^2 + q0^2)
-        *(dst_p) = angle_precise(t0) * kf * 100;
+        *(dst_p) = angle_precise(t0) * kf * 10.0;
 
         // Destination assumed to be interleaved complex.
         // Not required if the target stream is an audio DAC. It'd prevent proper loop unrolling in 16 bit types but with f32 my bet (not measured) is it does
@@ -294,7 +302,7 @@ void fm_demodulator::work(buffer_t<complex_t_f32> &src, float32_t *dst_p) {
 
 void fm_demodulator::work(const float32_t *src_i, const float32_t *src_q, float32_t *dst_p, size_t count) {
     float32_t prev_i = prev_i_f32, prev_q = prev_q_f32;
-    const float32_t gain = kf * 100;
+
     // Process 2 samples at a time for better pipeline utilization
     for (size_t i = 0; i < count; i += 2) {
         // Sample 0
@@ -313,8 +321,8 @@ void fm_demodulator::work(const float32_t *src_i, const float32_t *src_q, float3
         const float32_t imag1 = curr_q1 * curr_i0 - curr_i1 * curr_q0;
 
         // Compute angles (this is the bottleneck)
-        dst_p[2 * i] = atan2f(imag0, real0) * gain;
-        dst_p[2 * i + 2] = atan2f(imag1, real1) * gain;
+        dst_p[2 * i] = atan2f(imag0, real0) * kf * 10.0f;
+        dst_p[2 * i + 2] = atan2f(imag1, real1) * kf * 10.0f;
 
         prev_i = curr_i1;
         prev_q = curr_q1;
@@ -324,103 +332,37 @@ void fm_demodulator::work(const float32_t *src_i, const float32_t *src_q, float3
     prev_q_f32 = prev_q;
 }
 
-// Version with limiter to reduce AM modulation
 void fm_demodulator::work_real(const float32_t *src_i, const float32_t *src_q, float32_t *dst_p, size_t count) {
     float32_t prev_i = prev_i_f32, prev_q = prev_q_f32;
-    float32_t a1, a2;
-    constexpr float32_t EPS = 1e-12f;
-    const float32_t gain = kf * 100;
+
     // Optimized for sequential output - much better cache performance
     for (size_t i = 0; i < count; i += 2) {
         // Sample 0
-        float32_t i0 = src_i[i];
-        float32_t q0 = src_q[i];
-
-        // Fast limiter
-        float32_t ai0 = fabsf(i0);
-        float32_t aq0 = fabsf(q0);
-
-        float32_t max0 = ai0 > aq0 ? ai0 : aq0;
-        float32_t min0 = ai0 > aq0 ? aq0 : ai0;
-
-        float32_t mag0 = max0 + 0.375f * min0 + EPS;
-        float32_t inv0 = 1.0f / mag0;
-
-        i0 *= inv0;
-        q0 *= inv0;
+        const float32_t curr_i0 = src_i[i];
+        const float32_t curr_q0 = src_q[i];
 
         // Cross-correlation: curr * conj(prev)
-        const float32_t real0 = i0 * prev_i + q0 * prev_q;
-        const float32_t imag0 = q0 * prev_i - i0 * prev_q;
+        const float32_t real0 = curr_i0 * prev_i + curr_q0 * prev_q;
+        const float32_t imag0 = curr_q0 * prev_i - curr_i0 * prev_q;
 
         // Sample 1 (pipeline with sample 0)
-        float32_t i1 = src_i[i + 1];
-        float32_t q1 = src_q[i + 1];
+        const float32_t curr_i1 = src_i[i + 1];
+        const float32_t curr_q1 = src_q[i + 1];
 
-        float32_t ai1 = fabsf(i1);
-        float32_t aq1 = fabsf(q1);
-
-        float32_t max1 = ai1 > aq1 ? ai1 : aq1;
-        float32_t min1 = ai1 > aq1 ? aq1 : ai1;
-
-        float32_t mag1 = max1 + 0.375f * min1 + EPS;
-        float32_t inv1 = 1.0f / mag1;
-
-        i1 *= inv1;
-        q1 *= inv1;
-
-        const float32_t real1 = i1 * i0 + q1 * q0;
-        const float32_t imag1 = q1 * i0 - i1 * q0;
+        const float32_t real1 = curr_i1 * curr_i0 + curr_q1 * curr_q0;
+        const float32_t imag1 = curr_q1 * curr_i0 - curr_i1 * curr_q0;
 
         // Sequential writes - much better for cache and memory bandwidth
+        dst_p[i] = atan2f(imag0, real0) * kf * 10.0f;
+        dst_p[i + 1] = atan2f(imag1, real1) * kf * 10.0f;
 
-        atan2_f32(imag0, real0, &a1);
-        atan2_f32(imag1, real1, &a2);
-        dst_p[i] = a1 * gain;
-        dst_p[i + 1] = a2 * gain;
-
-        prev_i = i1;
-        prev_q = q1;
+        prev_i = curr_i1;
+        prev_q = curr_q1;
     }
 
     prev_i_f32 = prev_i;
     prev_q_f32 = prev_q;
 }
-
-// void fm_demodulator::work_real(const float32_t *src_i, const float32_t *src_q, float32_t *dst_p, size_t count) {
-//     float32_t prev_i = prev_i_f32, prev_q = prev_q_f32;
-//     float32_t a1, a2, gain = kf * 30.0f;
-
-//     // Optimized for sequential output - much better cache performance
-//     for (size_t i = 0; i < count; i += 2) {
-//         // Sample 0
-//         const float32_t curr_i0 = src_i[i];
-//         const float32_t curr_q0 = src_q[i];
-
-//         // Cross-correlation: curr * conj(prev)
-//         const float32_t real0 = curr_i0 * prev_i + curr_q0 * prev_q;
-//         const float32_t imag0 = curr_q0 * prev_i - curr_i0 * prev_q;
-
-//         // Sample 1 (pipeline with sample 0)
-//         const float32_t curr_i1 = src_i[i + 1];
-//         const float32_t curr_q1 = src_q[i + 1];
-
-//         const float32_t real1 = curr_i1 * curr_i0 + curr_q1 * curr_q0;
-//         const float32_t imag1 = curr_q1 * curr_i0 - curr_i1 * curr_q0;
-
-//         // Sequential writes - much better for cache and memory bandwidth
-//         atan2_f32(imag0, real0, &a1);
-//         atan2_f32(imag1, real1, &a2);
-//         dst_p[i] = a1 * gain;
-//         dst_p[i + 1] = a2 * gain;
-
-//         prev_i = curr_i1;
-//         prev_q = curr_q1;
-//     }
-
-//     prev_i_f32 = prev_i;
-//     prev_q_f32 = prev_q;
-// }
 
 void fm_demodulator::configure(const float sampling_rate, const float deviation_hz) {
     /*
@@ -428,8 +370,8 @@ void fm_demodulator::configure(const float sampling_rate, const float deviation_
      * Maximum delta-theta (output of atan2) at maximum deviation frequency:
      * delta_theta_max = 2 * pi * deviation / sampling_rate
      */
-    LOG("Configuring FM demodulator | deviation: %d | rate: %d\n", (int)deviation_hz, (int)sampling_rate);
-    kf = static_cast<float>((1.0f / (2.0 * PI * deviation_hz / sampling_rate)));
+    kf = static_cast<float>(1.0f / (2.0 * PI * deviation_hz / sampling_rate));
+    ks16 = 32767.0f * kf;
 }
 
 } // namespace dsp

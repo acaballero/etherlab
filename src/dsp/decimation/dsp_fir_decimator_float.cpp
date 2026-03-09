@@ -14,7 +14,9 @@
 #include "memory_allocator.h"
 
 template class DspFIRDecimatorFloatBase<FFT_LPF_FIR_FILTER_NTAPS, float32_t>;
-template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS>;
+
+// template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS>;
+template class DspFIRDecimatorFloat<28>;
 // template class DspFIRDecimatorFloat<FFT_LPF_FIR_FILTER_NTAPS, adc_type>;
 
 template class DspFIRDecimatorFloat<FIR_DECIMATOR_1ST_HALFBAND_TAPS>;

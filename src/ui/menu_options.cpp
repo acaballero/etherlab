@@ -24,7 +24,7 @@ menu_option_st<radio::IF_FILTER> if_filter_options[] = {
     {radio::IFFilterNames[radio::IF_FILTER_3KHZ], radio::IF_FILTER_3KHZ},     {radio::IFFilterNames[radio::IF_FILTER_6KHZ], radio::IF_FILTER_6KHZ},
     {radio::IFFilterNames[radio::IF_FILTER_7_5KHZ], radio::IF_FILTER_7_5KHZ}, {radio::IFFilterNames[radio::IF_FILTER_9KHZ], radio::IF_FILTER_9KHZ},
     {radio::IFFilterNames[radio::IF_FILTER_15KHZ], radio::IF_FILTER_15KHZ},   {radio::IFFilterNames[radio::IF_FILTER_150KHZ], radio::IF_FILTER_150KHZ},
-    {radio::IFFilterNames[radio::IF_FILTER_180KHZ], radio::IF_FILTER_180KHZ}};
+    {radio::IFFilterNames[radio::IF_FILTER_120KHZ], radio::IF_FILTER_120KHZ}};
 const char *colorNames[] = {"Black",        "Grey darker", "Grey dark", "Grey ligh", "White",   "Navy",     "Green dark",  "Cyan dark",    "Maroon",
                             "Olive",        "Blue",        "Green",     "Red",       "Magenta", "Yellow",   "Yellow dark", "Yellow light", "Orange",
                             "Green-yellow", "Pink",        "Brown",     "Gold",      "Silver",  "Sky blue", "Violet"};

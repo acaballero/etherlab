@@ -110,14 +110,15 @@ const st_filter if_filters[8] = {
     {10700000, 9000, false, 0},                         // 9 Khz (digital only)
     {10698000, 15000, true, GPIOEXP_IF_FILTER_15KHZ},   // 15 Kh
     {10700000, 150000, true, GPIOEXP_IF_FILTER_150KHZ}, // 150 Khz
-    {10700000, 150000, false, 0},                       // 180 Khz for WFM (digital only)
+    {10700000, 120000, false, 0}, // 120 Khz for WFM. In DSP mode, filtering for 150k needs many taps to avoid aliasing. It is not terribly bad, but I'll leave
+                                  // this reduced bandwidth anyway
 
 };
 const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "10 m",  "11 m", "12 m", "15 m",
                            "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "All",  "None"};
 const char *modulation_names[] = {"LSB", "USB", "FM", "WFM", "AM", "CW", "NONE"};
 const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 150000, 6000, 0};
-const char *IFFilterNames[] = {"300 Hz", "3 k", "6 k", "7.5 k", "9 k", "15 k", "150 k", "180 k", "Auto"};
+const char *IFFilterNames[] = {"300 Hz", "3 k", "6 k", "7.5 k", "9 k", "15 k", "150 k", "120 k", "Auto"};
 const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
 const char *rf_path_names[] = {"RX", "TX", "OFF"};
@@ -481,7 +482,7 @@ IF_FILTER band_if_filter() {
                 if (ISANALOG) {
                     filter = IF_FILTER_150KHZ;
                 } else {
-                    filter = IF_FILTER_180KHZ;
+                    filter = IF_FILTER_120KHZ;
                 }
 
             } else {
