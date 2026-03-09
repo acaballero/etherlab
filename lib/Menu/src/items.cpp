@@ -132,6 +132,9 @@ constText* textField::validator(int i) {return ((textFieldShadow*)shadow)->opera
 
 void textField::doNav(navNode& nav,navCmd cmd) {
   trace(MENU_DEBUG_OUT<<"textField::doNav:"<<cmd.cmd<<endl);
+
+  bool text_changed=false;
+
   switch(cmd.cmd) {
     case enterCmd:
       if (edited&&!charEdit) {
@@ -161,6 +164,7 @@ void textField::doNav(navNode& nav,navCmd cmd) {
         if (pos>=(idx_t)strlen(v)) pos=0;
         buffer()[cursor]=v[pos];
         dirty=true;
+        text_changed=true;
       } else {
         if(cursor<(idx_t)strlen(buffer())-1) cursor++;
         // if(cursor<sz()) cursor++;
@@ -176,6 +180,7 @@ void textField::doNav(navNode& nav,navCmd cmd) {
         if (pos<0) pos=strlen(v)-1;
         buffer()[cursor]=v[pos];
         dirty=true;
+        text_changed=true;
       } else {
         if (cursor) cursor--;
         edited=false;
@@ -184,6 +189,11 @@ void textField::doNav(navNode& nav,navCmd cmd) {
       break;
     default:break;
   }
+
+  if (text_changed) {
+    nav.event(nav.root->useUpdateEvent?updateEvent:enterEvent);
+  }
+
   trace(MENU_DEBUG_OUT<<"cursor:"<<cursor<<endl);
 }
 
@@ -306,6 +316,7 @@ void textField::parseInput(navNode& nav,menuIn& in) {
         buffer()[cursor]=validator(cursor)[0];
         if (cursor) cursor--;
         dirty=true;
+        nav.event(nav.root->useUpdateEvent?updateEvent:enterEvent);
         return;
       default: {
         const char* v=validator(cursor);
@@ -315,6 +326,7 @@ void textField::parseInput(navNode& nav,menuIn& in) {
           buffer()[cursor]=c;
           if (cursor<(idx_t)strlen(buffer())-1) cursor++;
           dirty=true;
+          nav.event(nav.root->useUpdateEvent?updateEvent:enterEvent);
           return;
         }
         // MENU_DEBUG_OUT<<hex(c)<<endl;

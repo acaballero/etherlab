@@ -48,8 +48,23 @@ static std::vector<uint8_t> parsed_sequence;
 // Widget
 static OOKWidget ook_w({{DISPLAY_X_PIXELS / 2, MENU_START_Y, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 6}, &lcd, "ook"});
 
+static void normalize_sequence_buf() {
+    // Keep a single trailing blank so the menu editor can extend the sequence
+    // one bit at a time (by editing the blank into 0/1).
+    size_t len = strlen(sequence_buf);
+
+    while (len > 0 && sequence_buf[len - 1] == ' ') {
+        sequence_buf[len - 1] = '\0';
+        len--;
+    }
+
+    if (len < MAX_SEQ_LEN) {
+        sequence_buf[len] = ' ';
+        sequence_buf[len + 1] = '\0';
+    }
+}
+
 // Parse the text buffer into a vector of 0/1 values.
-// Non-0/1 characters are ignored, 'F'/'f' inserts two 1s (common OOK convention).
 static void parse_sequence() {
     parsed_sequence.clear();
     for (size_t i = 0; i < MAX_SEQ_LEN && sequence_buf[i] != '\0'; i++) {
@@ -58,10 +73,6 @@ static void parse_sequence() {
             parsed_sequence.push_back(1);
         } else if (c == '0') {
             parsed_sequence.push_back(0);
-        } else if (c == 'F' || c == 'f') {
-            // Flipper / Mayhem convention: 'F' = two consecutive 1s
-            parsed_sequence.push_back(1);
-            parsed_sequence.push_back(1);
         }
     }
 }
@@ -72,6 +83,31 @@ static void update_widget() {
     ook_w.set_timing(mark_duration_us, space_duration_us);
     ook_w.set_dirty();
 }
+
+static bool pending_ook_config = false;
+
+static void apply_processor_config(st_dsp_params *task_info) {
+    if (!dsp_task) {
+        return;
+    }
+
+    auto *proc = (DspOOKProcessor *)dsp_task->get_processor();
+    if (!proc) {
+        return;
+    }
+
+    uint32_t sr = task_info ? task_info->sample_rate : dsp_task->info.sample_rate;
+
+    proc->set_config(0, mark_duration_us, space_duration_us, pause_us, sr);
+    proc->set_sequence(parsed_sequence);
+    proc->set_loop(loop_enabled);
+    proc->set_repetitions(repetitions);
+
+    ook_w.set_sequence(&parsed_sequence);
+    ook_w.set_timing(mark_duration_us, space_duration_us);
+    ook_w.set_task_status(&dsp_task->info);
+}
+
 
 // Frequency edit
 static result on_freq_updated();
@@ -88,6 +124,12 @@ static void on_event(st_dsp_params *, st_dsp_params *task_info) {
 
     switch (task_info->status) {
         case DSP_STATUS_RUNNING:
+            stopped = false;
+            if (pending_ook_config) {
+                apply_processor_config(task_info);
+                pending_ook_config = false;
+            }
+            break;
         case DSP_STATUS_PENDING:
             stopped = false;
             break;
@@ -99,6 +141,7 @@ static void on_event(st_dsp_params *, st_dsp_params *task_info) {
 }
 
 static void configure_and_start() {
+    normalize_sequence_buf();
     parse_sequence();
 
     if (parsed_sequence.empty()) {
@@ -107,6 +150,9 @@ static void configure_and_start() {
         return;
     }
 
+    update_widget();
+
+    pending_ook_config = true;
     dsp_start(
         []() {
             auto task = std::make_unique<OOKTask>();
@@ -114,18 +160,7 @@ static void configure_and_start() {
         },
         on_event);
 
-    // Configure the processor after the task is started
     if (dsp_task) {
-        auto *proc = (DspOOKProcessor *)dsp_task->get_processor();
-        if (proc) {
-            proc->set_config(0, mark_duration_us, space_duration_us, pause_us, dsp_task->info.sample_rate);
-            proc->set_sequence(parsed_sequence);
-            proc->set_loop(loop_enabled);
-            proc->set_repetitions(repetitions);
-        }
-
-        ook_w.set_sequence(&parsed_sequence);
-        ook_w.set_timing(mark_duration_us, space_duration_us);
         ook_w.set_task_status(&dsp_task->info);
     }
 }
@@ -147,6 +182,7 @@ static result on_freq_updated() {
 
 // Called when the sequence text is edited
 static result on_sequence_updated(eventMask) {
+    normalize_sequence_buf();
     parse_sequence();
     update_widget();
     return proceed;
@@ -165,6 +201,7 @@ static result on_menu_event(eventMask e) {
             freqEdit.set_frequency(radio::get_frequency());
             dsp_set_real_time(true);
 
+            normalize_sequence_buf();
             parse_sequence();
             view_manager::mainView.add_child(&ook_w);
             update_widget();
@@ -216,10 +253,22 @@ numberPrompt<uint16_t> repetitionsMenu((const char *)"Reps:", &repetitions, 0, '
                                        },
                                        1, 10000, 1, 10);
 
+#ifdef __clang__
+#ifndef typeof
+#define typeof __typeof__
+#endif
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-braces"
+#endif
+
 TOGGLE(loop_enabled, loopToggle, "Loop: ", doNothing, noEvent, noStyle, VALUE("On", true, doNothing, noEvent), VALUE("Off", false, doNothing, noEvent));
 
 MENU(ookMenu, "OOK Transmitter", on_menu_event, (eventMask)(enterEvent | exitEvent), noStyle, OP("Start / Stop", change_dsp_status, enterEvent),
      EDIT("Seq:", sequence_buf, binaryMask, on_sequence_updated, updateEvent, noStyle), OBJ(markDurationMenu), OBJ(spaceDurationMenu), OBJ(pauseMenu),
      OBJ(repetitionsMenu), SUBMENU(loopToggle), OBJ(freqEdit))
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 } // namespace dspOOKUI

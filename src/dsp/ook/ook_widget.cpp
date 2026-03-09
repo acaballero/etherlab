@@ -21,8 +21,12 @@ void OOKWidget::draw_waveform() {
     }
 
     const int margin_x = 6;
-    const int y_top = 14;
-    const int y_bottom = area.box.height - 18; // Leave room for labels and progress bar
+    const int y_top = 16;
+
+    const int bar_y = area.box.height - 8;
+    const int label_y = bar_y - y_top; // Font_7x10 + spacing
+    const int y_bottom = label_y - 6;  // Leave room for labels
+
     const int diagram_width = area.box.width - margin_x * 2;
 
     if (y_bottom <= y_top) {
@@ -44,7 +48,6 @@ void OOKWidget::draw_waveform() {
     float px_per_us = (float)diagram_width / (float)total_us;
 
     uint16_t line_color = C565_CYAN;
-    uint16_t fill_color = 0x0334; // dark cyan
     uint16_t cursor_color = C565_YELLOW;
 
     float x_accum = (float)margin_x;
@@ -82,13 +85,6 @@ void OOKWidget::draw_waveform() {
             display->writeLine(x_start, y, x_end, y, line_color);
         }
 
-        // Fill below "on" segments
-        if (on && (y_bottom - y_top) > 2) {
-            for (int fy = y_top + 1; fy < y_bottom; fy++) {
-                display->writeLine(x_start, fy, x_end, fy, fill_color);
-            }
-        }
-
         // Track cursor position
         if (i == current_bit) {
             cursor_x = x_accum;
@@ -110,19 +106,19 @@ void OOKWidget::draw_waveform() {
     // Baseline
     display->writeLine(margin_x, y_bottom, margin_x + diagram_width, y_bottom, C565_GREY_DARK);
 
-    // Bit count labels
-    display->setFont((FontDef *)&Font_Fixed5x7);
+    // Labels
+    display->setFont((FontDef *)&Font_7x10);
     display->setColor(C565_GREY_LIGHT);
-    display->gotoXY(margin_x, y_bottom + 1);
+    display->gotoXY(margin_x, label_y);
 
-    char label[16];
+    char label[20];
     snprintf(label, sizeof(label), "%d bits", (int)seq_len);
     display->print(label);
 
     // Frame duration label (right-aligned)
-    snprintf(label, sizeof(label), "%luus", (unsigned long)total_us);
-    int label_w = strlen(label) * 5;
-    display->gotoXY(margin_x + diagram_width - label_w, y_bottom + 1);
+    snprintf(label, sizeof(label), "%lu us", (unsigned long)total_us);
+    int label_w = strlen(label) * 7;
+    display->gotoXY(margin_x + diagram_width - label_w, label_y);
     display->print(label);
 
     // Draw playback cursor
