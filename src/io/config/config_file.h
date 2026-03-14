@@ -184,7 +184,12 @@ template <typename T> bool ConfigFile<T>::read_string(const char *fmt, char *v) 
     if (read_line(fmt)) {
         //  printf_("line: %s\n", buf);
         std::strcpy(v, buf + strlen(fmt));
-        v[strlen(v) - 1] = 0; // remove newline
+
+        // Strip newline(s). Handle both LF and CRLF.
+        while (strlen(v) > 0 && (v[strlen(v) - 1] == '\n' || v[strlen(v) - 1] == '\r')) {
+            v[strlen(v) - 1] = 0;
+        }
+
         return true;
     } else {
         //   printf_("Not found\n");

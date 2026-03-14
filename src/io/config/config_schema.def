@@ -1,0 +1,108 @@
+// X-macro configuration schema.
+//
+// This file is intentionally included multiple times with different macro
+// definitions to generate save/load/journal code.
+//
+// Each entry provides:
+//   - KEY: string key (without trailing '=')
+//   - ID:  identifier used for journal baseline storage (flattened)
+//   - MEMBER: member path within st_config (may be nested)
+//
+// Special markers:
+// - CFG_VERSION(ID) is for snapshot-only version line handling.
+// - CFG_VFO_ARRAY(ID) is for snapshot/journal VFO array fields.
+// - CFG_FFT_IQ_BLOBS(ID) is for snapshot-only large binary fields.
+
+CFG_VERSION(version);
+
+CFG_BOOL("debug", debug, debug);
+CFG_U8("power_ctrl", power_ctrl, power_ctrl);
+
+CFG_ENUM("filter", filter, filter);
+CFG_ENUM("if_filter", if_filter, if_filter);
+CFG_ENUM("frontend_path", frontend_path, frontend_path);
+CFG_ENUM("modulation", modulation, modulation);
+CFG_ENUM("mode", mode, mode);
+CFG_ENUM("band", band, band);
+
+CFG_BOOL("hpa_enabled", hpa_enabled, hpa_enabled);
+CFG_U8("max_power_dbm", max_power_dbm, max_power_dbm);
+CFG_ENUM("lo_injection", lo_injection, lo_injection);
+CFG_U8("power_save_period_seconds", power_save_period_seconds, power_save_period_seconds);
+
+CFG_U32("f_1st_if", f_1st_if, f_1st_if);
+CFG_U32("f_if_fm_tx", f_if_fm_tx, f_if_fm_tx);
+
+CFG_U8("vfo_ix", vfo_ix, vfo_ix);
+CFG_VFO_ARRAY(vfo);
+
+CFG_BOOL("memory_mode", memory_mode, memory_mode);
+CFG_U32_L("f_carrier", f_carrier, f_carrier);
+CFG_U32_L("f_step", f_step, f_step);
+CFG_U32_L("f_max", f_max, f_max);
+CFG_U32_L("f_min", f_min, f_min);
+
+CFG_U32("repeater_offset", repeater_offset, repeater_offset);
+CFG_ENUM("repeater_mode", repeater_mode, repeater_mode);
+
+// FFT scalars
+CFG_U32("fft.span", fft_span, fft.span);
+CFG_U32("fft.bw", fft_bw, fft.bw);
+CFG_I16("fft.min_db", fft_min_db, fft.min_db);
+CFG_I16("fft.max_db", fft_max_db, fft.max_db);
+CFG_BOOL("fft.min_db_auto", fft_min_db_auto, fft.min_db_auto);
+CFG_U8("fft.view_mode", fft_view_mode, fft.view_mode);
+CFG_FLOAT("fft.smooth_factor", fft_smooth_factor, fft.smooth_factor);
+CFG_BOOL("fft.enabled", fft_enabled, fft.enabled);
+CFG_U8("fft.refresh_period_ms", fft_refresh_period_ms, fft.refresh_period_ms);
+CFG_U8("fft.max_slices", fft_max_slices, fft.max_slices);
+CFG_I32("fft.maxAmpl", fft_maxAmpl, fft.maxAmpl);
+CFG_BOOL("fft.view_IQBalance", fft_view_IQBalance, fft.view_IQBalance);
+CFG_BOOL("fft.enable_iq_balance", fft_enable_iq_balance, fft.enable_iq_balance);
+CFG_U8("fft.conversion_time_us", fft_conversion_time_us, fft.conversion_time_us);
+CFG_U16("fft.waterfall_pixels_per_second", fft_waterfall_pixels_per_second, fft.waterfall_pixels_per_second);
+CFG_ENUM("fft.waterfall_mode", fft_waterfall_mode, fft.waterfall_mode);
+
+CFG_I16("fft.DCOffset_I", fft_DCOffset_I, fft.DCOffset_I);
+CFG_I16("fft.DCOffset_Q", fft_DCOffset_Q, fft.DCOffset_Q);
+CFG_U8("fft.iq_balance_estimate_period_ms", fft_iq_balance_estimate_period_ms, fft.iq_balance_estimate_period_ms);
+CFG_BOOL("fft.removeDC", fft_removeDC, fft.removeDC);
+CFG_U8("fft.window", fft_window, fft.window);
+CFG_U32("fft.sample_rate", fft_sample_rate, fft.sample_rate);
+CFG_U32("fft.max_sample_rate", fft_max_sample_rate, fft.max_sample_rate);
+CFG_U32("fft.dsp_max_sample_rate", fft_dsp_max_sample_rate, fft.dsp_max_sample_rate);
+CFG_U32("fft.min_sample_rate", fft_min_sample_rate, fft.min_sample_rate);
+CFG_U8("fft.max_decimation_factor", fft_max_decimation_factor, fft.max_decimation_factor);
+CFG_ENUM("fft.spectrum_style", fft_spectrum_style, fft.spectrum_style);
+CFG_U16("fft.spectrum_line_color", fft_spectrum_line_color, fft.spectrum_line_color);
+CFG_U16("fft.spectrum_fill_color", fft_spectrum_fill_color, fft.spectrum_fill_color);
+
+CFG_FFT_IQ_BLOBS(fft_iq_blobs);
+
+// DSP scalars
+CFG_I8("dsp.gain", dsp_gain, dsp.gain);
+CFG_BOOL("dsp.audio_compressor_enabled", dsp_audio_compressor_enabled, dsp.audio_compressor_enabled);
+CFG_BOOL("dsp.deemphasis_enabled", dsp_deemphasis_enabled, dsp.deemphasis_enabled);
+CFG_BOOL("dsp.audio_bpf_enabled", dsp_audio_bpf_enabled, dsp.audio_bpf_enabled);
+CFG_I32("dsp.audio_compressor_threshold", dsp_audio_compressor_threshold, dsp.audio_compressor_threshold);
+CFG_I8("dsp.test_signal.pulse_duty", dsp_test_signal_pulse_duty, dsp.test_signal.pulse_duty);
+CFG_U32("dsp.test_signal.baseband_frequency", dsp_test_signal_baseband_frequency, dsp.test_signal.baseband_frequency);
+CFG_U32("dsp.test_signal.modulation_frequency", dsp_test_signal_modulation_frequency, dsp.test_signal.modulation_frequency);
+CFG_U8("dsp.test_signal.shape", dsp_test_signal_shape, dsp.test_signal.shape);
+
+// HW scalars
+CFG_ENUM("hw.cmx973_vga", hw_cmx973_vga, hw.cmx973_vga);
+CFG_ENUM("hw.cmx973_vgb", hw_cmx973_vgb, hw.cmx973_vgb);
+CFG_U32("hw.sd_write_max_kbps", hw_sd_write_max_kbps, hw.sd_write_max_kbps);
+CFG_U16("hw.offset", hw_offset, hw.dac_offset);
+CFG_I16("hw.dac_off_balance", hw_dac_off_balance, hw.dac_off_balance);
+CFG_FLOAT("hw.dac_amp_balance", hw_dac_amp_balance, hw.dac_amp_balance);
+
+// Misc
+CFG_U16("coupler_0db_mv", coupler_0db_mv, coupler_0db_mv);
+CFG_I32("f_correction", f_correction, f_correction);
+CFG_I32("if_correction", if_correction, if_correction);
+CFG_BOOL("squelch_auto", squelch_auto, squelch_auto);
+CFG_FLOAT("squelch_level", squelch_level, squelch_level);
+CFG_BOOL("agc_enabled", agc_enabled, agc_enabled);
+CFG_BOOL("enable_quadrature", enable_quadrature, enable_quadrature);

@@ -17,3 +17,4 @@
 - Naming: types `PascalCase` (e.g., `GPIOPin`), namespaces/functions `snake_case` (e.g., `periodic_task`), macros/feature flags `UPPER_SNAKE`.
 - Types: prefer fixed-width ints (`uint32_t`, `int32_t`) and `enum class` for new enums; keep POD structs (often `st_*`) simple.
 - Error handling: prefer explicit status returns / `Result<TValue,TError>` over exceptions; always check HAL/driver return codes.
+- Avoid duplicated/verbose code: prefer single-source-of-truth patterns (e.g. X-macros/schema lists, small shared helpers) so adding/modifying fields does not require updating multiple hand-written switch/if chains. Keep runtime overhead minimal (compile-time generation/inlining preferred).

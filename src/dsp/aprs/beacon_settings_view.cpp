@@ -9,7 +9,7 @@
 #include "input/inputEvent.h"
 #include "ips_font.h"
 #include "status.h"
-#include "io/config_file.h"
+#include "io/config/config_file.h"
 #include <cstddef>
 #include <cstring>
 #include <iterator>

@@ -1,7 +1,7 @@
 //
 // Created by Angel Dust on 08/01/2026.
 //
-#include "io/config_file.h"
+#include "io/config/config_file.h"
 #include "dsp/aprs/aprs_settings.h"
 
 template class ConfigFile<aprs::settings>;

@@ -2,18 +2,21 @@
 // Created by Angel Dust on 01/11/2019.
 //
 #include "settings.h"
+
 #include "dsp/dsp_config.h"
 #include "fatfs/fatfs.h"
 #include "ff.h"
 #include "hw/stm32f4xx/eeprom.h"
+#include "io/config/config_file.h"
+#include "io/config/config_journal.h"
 #include "main.h"
 #include "hw/stm32.h"
 #include "status.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_flash.h"
-#include "io/config_file.h"
 #include "types.h"
 #include "ui/frequency_memory_ui.h"
+
 #include <cstring>
 
 // Try to read the config from the SD Card
@@ -21,71 +24,140 @@ ConfigFile<> config_file;
 // This is stored in flash (so no worry for BSS)
 static const Config default_cfg{};
 
+// Baseline for journal diffing (small; excludes FFT blobs).
+static io::config_journal::st_config_journal_baseline last_journaled{};
+static bool last_journaled_valid = false;
+
+#if ENABLE_SD_CARD
+static void compact_sd_config_if_needed(const Config &cfg) {
+
+    // Keep this conservative: compaction implies a full snapshot rewrite.
+    constexpr uint32_t COMPACT_THRESHOLD_BYTES = 4096;
+
+    if (sdcard_info.status != sdcard_STATUS::Mounted) {
+        return;
+    }
+
+    const uint32_t journal_size = io::config_journal::size_bytes("config.jrn");
+    if (journal_size == 0 || journal_size <= COMPACT_THRESHOLD_BYTES) {
+        return;
+    }
+
+    // 1) Rotate snapshot backups using renames (metadata-only).
+    if (lock_sd_card(0, "cfg_compact_rotate")) {
+        (void)f_unlink("config.bak2.cfg");
+        (void)f_rename("config.bak1.cfg", "config.bak2.cfg");
+        (void)f_unlink("config.bak1.cfg");
+        (void)f_rename("config.cfg", "config.bak1.cfg");
+        unlock_sd_card();
+    }
+
+    // 2) Write new snapshot to a temp file.
+    ConfigFile<> snapshot_writer;
+    const bool wrote_snapshot = snapshot_writer.save("config.tmp", &cfg);
+    if (!wrote_snapshot) {
+        return;
+    }
+
+    // 3) Promote temp snapshot and clear the journal.
+    if (lock_sd_card(0, "cfg_compact_promote")) {
+        (void)f_unlink("config.cfg");
+        (void)f_rename("config.tmp", "config.cfg");
+        (void)f_unlink("config.jrn");
+        unlock_sd_card();
+    }
+}
+#endif
+
 uint8_t settings_read(Config *settings) {
 
-    // If the version of the settings stored is different from the version of the Config struct, we don't read them
-
     bool ok = false;
-    char version[3];
 
 #if ENABLE_SD_CARD
     if (sdcard_info.status == sdcard_STATUS::Mounted) {
 
-        memcpy(version, settings->version, 3);
+        Config tmp = default_cfg;
 
-        ok = config_file.load("config.cfg", settings);
+        auto try_load_snapshot = [&](const char *filename) {
+            Config candidate = default_cfg;
+
+            if (!config_file.load(filename, &candidate)) {
+                return false;
+            }
+            if (memcmp(candidate.version, CONFIG_VERSION, 3) != 0) {
+                return false;
+            }
+            tmp = candidate;
+            return true;
+        };
+
+        ok = try_load_snapshot("config.cfg") || try_load_snapshot("config.bak1.cfg") || try_load_snapshot("config.bak2.cfg");
 
         if (ok) {
-            ok = (memcmp(version, &settings->version, 3) == 0);
+            // Journal is optional: replay whatever is available.
+            (void)io::config_journal::replay("config.jrn", &tmp);
+
+            *settings = tmp;
+
+            // Establish baseline for runtime journal diffing.
+            io::config_journal::init_baseline(*settings, &last_journaled);
+            last_journaled_valid = true;
+
+            compact_sd_config_if_needed(tmp);
+
+            return EE_OK;
         }
     }
 #endif
-    if (!ok) {
 
-        // Read config from flash
+    // Read config from flash
+    *settings = default_cfg;
 
-        *settings = default_cfg;
+    char version[3];
+    uint8_t status = flash_read((uint16_t *)version, 2);
 
-        uint8_t status = flash_read((uint16_t *)version, 2);
-
-        if (status == EE_OK) {
-            if (memcmp(version, &settings->version, 3) == 0) {
-                status = flash_read((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
-            }
+    if (status == EE_OK) {
+        if (memcmp(version, &settings->version, 3) == 0) {
+            status = flash_read((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
         }
-
-        return status;
-    } else {
-        return EE_OK;
     }
+
+    io::config_journal::init_baseline(*settings, &last_journaled);
+    last_journaled_valid = true;
+
+    return status;
 }
 
 uint8_t settings_write(Config *settings) {
 
-    bool ok = false;
-
     // TODO: Make plugin-like configuration system so things like the dsp subsystem is not so coupled here
-    config.dsp = dsp::dsp_config;
+    settings->dsp = dsp::dsp_config;
 
 #if ENABLE_SD_CARD
-
     if (sdcard_info.status == sdcard_STATUS::Mounted) {
 
-        ConfigFile<> config_file;
+        if (!last_journaled_valid) {
+            io::config_journal::init_baseline(*settings, &last_journaled);
+            last_journaled_valid = true;
+        }
 
-        ok = config_file.save("config.cfg", settings);
+        bool wrote_any = false;
+        const bool ok = io::config_journal::append_changes("config.jrn", *settings, &last_journaled, &wrote_any);
 
         if (!ok) {
-            status::pop_alert(status::ERROR, "Error saving config in SD card. Fallback to Flash");
+            status::pop_alert(status::ERROR, "Error saving config journal in SD card. Fallback to Flash");
+        } else {
+            (void)wrote_any;
+            return 0;
         }
     }
 #endif
 
-    if (!ok) {
-        return flash_write((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
-    } else {
-        return 0;
-    }
+    // Fallback: store full settings in flash.
+    io::config_journal::init_baseline(*settings, &last_journaled);
+    last_journaled_valid = true;
+
+    return flash_write((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
 }
 
 uint8_t settings_write(st_freq_mem *mem) {

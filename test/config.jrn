@@ -1,0 +1,15 @@
+vfo[1].freq=7414100
+fft.max_db=-90
+vfo[1].freq=7349500
+fft.max_db=-80
+vfo[0].freq=6900000
+vfo[1].freq=7349800
+vfo[1].step=100
+vfo[0].freq=7330000
+vfo[1].freq=7070000
+fft.max_db=-100
+vfo[1].freq=7259200
+vfo[1].step=100
+fft.max_db=-80
+squelch_level=4.000000
+vfo[0].step=1000

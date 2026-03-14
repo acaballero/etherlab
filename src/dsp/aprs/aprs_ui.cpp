@@ -16,7 +16,7 @@
 #include "hw/board/board_v2.h"
 #include "hw/stm32f4xx/rtc.h"
 #include "input/inputEvent.h"
-#include "io/config_file.h"
+#include "io/config/config_file.h"
 #include "io/log_file.h"
 #include "ips_font.h"
 #include "main_board.h"
