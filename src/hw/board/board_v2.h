@@ -19,6 +19,9 @@
 #include "../../../lib/ADF4351/adf4351.h"
 #include "../../../lib/CMX973/cmx973.h"
 #include "../../../lib/Si5351/si5351_I2C.h"
+
+#include "Signal.h"
+#include "os/periodic_task.h"
 #include "types.h"
 
 // CMX973 allowed min gain value per amplifier

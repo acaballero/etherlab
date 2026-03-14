@@ -5,8 +5,8 @@
 #ifndef TRX_FRONTEND_INPUTEVENT_H
 #define TRX_FRONTEND_INPUTEVENT_H
 
-#include <stdio.h>
 #include <stddef.h>
+
 #include "ui/ui_types.h"
 
 enum BUTTON_ID {

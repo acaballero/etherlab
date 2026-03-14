@@ -58,9 +58,9 @@ class BeaconSettingsView : public View {
     Label messageLabel{{1 * c_width, 4 * c_height + margin}, "Message:", C565_TEXT_FG};
     TextWidget messageField{{12 * c_width, 4 * c_height + margin, 250, c_height}, "", "Message"};
 
-    Button button_ok{{}, &lcd, "OK", C565_BUTTON_TEXT_FG, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
+    Button button_ok{{}, display, "OK", C565_BUTTON_TEXT_FG, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
 
-    Button button_cancel{{}, &lcd, "Cancel", C565_BUTTON_TEXT_FG, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
+    Button button_cancel{{}, display, "Cancel", C565_BUTTON_TEXT_FG, C565_GREY_DARK, BUTTON_STYLE_3D, ALIGN_CENTER};
 
     const std::function<void(bool, aprs::settings &)> on_select{nullptr};
 

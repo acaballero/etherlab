@@ -32,7 +32,7 @@ typedef struct {
     // Difference in offset between I and Q DAC channels
     int16_t dac_off_balance = 12;
     // Ammplitude balance  between I and Q DAC channels
-    float32_t dac_amp_balance = 1.01;
+    float dac_amp_balance = 1.01f;
 
 } st_hw_config;
 

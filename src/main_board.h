@@ -5,12 +5,14 @@
 #ifndef TRX_FRONTEND_MAIN_BOARD_H
 #define TRX_FRONTEND_MAIN_BOARD_H
 
+#include "../lib/MCP23017/mcp23017.h"
+
+#include "ShiftReg.h"
+#include "Signal.h"
 #include "radio.h"
 #include "types.h"
-#include "stdio.h"
-#include "../lib/MCP23017/mcp23017.h"
-#include "ShiftReg.h"
-#include <sys/_stdint.h>
+
+#include <cstdint>
 
 namespace main_board {
 

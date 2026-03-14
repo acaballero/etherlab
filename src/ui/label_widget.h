@@ -23,11 +23,12 @@ class Label : public Widget {
         set_label("");
     }
 
-    Label(Rect parent_rect) : Widget{parent_rect, &lcd} {
+    Label(Rect parent_rect) : Widget{parent_rect, Widget::default_display()} {
         set_label("");
     }
 
-    Label(Rect parent_rect, Color fg_color, Color bg_color = C565_TEXT_BG, ButtonStyle style = LABEL_STYLE_HOLLOW) : Widget{parent_rect, &lcd} {
+    Label(Rect parent_rect, Color fg_color, Color bg_color = C565_TEXT_BG, ButtonStyle style = LABEL_STYLE_HOLLOW)
+        : Widget{parent_rect, Widget::default_display()} {
         set_label("");
         set_color(fg_color);
         set_bg(bg_color);

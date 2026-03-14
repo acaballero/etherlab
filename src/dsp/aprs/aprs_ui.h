@@ -21,6 +21,7 @@
 #include "dsp/dsp.h"
 #include "types.h"
 #include "ui/gain_info.h"
+#include "ui/menu_options.h"
 #include "ui/ui_types.h"
 #include "ui/view.h"
 #include "ui/button_widget.h"
@@ -61,9 +62,9 @@ class APRSView : public View {
 
     Label title_widget{{0, 0, DISPLAY_X_PIXELS - button_collapse_width - 2, title_height}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
 
-    GainInfoWidget gain{{0, 0, DISPLAY_X_PIXELS / 3, title_height}, &lcd};
+    GainInfoWidget gain{{0, 0, DISPLAY_X_PIXELS / 3, title_height}, display};
     APRSTableWidget table_view{{0, title_height + panel_sep, table_width - panel_sep / 2, 90 + title_height}, max_sources};
-    ConsoleWidget console{{table_width + panel_sep / 2, title_height + panel_sep, console_width - panel_sep, 90 + title_height}, &lcd};
+    ConsoleWidget console{{table_width + panel_sep / 2, title_height + panel_sep, console_width - panel_sep, 90 + title_height}, display};
 
     Button button_collapse{{DISPLAY_X_PIXELS - button_collapse_width - 1, 0, button_collapse_width, title_height}, display, "<<"};
     bool collapsed{false};

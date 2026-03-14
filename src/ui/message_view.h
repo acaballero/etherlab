@@ -7,6 +7,7 @@
 
 #include "console_widget.h"
 #include "label_widget.h"
+#include "menu_options.h"
 #include "text_widget.h"
 #include "view.h"
 #include "types.h"
@@ -44,7 +45,8 @@ class MessageView : public View {
     uint16_t title_color;
     const uint16_t text_color;
 
-    ConsoleWidget console{{padding, padding + title_height, parent_rect().width() - (padding)*2, parent_rect().height() - (padding)*2}, &lcd};
+    ConsoleWidget console{{padding, padding + title_height, parent_rect().width() - (padding)*2, parent_rect().height() - (padding)*2},
+                        Widget::default_display()};
 
     TextWidget text_w{};
     Label title_w{{}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};

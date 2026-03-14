@@ -18,6 +18,7 @@
 
 #include "fatfs.h"
 #include "ffconf.h"
+#include "hw/stm32f4xx/rtc.h"
 #include "hw/stm32f4xx/usb.h"
 
 #include "os/periodic_task.h"

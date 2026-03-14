@@ -5,7 +5,8 @@
 #ifndef TRX_FRONTEND_SCANNER_H
 #define TRX_FRONTEND_SCANNER_H
 
-#include "stdio.h"
+#include "Signal.h"
+#include "os/periodic_task.h"
 #include "types.h"
 
 #define SCANNER_MIN_DELAY_MS 5

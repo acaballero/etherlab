@@ -1,15 +1,12 @@
 #ifndef _DISPLAY_H
 #define _DISPLAY_H
 
-#include "Display_afb.h"
 #include "label_widget.h"
-#include "ui/menu_options.h"
-#include "ui_types.h"
 #include "widget.h"
-#include "lcd.h"
 
+#include <functional>
+#include <initializer_list>
 #include <vector>
-#include <map>
 
 class View : public Widget {
 
@@ -17,7 +14,7 @@ class View : public Widget {
     View() : View({0, 0, DISPLAY_X_PIXELS, DISPLAY_Y_PIXELS}) {
     }
 
-    View(Rect parent_rect, const char *title = nullptr) : Widget(parent_rect, &lcd) {
+    View(Rect parent_rect, const char *title = nullptr) : Widget(parent_rect, Widget::default_display()) {
 
         if (title) {
 

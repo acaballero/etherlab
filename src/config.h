@@ -5,10 +5,8 @@
 #ifndef TRX_FRONTEND_CONFIG_H
 #define TRX_FRONTEND_CONFIG_H
 
-#include <stdio.h>
 #include <cstdint>
 
-#include "hw/stm32_hal.h"
 #include "hw/hw_config.h"
 #include "dsp/fft/fft_types.h"
 #include "dsp/dsp_config.h"

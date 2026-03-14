@@ -3,6 +3,8 @@
 //
 
 #include "signal_generator_widget.h"
+
+#include "Display_afb.h"
 #include "../../../lib/utils/utils.hpp"
 #include "dsp/dsp_common.h"
 

@@ -14,7 +14,8 @@
 class ToggleButton : public Button {
 
   public:
-    ToggleButton(Rect rect, char *label, std::function<void(bool)> on_change, uint16_t fg_color, Display *display = &lcd, uint16_t bg_color = C565_GREY_LIGHT,
+    ToggleButton(Rect rect, char *label, std::function<void(bool)> on_change, uint16_t fg_color, Display *display = Widget::default_display(),
+                 uint16_t bg_color = C565_GREY_LIGHT,
                  ButtonStyle style = BUTTON_STYLE_FLAT, Align aling = ALIGN_LEFT, uint32_t id = 0)
         : Button(rect, display, label, fg_color, bg_color, style, aling, id) {
 

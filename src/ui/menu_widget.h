@@ -11,7 +11,7 @@
 
 class MenuWidget : public Widget {
   public:
-    MenuWidget(Rect r) : Widget(r, &lcd) {
+    MenuWidget(Rect r) : Widget(r, Widget::default_display()) {
         set_focusable(true);
         set_default_quick_actions();
     };

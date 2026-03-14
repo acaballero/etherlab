@@ -5,13 +5,12 @@
 #ifndef TRX_FRONTEND_RADIO_H
 #define TRX_FRONTEND_RADIO_H
 
-#include "os/periodic_task.h"
-#include <stdio.h>
 #include "Signal.h"
 #include "mixer.h"
+#include "os/periodic_task.h"
 #include "types.h"
+
 #include <cstdint>
-#include <sys/_stdint.h>
 
 namespace radio {
 

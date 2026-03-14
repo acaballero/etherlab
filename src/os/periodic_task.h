@@ -5,11 +5,11 @@
 #ifndef TRX_FRONTEND_PERIODIC_TASK_H
 #define TRX_FRONTEND_PERIODIC_TASK_H
 
-#include "stdio.h"
-#include "stdint.h"
+#include <cstdint>
 #include <cstring>
 #include <functional>
-#include <stm32f4xx.h>
+
+extern "C" uint32_t HAL_GetTick(void);
 
 namespace os {
 

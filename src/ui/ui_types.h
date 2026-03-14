@@ -5,6 +5,8 @@
 #ifndef UI_TYPES_H
 #define UI_TYPES_H
 
+#include "display_constants.h"
+
 #include <stdint.h>
 #include <vector>
 

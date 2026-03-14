@@ -3,6 +3,8 @@
 //
 #include "locator_view.h"
 
+#include "utils.hpp"
+
 namespace ui {
 
 Locator::Locator(const Point pos, const alt_unit altitude_unit, const spd_unit speed_unit, FontDef *f)

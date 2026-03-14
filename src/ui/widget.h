@@ -1,23 +1,28 @@
 #ifndef __WIDGET_H__
 #define __WIDGET_H__
 
-#include "ui_types.h"
-#include "../input/inputEvent.h"
-#include "../../lib/ST77XX-STM32/Display_afb.h"
-#include "../../lib/ST77XX-STM32/Painter.hpp"
-#include "../../lib/printf/printf.h"
-#include "lcd.h"
+#include "Painter.hpp"
+#include "display_constants.h"
+#include "input/inputEvent.h"
+#include "ips_font.h"
+#include "ui/ui_types.h"
+
+#include <functional>
 #include <vector>
-#include <printf.h>
-#include "menu_options.h"
-#include "status.h"
+
+namespace Menu {
+struct menu_actions_st;
+}
 
 enum Align { ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER };
 
+class Display;
+
 class Widget : public Painter {
   public:
-    Widget() : _parent_rect{}, display{(Display *)&lcd} {
-    }
+    Widget();
+
+    static Display *default_display();
 
     Widget(Rect parent_rect, Display *display, const char *name = nullptr) : _parent_rect{parent_rect}, display{display} {
         if (name) {

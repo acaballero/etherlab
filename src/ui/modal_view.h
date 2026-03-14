@@ -39,19 +39,19 @@ class ModalView : public View {
 
     Button button_ok{
         {},
-        &lcd,
+        display,
         "OK",
     };
 
     Button button_yes{
         {},
-        &lcd,
+        display,
         "YES",
     };
 
     Button button_no{
         {},
-        &lcd,
+        display,
         "NO",
     };
 

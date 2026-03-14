@@ -37,7 +37,7 @@ struct APRSSource {
 
 class APRSTableWidget : public Widget {
   public:
-    APRSTableWidget(Rect parent_rect, int max_rows) : Widget(parent_rect, &lcd) {
+    APRSTableWidget(Rect parent_rect, int max_rows) : Widget(parent_rect, Widget::default_display()) {
         set_name("atbl");
         set_focusable(true);
         set_active(false);

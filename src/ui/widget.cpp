@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "Display_afb.h"
+#include "lcd.h"
 #include "input/inputEvent.h"
 #include "ui/frequency_memory_ui.h"
 #include "view.h"
@@ -13,6 +14,13 @@
 #include "status.h"
 
 const std::vector<Widget *> Widget::no_children{};
+
+Display *Widget::default_display() {
+    return static_cast<Display *>(&lcd);
+}
+
+Widget::Widget() : _parent_rect{}, display{default_display()} {
+}
 
 Point Widget::screen_pos() {
     return screen_rect().location();

@@ -15,7 +15,8 @@ class TextWidget : public Widget {
   public:
     TextWidget() : Widget(){};
 
-    TextWidget(Rect parent_rect, const std::string &text_str, const std::string &name_str = {}, uint16_t fg_color = C565_TEXT_FG) : Widget(parent_rect, &lcd) {
+    TextWidget(Rect parent_rect, const std::string &text_str, const std::string &name_str = {}, uint16_t fg_color = C565_TEXT_FG)
+        : Widget(parent_rect, Widget::default_display()) {
         set_focusable(true);
         set_active(false);
         set_fg(fg_color);

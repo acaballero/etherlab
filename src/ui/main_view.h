@@ -57,24 +57,24 @@ class MainView : public View {
 
   protected:
     TitleBarWidget header_w = {{0, 0, DISPLAY_X_PIXELS / 2 - 50, HEADER_HEIGHT}};
-    PowerMetricsWidget pow_metrics_w{{DISPLAY_X_PIXELS / 2 - 50, 0, 90, HEADER_HEIGHT}, &lcd};
+    PowerMetricsWidget pow_metrics_w{{DISPLAY_X_PIXELS / 2 - 50, 0, 90, HEADER_HEIGHT}, display};
     StatusWidget status_w{{0, DISPLAY_Y_PIXELS - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
-    DbScaleWidget dbscale_w{{DISPLAY_X_PIXELS - DBSCALE_WIDTH, HEADER_HEIGHT, DBSCALE_WIDTH, FFT_HEIGHT}, &lcd};
-    TuneWidget tune_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, METER_WIDTH, TUNE_INFO_HEIGHT}, &lcd};
+    DbScaleWidget dbscale_w{{DISPLAY_X_PIXELS - DBSCALE_WIDTH, HEADER_HEIGHT, DBSCALE_WIDTH, FFT_HEIGHT}, display};
+    TuneWidget tune_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, METER_WIDTH, TUNE_INFO_HEIGHT}, display};
 
     RadioStatusWidget radio_w{{METER_WIDTH, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, DISPLAY_X_PIXELS - METER_WIDTH, INFO_HEIGHT}};
-    SMeterWidget smeter_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT - 20}, &lcd};
+    SMeterWidget smeter_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT - 20}, display};
     SNRWidget snr_w{{15, WATERFALL_TOP + FFT_WATERFALL_HEIGHT + METERS_HEIGHT - 5, METER_WIDTH - 15, SNRWidget::height}};
-    PowerMeterWidget powmeter_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT + 10}, &lcd};
-    InfoWidget info_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT + TUNE_INFO_HEIGHT, METER_WIDTH, FFT_INFO_HEIGHT}, &lcd};
-    FrequencyWidget frequency_w{{DISPLAY_X_PIXELS - 150, 0, 150, HEADER_HEIGHT}, &lcd};
+    PowerMeterWidget powmeter_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, METER_WIDTH, METERS_HEIGHT + 10}, display};
+    InfoWidget info_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT + TUNE_INFO_HEIGHT, METER_WIDTH, FFT_INFO_HEIGHT}, display};
+    FrequencyWidget frequency_w{{DISPLAY_X_PIXELS - 150, 0, 150, HEADER_HEIGHT}, display};
     FrequencyButtonsWidget frequency_buttons_w{{DISPLAY_X_PIXELS / 2 - 40, 0, 120, HEADER_HEIGHT}};
-    FFTWidget fft_w{{0, HEADER_HEIGHT, FFT_ZONE_WIDTH, FFT_WIDGET_HEIGHT}, &lcd, config.fft.spectrum_style};
-    FFTXAxisWidget fft_x{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, FFT_ZONE_WIDTH, FFT_X_AXIS_HEIGHT}, &lcd};
-    FFTBandBarWidget fft_band_bar{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_X_AXIS_HEIGHT, FFT_ZONE_WIDTH, FFT_BAND_BAR_HEIGHT}, &lcd};
+    FFTWidget fft_w{{0, HEADER_HEIGHT, FFT_ZONE_WIDTH, FFT_WIDGET_HEIGHT}, display, config.fft.spectrum_style};
+    FFTXAxisWidget fft_x{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, FFT_ZONE_WIDTH, FFT_X_AXIS_HEIGHT}, display};
+    FFTBandBarWidget fft_band_bar{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_X_AXIS_HEIGHT, FFT_ZONE_WIDTH, FFT_BAND_BAR_HEIGHT}, display};
 
-    WaterfallWidget waterfall_w{{0, WATERFALL_TOP, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
-    IQBalanceWidget iqbal_w{{0, WATERFALL_TOP, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
+    WaterfallWidget waterfall_w{{0, WATERFALL_TOP, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, display};
+    IQBalanceWidget iqbal_w{{0, WATERFALL_TOP, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, display};
     MenuWidget menu_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, DISPLAY_X_PIXELS, INFO_HEIGHT}};
     OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
 

@@ -5,8 +5,6 @@
 #ifndef TRX_FRONTEND_PAINTER_HPP
 #define TRX_FRONTEND_PAINTER_HPP
 
-#include "stdio.h"
-
 class Painter {
 
   public:

@@ -5,9 +5,10 @@
 #ifndef TRX_FFT_BAND_BAR_WIDGET_H
 #define TRX_FFT_BAND_BAR_WIDGET_H
 
-#include "../../types.h"
-#include "../../ui/widget.h"
 #include "input/inputEvent.h"
+#include "types.h"
+#include "ui/widget.h"
+
 #include <vector>
 
 class FFTBandBarWidget : public Widget {

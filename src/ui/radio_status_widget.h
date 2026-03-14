@@ -29,13 +29,13 @@ class RadioStatusWidget : public View {
 
     // Col 1
     Label lblMode{{0, padding_top, btn_width, btn_height}};
-    Button btnGain{{0, btn_height + padding_top + 2, btn_width, btn_height}, &lcd, "", C565_BLACK};
+    Button btnGain{{0, btn_height + padding_top + 2, btn_width, btn_height}, Widget::default_display(), "", C565_BLACK};
     // Col 2
-    Button btnVFO{{btn_width + 2, padding_top, btn_width, btn_height}, &lcd, "", C565_BLACK};
-    Button btnSquelch{{btn_width + 2, btn_height + padding_top + 2, btn_width, btn_height}, &lcd, "", C565_BLACK};
+    Button btnVFO{{btn_width + 2, padding_top, btn_width, btn_height}, Widget::default_display(), "", C565_BLACK};
+    Button btnSquelch{{btn_width + 2, btn_height + padding_top + 2, btn_width, btn_height}, Widget::default_display(), "", C565_BLACK};
     // Col 3
-    Button btnRIT{{btn_width * 2 + 4, padding_top, btn_width, btn_height}, &lcd, "", C565_BLACK};
-    Button btnSettings{{btn_width * 2 + 4, btn_height + padding_top + 2, btn_width, btn_height}, &lcd, "", C565_BLACK};
+    Button btnRIT{{btn_width * 2 + 4, padding_top, btn_width, btn_height}, Widget::default_display(), "", C565_BLACK};
+    Button btnSettings{{btn_width * 2 + 4, btn_height + padding_top + 2, btn_width, btn_height}, Widget::default_display(), "", C565_BLACK};
 
     char buf[20];
 

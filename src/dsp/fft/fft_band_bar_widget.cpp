@@ -4,7 +4,6 @@
 
 #include "fft_band_bar_widget.h"
 
-#include "Display_afb.h"
 #include "dsp/fft/fft_params.h"
 #include "fft.h"
 #include "ips_font.h"

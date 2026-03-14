@@ -5,12 +5,21 @@
 #ifndef TRX_FRONTEND_STATUS_H
 #define TRX_FRONTEND_STATUS_H
 
-#include "hw/stm32.h"
-#include "hw/hw_config.h"
-#include "config.h"
-#include "Signal.h"
+#include <cstdint>
+
+#include "radio.h"
+#include "types.h"
 #include "ui/menu_options.h"
 #include "../lib/printf/printf.h"
+
+class Signal;
+
+// Avoid pulling the full HAL header here. We only need the tick counter for logging.
+extern "C" uint32_t HAL_GetTick(void);
+
+#ifndef DEBUG_MSGS
+#define DEBUG_MSGS 1
+#endif
 
 #if DEBUG_MSGS
 extern int debug_indent;

@@ -23,9 +23,13 @@ class OptionButtonsView : public View {
     static constexpr uint16_t WIDTH = DISPLAY_X_PIXELS;
     static constexpr uint8_t MAX_BUTTONS = 32;
 
-    OptionButtonsView() : View() { init(); }
+    OptionButtonsView() : View() {
+        init();
+    }
 
-    OptionButtonsView(Rect parent_rect) : View(parent_rect) { init(); }
+    OptionButtonsView(Rect parent_rect) : View(parent_rect) {
+        init();
+    }
 
     void on_focus() override;
 
@@ -54,6 +58,7 @@ class OptionButtonsView : public View {
 
   private:
     int focused_button = -1;
+
     static constexpr int max_cols = 4;
     static constexpr int max_rows = 4;
 

@@ -27,7 +27,7 @@ class TitleBarWidget : public View {
 
     Button btnDSP{{120 + MARGIN, MARGIN, 0, area.box.height - MARGIN * 2}, display, ""};
 
-    TitleBarIconsWidget titleBarWidgetInner{{0, MARGIN, 110, area.box.height}, &lcd};
+    TitleBarIconsWidget titleBarWidgetInner{{0, MARGIN, 110, area.box.height}, display};
 
     // Refresh clock
     os::periodic_task task{1000, [this](void) {

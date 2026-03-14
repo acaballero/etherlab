@@ -5,10 +5,8 @@
 #ifndef TRX_FRONTEND_TYPES_H
 #define TRX_FRONTEND_TYPES_H
 
-#include <stdio.h>
 #include <cstring>
 #include <cstdint>
-#include "dsp/dsp_common.h"
 
 enum IF_PROCESSING_MODE { ANALOG, DSP };
 
