@@ -13,7 +13,9 @@
 #include "os/periodic_task.h"
 #include <stdint.h>
 
+#ifndef FFT_WATERFALL_HEIGHT
 #define FFT_WATERFALL_HEIGHT 90
+#endif
 #define FFT_WATERFALL_DEFAULT_COLOR_INDEX 1
 
 class WaterfallWidget : public Widget {

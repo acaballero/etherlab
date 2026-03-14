@@ -22,6 +22,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     this->set_name("main");
     tune_w.set_name("tune");
     fft_w.set_name("fft");
+    fft_band_bar.set_name("band");
     waterfall_w.set_name("wate");
     radio_w.set_name("radio");
     info_w.set_name("info");
@@ -38,6 +39,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
 
     fft_w.set_show_fps(true);
     fft_w.set_z_index(20);
+    fft_band_bar.set_z_index(20);
     fft_x.set_z_index(20);
     dbscale_w.set_z_index(10);
     // waterfall_w.set_show_fps(true);
@@ -60,7 +62,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     children_.reserve(40);
 
     add_children({&menu_w, &header_w, &pow_metrics_w, &tune_w, &smeter_w, &snr_w, &radio_w, &powmeter_w, &info_w, &status_w, &dbscale_w, &frequency_buttons_w,
-                  &frequency_w, &iqbal_w, &waterfall_w, &fft_w, &fft_x, &optionButtonsView});
+                  &frequency_w, &iqbal_w, &waterfall_w, &fft_w, &fft_band_bar, &fft_x, &optionButtonsView});
 }
 
 void MainView::before_paint() {

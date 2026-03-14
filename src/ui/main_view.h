@@ -6,6 +6,7 @@
 #define TRX_FRONTEND_MAIN_VIEW_H
 
 #include "config.h"
+#include "dsp/fft/fft_band_bar_widget.h"
 #include "dsp/fft/fft_x_axis_widget.h"
 #include "dsp/fft/snr_widget.h"
 #include "hw/hw_config.h"
@@ -70,6 +71,7 @@ class MainView : public View {
     FrequencyButtonsWidget frequency_buttons_w{{DISPLAY_X_PIXELS / 2 - 40, 0, 120, HEADER_HEIGHT}};
     FFTWidget fft_w{{0, HEADER_HEIGHT, FFT_ZONE_WIDTH, FFT_WIDGET_HEIGHT}, &lcd, config.fft.spectrum_style};
     FFTXAxisWidget fft_x{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT, FFT_ZONE_WIDTH, FFT_X_AXIS_HEIGHT}, &lcd};
+    FFTBandBarWidget fft_band_bar{{0, HEADER_HEIGHT + FFT_WIDGET_HEIGHT + FFT_X_AXIS_HEIGHT, FFT_ZONE_WIDTH, FFT_BAND_BAR_HEIGHT}, &lcd};
 
     WaterfallWidget waterfall_w{{0, WATERFALL_TOP, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};
     IQBalanceWidget iqbal_w{{0, WATERFALL_TOP, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, &lcd};

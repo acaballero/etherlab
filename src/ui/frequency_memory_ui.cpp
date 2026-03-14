@@ -365,7 +365,8 @@ auto extract_freq_func = [](const std::string &line) {
     return m.freq;
 };
 
-void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories, const std::vector<FREQ_TYPE> &types) {
+void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories, const std::vector<FREQ_TYPE> &types,
+                        uint32_t max_items) {
 
     //  LOG("find_in_freq_range %d, %d\n", freq_min, freq_max);
     INIT_OR_ABORT()
@@ -373,7 +374,7 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
 
     std::vector<uint32_t> line_numbers;
 
-    FRESULT res = db_file->find_range(freq_min, freq_max, extract_freq_func, line_numbers, MAX_RETRIEVED_ITEMS_PER_RANGE);
+    FRESULT res = db_file->find_range(freq_min, freq_max, extract_freq_func, line_numbers, max_items);
 
     if (res != FR_OK) {
         // TODO: Remove this once this is stable
