@@ -291,8 +291,24 @@ void WaterfallWidget::scroll() {
 
         *(row + ix) = mask | ((color % 16) << shift);
 
-        for (int n = 1; n < step; n++) { // repeat as many lines as the step size
-            *(row + (ix + (n * (width >> 1)))) = *(row + ix);
+        if (step > 1) { // repeat as many lines as the step size
+            const uint8_t v = *(row + ix);
+            if (top_y + step <= FFT_WATERFALL_HEIGHT) {
+                // Fast path: contiguous copy, no wrap-around
+                for (int n = 1; n < step; n++) {
+                    *(row + (ix + (n * (width >> 1)))) = v;
+                }
+            } else {
+                // Wrap-safe path
+                for (int n = 1; n < step; n++) {
+                    uint16_t y = top_y + n;
+                    if (y >= FFT_WATERFALL_HEIGHT) {
+                        y -= FFT_WATERFALL_HEIGHT;
+                    }
+                    uint8_t *row_n = waterfallBuffer + ((y * width) >> 1);
+                    *(row_n + ix) = v;
+                }
+            }
         }
     }
 

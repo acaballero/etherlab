@@ -301,6 +301,7 @@ bool Display::draw_area(Area *area, Painter *painter, bool pad_display) {
                     }
 
                     DMAHalfTransferCompleted = false;
+                    dma_active = true;
 
                     HAL_SPI_Transmit_DMA(spi_port, ((uint8_t *)b565_buffer), dma_transfer_length);
                 }
@@ -323,6 +324,7 @@ bool Display::draw_area(Area *area, Painter *painter, bool pad_display) {
 
         if (use_dma) {
             END_DMA_TRANSFER
+            dma_active = false;
         } else {
             DISP_DC_PORT->BSRR |= DISP_DC_PIN << 16; // DC PIN UNSET
         }
@@ -437,6 +439,7 @@ void Display::DMATxHalfCpltCallback(void) {
 }
 
 void Display::DMATxCpltCallback(void) {
+    dma_active = false;
 }
 
 uint16_t Display::getColor() {

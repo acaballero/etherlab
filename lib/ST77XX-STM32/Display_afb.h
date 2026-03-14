@@ -321,11 +321,26 @@ class Display {
     uint8_t get_transparency();
 
     bool can_interrupt() {
-        return !busy || curr_buffer == b565_buffer;
-        // if (!ok) {
-        //     interrupted = true;
-        // }
-        // return true;
+        // When drawing into the LCD DMA buffer, missing the half-transfer deadline
+        // causes visible corruption (DMA reads a half-buffer that wasn't fully painted).
+        //
+        // Allow interrupts freely when we're not painting.
+        // While painting, allow interrupts only when writing the 1st half-buffer.
+        // This also closes the race window before `busy` is set when starting to paint
+        // the 2nd half-buffer during an active DMA transfer.
+        if (!use_dma) {
+            return true;
+        }
+
+        if (!busy) {
+            return true;
+        }
+
+        if (dma_active) {
+            return curr_buffer == b565_buffer;
+        }
+
+        return true;
     }
 
     uint16_t current_line = 0;
@@ -333,6 +348,7 @@ class Display {
     uint16_t current_last_line = 0;
     volatile bool DMAHalfTransferCompleted = false;
     volatile bool busy = false;
+    volatile bool dma_active = false;
     //    volatile bool interrupted = false;
     bool use_dma = true;
     // Display buffer area
