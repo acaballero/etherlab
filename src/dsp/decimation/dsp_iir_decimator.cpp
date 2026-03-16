@@ -57,6 +57,10 @@ void DspIIRDecimator<order>::decimate(const buffer_t<int16_t> &src, buffer_t<int
     }
 }
 
+template <int order> void DspIIRDecimator<order>::decimate(float32_t *src, float32_t *dst, size_t n_samples) {
+    arm_biquad_cascade_df1_f32(&iir_instance, src, dst, n_samples);
+}
+
 template <int order>
 void DspIIRDecimator<order>::decimate(const buffer_t<float32_t> &src, buffer_t<float32_t> &dst, const uint8_t channel_n, const uint8_t n_channels_in,
                                       uint8_t n_channels_out) {
@@ -64,7 +68,7 @@ void DspIIRDecimator<order>::decimate(const buffer_t<float32_t> &src, buffer_t<f
     uint16_t n = src.count / n_channels_in;
 
     float in[n];
-    float out[n];
+    float out[n / factor];
 
     for (uint16_t i = channel_n, j = 0; j < n; i += n_channels_in, j++) {
         in[j] = src.p[i];
