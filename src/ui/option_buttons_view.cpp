@@ -73,10 +73,10 @@ bool OptionButtonsView::on_input(const st_inputEvent event) {
                     this->set_visible(false);
                     break;
                 case FPANEL_DISPLAY_BUTTON_1:
-                    consumed = update_focus(focused_button + event.value);
+                    consumed = update_focus(focused_button - 1);
                     break;
                 case FPANEL_DISPLAY_BUTTON_2:
-                    consumed = update_focus(focused_button + event.value);
+                    consumed = update_focus(focused_button + 1);
                     break;
                 case FPANEL_DISPLAY_BUTTON_3:
                     break;
@@ -243,6 +243,14 @@ void OptionButtonsView::init() {
 
     button_close.action = [this](Button &, st_inputEvent) {
         this->set_visible(false);
+    };
+
+    button_next.action = [this](Button &, st_inputEvent) {
+        update_focus(focused_button + 1);
+    };
+
+    button_prev.action = [this](Button &, st_inputEvent) {
+        update_focus(focused_button - 1);
     };
 
     display_panel_buttons.set_labels(display_buttons_labels);

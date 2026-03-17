@@ -39,6 +39,11 @@ FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYL
             refresh_all = true;
         }
     });
+
+    // Refresh all if span changes
+    fft::signal.add(this, [this](void *, const void *) {
+        refresh_all = true;
+    });
 }
 
 void FFTWidget::draw_bandwidth() {

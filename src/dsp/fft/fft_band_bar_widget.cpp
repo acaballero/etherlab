@@ -213,7 +213,7 @@ bool FFTBandBarWidget::paint_callback() {
     const uint16_t w = size().width();
     const uint16_t h = size().height();
 
-    const uint16_t y_label = 2;
+    const uint16_t y_label = 4;
 
     const uint64_t span_start = fft::fft_params.span_f_start;
     const uint64_t span = fft::fft_params.span;
@@ -275,12 +275,12 @@ bool FFTBandBarWidget::paint_callback() {
 
         if (label[0]) {
             Size ts = display->get_text_size(label);
-            if ((int)ts.width() <= avail_px && y_label + ts.height() < h) {
+            if ((int)ts.width() <= avail_px && y_label + ts.height() - 3 < h) {
                 int tx = x1 + (seg_w - (int)ts.width()) / 2;
                 int bx0 = tx - 2;
                 int bx1 = tx + (int)ts.width() + 2;
-                int by0 = y_label - 1;
-                int by1 = y_label + (int)ts.height() - 2;
+                int by0 = y_label - 2;
+                int by1 = y_label + (int)ts.height() - 4;
 
                 bx0 = max2(bx0, x1 + 1);
                 bx1 = min2(bx1, x2 - 1);

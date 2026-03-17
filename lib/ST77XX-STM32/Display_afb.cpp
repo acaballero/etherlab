@@ -309,12 +309,12 @@ bool Display::draw_area(Area *area, Painter *painter, bool pad_display) {
 
                 // The second half of the RGB buffer is ready
                 // Wait for the first half of the buffer to be transferred before start again
-                curr_buffer = b565_buffer;
+
                 if (use_dma) {
                     while (!DMAHalfTransferCompleted) {
                     }
                 }
-
+                curr_buffer = b565_buffer;
                 // The last chunk may need fewer bytes to transfer
                 check_dma_transfer_length();
             }
