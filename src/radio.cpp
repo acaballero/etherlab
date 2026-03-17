@@ -129,7 +129,7 @@ IF_FILTER_2 if_filter_2 = IF_FILTER_2_AUTO;
 
 void task_loop();
 
-os::periodic_task task(50, task_loop);
+os::periodic_task task(50, task_loop, 0, 0, "rad");
 
 bool is_filter_allowed(IF_FILTER filter) {
     return (if_filters[filter].analog_available || !ISANALOG) && (if_filters[filter].bandwidth >= modulation_min_bandwidths[config.modulation]);

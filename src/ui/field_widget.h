@@ -65,7 +65,8 @@ class Field : public Widget {
     std::function<void(void)> fn_writer; // Handler to delegate the writing
 
   protected:
-    char text[MAX_SIZE];
+    // +1 to always keep a null terminator.
+    char text[MAX_SIZE + 1];
 
     uint16_t fg_color = C565_GREY_DARK;
     uint16_t fg_disabled_color = C565_GREY_LIGHT;

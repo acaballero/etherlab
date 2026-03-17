@@ -31,9 +31,10 @@ FFTWidget::FFTWidget(const Rect &parentRect, Display *display, FFT_SPECTRUM_STYL
                 os::task_manager.remove(task_id);
             }
 
-            task_id = os::task_manager.set_timeout(500, [this]() { // Debounce
-                fetch_stations_in_range();
-            });
+            task_id = os::task_manager.set_timeout(500,
+                                                   [this]() { // Debounce
+                                                       fetch_stations_in_range();
+                                                   });
 
             refresh_all = true;
         }
@@ -62,8 +63,11 @@ void FFTWidget::draw_bandwidth() {
 }
 
 void FFTWidget::fetch_stations_in_range() {
+
     unsigned long fft_span_f_end = fft::fft_params.span_f_start + config.fft.span;
+
     freq_memory::find_in_freq_range(fft::fft_params.span_f_start, fft_span_f_end, stations_in_range, {STATION});
+
     int64_t f = radio::get_frequency();
 
     // Sort by distance to center

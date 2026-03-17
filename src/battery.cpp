@@ -13,7 +13,7 @@ namespace battery {
 void check_battery();
 
 battery_st_info battery_info;
-os::periodic_task task(2000, check_battery);
+os::periodic_task task(2000, check_battery, 0, 0, "bat");
 Signal battery_signal;
 
 void update_battery_info() {

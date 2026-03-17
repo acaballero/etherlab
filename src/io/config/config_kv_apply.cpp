@@ -36,16 +36,38 @@ static bool parse_i64_strict(const char *s, int64_t *out) {
     if (!s || !out) {
         return false;
     }
+
     while (*s == ' ' || *s == '\t') {
         ++s;
     }
+
+    bool negative = false;
     if (*s == '+' || *s == '-') {
+        negative = (*s == '-');
         ++s;
     }
+
     if (!is_digit(*s)) {
         return false;
     }
-    *out = safe_atoi64(s);
+
+    // Parse digits (strict) and validate end-of-string (allow trailing whitespace).
+    uint64_t value = 0;
+    while (is_digit(*s)) {
+        value = value * 10u + (uint64_t)(*s - '0');
+        ++s;
+    }
+
+    while (*s == ' ' || *s == '\t') {
+        ++s;
+    }
+
+    if (*s != 0) {
+        return false;
+    }
+
+    // NOTE: keep behavior close to safe_atoi64 for out-of-range values.
+    *out = negative ? -(int64_t)value : (int64_t)value;
     return true;
 }
 

@@ -20,13 +20,7 @@ static constexpr uint32_t MAX_BAND_MARKERS = 64;
 static uint16_t band_color_for_index(size_t ix) {
     // Use darker tones so the band bar doesn't dominate the UI.
     static const uint16_t colors[] = {
-        C565_CYAN_DARK,
-        C565_GREEN_DARK,
-        C565_NAVY,
-        C565_PURPLE,
-        C565_MAROON,
-        C565_GREY_DARKER,
-        C565_OLIVE,
+        C565_CYAN_DARK, C565_GREEN_DARK, C565_NAVY, C565_PURPLE, C565_MAROON, C565_GREY_DARKER, C565_OLIVE,
     };
 
     return colors[ix % (sizeof(colors) / sizeof(colors[0]))];
@@ -219,7 +213,7 @@ bool FFTBandBarWidget::paint_callback() {
     const uint16_t w = size().width();
     const uint16_t h = size().height();
 
-    const uint16_t y_label = 0;
+    const uint16_t y_label = 2;
 
     const uint64_t span_start = fft::fft_params.span_f_start;
     const uint64_t span = fft::fft_params.span;
@@ -286,7 +280,7 @@ bool FFTBandBarWidget::paint_callback() {
                 int bx0 = tx - 2;
                 int bx1 = tx + (int)ts.width() + 2;
                 int by0 = y_label - 1;
-                int by1 = y_label + (int)ts.height();
+                int by1 = y_label + (int)ts.height() - 2;
 
                 bx0 = max2(bx0, x1 + 1);
                 bx1 = min2(bx1, x2 - 1);

@@ -296,6 +296,7 @@ void Widget::on_child_focus_changed(Widget *widget, bool was_focused) {
                 // }
                 for (const auto child : children()) {
                     if (child != widget) {
+
                         child->set_focus(false);
                     }
                 }
@@ -310,8 +311,6 @@ void Widget::on_child_focus_changed(Widget *widget, bool was_focused) {
 }
 
 bool Widget::set_focus(bool v) {
-
-    // LOG("'%s' focus: %d => %d\n", get_name(), flags.focus, v);
 
     if (!v) {
         // int i = 0;

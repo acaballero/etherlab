@@ -20,7 +20,7 @@ uint16_t cpl_offset = CPL_LOGAMP_OFFSET_MV;
 
 void calculate_power();
 
-os::periodic_task task(50, calculate_power);
+os::periodic_task task(50, calculate_power, 0, 0, "rfcpl");
 Signal rf_coupler_signal;
 struct rf_coupler_info info;
 

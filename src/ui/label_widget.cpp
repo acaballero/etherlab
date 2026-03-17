@@ -111,7 +111,12 @@ void Label::calc_widths() {
 }
 
 void Label::set_label(const char *t) {
-    strncpy(label, t, MAX_CHARS);
+    if (!t) {
+        label[0] = '\0';
+    } else {
+        strncpy(label, t, MAX_CHARS - 1);
+        label[MAX_CHARS - 1] = '\0';
+    }
     set_dirty();
 
     calc_widths();
@@ -122,13 +127,23 @@ char *Label::get_label() {
 }
 
 void Label::set_value(const char *t) {
-    strncpy(value, t, MAX_CHARS_VALUE);
+    if (!t) {
+        value[0] = '\0';
+    } else {
+        strncpy(value, t, MAX_CHARS_VALUE - 1);
+        value[MAX_CHARS_VALUE - 1] = '\0';
+    }
     set_dirty();
     calc_widths();
 }
 
 void Label::set_unit(const char *t) {
-    strncpy(unit, t, MAX_CHARS_UNIT);
+    if (!t) {
+        unit[0] = '\0';
+    } else {
+        strncpy(unit, t, MAX_CHARS_UNIT - 1);
+        unit[MAX_CHARS_UNIT - 1] = '\0';
+    }
     set_dirty();
     calc_widths();
 }

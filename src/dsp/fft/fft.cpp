@@ -228,7 +228,7 @@ void fft_loop();
 namespace fft {
 Signal db_range_signal;
 os::periodic_task snr_task(FFT_SNR_REFRESH_PERIOD_MS, calc_snr);
-os::periodic_task fft_task(config.fft.refresh_period_ms, fft_loop);
+os::periodic_task fft_task(config.fft.refresh_period_ms, fft_loop, 0, 0, "fft");
 os::periodic_task iqbalance_task(FFT_IQBALANCE_REFRESH_PERIOD_MS, []() {
     view_manager::mainView.IQBalance()->set_visible(true);
     view_manager::mainView.Waterfall()->set_visible(false);
@@ -621,7 +621,7 @@ uint32_t get_peak(uint32_t start_bin, uint32_t end_bin, fft_type &peak_v) {
  */
 void calculate_noise_floor() {
 
-    fft_type copy[FFT_N];
+    static CCM_SECTION fft_type copy[FFT_N];
     memcpy(copy, fft_output + fft::fft_params.start_bin, fft::fft_params.nbins * sizeof(fft_type));
 
     std::sort(copy, copy + fft::fft_params.nbins);

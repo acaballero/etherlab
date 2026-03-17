@@ -189,14 +189,6 @@ void test() {
     //   view_manager::mainView.NumberEdit()->set_focus(true);
 }
 
-void watchdog() {
-    static int i = 0;
-    if (i++ % 100 == 0) {
-        void *heap_end = sbrk(0);
-        printf_("Heap end: %p\n", heap_end);
-    }
-}
-
 bool dsptested = false;
 
 int main() {
@@ -237,9 +229,6 @@ int main() {
     while (1) {
 
         os::task_manager.run();
-
-        //  LOG("S:%d\n", stack_used_bytes_worst_case());
-        // watchdog();
 
         if (!dsptested) {
 #if DEBUG_SD_CARD

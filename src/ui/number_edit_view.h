@@ -8,6 +8,7 @@
 #include "Display_afb.h"
 #include "display_panel_buttons_widget.h"
 #include "stdio.h"
+#include "ui/menu_options.h"
 #include "ui/widget.h"
 #include "view.h"
 #include "button_widget.h"
@@ -21,7 +22,7 @@ class NumberEditView : public View {
     static constexpr uint16_t MARGIN = 3;
     static constexpr uint16_t BUTTON_H = 50;
     static constexpr uint16_t BUTTONS_Y = HEADER_HEIGHT + BUTTON_H + MARGIN * 3;
-    static constexpr uint16_t HEIGHT = BUTTONS_Y + 2 * BUTTON_H + STATUS_HEIGHT;
+    static constexpr uint16_t HEIGHT = BUTTONS_Y + 2 * BUTTON_H;
     static constexpr uint16_t WIDTH = DISPLAY_X_PIXELS;
     static constexpr int BUTTON_W = WIDTH / COLS;
 
@@ -50,6 +51,10 @@ class NumberEditView : public View {
 
     void set_update_on_changes(bool b) {
         update_on_changes = b;
+    }
+
+    Menu::menu_actions_st *get_quick_actions() override {
+        return &actions;
     }
 
   private:
@@ -92,9 +97,31 @@ class NumberEditView : public View {
     Label text_widget{{0, HEADER_HEIGHT + MARGIN * 2, 3 * BUTTON_W, BUTTON_H}, C565_BLACK, C565_WHITE, ButtonStyle::BUTTON_STYLE_FLAT};
     Label title{{0, MARGIN, WIDTH, HEADER_HEIGHT}, C565_WHITE, C565_GREY_DARKER, ButtonStyle::BUTTON_STYLE_FLAT};
 
-    const char *display_buttons_labels[6] = {"<<", "<", ">", ">>", "OK", "Cancel"};
+    Menu::menu_action_st menu_actions[6] = {{"<<",
+                                             [this]() {
+                                                 this->on_button(buttons[DECR_BIG]);
+                                             }},
+                                            {"<",
+                                             [this]() {
+                                                 this->on_button(buttons[DECR]);
+                                             }},
+                                            {">",
+                                             [this]() {
+                                                 this->on_button(buttons[INCR]);
+                                             }},
+                                            {">>",
+                                             [this]() {
+                                                 this->on_button(buttons[INCR_BIG]);
+                                             }},
+                                            {"OK",
+                                             [this]() {
+                                                 this->on_button(buttons[OK]);
+                                             }},
+                                            {"Cancel", [this]() {
+                                                 this->on_button(buttons[CANCEL]);
+                                             }}};
 
-    DisplayPanelButtonsWidget display_panel_buttons = {{0, HEIGHT - STATUS_HEIGHT, DISPLAY_X_PIXELS, STATUS_HEIGHT}};
+    Menu::menu_actions_st actions = {menu_actions, sizeof(menu_actions) / sizeof(Menu::menu_action_st)};
 
     void on_button(Button &button);
 };

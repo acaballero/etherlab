@@ -19,7 +19,7 @@ _lstack = _estack - _Min_Stack_Size;         /* lowest address reserved for stac
 /* Specify the memory areas */
 MEMORY
 {
-    RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 196K
+    RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 192K /* not 196K since STM32F4 has 4 KB of backup SRAM in a separate region */
     FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 1024K
     CCMRAM (rw)     : ORIGIN = 0x10000000, LENGTH = 64K
 }

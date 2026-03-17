@@ -32,7 +32,7 @@ static constexpr uint32_t AGC_DEFAULT_ATTACK_MS = 100;
 uint32_t release_ms = AGC_DEFAULT_RELEASE_MS;
 uint32_t attack_ms = AGC_DEFAULT_ATTACK_MS;
 
-os::periodic_task task(task_period_ms, check_agc);
+os::periodic_task task(task_period_ms, check_agc, 0, 0, "agc");
 
 bool overload = false;
 uint64_t last_overload_state_change = 0;

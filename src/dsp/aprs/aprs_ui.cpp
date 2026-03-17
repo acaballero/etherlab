@@ -130,25 +130,26 @@ void APRSView::toggle_beacon() {
 
     if (!os::task_manager.remove(beacon_task_id)) {
         // Was disabled
-        auto settings_view = std::make_unique<BeaconSettingsView>(
 
-            [this](bool ok, aprs::settings settings) {
-                if (ok) {
+        view_manager::open([&]() {
+            return std::make_unique<BeaconSettingsView>(
 
-                    aprs_settings = settings;
-                    auto *p = new os::periodic_task{static_cast<uint64_t>(settings.beacon_period_ms), [this]() {
-                                                        send_packet(aprs_settings.message);
-                                                    }};
+                [this](bool ok, aprs::settings settings) {
+                    if (ok) {
 
-                    menu_actions[2].bg_color = C565_GREEN;
-                    menu_actions[2].fg_color = C565_WHITE;
-                    beacon_task_id = os::task_manager.add(p);
-                    actions.dirty = true;
-                    navigation_signal.emit(this);
-                }
-            });
+                        aprs_settings = settings;
+                        auto *p = new os::periodic_task{static_cast<uint64_t>(settings.beacon_period_ms), [this]() {
+                                                            send_packet(aprs_settings.message);
+                                                        }};
 
-        view_manager::open(move(settings_view));
+                        menu_actions[2].bg_color = C565_GREEN;
+                        menu_actions[2].fg_color = C565_WHITE;
+                        beacon_task_id = os::task_manager.add(p);
+                        actions.dirty = true;
+                        navigation_signal.emit(this);
+                    }
+                });
+        });
     } else {
         menu_actions[2].fg_color = C565_BUTTON_TEXT_FG;
         menu_actions[2].bg_color = C565_BG_DISABLED;

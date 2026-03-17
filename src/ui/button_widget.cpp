@@ -11,7 +11,12 @@
 #include <stdint.h>
 
 void Button::set_text(char const *t) {
-    strncpy(text, t, MAX_CHARS);
+    if (!t) {
+        text[0] = '\0';
+    } else {
+        strncpy(text, t, MAX_CHARS - 1);
+        text[MAX_CHARS - 1] = '\0';
+    }
     set_dirty();
     calc_widths();
 }
@@ -207,13 +212,23 @@ void Button::set_fg(uint16_t fg) {
 }
 
 void Button::set_value(const char *t) {
-    strncpy(value, t, MAX_CHARS_VALUE);
+    if (!t) {
+        value[0] = '\0';
+    } else {
+        strncpy(value, t, MAX_CHARS_VALUE - 1);
+        value[MAX_CHARS_VALUE - 1] = '\0';
+    }
     set_dirty();
     calc_widths();
 }
 
 void Button::set_unit(const char *t) {
-    strncpy(unit, t, 4);
+    if (!t) {
+        unit[0] = '\0';
+    } else {
+        strncpy(unit, t, MAX_CHARS_UNIT - 1);
+        unit[MAX_CHARS_UNIT - 1] = '\0';
+    }
     set_dirty();
     calc_widths();
 }

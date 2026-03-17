@@ -9,7 +9,8 @@
 
 NumberField::NumberField(Point parent_pos, int l, range_t range, int32_t step, const char *u, bool can_loop)
     : Widget{{{parent_pos}, {}}, Widget::default_display()}, range{range}, step{step}, length{l}, can_loop{can_loop} {
-    strncpy(units, u, sizeof(units));
+    strncpy(units, u ? u : "", sizeof(units) - 1);
+    units[sizeof(units) - 1] = '\0';
     set_focusable(true);
     set_active(false);
     calc_size();

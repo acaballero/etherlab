@@ -60,7 +60,7 @@ void dsp_stop();
 void on_task_event(void *, const void *info);
 
 namespace dsp {
-os::periodic_task task(50, dsp_loop, 0, 0);
+os::periodic_task task(50, dsp_loop, 0, 0, "dsp");
 bool adc_overload{false};
 
 bool apply_audio_bpf() {
@@ -431,7 +431,7 @@ inline void adc_work() {
         dsp::rotate_fs4_q15((const q15_t *)current_buffer->p, (q15_t *)current_buffer->p, DSP_BLOCK);
     }
 #endif
-  
+
     if (!dsp::dsp_params || dsp::dsp_params->direction == DSP_DIRECTION_IN || dsp::dsp_params->direction == DSP_DIRECTION_INOUT) {
 
         // If the direction is input or bidirectional...

@@ -26,7 +26,11 @@ void pop();
 void init();
 
 void open_app(std::unique_ptr<View> view);
-void open(std::unique_ptr<View> v);
+
+/**
+ * This uses a factory so it can delete previous view before instantiating the new one to prevent heap exhaustion (currently **very** tight)
+ */
+void open(std::function<std::unique_ptr<View>()> factory);
 
 bool on_input(st_inputEvent &e);
 

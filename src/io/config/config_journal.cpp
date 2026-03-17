@@ -13,6 +13,9 @@
 
 namespace io::config_journal {
 
+// Avoid putting a FatFs `FIL` on the stack (it can be large depending on FatFs config).
+// Reuse the shared handle: access is serialized via `lock_sd_card()`.
+
 static void strip_newline(char *s) {
     if (!s) {
         return;
@@ -61,12 +64,12 @@ uint32_t size_bytes(const char *filename) {
         return 0;
     }
 
-    FIL f;
+    FIL *f = &FatFSFileHandle;
     uint32_t size = 0;
 
-    if (f_open(&f, filename, FA_READ) == FR_OK) {
-        size = (uint32_t)f_size(&f);
-        f_close(&f);
+    if (f_open(f, filename, FA_READ) == FR_OK) {
+        size = (uint32_t)f_size(f);
+        f_close(f);
     }
 
     unlock_sd_card();
@@ -87,15 +90,15 @@ bool replay(const char *filename, st_config *cfg, uint32_t *applied_lines) {
         return false;
     }
 
-    FIL f;
-    FRESULT res = f_open(&f, filename, FA_READ);
+    FIL *f = &FatFSFileHandle;
+    FRESULT res = f_open(f, filename, FA_READ);
     if (res != FR_OK) {
         unlock_sd_card();
         return true; // missing journal is OK
     }
 
     char line[256];
-    while (f_gets(line, sizeof(line), &f) != nullptr) {
+    while (f_gets(line, sizeof(line), f) != nullptr) {
 
         strip_newline(line);
         const char *p = skip_ws(line);
@@ -130,7 +133,7 @@ bool replay(const char *filename, st_config *cfg, uint32_t *applied_lines) {
         }
     }
 
-    f_close(&f);
+    f_close(f);
     unlock_sd_card();
     return true;
 }
@@ -191,7 +194,7 @@ bool append_changes(const char *filename, const st_config &current, st_config_jo
     // Lazily open the journal only if we actually need to write.
     bool opened = false;
     bool ok = true;
-    FIL f;
+    FIL *f = &FatFSFileHandle;
 
     auto ensure_open = [&]() -> bool {
         if (opened) {
@@ -200,12 +203,12 @@ bool append_changes(const char *filename, const st_config &current, st_config_jo
         if (!lock_sd_card(0, "cfg_jrn_append")) {
             return false;
         }
-        if (f_open(&f, filename, FA_WRITE | FA_OPEN_ALWAYS) != FR_OK) {
+        if (f_open(f, filename, FA_WRITE | FA_OPEN_ALWAYS) != FR_OK) {
             unlock_sd_card();
             return false;
         }
-        if (f_lseek(&f, f_size(&f)) != FR_OK) {
-            f_close(&f);
+        if (f_lseek(f, f_size(f)) != FR_OK) {
+            f_close(f);
             unlock_sd_card();
             return false;
         }
@@ -239,23 +242,23 @@ bool append_changes(const char *filename, const st_config &current, st_config_jo
         }                                                                                                                                                      \
     } while (0)
 
-#define CFG_BOOL(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%d\n", cfg.MEMBER ? 1 : 0))
-#define CFG_U8(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%u\n", (unsigned)cfg.MEMBER))
-#define CFG_I8(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%d\n", (int)cfg.MEMBER))
-#define CFG_U16(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%u\n", (unsigned)cfg.MEMBER))
-#define CFG_I16(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%d\n", (int)cfg.MEMBER))
-#define CFG_I32(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%ld\n", (long)cfg.MEMBER))
-#define CFG_U32(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%lu\n", (unsigned long)cfg.MEMBER))
-#define CFG_U32_L(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%lu\n", (unsigned long)cfg.MEMBER))
-#define CFG_FLOAT(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%f\n", cfg.MEMBER))
-#define CFG_ENUM(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(&f, KEY "=%d\n", (int)cfg.MEMBER))
+#define CFG_BOOL(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%d\n", cfg.MEMBER ? 1 : 0))
+#define CFG_U8(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%u\n", (unsigned)cfg.MEMBER))
+#define CFG_I8(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%d\n", (int)cfg.MEMBER))
+#define CFG_U16(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%u\n", (unsigned)cfg.MEMBER))
+#define CFG_I16(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%d\n", (int)cfg.MEMBER))
+#define CFG_I32(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%ld\n", (long)cfg.MEMBER))
+#define CFG_U32(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%lu\n", (unsigned long)cfg.MEMBER))
+#define CFG_U32_L(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%lu\n", (unsigned long)cfg.MEMBER))
+#define CFG_FLOAT(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%f\n", cfg.MEMBER))
+#define CFG_ENUM(KEY, ID, MEMBER) JRN_UPDATE(cfg.MEMBER, baseline->ID, journal_printf(f, KEY "=%d\n", (int)cfg.MEMBER))
 
 #define CFG_VFO_ARRAY(ID)                                                                                                                                     \
     for (size_t i = 0; ok && i < st_config_journal_baseline::VFO_COUNT; ++i) {                                                                                \
-        JRN_UPDATE(cfg.vfo[i].freq, baseline->vfo[i].freq, journal_printf(&f, "vfo[%u].freq=%lu\n", (unsigned)i, (unsigned long)cfg.vfo[i].freq));          \
-        JRN_UPDATE(cfg.vfo[i].step, baseline->vfo[i].step, journal_printf(&f, "vfo[%u].step=%lu\n", (unsigned)i, (unsigned long)cfg.vfo[i].step));          \
-        JRN_UPDATE(cfg.vfo[i].rit, baseline->vfo[i].rit, journal_printf(&f, "vfo[%u].rit=%ld\n", (unsigned)i, (long)cfg.vfo[i].rit));                        \
-        JRN_UPDATE(cfg.vfo[i].mode, baseline->vfo[i].mode, journal_printf(&f, "vfo[%u].modulation=%d\n", (unsigned)i, (int)cfg.vfo[i].mode));               \
+        JRN_UPDATE(cfg.vfo[i].freq, baseline->vfo[i].freq, journal_printf(f, "vfo[%u].freq=%lu\n", (unsigned)i, (unsigned long)cfg.vfo[i].freq));          \
+        JRN_UPDATE(cfg.vfo[i].step, baseline->vfo[i].step, journal_printf(f, "vfo[%u].step=%lu\n", (unsigned)i, (unsigned long)cfg.vfo[i].step));          \
+        JRN_UPDATE(cfg.vfo[i].rit, baseline->vfo[i].rit, journal_printf(f, "vfo[%u].rit=%ld\n", (unsigned)i, (long)cfg.vfo[i].rit));                        \
+        JRN_UPDATE(cfg.vfo[i].mode, baseline->vfo[i].mode, journal_printf(f, "vfo[%u].modulation=%d\n", (unsigned)i, (int)cfg.vfo[i].mode));               \
     }
 
 #include "config_schema.def"
@@ -279,7 +282,7 @@ bool append_changes(const char *filename, const st_config &current, st_config_jo
 #undef CFG_VERSION
 
     if (opened) {
-        f_close(&f);
+        f_close(f);
         unlock_sd_card();
     }
 

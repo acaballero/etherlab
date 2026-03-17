@@ -29,37 +29,6 @@ bool NumberEditView::on_input(const st_inputEvent event) {
             consumed = true;
             break;
 
-        case INPUT_EVENT_TYPE_BUTTON_PRESS:
-        case INPUT_EVENT_TYPE_BUTTON_DBL_PRESS:
-
-            switch (event.value) {
-
-                case FPANEL_DISPLAY_BUTTON_1:
-                    this->on_button(buttons[DECR_BIG]);
-                    break;
-                case FPANEL_DISPLAY_BUTTON_2:
-                    this->on_button(buttons[DECR]);
-                    break;
-                case FPANEL_DISPLAY_BUTTON_3:
-                    this->on_button(buttons[INCR]);
-                    break;
-                case FPANEL_DISPLAY_BUTTON_4:
-                    this->on_button(buttons[INCR_BIG]);
-                    break;
-                case FPANEL_DISPLAY_BUTTON_5:
-                case BTN_ENCODER:
-                case FPANEL_PAD_BUTTON_6:
-                    this->on_button(buttons[OK]);
-                    break;
-                case KEY_BACK:
-                default:
-                case FPANEL_DISPLAY_BUTTON_6:
-                    this->on_button(buttons[CANCEL]);
-                    break;
-            }
-
-            consumed = true;
-            break;
         default:
             consumed = false;
             break;
@@ -98,10 +67,6 @@ void NumberEditView::init() {
     }
 
     buttons[CANCEL].action = button_fn;
-
-    display_panel_buttons.set_labels(display_buttons_labels);
-
-    add_child(&display_panel_buttons);
 }
 
 void NumberEditView::on_focus() {

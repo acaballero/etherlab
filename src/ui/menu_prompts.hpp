@@ -11,8 +11,10 @@
 #include "ui/menuILI9431Out.h"
 #include "ui/number_edit_view.h"
 #include "ui/option_buttons_view.h"
+#include "ui/ui_types.h"
 #include "utils.hpp"
 #include "view_manager.h"
+
 #include <cstdint>
 #include <functional>
 #include "status.h"
@@ -126,17 +128,16 @@ template <typename T> class numberPrompt;
 template <typename T>
 void open_number_edit(T value, const char *units, const char *name, uint8_t frac_digits, std::function<void(T)> on_changed, T min, T max, T step, T step_big) {
 
-    // if (on_changed) {
-    //     LOG("open_number_edit on_changed has value\n");
-    // }
     value = (T)round_to_nearest_double(value, step);
 
-    auto view = std::make_unique<NumberEditView>(Rect{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT});
+    view_manager::open([&]() {
+        auto view =
+            std::make_unique<NumberEditView>(Rect{0, DISPLAY_Y_PIXELS - NumberEditView::HEIGHT - HEADER_HEIGHT, DISPLAY_X_PIXELS, NumberEditView::HEIGHT});
 
-    view->set_value(value, frac_digits, units, name, min, max, step, step_big);
-    view->on_changed = on_changed; // note this must be assigned before setting the value or a previous handler might be called
-
-    view_manager::open(std::move(view));
+        view->set_value(value, frac_digits, units, name, min, max, step, step_big);
+        view->on_changed = on_changed; // note this must be assigned before setting the value or a previous handler might be called
+        return view;
+    });
 }
 
 template <typename T>

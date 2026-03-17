@@ -12,6 +12,7 @@
 #include "status.h"
 #include <cstdio>
 #include <string>
+#include <string_view>
 #include <cstring>
 
 #include "io/fatfs_file.h"
@@ -124,6 +125,10 @@ template <uint32_t LINE_CACHE_SIZE = 16, uint32_t NEWLINE_CACHE_SIZE = 128> clas
     // Get line content (uses cache with LRU)
     std::string get_line(uint32_t line_number);
 
+    // Get line content by reference (cache-backed, avoids heap churn/copies).
+    // The returned reference remains valid until the line is evicted from the cache.
+    const std::string &get_line_ref(uint32_t line_number);
+
     // Prefetch lines starting from a given line
     void prefetch(uint32_t from_line, uint32_t count = LINE_CACHE_SIZE);
 
@@ -193,11 +198,13 @@ template <uint32_t LINE_CACHE_SIZE = 16, uint32_t NEWLINE_CACHE_SIZE = 128> clas
     // Line cache management with LRU
     std::string *find_cached_line(uint32_t line_number);
     void cache_line(uint32_t line_number, const std::string &content);
+    std::string &cache_line_move(uint32_t line_number, std::string &&content);
     uint32_t find_lru_cache_slot();
     void invalidate_lines_from(uint32_t line_number);
 
     // File structure operations using RingBuffer
     std::string read_line_from_file(uint32_t line_number);
+    std::string_view read_line_view(uint32_t line_number, char *buf, size_t buf_size);
     uint32_t find_line_start_offset(uint32_t line_number);
     uint32_t find_line_end_offset(uint32_t line_number);
     void ensure_newline_cache_covers(uint32_t line_number);
@@ -272,7 +279,11 @@ Result<uint32_t, io::filesystem_error> FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACH
     while (left < right) {
 
         uint32_t mid = left + (right - left) / 2;
-        std::string line = get_line(mid);
+
+        // Use the cache-backed path for correctness.
+        // With small caches and move-into-cache, heap churn is limited.
+        const std::string &line = get_line_ref(mid);
+
         // LOG("left:%d,right:%d,mid:%d | line:%s | ", left, right, mid, line.c_str());
         if (line.empty()) {
             // LOG_RAW("empty key!!\n");
@@ -427,11 +438,16 @@ template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrappe
     }
 
     file_.seek(0);
-    total_lines_ = 1; // At least one line if file has content
     cache_start_line_ = 0;
+    newline_cache_.clear();
+
+    // Count lines as: number of '\n' + 1 if file doesn't end with '\n'.
+    total_lines_ = 0;
+
     uint32_t offset = 0;
     uint32_t current_line = 0;
     uint32_t line_start = 0; // Track start of current line
+    char last_char = '\0';
 
     while (offset < file_size()) {
         uint32_t to_read = std::min((uint32_t)BUFFER_SIZE, file_size() - offset);
@@ -442,7 +458,8 @@ template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrappe
         }
 
         for (uint32_t i = 0; i < *result; ++i) {
-            if (work_buffer_[i] == '\n') {
+            last_char = work_buffer_[i];
+            if (last_char == '\n') {
                 // Store both start and end for this line
                 if (!newline_cache_.isFull()) {
                     newline_cache_.push(NewlineEntry(current_line, line_start, offset + i));
@@ -458,6 +475,11 @@ template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> void FileWrappe
         if (*result < to_read) {
             break;
         }
+    }
+
+    // If the file doesn't end with a newline, there is one final unterminated line.
+    if (last_char != '\n' && file_size()) {
+        total_lines_++;
     }
 }
 
@@ -503,6 +525,18 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::cache_line(uint32_t line_
     line_cache_[slot].content = content;
     line_cache_[slot].last_access_time = ++access_counter_;
     line_cache_[slot].valid = true;
+}
+
+template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
+std::string &FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::cache_line_move(uint32_t line_number, std::string &&content) {
+    uint32_t slot = find_lru_cache_slot();
+
+    line_cache_[slot].line_number = line_number;
+    line_cache_[slot].content = std::move(content);
+    line_cache_[slot].last_access_time = ++access_counter_;
+    line_cache_[slot].valid = true;
+
+    return line_cache_[slot].content;
 }
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
@@ -822,30 +856,91 @@ std::string FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::read_line_from_fil
     return result;
 }
 
-template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> std::string FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::get_line(uint32_t line_number) {
-    if (line_number >= total_lines_) {
+template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
+std::string_view FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::read_line_view(uint32_t line_number, char *buf, size_t buf_size) {
+
+    if (!buf || buf_size < 2) {
         return {};
     }
-    std::string content;
-    std::string *cached = find_cached_line(line_number);
-    if (cached) {
-        content = *cached;
-        cache_hits_++;
-    } else {
 
-        content = read_line_from_file(line_number);
-
-        cache_line(line_number, content);
-
-        cache_misses_++;
+    if (line_number >= total_lines_) {
+        buf[0] = '\0';
+        return {};
     }
 
-    // Remove trailing newline if present
+    // NOTE: For binary-search key extraction we only need a small prefix.
+    // Avoid calling find_line_end_offset() here: it can trigger extra scanning/cache rebuild.
+    const uint32_t start_offset = find_line_start_offset(line_number);
+    if (start_offset >= file_size()) {
+        buf[0] = '\0';
+        return {};
+    }
+
+    const uint32_t remaining = file_size() - start_offset;
+    const uint32_t to_read = std::min<uint32_t>((uint32_t)(buf_size - 1), remaining);
+
+    if (file_.seek(start_offset) != FR_OK) {
+        buf[0] = '\0';
+        return {};
+    }
+
+    auto read_result = file_.read(buf, to_read);
+
+    if (read_result.is_error() || *read_result == 0) {
+        buf[0] = '\0';
+        return {};
+    }
+
+    size_t n = std::min<size_t>((size_t)*read_result, buf_size - 1);
+
+    // Trim at newline to avoid spilling into the next record.
+    for (size_t i = 0; i < n; ++i) {
+        if (buf[i] == '\n') {
+            n = i;
+            break;
+        }
+    }
+
+    // Handle CRLF.
+    if (n > 0 && buf[n - 1] == '\r') {
+        --n;
+    }
+
+    buf[n] = '\0';
+    return std::string_view{buf, n};
+}
+
+template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE> std::string FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::get_line(uint32_t line_number) {
+    // Preserve the existing by-value API, but avoid additional cache-miss copies.
+    // (The reference-returning overload is used internally for no-churn lookups.)
+    const std::string &s = get_line_ref(line_number);
+    return std::string{s};
+}
+
+template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
+const std::string &FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::get_line_ref(uint32_t line_number) {
+    static const std::string empty;
+
+    if (line_number >= total_lines_) {
+        return empty;
+    }
+
+    std::string *cached = find_cached_line(line_number);
+    if (cached) {
+        cache_hits_++;
+        return *cached;
+    }
+
+    std::string content = read_line_from_file(line_number);
+
+    // Remove trailing newline if present (normally not included, but keep legacy safety).
     if (!content.empty() && content.back() == '\n') {
         content.pop_back();
     }
 
-    return content;
+    std::string &stored = cache_line_move(line_number, std::move(content));
+    cache_misses_++;
+    return stored;
 }
 
 template <uint32_t LINE_CACHE_SIZE, uint32_t NEWLINE_CACHE_SIZE>
@@ -861,7 +956,8 @@ void FileWrapper<LINE_CACHE_SIZE, NEWLINE_CACHE_SIZE>::prefetch(uint32_t from_li
         if (!find_cached_line(line)) {
             std::string content = read_line_from_file(line);
             if (!content.empty()) {
-                cache_line(line, content);
+                // Keep heap peak low by moving the allocation into the cache.
+                cache_line_move(line, std::move(content));
             }
         }
     }

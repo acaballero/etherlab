@@ -39,6 +39,7 @@ namespace freq_memory {
     }
 
 // FileBuffer for frequency memory storage
+// NOTE: This is heap-allocated and is a significant RAM consumer. Keep caches small.
 static std::unique_ptr<io::FileWrapper<>> db_file = nullptr;
 int curr_index = -1;
 static const char *FREQ_MEMORY_FILE = "madrid.db";
@@ -360,16 +361,47 @@ st_freq_mem get_by_index(int index) {
     return m;
 }
 
-auto extract_freq_func = [](const std::string &line) {
-    st_freq_mem m = deserialize_freq_mem(line.c_str());
-    return m.freq;
+auto extract_freq_func = [](std::string_view line) {
+    // CSV: id,mode,type,width,freq,repeater,offset,name
+    // We only need the `freq` field (index 4). Keep this allocation-free.
+
+    const char *p = line.data();
+    const char *end = p + line.size();
+
+    int comma_count = 0;
+    const char *field_start = p;
+
+    while (p < end && comma_count < 4) {
+        if (*p == ',') {
+            comma_count++;
+            field_start = p + 1;
+        }
+        ++p;
+    }
+
+    if (comma_count != 4 || field_start >= end) {
+        return (int64_t)0;
+    }
+
+    const char *field_end = field_start;
+    while (field_end < end && *field_end != ',') {
+        ++field_end;
+    }
+
+    int64_t freq = 0;
+    if (!parse_long_bounded(field_start, (size_t)(field_end - field_start), freq)) {
+        return (int64_t)0;
+    }
+
+    return freq;
 };
 
-void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories, const std::vector<FREQ_TYPE> &types,
-                        uint32_t max_items) {
+void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_freq_mem> &out_memories, const std::vector<FREQ_TYPE> &types, uint32_t max_items) {
 
     //  LOG("find_in_freq_range %d, %d\n", freq_min, freq_max);
+
     INIT_OR_ABORT()
+
     out_memories.clear();
 
     std::vector<uint32_t> line_numbers;
@@ -384,18 +416,14 @@ void find_in_freq_range(uint64_t freq_min, uint64_t freq_max, std::vector<st_fre
 
     out_memories.reserve(line_numbers.size());
 
-    if (!line_numbers.empty()) {
-        uint32_t min_line = *std::min_element(line_numbers.begin(), line_numbers.end());
-        uint32_t max_line = *std::max_element(line_numbers.begin(), line_numbers.end());
-
-        std::vector<std::string> lines = db_file->get_lines_range(min_line, max_line + 1);
-
-        for (auto line : lines) {
-            if (!line.empty()) {
-                auto item = deserialize_freq_mem(line.c_str());
-                if (types.empty() || std::find(types.begin(), types.end(), item.type) != types.end()) {
-                    out_memories.push_back(item);
-                }
+    // Avoid allocating a temporary `std::vector<std::string>` (and copying strings)
+    // for the range. `line_numbers` is already bounded by `max_items`.
+    for (uint32_t line_no : line_numbers) {
+        std::string line = db_file->get_line(line_no);
+        if (!line.empty()) {
+            auto item = deserialize_freq_mem(line.c_str());
+            if (types.empty() || std::find(types.begin(), types.end(), item.type) != types.end()) {
+                out_memories.push_back(item);
             }
         }
     }

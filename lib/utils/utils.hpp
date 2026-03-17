@@ -68,6 +68,7 @@ unsigned long micros();
 void stack_paint(void);
 size_t stack_high_water_bytes(void);
 size_t stack_used_bytes_worst_case(void);
+void log_mem(const char *tag);
 /*******/
 
 typedef float float32_t;

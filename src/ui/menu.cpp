@@ -243,7 +243,7 @@ Menu::numberPrompt<uint32_t> ifFMTXFreqMenu((const char *)"FM IF TX Frequency", 
                                             10000, 100000000, 100, 1000);
 
 result settings_reset(eventMask) {
-    config = Config();
+    config = Config(); // TODO: This will overflow the stack
     settings_write(&config);
     return proceed;
 }
@@ -285,6 +285,7 @@ void unlock() {
     if (locked) {
         view_manager::pop();
         delete lock_view;
+        lock_view = nullptr; // prevent use-after-free on next lock()
         fft::fft_task.set_enabled(true);
         view_manager::task.set_enabled(true);
         view_manager::mainView.set_dirty();

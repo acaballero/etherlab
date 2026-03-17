@@ -17,6 +17,8 @@
 #include "types.h"
 #include "ui/frequency_memory_ui.h"
 
+#include "utils.hpp"
+
 #include <cstring>
 
 // Try to read the config from the SD Card
@@ -32,7 +34,7 @@ static bool last_journaled_valid = false;
 static void compact_sd_config_if_needed(const Config &cfg) {
 
     // Keep this conservative: compaction implies a full snapshot rewrite.
-    constexpr uint32_t COMPACT_THRESHOLD_BYTES = 4096;
+    constexpr uint32_t COMPACT_THRESHOLD_BYTES = 2048;
 
     if (sdcard_info.status != sdcard_STATUS::Mounted) {
         return;
@@ -76,34 +78,40 @@ uint8_t settings_read(Config *settings) {
 #if ENABLE_SD_CARD
     if (sdcard_info.status == sdcard_STATUS::Mounted) {
 
-        Config tmp = default_cfg;
+        // Avoid large stack temporaries: reuse caller-provided buffer.
+        *settings = default_cfg;
 
         auto try_load_snapshot = [&](const char *filename) {
-            Config candidate = default_cfg;
+            // Ensure missing keys keep defaults.
+            *settings = default_cfg;
 
-            if (!config_file.load(filename, &candidate)) {
+            if (!config_file.load(filename, settings)) {
                 return false;
             }
-            if (memcmp(candidate.version, CONFIG_VERSION, 3) != 0) {
+            if (memcmp(settings->version, CONFIG_VERSION, 3) != 0) {
                 return false;
             }
-            tmp = candidate;
             return true;
         };
 
         ok = try_load_snapshot("config.cfg") || try_load_snapshot("config.bak1.cfg") || try_load_snapshot("config.bak2.cfg");
 
         if (ok) {
+#if DEBUG
+            printf_("settings_read: stack used pre-jrn: %u\n", (unsigned)stack_used_bytes_worst_case());
+#endif
             // Journal is optional: replay whatever is available.
-            (void)io::config_journal::replay("config.jrn", &tmp);
+            (void)io::config_journal::replay("config.jrn", settings);
 
-            *settings = tmp;
+#if DEBUG
+            printf_("settings_read: stack used post-jrn: %u\n", (unsigned)stack_used_bytes_worst_case());
+#endif
 
             // Establish baseline for runtime journal diffing.
             io::config_journal::init_baseline(*settings, &last_journaled);
             last_journaled_valid = true;
 
-            compact_sd_config_if_needed(tmp);
+            compact_sd_config_if_needed(*settings);
 
             return EE_OK;
         }
@@ -113,7 +121,8 @@ uint8_t settings_read(Config *settings) {
     // Read config from flash
     *settings = default_cfg;
 
-    char version[3];
+    // Read 2x uint16_t (4 bytes) from flash; keep buffer sized accordingly.
+    char version[4];
     uint8_t status = flash_read((uint16_t *)version, 2);
 
     if (status == EE_OK) {

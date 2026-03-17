@@ -144,31 +144,33 @@ class SDMenuT : public Menu::menuNode {
                 message_str = {"Delete " + std::to_string(sel_items.size()) + " files?"};
             }
 
-            view_manager::open(std::make_unique<ModalView>("Confirmation", message_str, modal_t::YESNO, [this](bool ok) {
-                if (ok) {
+            view_manager::open([&]() {
+                return std::make_unique<ModalView>("Confirmation", message_str, modal_t::YESNO, [this](bool ok) {
+                    if (ok) {
 
-                    for (const auto ix : sel_items) {
-                        char fn[FN_SIZE];
-                        fso->entry(ix, fn, sizeof(fn));
-                        io::path file_path = focused_path.parent_path() / fn;
+                        for (const auto ix : sel_items) {
+                            char fn[FN_SIZE];
+                            fso->entry(ix, fn, sizeof(fn));
+                            io::path file_path = focused_path.parent_path() / fn;
 
-                        // LOG("Deleting file '%s'\n", file_path.c_str());
-                        f_close(fso->file);
-                        FRESULT res = f_unlink(file_path.c_str());
+                            // LOG("Deleting file '%s'\n", file_path.c_str());
+                            f_close(fso->file);
+                            FRESULT res = f_unlink(file_path.c_str());
 
-                        if (res != FR_OK) {
-                            status::pop_alert(status::ERROR, "Error deleting file");
+                            if (res != FR_OK) {
+                                status::pop_alert(status::ERROR, "Error deleting file");
+                            }
                         }
-                    }
-
-                    refresh();
-                } else {
-                    if (sel_items.size() == 1) {
 
                         refresh();
+                    } else {
+                        if (sel_items.size() == 1) {
+
+                            refresh();
+                        }
                     }
-                }
-            }));
+                });
+            });
         }
     }
 

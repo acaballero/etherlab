@@ -151,7 +151,9 @@ void FFTIQBalancer::correctSpectrum(complex_t_f32 *data) {
 
     complex_t_f32 sp, sm, err;
 
-    complex_t_f32 copy[FFT_N];
+    // Avoid a large stack frame (FFT_N * sizeof(complex_t_f32)).
+    // CCMRAM has enough headroom for this scratch buffer.
+    static CCM_SECTION complex_t_f32 copy[FFT_N];
     memcpy(copy, data, FFT_N * sizeof(*data));
 
     int j, fi = 0;

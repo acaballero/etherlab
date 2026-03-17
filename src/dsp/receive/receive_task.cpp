@@ -78,11 +78,11 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
     } else {
 
         if (audio_bpf_enabled) {
-            audio_bpf.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
+            audio_bpf.decimate(buff_out_f32.p, buff_out_f32.p, buff_out_f32.count);
         }
 
         if (deemph_enabled) {
-            deemph_filter.decimate(buff_out_f32, buff_out_f32, 0, 1, 1);
+            deemph_filter.decimate(buff_out_f32.p, buff_out_f32.p, buff_out_f32.count);
         }
 
         if (compressor_enabled) {

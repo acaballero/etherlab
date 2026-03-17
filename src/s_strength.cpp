@@ -45,7 +45,7 @@ bool last_squelch_test;
 float s_strength;
 float s_level;
 uint64_t last_activation_trigger_ms = 0;
-os::periodic_task task(50, check_signal_strength);
+os::periodic_task task(50, check_signal_strength, 0, 0, "ss");
 
 // Converts dBs to S-units
 float db_to_s_strength(float db) {

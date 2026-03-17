@@ -10,7 +10,14 @@
 #include <stdint.h>
 
 void Field::set_text(char const *t) {
-    strncpy(text, t, size + 1);
+    if (!t) {
+        text[0] = '\0';
+    } else {
+        const size_t n = min2((size_t)size, (size_t)MAX_SIZE);
+        strncpy(text, t, n);
+        text[n] = '\0';
+    }
+
     trim(text);
     pos = strlen(text);
     set_dirty();

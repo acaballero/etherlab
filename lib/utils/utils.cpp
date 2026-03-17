@@ -262,11 +262,12 @@ void printLog(logevent_st_t *logEventsClone) {
 
 extern uint32_t _lstack; // low address of stack region (defined in linker script)
 extern uint32_t _estack; // high address (initial SP)
-
+#include <sys/unistd.h>  // sbrk
+extern char _end;
 #define STACK_PATTERN 0xA5A5A5A5u
 
 /*
- * Paints the stack with a known patter to troubleshoot stack overflows
+ * Paints the stack with a known pattern to troubleshoot stack overflows
  */
 void stack_paint(void) {
     uint32_t *p = &_lstack;
@@ -294,6 +295,21 @@ size_t stack_used_bytes_worst_case(void) {
     size_t total_bytes = (size_t)((uintptr_t)&_estack - (uintptr_t)&_lstack);
     return total_bytes - free_bytes;
 }
+
+void log_mem(const char *tag) {
+    const uintptr_t sp = (uintptr_t)__get_MSP();
+    const uintptr_t stack_top = (uintptr_t)&_estack;
+    const uintptr_t stack_low = (uintptr_t)&_lstack;
+    const uintptr_t heap_start = (uintptr_t)&_end;
+    const uintptr_t heap_end = (uintptr_t)sbrk(0);
+
+    const size_t stack_used_now = (size_t)(stack_top - sp);
+    const size_t stack_used_worst = stack_used_bytes_worst_case();
+
+    printf_("[log_mem:%s] sp=0x%08lx used_now=%lu worst=%lu heap_start=0x%08lx heap_end=0x%08lx stack_low=0x%08lx freeMem=%d\n", tag, (unsigned long)sp,
+            (unsigned long)stack_used_now, (unsigned long)stack_used_worst, (unsigned long)heap_start, (unsigned long)heap_end, (unsigned long)stack_low,
+            freeMemory());
+};
 
 int endsWith(const char *str, const char *suffix) {
     if (!str || !suffix) {

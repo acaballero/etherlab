@@ -41,7 +41,7 @@ std::unique_ptr<View> app_view_p;
 std::unique_ptr<View> view_p;
 
 void view_loop();
-os::periodic_task task(250, view_loop);
+os::periodic_task task(250, view_loop, 0, 0, "vmgr");
 
 void push(View *view) {
     if (view_index < MAX_VIEWS) {
@@ -197,19 +197,33 @@ void open_app(std::unique_ptr<View> view) {
     view_manager::mainView.to_top(app_view_p.get());
 }
 
-void open(std::unique_ptr<View> v) {
-    view_p = move(v);
+void open(std::function<std::unique_ptr<View>()> factory) {
+
+    // Close any existing overlay view first.
+    // `mainView` stores raw child pointers; if we overwrite `view_p` without
+    // removing the previous child, we leave a dangling pointer behind
+    if (view_p) {
+        auto *old = view_p.get();
+        view_manager::mainView.remove_child(old);
+
+        view_p.reset();
+    }
+
+    view_p = factory();
 
     auto *view_ptr = view_p.get();
     view_p->on_hide_fn = [view_ptr]() {
         view_manager::mainView.remove_child(view_ptr);
+
         if (view_p.get() == view_ptr) {
             view_p.reset();
         }
     };
 
     view_manager::mainView.add_child(view_ptr);
+
     view_manager::mainView.to_top(view_ptr);
+
     view_ptr->set_focus(true);
 }
 
