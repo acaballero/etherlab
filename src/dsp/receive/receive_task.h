@@ -21,6 +21,7 @@
 #include "dsp/modulation/dsp_demodulate.h"
 #include "dsp/blocks/dc_block.h"
 #include "dsp/audio/audio_compressor.hpp"
+#include "cw_decoder.h"
 
 class ReceiveTask : public ReceiveTaskBase {
 
@@ -47,10 +48,13 @@ class ReceiveTask : public ReceiveTaskBase {
     SignalToken squelch_signal_token{0};
     SignalToken if_gain_signal_token{0};
 
+    cw_decode::CwDecoder cw_decoder;
+
     void set_squelch();
     bool init() override;
     void process_audio(buffer_t<float32_t> &buff_out_f32) override;
     MODULATION_MODE get_modulation_mode() const override;
+    uint32_t get_modulation_bw_hz() const override;
 };
 
 #endif // TRX_FRONTEND_RECEIVE_TASK_H

@@ -11,6 +11,6 @@
 
 uint8_t settings_read(Config *settings);
 uint8_t settings_write(Config *settings);
-uint8_t settings_write(st_freq_mem *mem);
+// uint8_t settings_write(st_freq_mem *mem);
 
 #endif // TRX_FRONTEND_SETTINGS_H

@@ -117,7 +117,14 @@ class ReceiveTaskBase : public Task {
 
     /* Bandwidth of the output audio stream (IIR LPF config will match this) */
     virtual uint32_t get_audio_bw_hz() const {
-        return get_modulation_mode() == WFM ? 9000 : 4000;
+        auto mode = get_modulation_mode();
+        if (mode == WFM) {
+            return 9000;
+        }
+        if (mode == CW) {
+            return 1800;
+        }
+        return 4000;
     };
 
     /* Sample rate of the output audio stream. Must be a divisor of DSP_AUDIO_SAMPLE_RATE  */

@@ -91,9 +91,37 @@ void ConsoleWidget::clear() {
     line_buffer.fill("");
     line_count = 0;
     line_head = 0;
+    live_line_present = false;
+}
+
+void ConsoleWidget::set_live_line(const std::string &line) {
+    if (rows == 0) {
+        return;
+    }
+
+    if (!live_line_present) {
+        line_buffer[line_head] = line;
+        line_head = (line_head + 1) % rows;
+        if (line_count < rows) {
+            line_count++;
+        }
+        live_line_present = true;
+    } else {
+        size_t idx = (line_head + rows - 1) % rows;
+        line_buffer[idx] = line;
+    }
+
+    set_dirty();
+}
+
+void ConsoleWidget::commit_live_line() {
+    live_line_present = false;
 }
 
 void ConsoleWidget::write(const std::string &message) {
+
+    // Explicit line writes start committed line mode.
+    live_line_present = false;
 
     size_t pos = 0;
     int next_color = -1;

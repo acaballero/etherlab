@@ -109,9 +109,6 @@ void setup() {
     LOG("Reading settigns\n");
 
     if (settings_read(&config) != EE_OK) {
-
-        // Wrong config version, write the new one
-        settings_write(&config);
         status::pop_alert(status::ERROR, "Settings read error");
     }
 

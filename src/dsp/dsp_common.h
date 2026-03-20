@@ -225,6 +225,12 @@ struct st_dsp_params {
 
 namespace dsp {
 
+enum CwDecodeAlgorithm : uint8_t {
+    CW_DECODE_GOERTZEL = 0,
+    CW_DECODE_ENVELOPE = 1,
+    CW_DECODE_MAYHEM = 2,
+};
+
 struct st_test_signal_params {
     int8_t pulse_duty = 10;
     uint32_t baseband_frequency = 4000;
@@ -237,6 +243,14 @@ struct st_dsp_config {
     bool audio_compressor_enabled = false;
     bool deemphasis_enabled = false;
     bool audio_bpf_enabled = true;
+    bool decode_cw = false;
+    CwDecodeAlgorithm cw_decode_algorithm = CW_DECODE_GOERTZEL;
+    uint8_t cw_decode_preset = 1;
+    uint8_t cw_goertzel_snr_db = 4;
+    uint8_t cw_transition_min_dot_percent = 22;
+    uint8_t cw_letter_gap_mult_x10 = 20;
+    uint8_t cw_word_gap_mult_x10 = 58;
+    uint16_t cw_decode_bw_hz = 700;
     int32_t audio_compressor_threshold = -30;
     st_test_signal_params test_signal;
 

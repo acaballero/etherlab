@@ -13,6 +13,7 @@
 #include "ui/widget.h"
 #include "view_manager.h"
 #include "menu_options.h"
+#include "dsp/receive/receive_ui.h"
 #include <memory>
 
 MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPLAY_Y_PIXELS + DISPLAY_PADDING * 2}) {
@@ -27,6 +28,7 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     radio_w.set_name("radio");
     info_w.set_name("info");
     menu_w.set_name("menu");
+    cw_console_w.set_name("cwcon");
     smeter_w.set_name("smeter");
     powmeter_w.set_name("powr");
     optionButtonsView.set_name("opti");
@@ -54,18 +56,28 @@ MainView::MainView() : View({0, 0, DISPLAY_X_PIXELS + DISPLAY_PADDING * 2, DISPL
     powmeter_w.set_visible(false);
     optionButtonsView.set_visible(false);
     optionButtonsView.set_z_index(300);
+    cw_console_w.set_z_index(15);
+    cw_console_w.set_visible(false);
 
     frequency_w.set_z_index(400); // Top-most widget will receive the default focus
 
     iqbal_w.set_visible(false);
 
+    dspReceiveUI::init(&cw_console_w, &waterfall_w, &iqbal_w);
+
     children_.reserve(40);
 
     add_children({&menu_w, &header_w, &pow_metrics_w, &tune_w, &smeter_w, &snr_w, &radio_w, &powmeter_w, &info_w, &status_w, &dbscale_w, &frequency_buttons_w,
-                  &frequency_w, &iqbal_w, &waterfall_w, &fft_w, &fft_band_bar, &fft_x, &optionButtonsView});
+                  &frequency_w, &iqbal_w, &waterfall_w, &cw_console_w, &fft_w, &fft_band_bar, &fft_x, &optionButtonsView});
+}
+
+MainView::~MainView() {
+    dspReceiveUI::deinit();
 }
 
 void MainView::before_paint() {
+
+    dspReceiveUI::before_paint();
 
     pow_metrics_w.set_visible(ISTX);
 

@@ -309,7 +309,7 @@ int32_t adf4350_setup(adf4350_init_param init_param) {
     printf("Reg3 %x\n",st->pdata->r3_user_settings);
     printf("Reg4 %x\n",st->pdata->r4_user_settings);*/
 
-    return (uint64_t)f_set != st->pdata->power_up_frequency ? -1 : 0;
+    return (uint64_t)(f_set / 100) != (uint64_t)(st->pdata->power_up_frequency / 100) ? -1 : 0;
 }
 
 /***************************************************************************/ /**

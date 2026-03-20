@@ -58,6 +58,8 @@ Menu::numberPrompt<uint32_t> dspFMMaxDev((const char *)"FM max. deviation", &con
                                          },
                                          2000, 5000, 100, 1000);
 
+static void apply_cw_preset(uint8_t preset, bool restart = true);
+
 result apply_dsp_changes(eventMask) {
     if (dsp::dsp_config.audio_compressor_enabled) {
         compressorThresholdMenu.enable();
@@ -65,6 +67,8 @@ result apply_dsp_changes(eventMask) {
         compressorThresholdMenu.disable();
     }
 
+    apply_cw_preset(dsp::dsp_config.cw_decode_preset, false);
+    config.dsp = dsp::dsp_config;
     dsp_restart();
 
     return proceed;
@@ -82,6 +86,60 @@ TOGGLE(dsp::dsp_config.audio_bpf_enabled, toggleAudioBPF, "Audio BPF: ", doNothi
 TOGGLE(dsp::dsp_config.baseband_echo, toggleBasebandEcho, "Baseband echo: ", doNothing, noEvent, noStyle, //,doExit,enterEvent,noStyle
        VALUE("On", true, apply_dsp_changes, noEvent), VALUE("Off", false, apply_dsp_changes, noEvent));
 
+TOGGLE(dsp::dsp_config.decode_cw, toggleDecodeCW, "Decode CW: ", doNothing, noEvent, noStyle,
+       VALUE("On", true, apply_dsp_changes, noEvent), VALUE("Off", false, apply_dsp_changes, noEvent));
+
+static void apply_cw_preset(uint8_t preset, bool restart) {
+    switch (preset) {
+        case 0: // Noisy / weak
+            dsp::dsp_config.cw_decode_bw_hz = 1000;
+            dsp::dsp_config.cw_goertzel_snr_db = 4;
+            dsp::dsp_config.cw_transition_min_dot_percent = 18;
+            dsp::dsp_config.cw_letter_gap_mult_x10 = 18;
+            dsp::dsp_config.cw_word_gap_mult_x10 = 55;
+            break;
+        case 2: // Strong / clean
+            dsp::dsp_config.cw_decode_bw_hz = 600;
+            dsp::dsp_config.cw_goertzel_snr_db = 8;
+            dsp::dsp_config.cw_transition_min_dot_percent = 30;
+            dsp::dsp_config.cw_letter_gap_mult_x10 = 24;
+            dsp::dsp_config.cw_word_gap_mult_x10 = 68;
+            break;
+        case 1:
+        default: // Balanced
+            dsp::dsp_config.cw_decode_bw_hz = 700;
+            dsp::dsp_config.cw_goertzel_snr_db = 6;
+            dsp::dsp_config.cw_transition_min_dot_percent = 25;
+            dsp::dsp_config.cw_letter_gap_mult_x10 = 22;
+            dsp::dsp_config.cw_word_gap_mult_x10 = 62;
+            break;
+    }
+
+    if (restart) {
+        dsp_restart();
+    }
+}
+
+Menu::menu_option_st<dsp::CwDecodeAlgorithm> cw_algorithm_options[] = {{"Goertzel", dsp::CW_DECODE_GOERTZEL},
+                                                                         {"Envelope", dsp::CW_DECODE_ENVELOPE},
+                                                                         {"Mayhem", dsp::CW_DECODE_MAYHEM}};
+
+Menu::optionsPrompt<dsp::CwDecodeAlgorithm> cwAlgorithmMenu((const char *)"Algorithm", cw_algorithm_options, dsp::dsp_config.cw_decode_algorithm,
+                                                            sizeof(cw_algorithm_options) / sizeof(cw_algorithm_options[0]), [](dsp::CwDecodeAlgorithm v) {
+                                                                dsp::dsp_config.cw_decode_algorithm = v;
+                                                                apply_dsp_changes(enterEvent);
+                                                            });
+
+Menu::menu_option_st<uint8_t> cw_preset_options[] = {{"Noisy", 0}, {"Balanced", 1}, {"Clean", 2}};
+
+Menu::optionsPrompt<uint8_t> cwPresetMenu((const char *)"Preset", cw_preset_options, dsp::dsp_config.cw_decode_preset,
+                                          sizeof(cw_preset_options) / sizeof(cw_preset_options[0]), [](uint8_t v) {
+                                              dsp::dsp_config.cw_decode_preset = v;
+                                              apply_cw_preset(v, true);
+                                          });
+
+MENU(cwDecoderMenu, "CW decoder", doNothing, anyEvent, noStyle, SUBMENU(toggleDecodeCW), OBJ(cwAlgorithmMenu), OBJ(cwPresetMenu));
+
 result open_aprs(eventMask) {
     Menu::close();
     view_manager::open_app(std::make_unique<dsp_ui::APRSView>(Rect{0, MENU_START_Y - 50, DISPLAY_X_PIXELS, METERS_HEIGHT + 80}));
@@ -97,7 +155,7 @@ result open_radiosonde(eventMask) {
 /* TODO: Disable SD card related functionality if card is not enabled */
 MENU(menuDSP, "DSP", doNothing, anyEvent, noStyle, SUBMENU(dspCaptureUI::captureMenu), SUBMENU(dspReplayUI::replayMenu),
      SUBMENU(dspSignalGeneratorUI::signalGeneratorMenu), OP("APRS", open_aprs, enterEvent), OP("Radiosonde", open_radiosonde, enterEvent),
-     SUBMENU(dspOOKUI::ookMenu), SUBMENU(toggleDSP), SUBMENU(toggleAGC), SUBMENU(toggleBasebandEcho), SUBMENU(toggleAudioBPF), SUBMENU(toggleFMDeemph),
+     SUBMENU(dspOOKUI::ookMenu), SUBMENU(toggleDSP), SUBMENU(toggleAGC), SUBMENU(toggleBasebandEcho), SUBMENU(cwDecoderMenu), SUBMENU(toggleAudioBPF), SUBMENU(toggleFMDeemph),
      SUBMENU(toggleDSPCompressor), OBJ(compressorThresholdMenu), OBJ(dspBandwidthMenu), OBJ(dspWFMMaxDev), OBJ(dspFMMaxDev));
 
 } // namespace dsp_ui

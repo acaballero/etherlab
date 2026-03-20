@@ -25,7 +25,7 @@
 #define ISTX (config.mode == ANALOG_TX || config.mode == DIGITAL_TX)
 #define ANALOGMODE(mode) (mode == ANALOG_TX || mode == ANALOG_RX)
 #define ISANALOG (ANALOGMODE(config.mode))
-#define CONFIG_VERSION "341"
+#define CONFIG_VERSION "346"
 
 namespace configuration {
 extern os::periodic_task task;

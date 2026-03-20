@@ -17,6 +17,8 @@ class ConsoleWidget : public Widget, public HasPadding {
     void clear();
     void write(const std::string &message);
     void writeln(const std::string &message);
+    void set_live_line(const std::string &line);
+    void commit_live_line();
     void set_parent_rect(Rect) override;
     void set_rows(size_t r);
     uint32_t get_line_count() {
@@ -36,6 +38,7 @@ class ConsoleWidget : public Widget, public HasPadding {
     std::array<std::string, max_lines> line_buffer;
     size_t line_head = 0;
     size_t line_count = 0;
+    bool live_line_present = false;
 
     void wrap(const std::string &raw_line);
     void calc_size();

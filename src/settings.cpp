@@ -84,12 +84,16 @@ uint8_t settings_read(Config *settings) {
         auto try_load_snapshot = [&](const char *filename) {
             // Ensure missing keys keep defaults.
             *settings = default_cfg;
+            LOG("Loading %s\n", filename);
 
             if (!config_file.load(filename, settings)) {
+                LOG("%s no found or failed loading\n", filename);
                 return false;
             }
             if (memcmp(settings->version, CONFIG_VERSION, 3) != 0) {
-                return false;
+                LOG("Config version in %s is %s. Expected %s. Saving it.\n", filename, settings->version, CONFIG_VERSION);
+                std::strncpy(settings->version, CONFIG_VERSION, 4);
+                config_file.save("config.cfg", settings);
             }
             return true;
         };
@@ -98,13 +102,13 @@ uint8_t settings_read(Config *settings) {
 
         if (ok) {
 #if DEBUG
-            printf_("settings_read: stack used pre-jrn: %u\n", (unsigned)stack_used_bytes_worst_case());
+            LOG("settings_read: stack used pre-jrn: %u\n", (unsigned)stack_used_bytes_worst_case());
 #endif
             // Journal is optional: replay whatever is available.
             (void)io::config_journal::replay("config.jrn", settings);
 
 #if DEBUG
-            printf_("settings_read: stack used post-jrn: %u\n", (unsigned)stack_used_bytes_worst_case());
+            LOG("settings_read: stack used post-jrn: %u\n", (unsigned)stack_used_bytes_worst_case());
 #endif
 
             // Establish baseline for runtime journal diffing.
@@ -121,6 +125,7 @@ uint8_t settings_read(Config *settings) {
     // Read config from flash
     *settings = default_cfg;
 
+    LOG("Loading settings from FLASH memory\n");
     // Read 2x uint16_t (4 bytes) from flash; keep buffer sized accordingly.
     char version[4];
     uint8_t status = flash_read((uint16_t *)version, 2);
@@ -128,6 +133,9 @@ uint8_t settings_read(Config *settings) {
     if (status == EE_OK) {
         if (memcmp(version, &settings->version, 3) == 0) {
             status = flash_read((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
+        } else {
+            LOG("Config version in FLASH is %s. Expected %s. Saving default.\n", version, settings->version);
+            config_file.save("config.cfg", settings);
         }
     }
 
@@ -169,27 +177,27 @@ uint8_t settings_write(Config *settings) {
     return flash_write((uint16_t *)settings, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
 }
 
-uint8_t settings_write(st_freq_mem *mem) {
+// uint8_t settings_write(st_freq_mem *mem) {
 
-    bool ok = false;
+//     bool ok = false;
 
-#if ENABLE_SD_CARD
-    if (sdcard_info.status == sdcard_STATUS::Mounted) {
+// #if ENABLE_SD_CARD
+//     if (sdcard_info.status == sdcard_STATUS::Mounted) {
 
-        ConfigFile<st_freq_mem> config_file;
+//         ConfigFile<st_freq_mem> config_file;
 
-        ok = config_file.save("mem.db", mem);
+//         ok = config_file.save("mem.db", mem);
 
-        if (!ok) {
-            status::pop_alert(status::ERROR, "Error saving memory in SD card");
-        }
-    }
-#else
-    return flash_write((uint16_t *)&config, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
-#endif
+//         if (!ok) {
+//             status::pop_alert(status::ERROR, "Error saving memory in SD card");
+//         }
+//     }
+// #else
+//     return flash_write((uint16_t *)&config, ceil((float)sizeof(Config) / (float)sizeof(uint16_t)));
+// #endif
 
-    return ok ? 0 : 1;
-}
+//     return ok ? 0 : 1;
+// }
 
 // static void _settings_reset_to_defaults(Config *settings) {
 //

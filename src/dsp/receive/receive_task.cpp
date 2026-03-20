@@ -31,8 +31,11 @@
 #include "ui/view.h"
 #include "ui/sd_filepicker_menu.h"
 #include "io/wav.h"
+#include <algorithm>
 #include <cstddef>
+#include <cstring>
 #include <memory>
+#include <string>
 
 #include "s_strength.h"
 
@@ -89,10 +92,35 @@ void ReceiveTask::process_audio(buffer_t<float32_t> &buff_out_f32) {
             compressor.work(buff_out_f32);
         }
     }
+
+    const bool cw_decode_enabled = dsp::dsp_config.decode_cw && (get_modulation_mode() == CW);
+    if (cw_decode_enabled) {
+        cw_decoder.process_block(buff_out_f32.p, buff_out_f32.count);
+        const std::string decoded = cw_decoder.take_text();
+        if (!decoded.empty()) {
+            cw_decode::text_event event{};
+            strncpy(event.text, decoded.c_str(), sizeof(event.text) - 1);
+            event.text[sizeof(event.text) - 1] = '\0';
+            cw_decode::text_signal.emit(&event);
+        }
+    } else {
+        cw_decoder.reset();
+    }
 }
 
 MODULATION_MODE ReceiveTask::get_modulation_mode() const {
     return main_board::get_modulation_mode();
+}
+
+
+uint32_t ReceiveTask::get_modulation_bw_hz() const {
+    const uint32_t radio_bw = radio::get_bandwidth_hz();
+
+    if (get_modulation_mode() == CW && dsp::dsp_config.decode_cw) {
+        return std::max<uint32_t>(radio_bw, dsp::dsp_config.cw_decode_bw_hz);
+    }
+
+    return radio_bw;
 }
 
 void ReceiveTask::set_squelch() {
@@ -110,6 +138,8 @@ void ReceiveTask::set_squelch() {
 bool ReceiveTask::init() {
 
     MODULATION_MODE mod = main_board::get_modulation_mode();
+
+    cw_decoder.configure(info.sample_rate, CW_PITCH_HZ);
 
     if (dsp::apply_audio_bpf()) {
         audio_bpf.config(info.sample_rate, get_audio_bw_hz(), 1, mod == WFM ? 100 : 300);
@@ -143,7 +173,7 @@ bool ReceiveTask::init() {
     }
 
     if (!if_gain_signal_token) {
-        if_gain_signal_token = if_gain_signal.add(NULL, [this](void *, const void *) {
+        if_gain_signal_token = if_gain_signal.add(NULL, [](void *, const void *) {
             MODULATION_MODE mod = main_board::get_modulation_mode();
 
             switch (mod) {

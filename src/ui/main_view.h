@@ -26,14 +26,17 @@
 #include "../dsp/fft/fft_widget.h"
 #include "../dsp/fft/iqbalance_widget.h"
 #include "../dsp/fft/waterfall_widget.h"
+#include "console_widget.h"
 #include "lcd.h"
 #include "s_meter_widget.h"
 #include "pow_meter_widget.h"
 #include "radio_status_widget.h"
 
+
 class MainView : public View {
   public:
     MainView();
+    ~MainView() override;
 
     WaterfallWidget *Waterfall();
 
@@ -75,6 +78,7 @@ class MainView : public View {
 
     WaterfallWidget waterfall_w{{0, WATERFALL_TOP, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, display};
     IQBalanceWidget iqbal_w{{0, WATERFALL_TOP, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT}, display};
+    ConsoleWidget cw_console_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT / 2, DISPLAY_X_PIXELS, FFT_WATERFALL_HEIGHT - FFT_WATERFALL_HEIGHT / 2}, display};
     MenuWidget menu_w{{0, WATERFALL_TOP + FFT_WATERFALL_HEIGHT, DISPLAY_X_PIXELS, INFO_HEIGHT}};
     OptionButtonsView optionButtonsView{{0, HEADER_HEIGHT, DISPLAY_X_PIXELS, OptionButtonsView::HEIGHT}};
 
