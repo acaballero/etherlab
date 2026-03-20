@@ -53,7 +53,7 @@ typedef struct st_config //__attribute__ ((packed))
 
     char version[4] = CONFIG_VERSION;
 
-    bool debug = true;
+    bool debug = false;
 
     uint8_t power_ctrl = 0; // Power control byte (8 power control lines)
 

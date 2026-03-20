@@ -125,7 +125,7 @@ extern "C" {
 
 void change_frequency(int amount);
 
-bool set_frequency(uint64_t f, int vfo = -1);
+bool set_frequency(uint64_t f, bool constrain_to_band = true, int vfo = -1);
 void change_step(int amount);
 uint64_t get_frequency();
 uint64_t get_vfo_frequency(uint8_t);

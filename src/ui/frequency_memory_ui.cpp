@@ -656,8 +656,10 @@ st_freq_mem find_closest(uint64_t f, DIRECTION direction, FREQ_TYPE t) {
     }
 
     // Now a linear scan from binary search position (to discard unwanted types)
+    // Note: binary_search_first() already returns the correct candidate index for the given mode.
+    // Starting at start_pos (+/- 0) is required; skipping it breaks BACKWARDS lookups at band boundaries.
     int32_t step = (direction == FORWARD) ? 1 : -1;
-    for (int32_t pos = start_pos + step; pos >= 0 && pos < count; pos += step) {
+    for (int32_t pos = start_pos; pos >= 0 && pos < count; pos += step) {
         st_freq_mem mem = get_by_index(pos);
         if (t == ALL || mem.type == t) {
             return mem;

@@ -443,7 +443,7 @@ void cmd_set_vfo_freq_handler(st_usb_cdc_command *command, uint8_t *response, ui
         f = parse_freq(command->data + 6);
         LOG_RAW("set | id: %d | freq: %llu | ", vfo, f);
 
-        radio::set_frequency(f, vfo);
+        radio::set_frequency(f, false, vfo);
         memcpy(response, ok_response_data, 5);
     } else {
         f = radio::get_vfo_frequency(vfo);

@@ -117,7 +117,7 @@ const st_filter if_filters[8] = {
 const char *bandNames[] = {"70 cm", "1 m",  "2 m",  "Airband", "WFM",  "6 m",  "10 m",  "11 m", "12 m", "15 m",
                            "17 m",  "20 m", "30 m", "40 m",    "60 m", "80 m", "160 m", "Auto", "All",  "None"};
 const char *modulation_names[] = {"LSB", "USB", "FM", "WFM", "AM", "CW", "NONE"};
-const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 150000, 6000, 0};
+const uint32_t modulation_min_bandwidths[] = {3000, 3000, 9000, 120000, 6000, 0};
 const char *IFFilterNames[] = {"300 Hz", "3 k", "6 k", "7.5 k", "9 k", "15 k", "150 k", "120 k", "Auto"};
 const char *IFFilter2Names[] = {"Auto", "Pass-thru"};
 const char *repeaterNames[] = {"+", "-", "Off"};
@@ -295,14 +295,25 @@ void change_frequency(int amount) {
 
 // This does not change the frequency immediatelly so it can be called from an IRQhandler.
 // Otherwise, SPI might clash
-bool set_frequency(uint64_t f, int vfo_ix) {
+bool set_frequency(uint64_t f, bool constrain_to_band, int vfo_ix) {
 
     if (vfo_ix < 0) {
         vfo_ix = config.vfo_ix;
     }
+
     uint64_t min_f = get_min_frequency();
     uint64_t max_f = get_max_frequency();
-    if (f >= min_f && f <= max_f) {
+    bool in_bounds = f >= min_f && f <= max_f;
+    auto band = find_band(f);
+
+    // Out of band => if the band is different than the one selected and constrain is disabled, allow
+    // the change and set BAND_AUTO
+    if (!in_bounds && band != BAND_ALL && band != get_band() && !constrain_to_band) {
+        set_band(BAND_AUTO);
+        in_bounds = true;
+    }
+
+    if (in_bounds) {
         config.vfo[vfo_ix].freq = f;
         return true;
     } else {

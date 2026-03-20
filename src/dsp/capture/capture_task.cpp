@@ -3,8 +3,10 @@
 //
 
 #include "capture_task.h"
+#include "dsp/dsp.h"
 #include "dsp/dsp_buffers.h"
 #include "stm32f4xx_hal.h"
+#include "main_board.h"
 #include "utils.hpp"
 
 /* Should be defined in the HW abstraction layer */
@@ -145,7 +147,12 @@ bool CaptureTask::start_impl() {
         this->abort(DSP_ERR_FILEOPEN);
         return false;
     } else {
+
+        dsp_set_real_time(true); // No FFT slicing, etc
+
         dsp::enable_frequency_shift(false);
+
+        main_board::set_mode(DIGITAL_RX);
 
         // Update FFT and sample rate parameters
         fft_config(config.fft.span);

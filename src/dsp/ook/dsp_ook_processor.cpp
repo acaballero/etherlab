@@ -15,9 +15,20 @@ void DspOOKProcessor::set_config(uint32_t carrier_freq, uint32_t mark_us, uint32
     this->cached_sample_rate = sample_rate;
 
     // Convert microseconds to sample counts
-    float32_t us_to_samples = (float32_t)sample_rate / 1000000.0f;
+    const float32_t us_to_samples = (float32_t)sample_rate / 1000000.0f;
+
+    // Mark/space must be >= 1 sample for the interval engine to make progress.
     mark_samples = (float32_t)mark_us * us_to_samples;
+    if (mark_samples < 1.0f) {
+        mark_samples = 1.0f;
+    }
+
     space_samples = (float32_t)space_us * us_to_samples;
+    if (space_samples < 1.0f) {
+        space_samples = 1.0f;
+    }
+
+    // Pause may be zero (no gap).
     pause_samples = (float32_t)pause_us * us_to_samples;
 
     carrier.set_config(carrier_freq, sample_rate);
@@ -30,9 +41,13 @@ void DspOOKProcessor::set_config(uint32_t carrier_freq, uint32_t mark_us, uint32
     finished = false;
     in_pause = false;
     current_interval_len = 0;
+    brute_advance_pending = false;
 }
 
 void DspOOKProcessor::set_sequence(const std::vector<uint8_t> &seq) {
+    mode = OOKTxMode::Manual;
+    brute_advance_pending = false;
+
     sequence = seq;
     sample_accumulator = 0;
     bit_index = 0;
@@ -40,6 +55,67 @@ void DspOOKProcessor::set_sequence(const std::vector<uint8_t> &seq) {
     finished = false;
     in_pause = false;
     current_interval_len = 0;
+}
+
+void DspOOKProcessor::set_bruteforce(OOKBruteProtocol protocol, uint32_t start_code, uint32_t stop_code, uint32_t step) {
+    mode = OOKTxMode::BruteForce;
+
+    brute_protocol = protocol;
+    brute_start_code = start_code;
+    brute_stop_code = stop_code;
+    brute_step = (step == 0) ? 1 : step;
+
+    brute_counter = brute_start_code;
+    brute_advance_pending = false;
+
+    sample_accumulator = 0;
+    bit_index = 0;
+    current_rep = 0;
+    finished = false;
+    in_pause = false;
+    current_interval_len = 0;
+
+    if (!load_brute_sequence(brute_counter)) {
+        finished = true;
+    }
+}
+
+bool DspOOKProcessor::load_brute_sequence(uint32_t code) {
+    const auto *preset = ook_brute_get_preset(brute_protocol);
+    if (!preset) {
+        return false;
+    }
+
+    // Respect preset bit width.
+    code &= ook_brute_max_code(*preset);
+
+    return ook_brute_build_sequence(*preset, code, sequence);
+}
+
+bool DspOOKProcessor::advance_brute_code() {
+    const auto *preset = ook_brute_get_preset(brute_protocol);
+    if (!preset) {
+        return false;
+    }
+
+    const uint32_t max_code = ook_brute_max_code(*preset);
+
+    // The start/stop might exceed the preset range; clamp counter to the preset size.
+    brute_start_code &= max_code;
+    brute_stop_code &= max_code;
+
+    uint32_t next = brute_counter + brute_step;
+
+    if (next > brute_stop_code) {
+        if (loop) {
+            next = brute_start_code;
+        } else {
+            return false;
+        }
+    }
+
+    brute_counter = next;
+    return load_brute_sequence(brute_counter);
 }
 
 uint32_t DspOOKProcessor::get_frame_duration_us() const {
@@ -80,28 +156,74 @@ void DspOOKProcessor::work(const buffer_t<adc_type> *buffer) {
                 bool is_mark = (sequence[bit_index] != 0);
                 current_interval_len = is_mark ? mark_samples : space_samples;
             } else {
-                // Sequence exhausted — enter pause or finish
+                // Sequence exhausted (end of one frame)
                 current_rep++;
-                if (loop || current_rep < repetitions) {
-                    bit_index = 0;
-                    sample_accumulator = 0;
 
-                    if (pause_samples > 0) {
-                        in_pause = true;
-                        current_interval_len = pause_samples;
+                if (mode == OOKTxMode::BruteForce) {
+
+                    if (current_rep < repetitions) {
+                        // Repeat the same code
+                        bit_index = 0;
+                        sample_accumulator = 0;
+
+                        if (pause_samples > 0) {
+                            in_pause = true;
+                            current_interval_len = pause_samples;
+                        } else if (!sequence.empty()) {
+                            const bool is_mark = (sequence[0] != 0);
+                            current_interval_len = is_mark ? mark_samples : space_samples;
+                        }
+
                     } else {
-                        // No pause, restart immediately
-                        bool is_mark = (sequence[0] != 0);
-                        current_interval_len = is_mark ? mark_samples : space_samples;
+                        // Finished repeating this code. Advance to next code after the pause.
+                        current_rep = 0;
+
+                        if (pause_samples > 0) {
+                            in_pause = true;
+                            brute_advance_pending = true;
+                            current_interval_len = pause_samples;
+                        } else {
+                            // No pause: advance immediately.
+                            if (!advance_brute_code() || sequence.empty()) {
+                                for (size_t j = i; j < wrapped.count; j++) {
+                                    wrapped.p[j].i = 0;
+                                    wrapped.p[j].r = 0;
+                                }
+                                finished = true;
+                                return;
+                            }
+
+                            bit_index = 0;
+                            sample_accumulator = 0;
+                            const bool is_mark = (sequence[0] != 0);
+                            current_interval_len = is_mark ? mark_samples : space_samples;
+                        }
                     }
+
                 } else {
-                    // Done — fill rest with silence
-                    for (size_t j = i; j < wrapped.count; j++) {
-                        wrapped.p[j].i = 0;
-                        wrapped.p[j].r = 0;
+
+                    // Manual sequence mode: repetitions and/or loop on the same sequence
+                    if (loop || current_rep < repetitions) {
+                        bit_index = 0;
+                        sample_accumulator = 0;
+
+                        if (pause_samples > 0) {
+                            in_pause = true;
+                            current_interval_len = pause_samples;
+                        } else {
+                            // No pause, restart immediately
+                            bool is_mark = (sequence[0] != 0);
+                            current_interval_len = is_mark ? mark_samples : space_samples;
+                        }
+                    } else {
+                        // Done — fill rest with silence
+                        for (size_t j = i; j < wrapped.count; j++) {
+                            wrapped.p[j].i = 0;
+                            wrapped.p[j].r = 0;
+                        }
+                        finished = true;
+                        return;
                     }
-                    finished = true;
-                    return;
                 }
             }
         }
@@ -130,8 +252,21 @@ void DspOOKProcessor::work(const buffer_t<adc_type> *buffer) {
             current_interval_len = 0; // Will be set up next iteration
 
             if (in_pause) {
-                // Pause finished, restart sequence
+                // Pause finished
                 in_pause = false;
+
+                if (mode == OOKTxMode::BruteForce && brute_advance_pending) {
+                    brute_advance_pending = false;
+                    if (!advance_brute_code() || sequence.empty()) {
+                        for (size_t j = i + 1; j < wrapped.count; j++) {
+                            wrapped.p[j].i = 0;
+                            wrapped.p[j].r = 0;
+                        }
+                        finished = true;
+                        return;
+                    }
+                }
+
                 bit_index = 0;
             } else {
                 bit_index++;

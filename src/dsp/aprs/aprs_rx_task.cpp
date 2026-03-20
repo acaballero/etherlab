@@ -31,11 +31,11 @@ void APRSTask::process_audio(buffer_t<float32_t> &audio) {
     }
 
     if (deemph_enabled) {
-        deemph_filter.decimate(audio, audio, 0, 1, 1);
+        deemph_filter.decimate(audio.p, audio.p, audio.count);
     }
 
     if (audio_bpf_enabled) {
-        audio_bpf.decimate(audio, audio, 0, 1, 1);
+        audio_bpf.decimate(audio.p, audio.p, audio.count);
     }
 
     float32_t *audio_sample_p = audio.p;

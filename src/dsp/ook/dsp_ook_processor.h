@@ -8,6 +8,7 @@
 #include "dsp/dsp_common.h"
 #include "dsp/dsp_processor.h"
 #include "dsp/blocks/signal_generator.h"
+#include "dsp/ook/ook_brute_presets.h"
 #include "types.h"
 #include <cstdint>
 #include <vector>
@@ -39,8 +40,20 @@ class DspOOKProcessor : public DspProcessor {
     void set_config(uint32_t carrier_freq, uint32_t mark_duration_us, uint32_t space_duration_us,
                     uint32_t pause_us, uint32_t sample_rate);
 
-    /** Set the OOK bit sequence. Each element is 0 (off) or 1 (on). */
+    enum class OOKTxMode : uint8_t {
+        Manual = 0,
+        BruteForce,
+    };
+
+    /** Set the OOK bit sequence. Each element is 0 (off) or 1 (on). Selects Manual mode. */
     void set_sequence(const std::vector<uint8_t> &seq);
+
+    /** Configure brute-force mode (PortaPack-style presets). */
+    void set_bruteforce(OOKBruteProtocol protocol, uint32_t start_code, uint32_t stop_code, uint32_t step);
+
+    OOKTxMode get_mode() const {
+        return mode;
+    }
 
     void set_loop(bool v) {
         loop = v;
@@ -110,6 +123,20 @@ class DspOOKProcessor : public DspProcessor {
     bool loop{false};
     bool finished{false};
     bool in_pause{false}; // True when outputting silence between repetitions
+
+    // Mode
+    OOKTxMode mode{OOKTxMode::Manual};
+
+    // Brute-force state
+    OOKBruteProtocol brute_protocol{OOKBruteProtocol::CAME_12};
+    uint32_t brute_start_code{0};
+    uint32_t brute_stop_code{0};
+    uint32_t brute_step{1};
+    uint32_t brute_counter{0};
+    bool brute_advance_pending{false};
+
+    bool load_brute_sequence(uint32_t code);
+    bool advance_brute_code();
 };
 
 #endif // TRX_FRONTEND_DSP_OOK_PROCESSOR_H

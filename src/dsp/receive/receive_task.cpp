@@ -99,7 +99,7 @@ void ReceiveTask::set_squelch() {
 
     MODULATION_MODE m = get_modulation_mode();
     if ((m == FM || m == WFM) && config.squelch_level) {
-        float threshold = max2(0, 10 - config.squelch_level);
+        float threshold = max2(0, 30 - config.squelch_level * 3);
         squelch.config(threshold, info.sample_rate, 1.4f * get_audio_bw_hz());
         squelch_enabled = true;
     } else {

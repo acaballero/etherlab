@@ -37,7 +37,7 @@ FileType ftype = FTYPE_WAV;
 io::path fname;
 char fname_buff[PATH_SIZE];
 bool filename_is_edited = false;
-CaptureWidget capture_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 10, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 10}, &lcd};
+CaptureWidget capture_w{{DISPLAY_X_PIXELS / 2, MENU_START_Y + 12, DISPLAY_X_PIXELS / 2, INFO_HEIGHT - 12}, &lcd};
 MODE previous_mode;
 Menu::result on_freq_updated(Menu::eventMask e); // Forward declaration
 io::path get_file_name();                        // Forward declaration

@@ -14,7 +14,12 @@ class Task {
   public:
     Task(){};
 
-    virtual ~Task() = default;
+    virtual ~Task() {
+        if (processor) {
+            processor.reset();
+        }
+    };
+
     virtual const char *get_name() {
         return "-";
     };
