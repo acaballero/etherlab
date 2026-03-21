@@ -398,7 +398,7 @@ void update_options() {
         }
     }
 
-    dsp_ui::apply_dsp_changes();
+    dsp_ui::refresh_menu_state();
 }
 
 void mode_signal_handler(void *, const void *) {

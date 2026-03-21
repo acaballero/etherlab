@@ -106,8 +106,6 @@ void setup() {
         Error_Handler();
     }
 
-    LOG("Reading settigns\n");
-
     if (settings_read(&config) != EE_OK) {
         status::pop_alert(status::ERROR, "Settings read error");
     }

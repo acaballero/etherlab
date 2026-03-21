@@ -18,6 +18,7 @@ namespace dsp_ui {
 
 extern Menu::menu menuDSP;
 extern bool dsp_enabled;
+void refresh_menu_state();
 Menu::result apply_dsp_changes(Menu::eventMask = Menu::noEvent);
 
 } // namespace dsp_ui

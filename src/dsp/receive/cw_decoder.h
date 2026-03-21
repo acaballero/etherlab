@@ -17,7 +17,17 @@ struct text_event {
     char text[48];
 };
 
+struct debug_event {
+    uint8_t algorithm = 0;
+    uint8_t tone_on = 0;
+    uint16_t dot_ms = 0;
+    uint16_t run_ms = 0;
+    int8_t snr_db = 0;
+    uint8_t symbol_len = 0;
+};
+
 extern Signal text_signal;
+extern Signal debug_signal;
 
 class CwDecoderBase {
   public:
@@ -28,6 +38,7 @@ class CwDecoderBase {
     virtual void process_block(const float *samples, size_t count) = 0;
 
     std::string take_text();
+    virtual debug_event get_debug() const;
 
   protected:
     void reset_common();
@@ -105,6 +116,7 @@ class CwDecoder {
     void reset();
     void process_block(const float *samples, size_t count);
     std::string take_text();
+    debug_event get_debug() const;
 
   private:
     template <size_t A, size_t B> struct static_max {

@@ -60,13 +60,16 @@ Menu::numberPrompt<uint32_t> dspFMMaxDev((const char *)"FM max. deviation", &con
 
 static void apply_cw_preset(uint8_t preset, bool restart = true);
 
-result apply_dsp_changes(eventMask) {
+void refresh_menu_state() {
     if (dsp::dsp_config.audio_compressor_enabled) {
         compressorThresholdMenu.enable();
     } else {
         compressorThresholdMenu.disable();
     }
+}
 
+result apply_dsp_changes(eventMask) {
+    refresh_menu_state();
     apply_cw_preset(dsp::dsp_config.cw_decode_preset, false);
     config.dsp = dsp::dsp_config;
     dsp_restart();

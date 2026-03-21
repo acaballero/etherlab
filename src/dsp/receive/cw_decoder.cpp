@@ -6,6 +6,7 @@
 namespace cw_decode {
 
 Signal text_signal{"cw_decode_text"};
+Signal debug_signal{"cw_decode_debug"};
 
 static constexpr float PI_F = 3.14159265358979323846f;
 
@@ -37,6 +38,16 @@ void CwDecoderBase::reset_common() {
     pending_text.clear();
     symbol_conf_accum = 0.0f;
     symbol_conf_count = 0;
+}
+
+
+debug_event CwDecoderBase::get_debug() const {
+    debug_event ev{};
+    ev.tone_on = tone_on ? 1 : 0;
+    ev.dot_ms = sample_rate ? static_cast<uint16_t>(clampf((dot_samples * 1000.0f) / static_cast<float>(sample_rate), 0.0f, 65535.0f)) : 0;
+    ev.run_ms = sample_rate ? static_cast<uint16_t>(clampf((static_cast<float>(run_samples) * 1000.0f) / static_cast<float>(sample_rate), 0.0f, 65535.0f)) : 0;
+    ev.symbol_len = static_cast<uint8_t>(std::min<size_t>(current_symbol.size(), 255));
+    return ev;
 }
 
 std::string CwDecoderBase::take_text() {
@@ -271,6 +282,13 @@ void CwGoertzelDecoder::finalize_goertzel_window() {
     goertzel_count = 0;
 }
 
+
+debug_event CwGoertzelDecoder::get_debug() const {
+    debug_event ev = CwDecoderBase::get_debug();
+    ev.snr_db = static_cast<int8_t>(clampf(tone_snr_db, -99.0f, 99.0f));
+    return ev;
+}
+
 void CwGoertzelDecoder::process_block(const float *samples, size_t count) {
     if (sample_rate == 0 || !samples || count == 0) {
         return;
@@ -351,6 +369,13 @@ void CwMayhemDecoder::handle_gap_ms(float duration_ms) {
     } else if (duration_ms >= letter_gap_ms) {
         finalize_symbol();
     }
+}
+
+
+debug_event CwMayhemDecoder::get_debug() const {
+    debug_event ev = CwDecoderBase::get_debug();
+    ev.dot_ms = static_cast<uint16_t>(clampf(mayhem_time_unit_ms, 0.0f, 65535.0f));
+    return ev;
 }
 
 void CwMayhemDecoder::process_block(const float *samples, size_t count) {
@@ -466,6 +491,17 @@ void CwDecoder::reset() {
 void CwDecoder::process_block(const float *samples, size_t count) {
     select_algorithm(dsp::dsp_config.cw_decode_algorithm);
     decoder_->process_block(samples, count);
+}
+
+
+debug_event CwDecoder::get_debug() const {
+    debug_event ev{};
+    if (!decoder_) {
+        return ev;
+    }
+    ev = decoder_->get_debug();
+    ev.algorithm = static_cast<uint8_t>(algorithm_);
+    return ev;
 }
 
 std::string CwDecoder::take_text() {

@@ -75,6 +75,8 @@ uint8_t settings_read(Config *settings) {
 
     bool ok = false;
 
+    LOG("Reading settings\n");
+
 #if ENABLE_SD_CARD
     if (sdcard_info.status == sdcard_STATUS::Mounted) {
 
@@ -94,6 +96,7 @@ uint8_t settings_read(Config *settings) {
                 LOG("Config version in %s is %s. Expected %s. Saving it.\n", filename, settings->version, CONFIG_VERSION);
                 std::strncpy(settings->version, CONFIG_VERSION, 4);
                 config_file.save("config.cfg", settings);
+                (void)f_unlink("config.jrn");
             }
             return true;
         };
@@ -136,6 +139,7 @@ uint8_t settings_read(Config *settings) {
         } else {
             LOG("Config version in FLASH is %s. Expected %s. Saving default.\n", version, settings->version);
             config_file.save("config.cfg", settings);
+            (void)f_unlink("config.jrn");
         }
     }
 
@@ -158,14 +162,52 @@ uint8_t settings_write(Config *settings) {
             last_journaled_valid = true;
         }
 
-        bool wrote_any = false;
-        const bool ok = io::config_journal::append_changes("config.jrn", *settings, &last_journaled, &wrote_any);
+        // If the on-disk snapshot carries an older CONFIG_VERSION, journal-only writes are not enough:
+        // settings_read() rejects the stale snapshot before replaying the journal. Refresh the snapshot first.
+        auto snapshot_version_matches = []() {
+            bool matches = false;
 
-        if (!ok) {
-            status::pop_alert(status::ERROR, "Error saving config journal in SD card. Fallback to Flash");
+            if (!lock_sd_card(0, "cfg_ver_check")) {
+                return false;
+            }
+
+            FIL *f = &FatFSFileHandle;
+            if (f_open(f, "config.cfg", FA_READ) == FR_OK) {
+                char line[32] = {};
+                if (f_gets(line, sizeof(line), f) != nullptr) {
+                    matches = std::strncmp(line, "version=" CONFIG_VERSION, std::strlen("version=" CONFIG_VERSION)) == 0;
+                }
+                f_close(f);
+            }
+
+            unlock_sd_card();
+            return matches;
+        }();
+
+        if (!snapshot_version_matches) {
+            if (config_file.save("config.cfg", settings)) {
+#if ENABLE_SD_CARD
+                if (lock_sd_card(0, "cfg_jrn_clear")) {
+                    (void)f_unlink("config.jrn");
+                    unlock_sd_card();
+                }
+#endif
+                io::config_journal::init_baseline(*settings, &last_journaled);
+                last_journaled_valid = true;
+                return 0;
+            }
+
+            status::pop_alert(status::ERROR, "Error refreshing SD config snapshot. Fallback to Flash");
         } else {
-            (void)wrote_any;
-            return 0;
+            bool wrote_any = false;
+            const bool ok = io::config_journal::append_changes("config.jrn", *settings, &last_journaled, &wrote_any);
+
+            if (!ok) {
+                status::pop_alert(status::ERROR, "Error saving config journal in SD card. Fallback to Flash");
+            } else {
+                (void)wrote_any;
+                return 0;
+            }
         }
     }
 #endif
